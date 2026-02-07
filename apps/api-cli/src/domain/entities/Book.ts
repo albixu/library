@@ -9,6 +9,9 @@
  * - Responsible for maintaining their own invariants
  *
  * This entity follows an immutable pattern - all "mutations" return new instances.
+ *
+ * Note: Embeddings are NOT part of the domain model. They are an infrastructure
+ * concern for semantic search, managed exclusively at the persistence layer.
  */
 
 import { BookType, type BookTypeValue } from '../value-objects/BookType.js';
@@ -18,13 +21,7 @@ import {
   RequiredFieldError,
   FieldTooLongError,
   InvalidUUIDError,
-  InvalidEmbeddingError,
 } from '../errors/DomainErrors.js';
-
-/**
- * Expected embedding dimensions for nomic-embed-text model
- */
-const EMBEDDING_DIMENSIONS = 768;
 
 /**
  * Field length constraints
@@ -34,6 +31,7 @@ const FIELD_CONSTRAINTS = {
   AUTHOR_MAX_LENGTH: 300,
   DESCRIPTION_MAX_LENGTH: 5000,
   CATEGORY_MAX_LENGTH: 100,
+  PATH_MAX_LENGTH: 1000,
 } as const;
 
 /**
@@ -53,13 +51,17 @@ export interface CreateBookProps {
   format: string;
   isbn?: string | null;
   description?: string | null;
-  embedding?: number[] | null;
+  available?: boolean;
+  path?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 /**
  * Props for reconstructing a Book from persistence
+ *
+ * Note: Embedding is intentionally excluded - it's managed at the persistence
+ * layer and never exposed to the domain.
  */
 export interface BookPersistenceProps {
   id: string;
@@ -70,7 +72,8 @@ export interface BookPersistenceProps {
   format: BookFormatValue;
   isbn: string | null;
   description: string | null;
-  embedding: number[] | null;
+  available: boolean;
+  path: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -86,7 +89,8 @@ export interface UpdateBookProps {
   format?: string;
   isbn?: string | null;
   description?: string | null;
-  embedding?: number[] | null;
+  available?: boolean;
+  path?: string | null;
 }
 
 /**
@@ -102,7 +106,8 @@ export class Book {
     public readonly format: BookFormat,
     public readonly isbn: ISBN | null,
     public readonly description: string | null,
-    public readonly embedding: readonly number[] | null,
+    public readonly available: boolean,
+    public readonly path: string | null,
     public readonly createdAt: Date,
     public readonly updatedAt: Date
   ) {
@@ -129,9 +134,10 @@ export class Book {
     const description = props.description
       ? Book.validateDescription(props.description)
       : null;
-    const embedding = props.embedding
-      ? Book.validateEmbedding(props.embedding)
-      : null;
+
+    // Available defaults to false, path is optional
+    const available = props.available ?? false;
+    const path = props.path ? Book.validatePath(props.path) : null;
 
     const now = new Date();
     const createdAt = props.createdAt ?? now;
@@ -146,7 +152,8 @@ export class Book {
       format,
       isbn,
       description,
-      embedding,
+      available,
+      path,
       createdAt,
       updatedAt
     );
@@ -166,7 +173,8 @@ export class Book {
       BookFormat.fromPersistence(props.format),
       props.isbn ? ISBN.fromPersistence(props.isbn) : null,
       props.description,
-      props.embedding ? Object.freeze([...props.embedding]) : null,
+      props.available,
+      props.path,
       props.createdAt,
       props.updatedAt
     );
@@ -204,9 +212,13 @@ export class Book {
       ? (props.description ? Book.validateDescription(props.description) : null)
       : this.description;
 
-    const embedding = props.embedding !== undefined
-      ? (props.embedding ? Book.validateEmbedding(props.embedding) : null)
-      : this.embedding;
+    const available = props.available !== undefined
+      ? props.available
+      : this.available;
+
+    const path = props.path !== undefined
+      ? (props.path ? Book.validatePath(props.path) : null)
+      : this.path;
 
     return new Book(
       this.id,
@@ -217,42 +229,18 @@ export class Book {
       format,
       isbn,
       description,
-      embedding,
+      available,
+      path,
       this.createdAt,
       new Date() // Update timestamp
     );
   }
 
   /**
-   * Updates only the embedding, returning a new instance
-   */
-  withEmbedding(embedding: number[]): Book {
-    const validatedEmbedding = Book.validateEmbedding(embedding);
-
-    return new Book(
-      this.id,
-      this.title,
-      this.author,
-      this.type,
-      this.category,
-      this.format,
-      this.isbn,
-      this.description,
-      validatedEmbedding,
-      this.createdAt,
-      new Date()
-    );
-  }
-
-  /**
-   * Checks if the book has an embedding
-   */
-  hasEmbedding(): boolean {
-    return this.embedding !== null && this.embedding.length > 0;
-  }
-
-  /**
    * Gets the text that should be used to generate embeddings
+   *
+   * This provides a consistent text representation for the infrastructure
+   * layer to use when generating vector embeddings for semantic search.
    */
   getTextForEmbedding(): string {
     const parts = [this.title, this.author, this.category];
@@ -339,21 +327,13 @@ export class Book {
     return trimmedDescription;
   }
 
-  private static validateEmbedding(embedding: number[]): readonly number[] {
-    if (!Array.isArray(embedding)) {
-      throw new InvalidEmbeddingError('Embedding must be an array of numbers');
+  private static validatePath(path: string): string {
+    const trimmedPath = path.trim();
+
+    if (trimmedPath.length > FIELD_CONSTRAINTS.PATH_MAX_LENGTH) {
+      throw new FieldTooLongError('path', FIELD_CONSTRAINTS.PATH_MAX_LENGTH);
     }
 
-    if (embedding.length !== EMBEDDING_DIMENSIONS) {
-      throw new InvalidEmbeddingError(
-        `Embedding must have ${EMBEDDING_DIMENSIONS} dimensions, got ${embedding.length}`
-      );
-    }
-
-    if (!embedding.every((n) => typeof n === 'number' && !isNaN(n))) {
-      throw new InvalidEmbeddingError('Embedding must contain only valid numbers');
-    }
-
-    return Object.freeze([...embedding]);
+    return trimmedPath;
   }
 }

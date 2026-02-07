@@ -20,8 +20,10 @@ services:
     volumes:
       # Mount source code for hot reload
       - ./apps/api-cli/src:/app/src:ro
+      - ./apps/api-cli/tests:/app/tests:ro
       - ./apps/api-cli/package.json:/app/package.json:ro
       - ./apps/api-cli/tsconfig.json:/app/tsconfig.json:ro
+      - ./apps/api-cli/vitest.config.ts:/app/vitest.config.ts:ro
       - ./apps/api-cli/drizzle.config.ts:/app/drizzle.config.ts:ro
       # Named volume for node_modules (prevents overwrite by host)
       - api_node_modules:/app/node_modules

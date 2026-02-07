@@ -1,219 +1,107 @@
 # AGENTS.md - AI Coding Agent Guidelines
 
-This document provides guidelines for AI coding agents working in this repository.
+Este documento es la fuente de verdad para los agentes de IA que trabajan en este repositorio. Define los estándares técnicos, el protocolo de interacción y los flujos de trabajo obligatorios.
 
-## Project Overview
+## 1. Protocolo de Interacción y Errores
+- **Detección de Errores:** Si detectas un error en el código existente o una vulnerabilidad:
+    1. **Detente** inmediatamente.
+    2. Explica el error y la causa raíz.
+    3. Propón la solución técnica siguiendo los estándares del proyecto.
+    4. **Solicita confirmación explícita** antes de aplicar cualquier cambio correctivo.
+- **Concisión:** Sé directo y evita explicaciones innecesarias a menos que se trate de una corrección de error crítico.
 
-**Library** is a personal digital library management system built with TypeScript, using:
-- **Runtime**: Node.js 20+ with ES Modules (`"type": "module"`)
-- **Framework**: Fastify (HTTP API) + Commander.js (CLI)
-- **Database**: PostgreSQL 16 + pgvector (semantic search)
-- **ORM**: Drizzle ORM
-- **Validation**: Zod
-- **Testing**: Vitest
-- **Architecture**: Hexagonal (Ports & Adapters)
+## 2. Project Overview
+**Library** es un sistema de gestión de biblioteca digital personal compuesto por:
+- **API (Node.js 20+ / Fastify)**: Lógica central y persistencia.
+- **CLI (Commander.js)**: Herramientas de terminal.
+- **Client Web (Angular)**: Interfaz de usuario (Última versión estable).
+- **Core Técnico**: TypeScript (ESM), PostgreSQL 16 + pgvector, Drizzle ORM, Zod, Vitest.
+- **Arquitectura**: Hexagonal (Ports & Adapters) y estrictamente **Domain-Driven Design (DDD)**.
 
-## Build/Lint/Test Commands
+## 3. Git Workflow & Commits
+Se debe seguir esta estructura de ramas jerárquica para cada desarrollo:
+1. **Historia de Usuario:** Rama base desde `main` (ej. `feature/US-123-titulo`).
+2. **Subtareas:** Ramas técnicas desde la rama de historia (ej. `task/US-123-db-schema`).
+3. **Integración:** Cada tarea se integra en la rama de historia mediante **Pull Request**.
+4. **Commits:** Seguir el estándar de **Conventional Commits**:
+   - `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `style:`.
 
-All commands run from `apps/api-cli/`:
+## 4. Build/Lint/Test Commands (apps/api-cli/)
 
 ```bash
-# Development
-npm run dev              # Start server with hot reload (tsx watch)
-npm run dev:cli          # Run CLI in dev mode
+# Desarrollo y Build
+npm run dev              # Server con hot reload
+npm run build            # Compilar TS
+npm run lint:fix         # ESLint con auto-fix (Estilo Prettier)
 
-# Build
-npm run build            # Compile TypeScript
-npm run typecheck        # Type-check without emitting
-
-# Testing
-npm test                 # Run all tests once
-npm run test:watch       # Run tests in watch mode
-npm run test:coverage    # Run with coverage report
-npm run test:ui          # Open Vitest UI in browser
-
-# Run a single test file
-npx vitest run tests/unit/domain/entities/Book.test.ts
-
-# Run tests matching a pattern
-npx vitest run -t "should create a valid ISBN"
-
-# Linting
-npm run lint             # Run ESLint
-npm run lint:fix         # Run ESLint with auto-fix
+# Testing (Ejecutar preferiblemente en Docker)
+docker exec -it library-api-dev npm test                 # Todos los tests
+docker exec -it library-api-dev npm run test:coverage    # Cobertura
+npx vitest run tests/unit/domain/entities/Book.test.ts   # Test específico
 
 # Database (Drizzle)
-npm run db:generate      # Generate migrations
-npm run db:migrate       # Run migrations
-npm run db:push          # Push schema to database
-npm run db:studio        # Open Drizzle Studio
-```
-
-### Docker Commands
-
-```bash
-docker-compose up -d                          # Start dev services
-docker exec -it library-api-dev npm test      # Run tests in container
-```
-
-## Project Structure
+npm run db:generate && npm run db:migrate
 
 ```
-apps/api-cli/
-├── src/
-│   ├── domain/              # Core business logic (NO external dependencies)
-│   │   ├── entities/        # Domain entities (Book.ts)
-│   │   ├── value-objects/   # Value objects (ISBN, BookType, BookFormat)
-│   │   ├── errors/          # Domain-specific errors
-│   │   └── index.ts         # Barrel export
-│   └── shared/
-│       └── utils/           # Shared utilities
-├── tests/
-│   └── unit/
-│       └── domain/          # Mirrors src/domain structure
+
+## 5. Project Structure
+
+```
+/
+├── apps/
+│   ├── api-cli/             # Backend & Terminal Tools
+│   │   ├── src/
+│   │   │   ├── domain/      # Business Logic (Pure TS, NO dependencies)
+│   │   │   └── shared/      # Utilities
+│   │   └── tests/           # Unit & Functional tests
+│   └── web-client/          # Angular Application (DDD structure)
+├── docs/                    # Design docs & Architecture
 └── docker/
+
 ```
 
-## Code Style Guidelines
+## 6. Code Style & Standards
 
-### Imports
+* **JavaScript/TS:** Usar los últimos estándares (ES2024+).
+* **Imports:** Requisito ESM: **Siempre usar extensión `.js**` en imports locales.
+* **Naming:**
+* Clases/Entidades: `PascalCase` (ej. `Book.ts`).
+* Utils/Functions: `camelCase`.
+* Booleans: prefijo `is`/`has`.
 
-- **Always use `.js` extension** for local imports (ESM requirement)
-- Use **relative imports** within the module
-- Use `type` keyword for type-only imports
-- Group imports: external packages first, then local imports
 
-```typescript
-// External packages (no extension)
-import { describe, it, expect } from 'vitest';
+* **Inmutabilidad:**
+* Constructores privados + métodos factoría estáticos.
+* Uso de `readonly` y `Object.freeze(this)`.
 
-// Local imports (always .js extension)
-import { BookType, type BookTypeValue } from '../value-objects/BookType.js';
-import { RequiredFieldError } from '../errors/DomainErrors.js';
-```
 
-### Naming Conventions
+* **Seguridad (Prioridad Máxima):**
+* Aplicar medidas contra **OWASP Top 10** (Inyección, XSS, etc.).
+* API: Validación estricta con Zod y sanitización de inputs.
+* Web: Uso de mecanismos nativos de Angular para evitar XSS (no usar `innerHTML`).
 
-| Element | Convention | Example |
-|---------|------------|---------|
-| Files (classes) | PascalCase | `Book.ts`, `ISBN.ts` |
-| Files (utils) | camelCase | `uuid.ts` |
-| Test files | `{Name}.test.ts` | `Book.test.ts` |
-| Classes | PascalCase | `Book`, `BookType` |
-| Error classes | PascalCase + Error | `InvalidISBNError` |
-| Interfaces | PascalCase | `CreateBookProps` |
-| Type aliases | PascalCase + Value | `BookTypeValue` |
-| Constants | SCREAMING_SNAKE | `EMBEDDING_DIMENSIONS` |
-| Functions | camelCase, verb-first | `validateTitle`, `generateUUID` |
-| Boolean methods | `is`/`has` prefix | `isValid`, `hasEmbedding` |
 
-### TypeScript Configuration
 
-Strict mode is enabled with these additional checks:
-- `noImplicitReturns`
-- `noFallthroughCasesInSwitch`
-- `noUncheckedIndexedAccess`
-- `noImplicitOverride`
+## 7. Testing Strategy
 
-### Types and Interfaces
+* **Unit Tests:** Obligatorios para toda la lógica de negocio en el Domain Layer.
+* **Functional Tests:** Obligatorios para probar la integración de componentes y flujos de la API/Web.
+* **Patrón:** Seguir el formato `describe/it` con nombres claros: `should {expected behavior}`.
+* **Métricas:** Mínimo **80% de cobertura** en lógica de negocio.
 
-```typescript
-// Use 'as const' for enum-like arrays
-export const BOOK_FORMATS = ['epub', 'pdf', 'mobi'] as const;
-export type BookFormatValue = (typeof BOOK_FORMATS)[number];
+## 8. Domain-Driven Design (DDD) Rules
 
-// Use readonly for immutable properties
-public readonly value: string;
-public readonly embedding: readonly number[] | null;
+1. **Domain Isolation:** La capa de dominio no tiene dependencias externas.
+2. **Value Objects:** Inmutables, se validan a sí mismos y se comparan por valor.
+3. **Entities:** Identificadas por ID único.
+4. **Factories:** Usar `create()` para entrada de usuario (valida) y `fromPersistence()` para DB (confía).
+5. **Errors:** Propagar errores de dominio específicos (`DomainError`) hacia arriba.
 
-// Separate interfaces for different use cases
-interface CreateBookProps { ... }      // User input (optional fields with ?)
-interface BookPersistenceProps { ... } // Database (all required, validated types)
-interface UpdateBookProps { ... }      // Partial updates
-```
+## 9. Definition of Done (DoD)
 
-### Error Handling
+Una tarea solo se considera finalizada si cumple:
 
-- Create domain-specific error classes extending `DomainError`
-- Throw errors early during validation in factory methods
-- Include descriptive error messages with the invalid value
-- Document thrown errors with `@throws` in JSDoc
-
-```typescript
-export class InvalidISBNError extends DomainError {
-  constructor(value: string) {
-    super(`Invalid ISBN format: "${value}"`);
-  }
-}
-
-/**
- * Creates a new ISBN instance
- * @throws InvalidISBNError if the value is not a valid ISBN
- */
-static create(value: string): ISBN { ... }
-```
-
-### Immutability Pattern
-
-Domain objects must be immutable:
-- Use `private constructor` + static factory methods
-- Use `Object.freeze(this)` in constructor
-- All properties must be `readonly`
-- "Mutations" return new instances
-
-```typescript
-export class Book {
-  private constructor(public readonly id: string, ...) {
-    Object.freeze(this);
-  }
-
-  static create(props: CreateBookProps): Book { ... }
-  static fromPersistence(props: BookPersistenceProps): Book { ... }
-  
-  update(props: UpdateBookProps): Book {
-    return new Book(...); // Returns new instance
-  }
-}
-```
-
-### Documentation
-
-- Add file-level JSDoc explaining purpose and design principles
-- Document methods with `@throws` annotations
-- Use section separators for large classes: `// ===== Private Validators =====`
-- Prefer self-documenting names over inline comments
-
-### Testing Patterns
-
-```typescript
-describe('ISBN', () => {
-  // Constants at the top
-  const VALID_ISBN_13 = '9780306406157';
-
-  describe('create', () => {
-    it('should create a valid ISBN-13', () => { ... });
-    it('should throw InvalidISBNError for invalid format', () => { ... });
-  });
-});
-
-// Factory functions for test data
-const createValidBookProps = (overrides?: Partial<CreateBookProps>) => ({
-  id: validUUID,
-  title: 'Clean Code',
-  ...overrides,
-});
-
-// Test naming: "should {expected behavior}"
-it('should return true for ISBNs with same value', () => { ... });
-
-// Explicit error type checking
-expect(() => ISBN.create('invalid')).toThrow(InvalidISBNError);
-```
-
-## Domain-Driven Design Rules
-
-1. **Domain layer has NO external dependencies** - only pure TypeScript
-2. **Value Objects** are immutable, self-validating, compared by value
-3. **Entities** are identified by ID, compared by ID
-4. **Use `create()` for user input** (validates) and `fromPersistence()` for database (trusts data)
-5. **Errors propagate up** - no try/catch in business logic
+* [ ] Código limpio (Lint/Typecheck OK).
+* [ ] Mínimo **80% de tests unitarios** y **100% de tests funcionales** nuevos/afectados.
+* [ ] Actualización de `README.md` y documentos en `/docs` si el diseño ha cambiado.
+* [ ] Commits realizados con el estándar Conventional Commits.

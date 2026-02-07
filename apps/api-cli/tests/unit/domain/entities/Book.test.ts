@@ -8,7 +8,6 @@ import {
   RequiredFieldError,
   FieldTooLongError,
   InvalidUUIDError,
-  InvalidEmbeddingError,
 } from '../../../../src/domain/errors/DomainErrors.js';
 import { InvalidBookTypeError } from '../../../../src/domain/value-objects/BookType.js';
 import { InvalidBookFormatError } from '../../../../src/domain/value-objects/BookFormat.js';
@@ -40,15 +39,12 @@ describe('Book', () => {
     format: 'pdf',
     isbn: null,
     description: null,
-    embedding: null,
+    available: false,
+    path: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     ...overrides,
   });
-
-  const createValidEmbedding = (): number[] => {
-    return Array.from({ length: 768 }, (_, i) => Math.random() * 2 - 1);
-  };
 
   describe('create', () => {
     it('should create a valid Book with required fields', () => {
@@ -63,22 +59,24 @@ describe('Book', () => {
       expect(book.format.value).toBe('pdf');
       expect(book.isbn).toBeNull();
       expect(book.description).toBeNull();
-      expect(book.embedding).toBeNull();
+      expect(book.available).toBe(false);
+      expect(book.path).toBeNull();
     });
 
     it('should create a Book with all optional fields', () => {
-      const embedding = createValidEmbedding();
       const props = createValidBookProps({
         isbn: validISBN,
         description: 'A handbook of agile software craftsmanship',
-        embedding,
+        available: true,
+        path: '/books/clean-code.pdf',
       });
 
       const book = Book.create(props);
 
       expect(book.isbn?.value).toBe(validISBN);
       expect(book.description).toBe('A handbook of agile software craftsmanship');
-      expect(book.embedding).toHaveLength(768);
+      expect(book.available).toBe(true);
+      expect(book.path).toBe('/books/clean-code.pdf');
     });
 
     it('should trim whitespace from string fields', () => {
@@ -243,31 +241,49 @@ describe('Book', () => {
         });
       });
 
-      describe('embedding', () => {
-        it('should throw InvalidEmbeddingError for wrong dimensions', () => {
-          expect(() =>
-            Book.create(createValidBookProps({ embedding: [1, 2, 3] }))
-          ).toThrow(InvalidEmbeddingError);
+      describe('available', () => {
+        it('should default to false when not provided', () => {
+          const book = Book.create(createValidBookProps());
+          expect(book.available).toBe(false);
         });
 
-        it('should throw InvalidEmbeddingError for non-number values', () => {
-          const invalidEmbedding = Array.from({ length: 768 }, () => 'not a number') as unknown as number[];
-          expect(() =>
-            Book.create(createValidBookProps({ embedding: invalidEmbedding }))
-          ).toThrow(InvalidEmbeddingError);
+        it('should accept true value', () => {
+          const book = Book.create(createValidBookProps({ available: true }));
+          expect(book.available).toBe(true);
         });
 
-        it('should throw InvalidEmbeddingError for NaN values', () => {
-          const embeddingWithNaN = createValidEmbedding();
-          embeddingWithNaN[0] = NaN;
-          expect(() =>
-            Book.create(createValidBookProps({ embedding: embeddingWithNaN }))
-          ).toThrow(InvalidEmbeddingError);
+        it('should accept explicit false value', () => {
+          const book = Book.create(createValidBookProps({ available: false }));
+          expect(book.available).toBe(false);
+        });
+      });
+
+      describe('path', () => {
+        it('should accept valid path', () => {
+          const book = Book.create(createValidBookProps({ path: '/books/clean-code.pdf' }));
+          expect(book.path).toBe('/books/clean-code.pdf');
         });
 
-        it('should accept null embedding', () => {
-          const book = Book.create(createValidBookProps({ embedding: null }));
-          expect(book.embedding).toBeNull();
+        it('should accept null path', () => {
+          const book = Book.create(createValidBookProps({ path: null }));
+          expect(book.path).toBeNull();
+        });
+
+        it('should default to null when not provided', () => {
+          const book = Book.create(createValidBookProps());
+          expect(book.path).toBeNull();
+        });
+
+        it('should trim whitespace from path', () => {
+          const book = Book.create(createValidBookProps({ path: '  /books/file.pdf  ' }));
+          expect(book.path).toBe('/books/file.pdf');
+        });
+
+        it('should throw FieldTooLongError for path exceeding 1000 chars', () => {
+          const longPath = '/books/' + 'A'.repeat(995);
+          expect(() =>
+            Book.create(createValidBookProps({ path: longPath }))
+          ).toThrow(FieldTooLongError);
         });
       });
     });
@@ -281,30 +297,24 @@ describe('Book', () => {
       expect(book.id).toBe(validUUID);
       expect(book.title).toBe('Clean Code');
       expect(book.type.value).toBe('technical');
+      expect(book.available).toBe(false);
+      expect(book.path).toBeNull();
     });
 
     it('should reconstruct a Book with all fields', () => {
-      const embedding = createValidEmbedding();
       const props = createValidPersistenceProps({
         isbn: validISBN,
         description: 'A great book',
-        embedding,
+        available: true,
+        path: '/books/clean-code.pdf',
       });
 
       const book = Book.fromPersistence(props);
 
       expect(book.isbn?.value).toBe(validISBN);
       expect(book.description).toBe('A great book');
-      expect(book.embedding).toHaveLength(768);
-    });
-
-    it('should freeze the embedding array', () => {
-      const embedding = createValidEmbedding();
-      const book = Book.fromPersistence(
-        createValidPersistenceProps({ embedding })
-      );
-
-      expect(Object.isFrozen(book.embedding)).toBe(true);
+      expect(book.available).toBe(true);
+      expect(book.path).toBe('/books/clean-code.pdf');
     });
   });
 
@@ -362,10 +372,26 @@ describe('Book', () => {
       expect(updated.description).toBe('New description');
     });
 
-    it('should update embedding', () => {
-      const newEmbedding = createValidEmbedding();
-      const updated = book.update({ embedding: newEmbedding });
-      expect(updated.embedding).toHaveLength(768);
+    it('should update available', () => {
+      const updated = book.update({ available: true });
+      expect(updated.available).toBe(true);
+    });
+
+    it('should update available to false', () => {
+      const bookAvailable = Book.create(createValidBookProps({ available: true }));
+      const updated = bookAvailable.update({ available: false });
+      expect(updated.available).toBe(false);
+    });
+
+    it('should update path', () => {
+      const updated = book.update({ path: '/new/path.pdf' });
+      expect(updated.path).toBe('/new/path.pdf');
+    });
+
+    it('should set path to null', () => {
+      const bookWithPath = Book.create(createValidBookProps({ path: '/old/path.pdf' }));
+      const updated = bookWithPath.update({ path: null });
+      expect(updated.path).toBeNull();
     });
 
     it('should update multiple fields at once', () => {
@@ -387,6 +413,8 @@ describe('Book', () => {
       expect(updated.type.value).toBe(book.type.value);
       expect(updated.category).toBe(book.category);
       expect(updated.format.value).toBe(book.format.value);
+      expect(updated.available).toBe(book.available);
+      expect(updated.path).toBe(book.path);
     });
 
     it('should preserve id and createdAt', () => {
@@ -408,50 +436,6 @@ describe('Book', () => {
     it('should validate updated fields', () => {
       expect(() => book.update({ title: '' })).toThrow(RequiredFieldError);
       expect(() => book.update({ type: 'invalid' })).toThrow(InvalidBookTypeError);
-    });
-  });
-
-  describe('withEmbedding', () => {
-    it('should return a new Book with the embedding', () => {
-      const book = Book.create(createValidBookProps());
-      const embedding = createValidEmbedding();
-
-      const updated = book.withEmbedding(embedding);
-
-      expect(updated.embedding).toHaveLength(768);
-      expect(book.embedding).toBeNull(); // Original unchanged
-    });
-
-    it('should update the updatedAt timestamp', () => {
-      const book = Book.create(createValidBookProps());
-      const embedding = createValidEmbedding();
-
-      const before = new Date();
-      const updated = book.withEmbedding(embedding);
-      const after = new Date();
-
-      expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
-      expect(updated.updatedAt.getTime()).toBeLessThanOrEqual(after.getTime());
-    });
-
-    it('should validate embedding dimensions', () => {
-      const book = Book.create(createValidBookProps());
-
-      expect(() => book.withEmbedding([1, 2, 3])).toThrow(InvalidEmbeddingError);
-    });
-  });
-
-  describe('hasEmbedding', () => {
-    it('should return true when embedding exists', () => {
-      const book = Book.create(
-        createValidBookProps({ embedding: createValidEmbedding() })
-      );
-      expect(book.hasEmbedding()).toBe(true);
-    });
-
-    it('should return false when embedding is null', () => {
-      const book = Book.create(createValidBookProps());
-      expect(book.hasEmbedding()).toBe(false);
     });
   });
 
@@ -504,13 +488,6 @@ describe('Book', () => {
     it('should be frozen', () => {
       const book = Book.create(createValidBookProps());
       expect(Object.isFrozen(book)).toBe(true);
-    });
-
-    it('should have frozen embedding', () => {
-      const book = Book.create(
-        createValidBookProps({ embedding: createValidEmbedding() })
-      );
-      expect(Object.isFrozen(book.embedding)).toBe(true);
     });
 
     it('should not allow property modification', () => {

@@ -62,12 +62,3 @@ export class InvalidUUIDError extends DomainError {
     super(`Invalid UUID format: "${value}"`);
   }
 }
-
-/**
- * Thrown when embedding dimensions are invalid
- */
-export class InvalidEmbeddingError extends DomainError {
-  constructor(message: string) {
-    super(`Invalid embedding: ${message}`);
-  }
-}

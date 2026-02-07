@@ -32,7 +32,6 @@ export {
   RequiredFieldError,
   FieldTooLongError,
   InvalidUUIDError,
-  InvalidEmbeddingError,
   InvalidBookTypeError,
   InvalidBookFormatError,
   InvalidISBNError,

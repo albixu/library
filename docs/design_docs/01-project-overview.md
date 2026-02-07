@@ -53,6 +53,8 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | `type` | enum | Sí | Tipo de libro (technical, novel, essay, etc.) |
 | `category` | string | Sí | Categoría específica (IA, programming, sci-fi, etc.) |
 | `format` | enum | Sí | Formato del archivo (epub, pdf, mobi, etc.) |
+| `available` | boolean | Sí | Indica si el libro está disponible (default: false) |
+| `path` | string | No | Ruta del archivo en el sistema de archivos |
 | `embedding` | vector | No | Vector de 768 dimensiones para búsqueda semántica |
 | `createdAt` | timestamp | Sí | Fecha de creación del registro |
 | `updatedAt` | timestamp | Sí | Fecha de última modificación |
