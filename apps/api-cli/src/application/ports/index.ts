@@ -9,3 +9,9 @@ export type {
 } from './EmbeddingService.js';
 
 export type { CategoryRepository } from './CategoryRepository.js';
+
+export type {
+  BookRepository,
+  SaveBookParams,
+  DuplicateCheckResult,
+} from './BookRepository.js';
