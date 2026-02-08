@@ -25,7 +25,8 @@ import {
   EmbeddingTextTooLongError,
 } from '../errors/ApplicationErrors.js';
 import {
-  BookAlreadyExistsError,
+  DuplicateISBNError,
+  DuplicateBookError,
 } from '../../domain/errors/DomainErrors.js';
 
 /**
@@ -114,7 +115,8 @@ export class CreateBookUseCase {
    *
    * @param input - The book data to create
    * @returns Promise resolving to the created book output
-   * @throws BookAlreadyExistsError if duplicate ISBN or triad found
+   * @throws DuplicateISBNError if a book with the same ISBN already exists
+   * @throws DuplicateBookError if a book with the same author, title, and format already exists
    * @throws EmbeddingTextTooLongError if embedding text exceeds 7000 chars
    * @throws EmbeddingServiceUnavailableError if embedding service is down
    * @throws DomainError for validation failures
@@ -172,8 +174,14 @@ export class CreateBookUseCase {
     });
 
     if (duplicateCheck.isDuplicate) {
-      throw new BookAlreadyExistsError(
-        duplicateCheck.message ?? 'Duplicate book found'
+      if (duplicateCheck.duplicateType === 'isbn') {
+        throw new DuplicateISBNError(book.isbn!.value);
+      } else if (duplicateCheck.duplicateType === 'triad') {
+        throw new DuplicateBookError(normalizedAuthor, normalizedTitle, book.format.value);
+      }
+      // Fallback for any unexpected cases (should never be reached in normal operation)
+      throw new Error(
+        `Unexpected duplicate type encountered: ${duplicateCheck.duplicateType ?? 'unknown'}. ${duplicateCheck.message ?? 'Duplicate book found'}`
       );
     }
 
