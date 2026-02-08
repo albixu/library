@@ -127,7 +127,6 @@ export class PostgresCategoryRepository implements CategoryRepository {
     const namesToCreate = normalizedNames.filter((n) => !existingNamesSet.has(n));
 
     // Create new categories if any
-    let newCategories: Category[] = [];
     if (namesToCreate.length > 0) {
       const categoriesToInsert = namesToCreate.map((name) =>
         Category.create({
@@ -138,21 +137,24 @@ export class PostgresCategoryRepository implements CategoryRepository {
 
       const insertRecords = CategoryMapper.toPersistenceList(categoriesToInsert);
       
-      const insertedRecords = await this.db
+      // Insert with onConflictDoNothing - some may be skipped by concurrent writers
+      await this.db
         .insert(categories)
         .values(insertRecords)
         .onConflictDoNothing()
         .returning();
-
-      newCategories = CategoryMapper.toDomainList(insertedRecords);
     }
 
-    // Combine all categories
-    const allCategories = [...existingCategories, ...newCategories];
+    // Re-fetch all categories to ensure we have complete data
+    // This handles race conditions where concurrent writers inserted categories
+    // between our initial check and our insert attempt
+    const allCategories = await this.findByNames(normalizedNames);
     const categoryMap = new Map(allCategories.map((c) => [c.name, c]));
 
-    // Return in input order
-    return normalizedNames.map((name) => categoryMap.get(name)!);
+    // Return in input order, filtering out any undefined values
+    return normalizedNames
+      .map((name) => categoryMap.get(name))
+      .filter((category): category is Category => category !== undefined);
   }
 
   /**
