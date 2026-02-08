@@ -30,6 +30,8 @@
     "fastify": "^5.2.1",
     "inquirer": "^12.3.2",
     "pg": "^8.13.1",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

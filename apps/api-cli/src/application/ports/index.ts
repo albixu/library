@@ -15,3 +15,6 @@ export type {
 } from './BookRepository.js';
 
 export type { CategoryRepository } from './CategoryRepository.js';
+
+export type { Logger, LogContext, ChildLoggerOptions } from './Logger.js';
+export { noopLogger } from './Logger.js';

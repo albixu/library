@@ -12,4 +12,5 @@
 
 export * from './config/index.js';
 export * from './driven/embedding/index.js';
+export * from './driven/logging/index.js';
 export * from './driven/persistence/index.js';

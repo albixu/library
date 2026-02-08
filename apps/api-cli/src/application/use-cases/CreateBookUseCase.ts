@@ -21,6 +21,8 @@ import { generateUUID } from '../../shared/utils/uuid.js';
 import type { BookRepository } from '../ports/BookRepository.js';
 import type { CategoryRepository } from '../ports/CategoryRepository.js';
 import type { EmbeddingService } from '../ports/EmbeddingService.js';
+import type { Logger } from '../ports/Logger.js';
+import { noopLogger } from '../ports/Logger.js';
 import {
   EmbeddingTextTooLongError,
 } from '../errors/ApplicationErrors.js';
@@ -87,6 +89,7 @@ export interface CreateBookUseCaseDeps {
   bookRepository: BookRepository;
   categoryRepository: CategoryRepository;
   embeddingService: EmbeddingService;
+  logger?: Logger;
 }
 
 /**
@@ -103,11 +106,13 @@ export class CreateBookUseCase {
   private readonly bookRepository: BookRepository;
   private readonly categoryRepository: CategoryRepository;
   private readonly embeddingService: EmbeddingService;
+  private readonly logger: Logger;
 
   constructor(deps: CreateBookUseCaseDeps) {
     this.bookRepository = deps.bookRepository;
     this.categoryRepository = deps.categoryRepository;
     this.embeddingService = deps.embeddingService;
+    this.logger = deps.logger?.child({ name: 'CreateBookUseCase' }) ?? noopLogger;
   }
 
   /**
@@ -122,6 +127,13 @@ export class CreateBookUseCase {
    * @throws DomainError for validation failures
    */
   async execute(input: CreateBookInput): Promise<CreateBookOutput> {
+    this.logger.debug('Starting book creation', {
+      title: input.title,
+      author: input.author,
+      isbn: input.isbn ?? null,
+      categoryCount: input.categoryNames.length,
+    });
+
     // 1. Validate and normalize fields needed for duplicate detection
     //    This provides early validation and normalization without persisting anything
     const bookType = BookType.create(input.type);
@@ -140,8 +152,16 @@ export class CreateBookUseCase {
 
     if (duplicateCheck.isDuplicate) {
       if (duplicateCheck.duplicateType === 'isbn' && bookIsbn) {
+        this.logger.warn('Duplicate ISBN detected', {
+          isbn: bookIsbn.value,
+        });
         throw new DuplicateISBNError(bookIsbn.value);
       } else if (duplicateCheck.duplicateType === 'triad') {
+        this.logger.warn('Duplicate book detected (author/title/format)', {
+          author: input.author.trim(),
+          title: input.title.trim(),
+          format: bookFormat.value,
+        });
         throw new DuplicateBookError(
           input.author.trim(),
           input.title.trim(),
@@ -156,6 +176,10 @@ export class CreateBookUseCase {
     const categories = await this.categoryRepository.findOrCreateMany(
       input.categoryNames
     );
+
+    this.logger.debug('Categories resolved', {
+      categories: categories.map((c) => c.name),
+    });
 
     // 4. Create Book entity with validated fields and categories
     const book = Book.create({
@@ -175,6 +199,10 @@ export class CreateBookUseCase {
     const embeddingText = book.getTextForEmbedding();
 
     if (embeddingText.length > MAX_EMBEDDING_TEXT_LENGTH) {
+      this.logger.error('Embedding text too long', {
+        actualLength: embeddingText.length,
+        maxLength: MAX_EMBEDDING_TEXT_LENGTH,
+      });
       throw new EmbeddingTextTooLongError(
         embeddingText.length,
         MAX_EMBEDDING_TEXT_LENGTH
@@ -182,14 +210,32 @@ export class CreateBookUseCase {
     }
 
     // 6. Generate embedding (may throw EmbeddingServiceUnavailableError)
-    const embeddingResult = await this.embeddingService.generateEmbedding(
-      embeddingText
-    );
+    this.logger.debug('Generating embedding', {
+      textLength: embeddingText.length,
+    });
+
+    let embeddingResult;
+    try {
+      embeddingResult = await this.embeddingService.generateEmbedding(
+        embeddingText
+      );
+    } catch (error) {
+      this.logger.error('Embedding generation failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
 
     // 7. Persist book with embedding atomically
     const savedBook = await this.bookRepository.save({
       book,
       embedding: embeddingResult.embedding,
+    });
+
+    this.logger.info('Book created successfully', {
+      bookId: savedBook.id,
+      title: savedBook.title,
+      author: savedBook.author,
     });
 
     // 8. Return output DTO
