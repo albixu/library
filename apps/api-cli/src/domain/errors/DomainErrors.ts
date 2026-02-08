@@ -109,7 +109,8 @@ export abstract class EmbeddingServiceError extends Error {
     super(message);
     this.name = this.constructor.name;
     Error.captureStackTrace(this, this.constructor);
-
+  }
+}
 
 /**
  * Thrown when the embedding service is not available (connection error, timeout, etc.)

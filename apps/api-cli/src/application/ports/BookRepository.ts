@@ -71,10 +71,13 @@ export interface BookRepository {
    * The check is performed using normalized values (lowercase, no special chars)
    * to ensure consistent duplicate detection.
    *
-   * @param author - The author name (will be normalized internally)
-   * @param title - The book title (will be normalized internally)
+   * @param author - The normalized author name (lowercase, trimmed)
+   * @param title - The normalized book title (lowercase, trimmed)
    * @param format - The book format (e.g., 'pdf', 'epub')
    * @returns Promise resolving to true if triad exists, false otherwise
+   *
+   * @remarks The application layer must normalize author and title before calling this method.
+   * Normalization: lowercase conversion and trimming of whitespace.
    */
   existsByTriad(author: string, title: string, format: string): Promise<boolean>;
 
@@ -83,8 +86,12 @@ export interface BookRepository {
    *
    * Use this before creating a book to get detailed duplicate information.
    *
-   * @param params - Object containing isbn (optional), author, title, and format
+   * @param params - Object containing isbn (optional, normalized), author (normalized), title (normalized), and format
    * @returns Promise resolving to duplicate check result
+   *
+   * @remarks The application layer must normalize isbn, author, and title before calling this method.
+   * - ISBN: Already normalized by the ISBN value object (without hyphens, uppercase)
+   * - Author/Title: lowercase conversion and trimming of whitespace
    */
   checkDuplicate(params: {
     isbn?: string | null;
