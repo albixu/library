@@ -60,6 +60,32 @@ const DEFAULTS = {
 } as const;
 
 /**
+ * Safely parses an integer from a string value
+ *
+ * @param value - The string value to parse
+ * @param defaultValue - The default value to return if parsing fails
+ * @param fieldName - The name of the field being parsed (for error messages)
+ * @returns The parsed integer or the default value
+ * @throws Error if the parsed value is NaN and no default is provided
+ */
+function safeParseInt(
+  value: string | undefined,
+  defaultValue: number,
+  fieldName: string
+): number {
+  const stringValue = value ?? String(defaultValue);
+  const parsed = parseInt(stringValue, 10);
+
+  if (!Number.isFinite(parsed)) {
+    throw new Error(
+      `Configuration error: ${fieldName} must be a valid number, got: "${stringValue}"`
+    );
+  }
+
+  return parsed;
+}
+
+/**
  * Loads and validates environment configuration
  *
  * @returns Complete environment configuration object
@@ -69,7 +95,7 @@ export function loadEnvConfig(): EnvConfig {
   return {
     app: {
       nodeEnv: process.env['NODE_ENV'] ?? DEFAULTS.NODE_ENV,
-      port: parseInt(process.env['PORT'] ?? String(DEFAULTS.PORT), 10),
+      port: safeParseInt(process.env['PORT'], DEFAULTS.PORT, 'PORT'),
       logLevel: process.env['LOG_LEVEL'] ?? DEFAULTS.LOG_LEVEL,
     },
     database: {
@@ -78,9 +104,10 @@ export function loadEnvConfig(): EnvConfig {
     ollama: {
       baseUrl: process.env['OLLAMA_BASE_URL'] ?? DEFAULTS.OLLAMA_BASE_URL,
       model: process.env['OLLAMA_MODEL'] ?? DEFAULTS.OLLAMA_MODEL,
-      timeoutMs: parseInt(
-        process.env['OLLAMA_TIMEOUT_MS'] ?? String(DEFAULTS.OLLAMA_TIMEOUT_MS),
-        10
+      timeoutMs: safeParseInt(
+        process.env['OLLAMA_TIMEOUT_MS'],
+        DEFAULTS.OLLAMA_TIMEOUT_MS,
+        'OLLAMA_TIMEOUT_MS'
       ),
     },
   };
