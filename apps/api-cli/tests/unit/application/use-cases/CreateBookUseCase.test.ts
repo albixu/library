@@ -11,7 +11,6 @@ import { Category } from '../../../../src/domain/entities/Category.js';
 import { Book } from '../../../../src/domain/entities/Book.js';
 import { BookAlreadyExistsError } from '../../../../src/domain/errors/DomainErrors.js';
 import {
-  EmbeddingTextTooLongError,
   EmbeddingServiceUnavailableError,
 } from '../../../../src/application/errors/ApplicationErrors.js';
 
