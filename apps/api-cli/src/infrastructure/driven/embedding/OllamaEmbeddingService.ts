@@ -86,8 +86,21 @@ export class OllamaEmbeddingService implements EmbeddingService {
       );
     }
 
-    const data = (await response.json()) as OllamaEmbeddingResponse;
+    // Parse response JSON
+    // Wrap in try/catch to handle invalid JSON or truncated responses
+    let data: OllamaEmbeddingResponse;
+    try {
+      data = (await response.json()) as OllamaEmbeddingResponse;
+    } catch (error) {
+      // Convert JSON parsing errors to EmbeddingServiceUnavailableError
+      // Preserve original error as cause for debugging
+      throw new EmbeddingServiceUnavailableError(
+        `Failed to parse response: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
+      );
+    }
 
+    // Validate response format
     if (!data.embedding || !Array.isArray(data.embedding)) {
       throw new EmbeddingServiceUnavailableError(
         'Invalid response format: missing embedding array'
