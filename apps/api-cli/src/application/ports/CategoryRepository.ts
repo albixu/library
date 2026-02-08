@@ -75,10 +75,11 @@ export interface CategoryRepository {
    *
    * This is a batch operation for persisting multiple categories at once.
    * More efficient than calling save() multiple times.
+   * The operation is atomic - either all categories are saved or none are.
    *
    * @param categories - Array of categories to save
    * @returns Promise resolving when all categories are saved
-   * @throws CategoryAlreadyExistsError if any category with the same name exists
+   * @throws CategoryAlreadyExistsError if any category with the same name exists (no partial save)
    */
   saveMany(categories: Category[]): Promise<void>;
 
