@@ -77,7 +77,7 @@ export function loadEnvConfig(): EnvConfig {
   return {
     app: {
       nodeEnv: process.env['NODE_ENV'] ?? DEFAULTS.NODE_ENV,
-      port: parseInt(process.env['PORT'] ?? String(DEFAULTS.PORT), 10),
+      port: safeParseInt(process.env['PORT'], DEFAULTS.PORT, 'PORT'),
       logLevel: process.env['LOG_LEVEL'] ?? DEFAULTS.LOG_LEVEL,
     },
     database: {
@@ -86,9 +86,10 @@ export function loadEnvConfig(): EnvConfig {
     ollama: {
       baseUrl: process.env['OLLAMA_BASE_URL'] ?? DEFAULTS.OLLAMA_BASE_URL,
       model: process.env['OLLAMA_MODEL'] ?? DEFAULTS.OLLAMA_MODEL,
-      timeoutMs: parseInt(
-        process.env['OLLAMA_TIMEOUT_MS'] ?? String(DEFAULTS.OLLAMA_TIMEOUT_MS),
-        10
+      timeoutMs: safeParseInt(
+        process.env['OLLAMA_TIMEOUT_MS'],
+        DEFAULTS.OLLAMA_TIMEOUT_MS,
+        'OLLAMA_TIMEOUT_MS'
       ),
     },
   };

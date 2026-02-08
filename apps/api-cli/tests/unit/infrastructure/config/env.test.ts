@@ -1,3 +1,6 @@
+/**
+ * Unit tests for environment configuration module
+ */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { loadEnvConfig, getOllamaConfig } from '../../../../src/infrastructure/config/env.js';
 
@@ -98,16 +101,28 @@ describe('Environment Configuration', () => {
 
       const config = getOllamaConfig();
 
-      expect(config.baseUrl).toBe('http://custom:11434');
-      expect(config.model).toBe('custom-model');
-      expect(config.timeoutMs).toBe(20000);
+      expect(config).toEqual({
+        baseUrl: 'http://test:11434',
+        model: 'test-model',
+        timeoutMs: 20000,
+      });
     });
 
-    it('should throw error when DATABASE_URL is not set (via loadEnvConfig)', () => {
-      delete process.env['DATABASE_URL'];
+    it('should return default Ollama configuration when no env vars set', () => {
+      const config = getOllamaConfig();
+
+      expect(config).toEqual({
+        baseUrl: 'http://ollama:11434',
+        model: 'nomic-embed-text',
+        timeoutMs: 30000,
+      });
+    });
+
+    it('should throw error if OLLAMA_TIMEOUT_MS is invalid', () => {
+      process.env['OLLAMA_TIMEOUT_MS'] = 'bad-value';
 
       expect(() => getOllamaConfig()).toThrow(
-        'DATABASE_URL environment variable is required but not set'
+        'Configuration error: OLLAMA_TIMEOUT_MS must be a valid number'
       );
     });
   });
