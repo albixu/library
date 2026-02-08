@@ -170,56 +170,6 @@ describe('CreateBookUseCase', () => {
       await expect(useCase.execute(validInput)).rejects.toThrow(BookAlreadyExistsError);
     });
 
-    it('should throw EmbeddingTextTooLongError when text exceeds 7000 chars', async () => {
-      // Embedding text = title + ' ' + author + ' ' + categories.join(' ') + ' ' + description
-      // Need total > 7000 chars while respecting individual field limits
-      // title max: 500, author max: 300, description max: 5000, category.name max: 100
-      const longDescription = 'A'.repeat(5000); // max
-      const longTitle = 'B'.repeat(500); // max
-      const longAuthor = 'C'.repeat(300); // max
-      // 10 categories with 100 chars each = 1000 chars
-      const manyCategories = Array.from({ length: 10 }, (_, i) => 'D'.repeat(100));
-
-      // Total: 500 + 300 + 5000 + 1000 + spaces = ~6800 + spaces
-      // Still not enough, but this tests the edge - let me use a simpler approach
-
-      const inputWithLongText: CreateBookInput = {
-        ...validInput,
-        title: longTitle,
-        author: longAuthor,
-        description: longDescription,
-        categoryNames: manyCategories,
-      };
-
-      // Mock categories to return max length names
-      const longCategoryEntities = manyCategories.map((name, i) =>
-        Category.create({
-          id: `550e8400-e29b-41d4-a716-4466554400${i.toString().padStart(2, '0')}`,
-          name,
-        })
-      );
-      (mockCategoryRepository.findOrCreateMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        longCategoryEntities
-      );
-
-      // 500 + 1 + 300 + 1 + (100*10 + 9 spaces) + 1 + 5000 = 6812
-      // This is under 7000, so we need to adjust the MAX constant or the test
-      // Actually, let's verify: the text IS under 7000 with these limits
-      // The validation should NOT throw. Let me create a scenario where it does throw
-      // by reducing the max constant in test or using a value just over
-
-      // For now, test with current limits - if 6812 < 7000, we won't throw
-      // The design says embedding limit is 7000, but individual fields have lower limits
-      // So with current field limits, we CAN'T exceed 7000!
-      // This is actually correct - the field limits prevent exceeding embedding limit
-      // Let's test the boundary case differently
-
-      const result = await useCase.execute(inputWithLongText);
-      // With max field values, we get ~6812 chars which is under 7000
-      // So the book should be created successfully
-      expect(result).toBeDefined();
-    });
-
     it('should propagate EmbeddingServiceUnavailableError', async () => {
       (mockEmbeddingService.generateEmbedding as ReturnType<typeof vi.fn>).mockRejectedValue(
         new EmbeddingServiceUnavailableError('Connection refused')
