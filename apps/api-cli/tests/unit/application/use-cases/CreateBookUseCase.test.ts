@@ -122,8 +122,8 @@ describe('CreateBookUseCase', () => {
 
       expect(mockBookRepository.checkDuplicate).toHaveBeenCalledWith({
         isbn: '9780132350884',
-        author: 'Robert C. Martin',
-        title: 'Clean Code',
+        author: 'robert c. martin',
+        title: 'clean code',
         format: 'pdf',
       });
     });
