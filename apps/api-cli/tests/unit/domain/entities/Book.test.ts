@@ -507,6 +507,14 @@ describe('Book', () => {
       expect(() => book.update({ title: '' })).toThrow(RequiredFieldError);
       expect(() => book.update({ type: 'invalid' })).toThrow(InvalidBookTypeError);
     });
+
+    it('should throw RequiredFieldError for empty description on update', () => {
+      expect(() => book.update({ description: '' })).toThrow(RequiredFieldError);
+    });
+
+    it('should throw RequiredFieldError for whitespace-only description on update', () => {
+      expect(() => book.update({ description: '   ' })).toThrow(RequiredFieldError);
+    });
   });
 
   describe('getTextForEmbedding', () => {
