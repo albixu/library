@@ -255,6 +255,25 @@ describe('PostgresCategoryRepository', () => {
       expect(result[0].name).toBe('concurrent category');
       expect(result[0].id).toBe(concurrentCategoryRecord.id);
     });
+
+    it('should throw error if categories cannot be found or created', async () => {
+      // First findByNames - category doesn't exist
+      mockDb.query.categories.findMany.mockResolvedValueOnce([]);
+
+      // Insert attempt fails
+      const insertChain = {
+        values: vi.fn().mockReturnThis(),
+        onConflictDoNothing: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockResolvedValue([]),
+      };
+      mockDb.insert.mockReturnValue(insertChain);
+
+      // Second findByNames after insert - still doesn't exist (unexpected situation)
+      mockDb.query.categories.findMany.mockResolvedValueOnce([]);
+
+      await expect(repository.findOrCreateMany(['missing category']))
+        .rejects.toThrow('Failed to find or create categories: missing category');
+    });
   });
 
   describe('save', () => {

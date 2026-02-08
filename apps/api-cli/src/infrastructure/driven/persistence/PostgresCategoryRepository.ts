@@ -151,10 +151,21 @@ export class PostgresCategoryRepository implements CategoryRepository {
     const allCategories = await this.findByNames(normalizedNames);
     const categoryMap = new Map(allCategories.map((c) => [c.name, c]));
 
-    // Return in input order, filtering out any undefined values
-    return normalizedNames
+    // Return in input order
+    const result = normalizedNames
       .map((name) => categoryMap.get(name))
       .filter((category): category is Category => category !== undefined);
+
+    // Validate that all categories were found/created successfully
+    if (result.length !== normalizedNames.length) {
+      const missingNames = normalizedNames.filter((name) => !categoryMap.has(name));
+      throw new Error(
+        `Failed to find or create categories: ${missingNames.join(', ')}. ` +
+        `This may indicate a database consistency issue.`
+      );
+    }
+
+    return result;
   }
 
   /**
