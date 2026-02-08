@@ -30,6 +30,19 @@ import {
 
 /**
  * Maximum length for embedding text (concatenation of book fields)
+ * 
+ * Defense-in-depth guard: With current domain constraints (Book: title 500 + author 300 + 
+ * description 5000 + max 10 categories × 100 chars each), the maximum possible embedding 
+ * text is ~6812 characters, making this 7000-char limit currently unreachable.
+ * 
+ * This guard is intentionally kept as a safety mechanism to prevent future issues if:
+ * - Domain constraints are relaxed (e.g., longer descriptions, more categories)
+ * - New fields are added to the embedding text
+ * - External integrations provide data that bypasses normal validation
+ * 
+ * This prevents expensive embedding service calls that would fail anyway, and provides
+ * a clear error message at the application layer rather than propagating provider-specific
+ * errors from the infrastructure layer.
  */
 const MAX_EMBEDDING_TEXT_LENGTH = 7000;
 
