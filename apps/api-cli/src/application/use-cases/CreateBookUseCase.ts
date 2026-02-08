@@ -25,7 +25,8 @@ import {
   EmbeddingTextTooLongError,
 } from '../errors/ApplicationErrors.js';
 import {
-  BookAlreadyExistsError,
+  DuplicateISBNError,
+  DuplicateBookError,
 } from '../../domain/errors/DomainErrors.js';
 
 /**
@@ -138,9 +139,17 @@ export class CreateBookUseCase {
     });
 
     if (duplicateCheck.isDuplicate) {
-      throw new BookAlreadyExistsError(
-        duplicateCheck.message ?? 'Duplicate book found'
-      );
+      if (duplicateCheck.duplicateType === 'isbn' && bookIsbn) {
+        throw new DuplicateISBNError(bookIsbn.value);
+      } else if (duplicateCheck.duplicateType === 'triad') {
+        throw new DuplicateBookError(
+          input.author.trim(),
+          input.title.trim(),
+          bookFormat.value
+        );
+      }
+      // Fallback for unexpected duplicate types (should not happen with current implementation)
+      throw new Error(`Unexpected duplicate type: ${duplicateCheck.duplicateType}`);
     }
 
     // 3. Resolve or create categories (only after duplicate check passes)
