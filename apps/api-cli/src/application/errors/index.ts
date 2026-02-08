@@ -5,4 +5,5 @@
 export {
   EmbeddingServiceError,
   EmbeddingServiceUnavailableError,
+  EmbeddingTextTooLongError,
 } from './ApplicationErrors.js';

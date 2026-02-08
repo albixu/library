@@ -33,3 +33,15 @@ export class EmbeddingServiceUnavailableError extends EmbeddingServiceError {
     );
   }
 }
+
+/**
+ * Thrown when the embedding text exceeds the maximum allowed length
+ * This is a client/input validation error at the application layer
+ */
+export class EmbeddingTextTooLongError extends EmbeddingServiceError {
+  constructor(actualLength: number, maxLength: number) {
+    super(
+      `Embedding text exceeds maximum length: ${actualLength} characters (max: ${maxLength})`
+    );
+  }
+}
