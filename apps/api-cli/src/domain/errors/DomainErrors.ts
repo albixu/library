@@ -104,11 +104,9 @@ export class DuplicateItemError extends DomainError {
 /**
  * Base class for embedding service errors
  */
-export abstract class EmbeddingServiceError extends Error {
+export abstract class EmbeddingServiceError extends DomainError {
   constructor(message: string) {
     super(message);
-    this.name = this.constructor.name;
-    Error.captureStackTrace(this, this.constructor);
   }
 }
 
