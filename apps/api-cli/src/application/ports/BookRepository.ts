@@ -23,6 +23,33 @@ export interface SaveBookParams {
 }
 
 /**
+ * Parameters for updating a book's mutable fields
+ *
+ * Only includes the book ID and the fields that can be mutated after creation.
+ * This prevents accidental persistence of changes to immutable fields.
+ *
+ * For optional fields:
+ * - Omitting the field (undefined) means "don't change this field"
+ * - Setting to null means "explicitly clear this field"
+ * - Setting to a value means "update to this value"
+ */
+export interface UpdateBookParams {
+  /** The book UUID to update */
+  id: string;
+  /**
+   * Whether the book is currently available. Omit to keep current value.
+   *
+   * Implementations must check for the presence of this property on the
+   * params object (e.g., `'available' in params`) rather than relying on
+   * its truthiness, otherwise `available: false` would be treated as
+   * "not provided".
+   */
+  available?: boolean;
+  /** File path to the book. Omit to keep current value, set to null to clear. */
+  path?: string | null;
+}
+
+/**
  * Result of a duplicate check operation
  */
 export interface DuplicateCheckResult {
@@ -117,14 +144,15 @@ export interface BookRepository {
   /**
    * Updates an existing book's mutable fields (available, path)
    *
-   * Note: Fields that are part of the embedding (title, author, description,
-   * type, categories, format) are immutable after creation.
+   * Only the fields explicitly provided in params will be updated.
+   * All other fields (title, author, description, type, categories, format)
+   * are immutable after creation because they affect the embedding.
    *
-   * @param book - The book with updated values
+   * @param params - Update parameters containing the book ID and fields to update
    * @returns Promise resolving to the updated Book
    * @throws BookNotFoundError if the book doesn't exist
    */
-  update(book: Book): Promise<Book>;
+  update(params: UpdateBookParams): Promise<Book>;
 
   /**
    * Deletes a book by its ID
