@@ -13,6 +13,9 @@ export {
   InvalidUUIDError,
   TooManyItemsError,
   DuplicateItemError,
+  EmbeddingServiceError,
+  EmbeddingServiceUnavailableError,
+  EmbeddingTextTooLongError,
 } from './DomainErrors.js';
 
 // Re-export Value Object errors for convenience
