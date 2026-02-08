@@ -5,9 +5,9 @@
  * This use case coordinates between domain entities and infrastructure ports.
  *
  * Flow:
- * 1. Validate input and create Book entity
- * 2. Check for duplicates (ISBN and triad)
- * 3. Resolve/create categories
+ * 1. Validate input
+ * 2. Resolve/create categories
+ * 3. Create Book entity and check for duplicates (ISBN and triad)
  * 4. Generate embedding from book text
  * 5. Persist book with embedding atomically
  */
