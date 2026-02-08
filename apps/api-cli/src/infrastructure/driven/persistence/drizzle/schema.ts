@@ -7,6 +7,7 @@
 
 import { pgTable, uuid, varchar, text, timestamp, boolean, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { vector } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 /**
  * Categories table
@@ -21,8 +22,8 @@ export const categories = pgTable('categories', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
-  // Unique index on lowercase name for case-insensitive uniqueness
-  uniqueIndex('categories_name_unique_idx').on(table.name),
+  // Functional unique index on lower(name) for true case-insensitive uniqueness
+  uniqueIndex('categories_name_unique_idx').on(sql`lower(${table.name})`),
 ]);
 
 /**
