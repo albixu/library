@@ -5,7 +5,7 @@
  * This schema supports pgvector for embedding storage.
  */
 
-import { pgTable, uuid, varchar, text, timestamp, boolean, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, boolean, index, uniqueIndex, primaryKey } from 'drizzle-orm/pg-core';
 import { vector } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
@@ -72,7 +72,7 @@ export const bookCategories = pgTable('book_categories', {
   categoryId: uuid('category_id').notNull().references(() => categories.id, { onDelete: 'restrict' }),
 }, (table) => [
   // Composite primary key
-  uniqueIndex('book_categories_pk').on(table.bookId, table.categoryId),
+  primaryKey({ columns: [table.bookId, table.categoryId] }),
   // Index for querying books by category
   index('book_categories_category_idx').on(table.categoryId),
 ]);
