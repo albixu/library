@@ -60,7 +60,16 @@ npm run db:generate && npm run db:migrate
 
 ```
 
-## 6. Code Style & Standards
+
+## 6. Critical Configurations
+
+### tsconfig.app.json
+
+```json
+{ "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test/**"] }
+```
+
+## 7. Code Style & Standards
 
 * **JavaScript/TS:** Usar los últimos estándares (ES2024+).
 * **Imports:** Requisito ESM: **Siempre usar extensión `.js**` en imports locales.
@@ -82,14 +91,26 @@ npm run db:generate && npm run db:migrate
 
 
 
-## 7. Testing Strategy
+## 8. Testing Strategy
 
+* **Lógica de negocio crítica:** 100% cubierto por tests.
+* **Funcionalidades visibles para el usuario:** Un mínimo del 80% de cobertura.
 * **Unit Tests:** Obligatorios para toda la lógica de negocio en el Domain Layer.
 * **Functional Tests:** Obligatorios para probar la integración de componentes y flujos de la API/Web.
 * **Patrón:** Seguir el formato `describe/it` con nombres claros: `should {expected behavior}`.
-* **Métricas:** Mínimo **80% de cobertura** en lógica de negocio.
 
-## 8. Domain-Driven Design (DDD) Rules
+### TDD Mandatory
+1. Write test FIRST → run → MUST FAIL
+2. Implement MINIMUM code to pass
+3. Refactor keeping tests green
+
+### Expected Test Counts
+
+- Unit/Integration: ~89
+- E2E: 7
+
+
+## 9. Domain-Driven Design (DDD) Rules
 
 1. **Domain Isolation:** La capa de dominio no tiene dependencias externas.
 2. **Value Objects:** Inmutables, se validan a sí mismos y se comparan por valor.
@@ -97,7 +118,7 @@ npm run db:generate && npm run db:migrate
 4. **Factories:** Usar `create()` para entrada de usuario (valida) y `fromPersistence()` para DB (confía).
 5. **Errors:** Propagar errores de dominio específicos (`DomainError`) hacia arriba.
 
-## 9. Definition of Done (DoD)
+## 10. Definition of Done (DoD)
 
 Una tarea solo se considera finalizada si cumple:
 
@@ -105,3 +126,4 @@ Una tarea solo se considera finalizada si cumple:
 * [ ] Mínimo **80% de tests unitarios** y **100% de tests funcionales** nuevos/afectados.
 * [ ] Actualización de `README.md` y documentos en `/docs` si el diseño ha cambiado.
 * [ ] Commits realizados con el estándar Conventional Commits.
+* [ ] 0 lint errors, 0 type errors, all tests green, build success.
