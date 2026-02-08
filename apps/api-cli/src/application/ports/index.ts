@@ -7,3 +7,5 @@ export type {
   EmbeddingServiceConfig,
   EmbeddingResult,
 } from './EmbeddingService.js';
+
+export type { CategoryRepository } from './CategoryRepository.js';
