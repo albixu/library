@@ -52,8 +52,8 @@ export interface CreateBookProps {
   type: string;
   categories: Category[];
   format: string;
+  description: string;
   isbn?: string | null;
-  description?: string | null;
   available?: boolean;
   path?: string | null;
   createdAt?: Date;
@@ -74,7 +74,7 @@ export interface BookPersistenceProps {
   categories: Category[];
   format: BookFormatValue;
   isbn: string | null;
-  description: string | null;
+  description: string;
   available: boolean;
   path: string | null;
   createdAt: Date;
@@ -91,7 +91,7 @@ export interface UpdateBookProps {
   categories?: Category[];
   format?: string;
   isbn?: string | null;
-  description?: string | null;
+  description?: string;
   available?: boolean;
   path?: string | null;
 }
@@ -108,7 +108,7 @@ export class Book {
     public readonly categories: readonly Category[],
     public readonly format: BookFormat,
     public readonly isbn: ISBN | null,
-    public readonly description: string | null,
+    public readonly description: string,
     public readonly available: boolean,
     public readonly path: string | null,
     public readonly createdAt: Date,
@@ -127,6 +127,7 @@ export class Book {
     const title = Book.validateTitle(props.title);
     const author = Book.validateAuthor(props.author);
     const categories = Book.validateCategories(props.categories);
+    const description = Book.validateDescription(props.description);
 
     // Validate and create value objects
     const type = BookType.create(props.type);
@@ -134,9 +135,6 @@ export class Book {
 
     // Validate optional fields
     const isbn = props.isbn ? ISBN.create(props.isbn) : null;
-    const description = props.description
-      ? Book.validateDescription(props.description)
-      : null;
 
     // Available defaults to false, path is optional
     const available = props.available ?? false;
@@ -212,7 +210,7 @@ export class Book {
       : this.isbn;
 
     const description = props.description !== undefined
-      ? (props.description ? Book.validateDescription(props.description) : null)
+      ? Book.validateDescription(props.description)
       : this.description;
 
     const available = props.available !== undefined
@@ -247,11 +245,7 @@ export class Book {
    */
   getTextForEmbedding(): string {
     const categoryNames = this.categories.map(c => c.name);
-    const parts = [this.title, this.author, ...categoryNames];
-
-    if (this.description) {
-      parts.push(this.description);
-    }
+    const parts = [this.title, this.author, ...categoryNames, this.description];
 
     return parts.join(' ');
   }
@@ -329,6 +323,10 @@ export class Book {
   }
 
   private static validateDescription(description: string): string {
+    if (!description || description.trim().length === 0) {
+      throw new RequiredFieldError('description');
+    }
+
     const trimmedDescription = description.trim();
 
     if (trimmedDescription.length > FIELD_CONSTRAINTS.DESCRIPTION_MAX_LENGTH) {
