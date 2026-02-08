@@ -11,7 +11,6 @@ import { Category } from '../../../../src/domain/entities/Category.js';
 import { Book } from '../../../../src/domain/entities/Book.js';
 import { BookAlreadyExistsError } from '../../../../src/domain/errors/DomainErrors.js';
 import {
-  EmbeddingTextTooLongError,
   EmbeddingServiceUnavailableError,
 } from '../../../../src/application/errors/ApplicationErrors.js';
 
@@ -168,6 +167,56 @@ describe('CreateBookUseCase', () => {
       (mockBookRepository.checkDuplicate as ReturnType<typeof vi.fn>).mockResolvedValue(duplicateResult);
 
       await expect(useCase.execute(validInput)).rejects.toThrow(BookAlreadyExistsError);
+    });
+
+    it('should NOT create categories when duplicate is detected', async () => {
+      const duplicateResult: DuplicateCheckResult = {
+        isDuplicate: true,
+        duplicateType: 'isbn',
+        message: 'A book with ISBN "9780132350884" already exists',
+      };
+      (mockBookRepository.checkDuplicate as ReturnType<typeof vi.fn>).mockResolvedValue(duplicateResult);
+
+      await expect(useCase.execute(validInput)).rejects.toThrow(BookAlreadyExistsError);
+
+      // Verify categories were NOT created (findOrCreateMany should not be called)
+      expect(mockCategoryRepository.findOrCreateMany).not.toHaveBeenCalled();
+    });
+
+    it('should throw EmbeddingTextTooLongError when text exceeds 7000 chars', async () => {
+      // Current domain constraints limit embedding text to ~6812 chars, so we can't
+      // naturally trigger the 7000-char guard. We simulate a future scenario where
+      // domain constraints have been relaxed (e.g., longer description field) by
+      // mocking Book.create() to return a Book-like object with getTextForEmbedding()
+      // that returns text exceeding the limit.
+      //
+      // This tests the defense-in-depth guard that protects against future changes.
+
+      const longText = 'X'.repeat(7001); // Just over the limit
+      
+      // Create a mock book that has all the required Book properties but returns long text
+      const mockLongBook = {
+        id: '550e8400-e29b-41d4-a716-446655440099',
+        title: 'Test Book',
+        author: 'Test Author',
+        description: 'Test Description',
+        type: { value: 'technical' },
+        format: { value: 'pdf' },
+        isbn: null,
+        available: false,
+        path: null,
+        categories: mockCategories,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        getTextForEmbedding: () => longText, // This exceeds the limit
+      };
+      
+      // Mock Book.create to return our special book
+      const createSpy = vi.spyOn(Book, 'create').mockReturnValue(mockLongBook as any);
+
+      await expect(useCase.execute(validInput)).rejects.toThrow(EmbeddingTextTooLongError);
+      
+      createSpy.mockRestore();
     });
 
     it('should propagate EmbeddingServiceUnavailableError', async () => {
