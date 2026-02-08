@@ -178,7 +178,7 @@ describe('CreateBookUseCase', () => {
       // that returns text exceeding the limit.
       //
       // This tests the defense-in-depth guard that protects against future changes.
-      
+
       const longText = 'X'.repeat(7001); // Just over the limit
       
       // Create a mock book that has all the required Book properties but returns long text
