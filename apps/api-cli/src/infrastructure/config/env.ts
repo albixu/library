@@ -60,10 +60,9 @@ const DEFAULTS = {
 } as const;
 
 /**
- * Loads and validates environment configuration
+ * Loads environment configuration with defaults
  *
  * @returns Complete environment configuration object
- * @throws Error if required environment variables are missing
  */
 export function loadEnvConfig(): EnvConfig {
   return {
