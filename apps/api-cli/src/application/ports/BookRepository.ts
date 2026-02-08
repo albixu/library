@@ -23,6 +23,33 @@ export interface SaveBookParams {
 }
 
 /**
+ * Parameters for updating a book's mutable fields
+ *
+ * Only includes the book ID and the fields that can be mutated after creation.
+ * This prevents accidental persistence of changes to immutable fields.
+ *
+ * For optional fields:
+ * - Omitting the field (undefined) means "don't change this field"
+ * - Setting to null means "explicitly clear this field"
+ * - Setting to a value means "update to this value"
+ */
+export interface UpdateBookParams {
+  /** The book UUID to update */
+  id: string;
+  /**
+   * Whether the book is currently available. Omit to keep current value.
+   *
+   * Implementations must check for the presence of this property on the
+   * params object (e.g., `'available' in params`) rather than relying on
+   * its truthiness, otherwise `available: false` would be treated as
+   * "not provided".
+   */
+  available?: boolean;
+  /** File path to the book. Omit to keep current value, set to null to clear. */
+  path?: string | null;
+}
+
+/**
  * Result of a duplicate check operation
  */
 export interface DuplicateCheckResult {
@@ -71,10 +98,13 @@ export interface BookRepository {
    * The check is performed using normalized values (lowercase, no special chars)
    * to ensure consistent duplicate detection.
    *
-   * @param author - The author name (will be normalized internally)
-   * @param title - The book title (will be normalized internally)
+   * @param author - The normalized author name (lowercase, trimmed)
+   * @param title - The normalized book title (lowercase, trimmed)
    * @param format - The book format (e.g., 'pdf', 'epub')
    * @returns Promise resolving to true if triad exists, false otherwise
+   *
+   * @remarks The application layer must normalize author and title before calling this method.
+   * Normalization: lowercase conversion and trimming of whitespace.
    */
   existsByTriad(author: string, title: string, format: string): Promise<boolean>;
 
@@ -83,8 +113,13 @@ export interface BookRepository {
    *
    * Use this before creating a book to get detailed duplicate information.
    *
-   * @param params - Object containing isbn (optional), author, title, and format
+   * @param params - Object containing isbn (optional, already-normalized string, typically ISBN.value), author (normalized), title (normalized), and format
    * @returns Promise resolving to duplicate check result
+   *
+   * @remarks The application layer must:
+   * - pass the ISBN as an already-normalized string produced by the ISBN value object (without hyphens, uppercase).
+   * - normalize author and title before calling this method.
+   * Author/Title normalization: lowercase conversion and trimming of whitespace.
    */
   checkDuplicate(params: {
     isbn?: string | null;
@@ -101,21 +136,23 @@ export interface BookRepository {
    *
    * @param params - The book and embedding to save
    * @returns Promise resolving to the saved Book
-   * @throws BookAlreadyExistsError if ISBN or triad duplicate exists
+   * @throws DuplicateISBNError if a book with the same ISBN already exists
+   * @throws DuplicateBookError if a book with the same author, title, and format already exists
    */
   save(params: SaveBookParams): Promise<Book>;
 
   /**
    * Updates an existing book's mutable fields (available, path)
    *
-   * Note: Fields that are part of the embedding (title, author, description,
-   * type, categories, format) are immutable after creation.
+   * Only the fields explicitly provided in params will be updated.
+   * All other fields (title, author, description, type, categories, format)
+   * are immutable after creation because they affect the embedding.
    *
-   * @param book - The book with updated values
+   * @param params - Update parameters containing the book ID and fields to update
    * @returns Promise resolving to the updated Book
    * @throws BookNotFoundError if the book doesn't exist
    */
-  update(book: Book): Promise<Book>;
+  update(params: UpdateBookParams): Promise<Book>;
 
   /**
    * Deletes a book by its ID
