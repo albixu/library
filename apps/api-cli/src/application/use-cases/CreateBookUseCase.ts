@@ -123,10 +123,12 @@ export class CreateBookUseCase {
     });
 
     // 3. Check for duplicates
+    const normalizedAuthor = book.author.trim().toLowerCase();
+    const normalizedTitle = book.title.trim().toLowerCase();
     const duplicateCheck = await this.bookRepository.checkDuplicate({
       isbn: book.isbn?.value ?? null,
-      author: book.author,
-      title: book.title,
+      author: normalizedAuthor,
+      title: normalizedTitle,
       format: book.format.value,
     });
 
