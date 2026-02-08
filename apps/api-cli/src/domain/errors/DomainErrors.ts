@@ -128,6 +128,9 @@ export class EmbeddingServiceUnavailableError extends EmbeddingServiceError {
 
 /**
  * Thrown when the embedding text exceeds the maximum allowed length
+/**
+ * Thrown when the embedding text exceeds the maximum allowed length
+ * This is a domain validation error as it validates business rules about data constraints
  */
 export class EmbeddingTextTooLongError extends DomainError {
   constructor(actualLength: number, maxLength: number) {
