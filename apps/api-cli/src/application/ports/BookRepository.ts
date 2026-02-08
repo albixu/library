@@ -86,11 +86,12 @@ export interface BookRepository {
    *
    * Use this before creating a book to get detailed duplicate information.
    *
-   * @param params - Object containing isbn (optional, normalized), author (normalized), title (normalized), and format
+   * @param params - Object containing isbn (optional, already-normalized string, typically ISBN.value), author (normalized), title (normalized), and format
    * @returns Promise resolving to duplicate check result
    *
-   * @remarks The application layer must normalize author and title before calling this method.
-   * ISBN is already normalized by the ISBN value object (without hyphens, uppercase).
+   * @remarks The application layer must:
+   * - pass the ISBN as an already-normalized string produced by the ISBN value object (without hyphens, uppercase).
+   * - normalize author and title before calling this method.
    * Author/Title normalization: lowercase conversion and trimming of whitespace.
    */
   checkDuplicate(params: {
