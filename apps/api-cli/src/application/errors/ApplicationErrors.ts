@@ -36,8 +36,7 @@ export class EmbeddingServiceUnavailableError extends EmbeddingServiceError {
 
 /**
  * Thrown when the embedding text exceeds the maximum allowed length
- * This is an application/infrastructure validation error as it validates
- * technical constraints of the embedding service
+ * This is a client/input validation error at the application layer
  */
 export class EmbeddingTextTooLongError extends EmbeddingServiceError {
   constructor(actualLength: number, maxLength: number) {
