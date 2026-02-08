@@ -71,6 +71,18 @@ export interface CategoryRepository {
   save(category: Category): Promise<Category>;
 
   /**
+   * Saves multiple categories to the persistence layer
+   *
+   * This is a batch operation for persisting multiple categories at once.
+   * More efficient than calling save() multiple times.
+   *
+   * @param categories - Array of categories to save
+   * @returns Promise resolving when all categories are saved
+   * @throws CategoryAlreadyExistsError if any category with the same name exists
+   */
+  saveMany(categories: Category[]): Promise<void>;
+
+  /**
    * Retrieves all categories
    *
    * @returns Promise resolving to an array of all Categories
