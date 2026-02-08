@@ -4,10 +4,13 @@ import {
   type CreateBookProps,
   type BookPersistenceProps,
 } from '../../../../src/domain/entities/Book.js';
+import { Category } from '../../../../src/domain/entities/Category.js';
 import {
   RequiredFieldError,
   FieldTooLongError,
   InvalidUUIDError,
+  TooManyItemsError,
+  DuplicateItemError,
 } from '../../../../src/domain/errors/DomainErrors.js';
 import { InvalidBookTypeError } from '../../../../src/domain/value-objects/BookType.js';
 import { InvalidBookFormatError } from '../../../../src/domain/value-objects/BookFormat.js';
@@ -18,12 +21,30 @@ describe('Book', () => {
   const validUUID = '550e8400-e29b-41d4-a716-446655440000';
   const validISBN = '9780132350884';
 
+  // Helper to create Category entities for testing
+  const createCategory = (id: string, name: string): Category => {
+    return Category.create({ id, name });
+  };
+
+  const programmingCategory = createCategory(
+    '110e8400-e29b-41d4-a716-446655440001',
+    'programming'
+  );
+  const softwareCategory = createCategory(
+    '220e8400-e29b-41d4-a716-446655440002',
+    'software engineering'
+  );
+  const bestPracticesCategory = createCategory(
+    '330e8400-e29b-41d4-a716-446655440003',
+    'best practices'
+  );
+
   const createValidBookProps = (overrides?: Partial<CreateBookProps>): CreateBookProps => ({
     id: validUUID,
     title: 'Clean Code',
     author: 'Robert C. Martin',
     type: 'technical',
-    category: 'programming',
+    categories: [programmingCategory],
     format: 'pdf',
     ...overrides,
   });
@@ -35,7 +56,7 @@ describe('Book', () => {
     title: 'Clean Code',
     author: 'Robert C. Martin',
     type: 'technical',
-    category: 'programming',
+    categories: [programmingCategory],
     format: 'pdf',
     isbn: null,
     description: null,
@@ -55,7 +76,8 @@ describe('Book', () => {
       expect(book.title).toBe('Clean Code');
       expect(book.author).toBe('Robert C. Martin');
       expect(book.type.value).toBe('technical');
-      expect(book.category).toBe('programming');
+      expect(book.categories).toHaveLength(1);
+      expect(book.categories[0].name).toBe('programming');
       expect(book.format.value).toBe('pdf');
       expect(book.isbn).toBeNull();
       expect(book.description).toBeNull();
@@ -83,23 +105,26 @@ describe('Book', () => {
       const props = createValidBookProps({
         title: '  Clean Code  ',
         author: '  Robert C. Martin  ',
-        category: '  programming  ',
       });
 
       const book = Book.create(props);
 
       expect(book.title).toBe('Clean Code');
       expect(book.author).toBe('Robert C. Martin');
-      expect(book.category).toBe('programming');
     });
 
-    it('should normalize category to lowercase', () => {
+    it('should allow multiple categories', () => {
       const props = createValidBookProps({
-        category: 'PROGRAMMING',
+        categories: [programmingCategory, softwareCategory, bestPracticesCategory],
       });
 
       const book = Book.create(props);
-      expect(book.category).toBe('programming');
+      expect(book.categories).toHaveLength(3);
+      expect(book.categories.map(c => c.name)).toEqual([
+        'programming',
+        'software engineering',
+        'best practices',
+      ]);
     });
 
     it('should set createdAt and updatedAt to now if not provided', () => {
@@ -183,18 +208,46 @@ describe('Book', () => {
         });
       });
 
-      describe('category', () => {
-        it('should throw RequiredFieldError for empty category', () => {
+      describe('categories', () => {
+        it('should throw RequiredFieldError for empty categories array', () => {
           expect(() =>
-            Book.create(createValidBookProps({ category: '' }))
+            Book.create(createValidBookProps({ categories: [] }))
           ).toThrow(RequiredFieldError);
         });
 
-        it('should throw FieldTooLongError for category exceeding 100 chars', () => {
-          const longCategory = 'A'.repeat(101);
+        it('should throw TooManyItemsError for more than 10 categories', () => {
+          const tooManyCategories = Array.from({ length: 11 }, (_, i) =>
+            createCategory(
+              `550e8400-e29b-41d4-a716-4466554400${i.toString().padStart(2, '0')}`,
+              `category${i}`
+            )
+          );
           expect(() =>
-            Book.create(createValidBookProps({ category: longCategory }))
-          ).toThrow(FieldTooLongError);
+            Book.create(createValidBookProps({ categories: tooManyCategories }))
+          ).toThrow(TooManyItemsError);
+        });
+
+        it('should throw DuplicateItemError for duplicate category IDs', () => {
+          const duplicateCategory = createCategory(
+            '110e8400-e29b-41d4-a716-446655440001', // Same ID as programmingCategory
+            'different name'
+          );
+          expect(() =>
+            Book.create(createValidBookProps({
+              categories: [programmingCategory, duplicateCategory],
+            }))
+          ).toThrow(DuplicateItemError);
+        });
+
+        it('should accept exactly 10 categories', () => {
+          const tenCategories = Array.from({ length: 10 }, (_, i) =>
+            createCategory(
+              `550e8400-e29b-41d4-a716-4466554400${i.toString().padStart(2, '0')}`,
+              `category${i}`
+            )
+          );
+          const book = Book.create(createValidBookProps({ categories: tenCategories }));
+          expect(book.categories).toHaveLength(10);
         });
       });
 
@@ -297,6 +350,7 @@ describe('Book', () => {
       expect(book.id).toBe(validUUID);
       expect(book.title).toBe('Clean Code');
       expect(book.type.value).toBe('technical');
+      expect(book.categories).toHaveLength(1);
       expect(book.available).toBe(false);
       expect(book.path).toBeNull();
     });
@@ -307,6 +361,7 @@ describe('Book', () => {
         description: 'A great book',
         available: true,
         path: '/books/clean-code.pdf',
+        categories: [programmingCategory, softwareCategory],
       });
 
       const book = Book.fromPersistence(props);
@@ -315,6 +370,7 @@ describe('Book', () => {
       expect(book.description).toBe('A great book');
       expect(book.available).toBe(true);
       expect(book.path).toBe('/books/clean-code.pdf');
+      expect(book.categories).toHaveLength(2);
     });
   });
 
@@ -346,9 +402,15 @@ describe('Book', () => {
       expect(updated.type.value).toBe('novel');
     });
 
-    it('should update category', () => {
-      const updated = book.update({ category: 'software-engineering' });
-      expect(updated.category).toBe('software-engineering');
+    it('should update categories', () => {
+      const updated = book.update({
+        categories: [softwareCategory, bestPracticesCategory],
+      });
+      expect(updated.categories).toHaveLength(2);
+      expect(updated.categories.map(c => c.name)).toEqual([
+        'software engineering',
+        'best practices',
+      ]);
     });
 
     it('should update format', () => {
@@ -411,7 +473,7 @@ describe('Book', () => {
 
       expect(updated.author).toBe(book.author);
       expect(updated.type.value).toBe(book.type.value);
-      expect(updated.category).toBe(book.category);
+      expect(updated.categories).toHaveLength(book.categories.length);
       expect(updated.format.value).toBe(book.format.value);
       expect(updated.available).toBe(book.available);
       expect(updated.path).toBe(book.path);
@@ -440,13 +502,16 @@ describe('Book', () => {
   });
 
   describe('getTextForEmbedding', () => {
-    it('should combine title, author, and category', () => {
-      const book = Book.create(createValidBookProps());
+    it('should combine title, author, and category names', () => {
+      const book = Book.create(createValidBookProps({
+        categories: [programmingCategory, softwareCategory],
+      }));
       const text = book.getTextForEmbedding();
 
       expect(text).toContain('Clean Code');
       expect(text).toContain('Robert C. Martin');
       expect(text).toContain('programming');
+      expect(text).toContain('software engineering');
     });
 
     it('should include description when present', () => {

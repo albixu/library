@@ -51,7 +51,7 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | `author` | string | Sí | Autor del libro |
 | `description` | string | No | Sinopsis o descripción del contenido |
 | `type` | enum | Sí | Tipo de libro (technical, novel, essay, etc.) |
-| `category` | string | Sí | Categoría específica (IA, programming, sci-fi, etc.) |
+| `categories` | Category[] | Sí | Lista de categorías asociadas (máx. 10) - Relación N:M |
 | `format` | enum | Sí | Formato del archivo (epub, pdf, mobi, etc.) |
 | `available` | boolean | Sí | Indica si el libro está disponible (default: false) |
 | `path` | string | No | Ruta del archivo en el sistema de archivos |
@@ -59,10 +59,29 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | `createdAt` | timestamp | Sí | Fecha de creación del registro |
 | `updatedAt` | timestamp | Sí | Fecha de última modificación |
 
-### 3.2 Value Objects
+### 3.2 Entidad: Category
 
-- **BookType**: `technical` | `novel` | `essay` | `poetry` | `reference` | `other`
-- **BookFormat**: `epub` | `pdf` | `mobi` | `azw3` | `djvu` | `other`
+Entidad independiente para gestionar categorías reutilizables.
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `id` | UUID | Sí | Identificador único generado por el sistema |
+| `name` | string | Sí | Nombre de la categoría (único, max 100 chars) |
+| `description` | string | No | Descripción de la categoría (max 500 chars) |
+| `createdAt` | timestamp | Sí | Fecha de creación del registro |
+| `updatedAt` | timestamp | Sí | Fecha de última modificación |
+
+### 3.3 Value Objects
+
+- **BookType**: `technical` | `novel` | `essay` | `poetry` | `biography` | `reference` | `manual` | `other`
+- **BookFormat**: `epub` | `pdf` | `mobi` | `azw3` | `djvu` | `cbz` | `cbr` | `txt` | `other`
+
+### 3.4 Relaciones
+
+- **Book ↔ Category**: Relación muchos-a-muchos (N:M)
+  - Un libro puede tener múltiples categorías (máximo 10)
+  - Una categoría puede estar asociada a múltiples libros
+  - Se gestiona mediante tabla de unión `book_categories`
 
 ---
 

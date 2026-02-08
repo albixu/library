@@ -28,6 +28,24 @@ export class BookNotFoundError extends DomainError {
 }
 
 /**
+ * Thrown when a category is not found
+ */
+export class CategoryNotFoundError extends DomainError {
+  constructor(identifier: string) {
+    super(`Category not found: ${identifier}`);
+  }
+}
+
+/**
+ * Thrown when trying to create a category with a name that already exists
+ */
+export class CategoryAlreadyExistsError extends DomainError {
+  constructor(name: string) {
+    super(`A category with name "${name}" already exists`);
+  }
+}
+
+/**
  * Thrown when trying to create a book with an ISBN that already exists
  */
 export class BookAlreadyExistsError extends DomainError {
@@ -60,5 +78,23 @@ export class FieldTooLongError extends DomainError {
 export class InvalidUUIDError extends DomainError {
   constructor(value: string) {
     super(`Invalid UUID format: "${value}"`);
+  }
+}
+
+/**
+ * Thrown when too many items are provided in an array field
+ */
+export class TooManyItemsError extends DomainError {
+  constructor(fieldName: string, maxItems: number) {
+    super(`"${fieldName}" exceeds maximum of ${maxItems} items`);
+  }
+}
+
+/**
+ * Thrown when duplicate items are found in an array field
+ */
+export class DuplicateItemError extends DomainError {
+  constructor(fieldName: string, duplicateValue: string) {
+    super(`Duplicate value "${duplicateValue}" in "${fieldName}"`);
   }
 }

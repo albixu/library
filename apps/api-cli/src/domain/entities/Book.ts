@@ -17,10 +17,13 @@
 import { BookType, type BookTypeValue } from '../value-objects/BookType.js';
 import { BookFormat, type BookFormatValue } from '../value-objects/BookFormat.js';
 import { ISBN } from '../value-objects/ISBN.js';
+import { Category } from './Category.js';
 import {
   RequiredFieldError,
   FieldTooLongError,
   InvalidUUIDError,
+  TooManyItemsError,
+  DuplicateItemError,
 } from '../errors/DomainErrors.js';
 
 /**
@@ -30,7 +33,7 @@ const FIELD_CONSTRAINTS = {
   TITLE_MAX_LENGTH: 500,
   AUTHOR_MAX_LENGTH: 300,
   DESCRIPTION_MAX_LENGTH: 5000,
-  CATEGORY_MAX_LENGTH: 100,
+  MAX_CATEGORIES: 10,
   PATH_MAX_LENGTH: 1000,
 } as const;
 
@@ -47,7 +50,7 @@ export interface CreateBookProps {
   title: string;
   author: string;
   type: string;
-  category: string;
+  categories: Category[];
   format: string;
   isbn?: string | null;
   description?: string | null;
@@ -68,7 +71,7 @@ export interface BookPersistenceProps {
   title: string;
   author: string;
   type: BookTypeValue;
-  category: string;
+  categories: Category[];
   format: BookFormatValue;
   isbn: string | null;
   description: string | null;
@@ -85,7 +88,7 @@ export interface UpdateBookProps {
   title?: string;
   author?: string;
   type?: string;
-  category?: string;
+  categories?: Category[];
   format?: string;
   isbn?: string | null;
   description?: string | null;
@@ -102,7 +105,7 @@ export class Book {
     public readonly title: string,
     public readonly author: string,
     public readonly type: BookType,
-    public readonly category: string,
+    public readonly categories: readonly Category[],
     public readonly format: BookFormat,
     public readonly isbn: ISBN | null,
     public readonly description: string | null,
@@ -123,7 +126,7 @@ export class Book {
     const id = Book.validateId(props.id);
     const title = Book.validateTitle(props.title);
     const author = Book.validateAuthor(props.author);
-    const category = Book.validateCategory(props.category);
+    const categories = Book.validateCategories(props.categories);
 
     // Validate and create value objects
     const type = BookType.create(props.type);
@@ -148,7 +151,7 @@ export class Book {
       title,
       author,
       type,
-      category,
+      categories,
       format,
       isbn,
       description,
@@ -169,7 +172,7 @@ export class Book {
       props.title,
       props.author,
       BookType.fromPersistence(props.type),
-      props.category,
+      Object.freeze([...props.categories]),
       BookFormat.fromPersistence(props.format),
       props.isbn ? ISBN.fromPersistence(props.isbn) : null,
       props.description,
@@ -196,9 +199,9 @@ export class Book {
       ? BookType.create(props.type)
       : this.type;
 
-    const category = props.category !== undefined
-      ? Book.validateCategory(props.category)
-      : this.category;
+    const categories = props.categories !== undefined
+      ? Book.validateCategories(props.categories)
+      : this.categories;
 
     const format = props.format !== undefined
       ? BookFormat.create(props.format)
@@ -225,7 +228,7 @@ export class Book {
       title,
       author,
       type,
-      category,
+      categories,
       format,
       isbn,
       description,
@@ -243,7 +246,8 @@ export class Book {
    * layer to use when generating vector embeddings for semantic search.
    */
   getTextForEmbedding(): string {
-    const parts = [this.title, this.author, this.category];
+    const categoryNames = this.categories.map(c => c.name);
+    const parts = [this.title, this.author, ...categoryNames];
 
     if (this.description) {
       parts.push(this.description);
@@ -303,18 +307,25 @@ export class Book {
     return trimmedAuthor;
   }
 
-  private static validateCategory(category: string): string {
-    if (!category || category.trim().length === 0) {
-      throw new RequiredFieldError('category');
+  private static validateCategories(categories: Category[]): readonly Category[] {
+    if (!categories || categories.length === 0) {
+      throw new RequiredFieldError('categories');
     }
 
-    const trimmedCategory = category.trim().toLowerCase();
-
-    if (trimmedCategory.length > FIELD_CONSTRAINTS.CATEGORY_MAX_LENGTH) {
-      throw new FieldTooLongError('category', FIELD_CONSTRAINTS.CATEGORY_MAX_LENGTH);
+    if (categories.length > FIELD_CONSTRAINTS.MAX_CATEGORIES) {
+      throw new TooManyItemsError('categories', FIELD_CONSTRAINTS.MAX_CATEGORIES);
     }
 
-    return trimmedCategory;
+    const seen = new Set<string>();
+
+    for (const category of categories) {
+      if (seen.has(category.id)) {
+        throw new DuplicateItemError('categories', category.name);
+      }
+      seen.add(category.id);
+    }
+
+    return Object.freeze([...categories]);
   }
 
   private static validateDescription(description: string): string {
