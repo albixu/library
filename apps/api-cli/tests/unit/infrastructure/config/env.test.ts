@@ -102,13 +102,15 @@ describe('Environment Configuration', () => {
       const config = getOllamaConfig();
 
       expect(config).toEqual({
-        baseUrl: 'http://test:11434',
-        model: 'test-model',
+        baseUrl: 'http://custom:11434',
+        model: 'custom-model',
         timeoutMs: 20000,
       });
     });
 
     it('should return default Ollama configuration when no env vars set', () => {
+      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
+
       const config = getOllamaConfig();
 
       expect(config).toEqual({
@@ -119,10 +121,47 @@ describe('Environment Configuration', () => {
     });
 
     it('should throw error if OLLAMA_TIMEOUT_MS is invalid', () => {
+      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
       process.env['OLLAMA_TIMEOUT_MS'] = 'bad-value';
 
       expect(() => getOllamaConfig()).toThrow(
-        'Configuration error: OLLAMA_TIMEOUT_MS must be a valid number'
+        'Invalid integer value for OLLAMA_TIMEOUT_MS: "bad-value". Expected a valid number.'
+      );
+    });
+
+    it('should throw error if OLLAMA_TIMEOUT_MS contains partial number with trailing text', () => {
+      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
+      process.env['OLLAMA_TIMEOUT_MS'] = '15000ms';
+
+      expect(() => loadEnvConfig()).toThrow(
+        'Invalid integer value for OLLAMA_TIMEOUT_MS: "15000ms". Expected a valid number.'
+      );
+    });
+
+    it('should throw error if PORT contains partial number with trailing text', () => {
+      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
+      process.env['PORT'] = '3000px';
+
+      expect(() => loadEnvConfig()).toThrow(
+        'Invalid integer value for PORT: "3000px". Expected a valid number.'
+      );
+    });
+
+    it('should throw error if PORT contains leading text', () => {
+      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
+      process.env['PORT'] = 'port3000';
+
+      expect(() => loadEnvConfig()).toThrow(
+        'Invalid integer value for PORT: "port3000". Expected a valid number.'
+      );
+    });
+
+    it('should throw error if integer value contains decimal', () => {
+      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
+      process.env['PORT'] = '3000.5';
+
+      expect(() => loadEnvConfig()).toThrow(
+        'Invalid integer value for PORT: "3000.5". Expected a valid number.'
       );
     });
   });
