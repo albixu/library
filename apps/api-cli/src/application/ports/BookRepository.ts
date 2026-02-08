@@ -18,7 +18,7 @@ import type { Book } from '../../domain/entities/Book.js';
 export interface SaveBookParams {
   /** The book entity to persist */
   book: Book;
-  /** The embedding vector (768 dimensions) */
+  /** The embedding vector (dimensions are model-dependent) */
   embedding: number[];
 }
 
