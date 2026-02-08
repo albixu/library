@@ -6,6 +6,8 @@ export {
   DomainError,
   BookNotFoundError,
   BookAlreadyExistsError,
+  DuplicateISBNError,
+  DuplicateBookError,
   CategoryNotFoundError,
   CategoryAlreadyExistsError,
   RequiredFieldError,
@@ -13,7 +15,6 @@ export {
   InvalidUUIDError,
   TooManyItemsError,
   DuplicateItemError,
-  EmbeddingTextTooLongError,
 } from './DomainErrors.js';
 
 // Re-export Value Object errors for convenience

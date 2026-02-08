@@ -47,10 +47,33 @@ export class CategoryAlreadyExistsError extends DomainError {
 
 /**
  * Thrown when trying to create a book with an ISBN that already exists
+ * @deprecated Use DuplicateISBNError for ISBN duplicates or DuplicateBookError for triad duplicates
  */
 export class BookAlreadyExistsError extends DomainError {
   constructor(isbn: string) {
     super(`A book with ISBN "${isbn}" already exists`);
+  }
+}
+
+/**
+ * Thrown when trying to create a book with an ISBN that already exists
+ * This is a specific case of duplicate detection based on ISBN uniqueness constraint
+ */
+export class DuplicateISBNError extends DomainError {
+  constructor(isbn: string) {
+    super(`A book with ISBN "${isbn}" already exists`);
+  }
+}
+
+/**
+ * Thrown when trying to create a book with a combination of author, title, and format
+ * that already exists (triad uniqueness constraint)
+ */
+export class DuplicateBookError extends DomainError {
+  constructor(author: string, title: string, format: string) {
+    super(
+      `A book with the same author, title, and format already exists: "${author}" - "${title}" (${format})`
+    );
   }
 }
 
@@ -104,9 +127,11 @@ export class DuplicateItemError extends DomainError {
 /**
  * Base class for embedding service errors
  */
-export abstract class EmbeddingServiceError extends DomainError {
+export abstract class EmbeddingServiceError extends Error {
   constructor(message: string) {
     super(message);
+    this.name = this.constructor.name;
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
@@ -124,8 +149,6 @@ export class EmbeddingServiceUnavailableError extends EmbeddingServiceError {
   }
 }
 
-/**
- * Thrown when the embedding text exceeds the maximum allowed length
 /**
  * Thrown when the embedding text exceeds the maximum allowed length
  * This is a domain validation error as it validates business rules about data constraints
