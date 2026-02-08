@@ -140,8 +140,10 @@ export class CreateBookUseCase {
       } else if (duplicateCheck.duplicateType === 'triad') {
         throw new DuplicateBookError(normalizedAuthor, normalizedTitle, book.format.value);
       }
-      // Fallback for any unexpected cases
-      throw new Error(duplicateCheck.message ?? 'Duplicate book found');
+      // Fallback for any unexpected cases (should never be reached in normal operation)
+      throw new Error(
+        `Unexpected duplicate type encountered: ${duplicateCheck.duplicateType ?? 'unknown'}. ${duplicateCheck.message ?? 'Duplicate book found'}`
+      );
     }
 
     // 4. Generate embedding text and validate length
