@@ -5,14 +5,18 @@
  * This use case coordinates between domain entities and infrastructure ports.
  *
  * Flow:
- * 1. Validate input and create Book entity
- * 2. Check for duplicates (ISBN and triad)
- * 3. Resolve/create categories
- * 4. Generate embedding from book text
- * 5. Persist book with embedding atomically
+ * 1. Validate input fields (title, author, type, format, isbn, description)
+ * 2. Check for duplicates using normalized fields
+ * 3. Resolve/create categories (only after duplicate check passes)
+ * 4. Create Book entity with validated fields and categories
+ * 5. Generate embedding from book text
+ * 6. Persist book with embedding atomically
  */
 
 import { Book } from '../../domain/entities/Book.js';
+import { BookType } from '../../domain/value-objects/BookType.js';
+import { BookFormat } from '../../domain/value-objects/BookFormat.js';
+import { ISBN } from '../../domain/value-objects/ISBN.js';
 import { generateUUID } from '../../shared/utils/uuid.js';
 import type { BookRepository } from '../ports/BookRepository.js';
 import type { CategoryRepository } from '../ports/CategoryRepository.js';
@@ -103,12 +107,37 @@ export class CreateBookUseCase {
    * @throws DomainError for validation failures
    */
   async execute(input: CreateBookInput): Promise<CreateBookOutput> {
-    // 1. Resolve or create categories
+    // 1. Validate and normalize fields needed for duplicate detection
+    //    This provides early validation and normalization without persisting anything
+    const bookType = BookType.create(input.type);
+    const bookFormat = BookFormat.create(input.format);
+    const bookIsbn = input.isbn ? ISBN.create(input.isbn) : null;
+
+    // Note: title and author will be validated by Book.create() later
+    // We use the raw input values for duplicate check as they'll be trimmed
+    // consistently by both the validation and the duplicate check
+
+    // 2. Check for duplicates BEFORE creating any resources
+    //    This prevents orphaned categories if the book is a duplicate
+    const duplicateCheck = await this.bookRepository.checkDuplicate({
+      isbn: bookIsbn?.value ?? null,
+      author: input.author.trim(),
+      title: input.title.trim(),
+      format: bookFormat.value,
+    });
+
+    if (duplicateCheck.isDuplicate) {
+      throw new BookAlreadyExistsError(
+        duplicateCheck.message ?? 'Duplicate book found'
+      );
+    }
+
+    // 3. Resolve or create categories (only after duplicate check passes)
     const categories = await this.categoryRepository.findOrCreateMany(
       input.categoryNames
     );
 
-    // 2. Create Book entity (validates all fields)
+    // 4. Create Book entity with validated fields and categories
     const book = Book.create({
       id: generateUUID(),
       title: input.title,
@@ -122,21 +151,7 @@ export class CreateBookUseCase {
       path: input.path,
     });
 
-    // 3. Check for duplicates
-    const duplicateCheck = await this.bookRepository.checkDuplicate({
-      isbn: book.isbn?.value ?? null,
-      author: book.author,
-      title: book.title,
-      format: book.format.value,
-    });
-
-    if (duplicateCheck.isDuplicate) {
-      throw new BookAlreadyExistsError(
-        duplicateCheck.message ?? 'Duplicate book found'
-      );
-    }
-
-    // 4. Generate embedding text and validate length
+    // 5. Generate embedding text and validate length
     const embeddingText = book.getTextForEmbedding();
 
     if (embeddingText.length > MAX_EMBEDDING_TEXT_LENGTH) {
@@ -146,18 +161,18 @@ export class CreateBookUseCase {
       );
     }
 
-    // 5. Generate embedding (may throw EmbeddingServiceUnavailableError)
+    // 6. Generate embedding (may throw EmbeddingServiceUnavailableError)
     const embeddingResult = await this.embeddingService.generateEmbedding(
       embeddingText
     );
 
-    // 6. Persist book with embedding atomically
+    // 7. Persist book with embedding atomically
     const savedBook = await this.bookRepository.save({
       book,
       embedding: embeddingResult.embedding,
     });
 
-    // 7. Return output DTO
+    // 8. Return output DTO
     return this.toOutput(savedBook);
   }
 

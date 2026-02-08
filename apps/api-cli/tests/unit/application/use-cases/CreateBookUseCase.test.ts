@@ -170,6 +170,20 @@ describe('CreateBookUseCase', () => {
       await expect(useCase.execute(validInput)).rejects.toThrow(BookAlreadyExistsError);
     });
 
+    it('should NOT create categories when duplicate is detected', async () => {
+      const duplicateResult: DuplicateCheckResult = {
+        isDuplicate: true,
+        duplicateType: 'isbn',
+        message: 'A book with ISBN "9780132350884" already exists',
+      };
+      (mockBookRepository.checkDuplicate as ReturnType<typeof vi.fn>).mockResolvedValue(duplicateResult);
+
+      await expect(useCase.execute(validInput)).rejects.toThrow(BookAlreadyExistsError);
+
+      // Verify categories were NOT created (findOrCreateMany should not be called)
+      expect(mockCategoryRepository.findOrCreateMany).not.toHaveBeenCalled();
+    });
+
     it('should throw EmbeddingTextTooLongError when text exceeds 7000 chars', async () => {
       // Embedding text = title + ' ' + author + ' ' + categories.join(' ') + ' ' + description
       // Need total > 7000 chars while respecting individual field limits
