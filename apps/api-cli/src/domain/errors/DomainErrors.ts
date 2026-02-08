@@ -47,6 +47,7 @@ export class CategoryAlreadyExistsError extends DomainError {
 
 /**
  * Thrown when trying to create a book with an ISBN that already exists
+ * @deprecated Use DuplicateISBNError for ISBN duplicates or DuplicateBookError for triad duplicates
  */
 export class BookAlreadyExistsError extends DomainError {
   constructor(isbn: string) {
