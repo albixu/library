@@ -9,7 +9,7 @@ import type { CategoryRepository } from '../../../../src/application/ports/Categ
 import type { EmbeddingService, EmbeddingResult } from '../../../../src/application/ports/EmbeddingService.js';
 import { Category } from '../../../../src/domain/entities/Category.js';
 import { Book } from '../../../../src/domain/entities/Book.js';
-import { BookAlreadyExistsError, DuplicateISBNError, DuplicateBookError } from '../../../../src/domain/errors/DomainErrors.js';
+import { DuplicateISBNError, DuplicateBookError } from '../../../../src/domain/errors/DomainErrors.js';
 import {
   EmbeddingTextTooLongError,
   EmbeddingServiceUnavailableError,
@@ -157,8 +157,9 @@ describe('CreateBookUseCase', () => {
       };
       (mockBookRepository.checkDuplicate as ReturnType<typeof vi.fn>).mockResolvedValue(duplicateResult);
 
-      await expect(useCase.execute(validInput)).rejects.toThrow(DuplicateISBNError);
-      await expect(useCase.execute(validInput)).rejects.toThrow('A book with ISBN "9780132350884" already exists');
+      await expect(useCase.execute(validInput)).rejects.toThrow(
+        new DuplicateISBNError('9780132350884')
+      );
     });
 
     it('should throw DuplicateBookError when triad duplicate found', async () => {
@@ -169,8 +170,9 @@ describe('CreateBookUseCase', () => {
       };
       (mockBookRepository.checkDuplicate as ReturnType<typeof vi.fn>).mockResolvedValue(duplicateResult);
 
-      await expect(useCase.execute(validInput)).rejects.toThrow(DuplicateBookError);
-      await expect(useCase.execute(validInput)).rejects.toThrow('A book with the same author, title, and format already exists');
+      await expect(useCase.execute(validInput)).rejects.toThrow(
+        new DuplicateBookError('Robert C. Martin', 'Clean Code', 'pdf')
+      );
     });
 
     it('should NOT create categories when duplicate is detected', async () => {
