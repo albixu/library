@@ -159,13 +159,15 @@ describe('OllamaEmbeddingService', () => {
         },
       });
 
+      let caughtError: unknown;
       try {
         await service.generateEmbedding('Some text');
-        expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error).toBeInstanceOf(EmbeddingServiceUnavailableError);
-        expect((error as EmbeddingServiceUnavailableError).cause).toBe(originalError);
+        caughtError = error;
       }
+
+      expect(caughtError).toBeInstanceOf(EmbeddingServiceUnavailableError);
+      expect((caughtError as EmbeddingServiceUnavailableError).cause).toBe(originalError);
     });
 
     it('should use custom model from config', async () => {
