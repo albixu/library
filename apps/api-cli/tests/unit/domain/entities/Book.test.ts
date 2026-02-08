@@ -46,6 +46,7 @@ describe('Book', () => {
     type: 'technical',
     categories: [programmingCategory],
     format: 'pdf',
+    description: 'A handbook of agile software craftsmanship',
     ...overrides,
   });
 
@@ -59,7 +60,7 @@ describe('Book', () => {
     categories: [programmingCategory],
     format: 'pdf',
     isbn: null,
-    description: null,
+    description: 'A handbook of agile software craftsmanship',
     available: false,
     path: null,
     createdAt: new Date('2024-01-01'),
@@ -80,7 +81,7 @@ describe('Book', () => {
       expect(book.categories[0].name).toBe('programming');
       expect(book.format.value).toBe('pdf');
       expect(book.isbn).toBeNull();
-      expect(book.description).toBeNull();
+      expect(book.description).toBe('A handbook of agile software craftsmanship');
       expect(book.available).toBe(false);
       expect(book.path).toBeNull();
     });
@@ -281,16 +282,23 @@ describe('Book', () => {
       });
 
       describe('description', () => {
+        it('should throw RequiredFieldError for empty description', () => {
+          expect(() =>
+            Book.create(createValidBookProps({ description: '' }))
+          ).toThrow(RequiredFieldError);
+        });
+
+        it('should throw RequiredFieldError for whitespace-only description', () => {
+          expect(() =>
+            Book.create(createValidBookProps({ description: '   ' }))
+          ).toThrow(RequiredFieldError);
+        });
+
         it('should throw FieldTooLongError for description exceeding 5000 chars', () => {
           const longDescription = 'A'.repeat(5001);
           expect(() =>
             Book.create(createValidBookProps({ description: longDescription }))
           ).toThrow(FieldTooLongError);
-        });
-
-        it('should accept null description', () => {
-          const book = Book.create(createValidBookProps({ description: null }));
-          expect(book.description).toBeNull();
         });
       });
 
@@ -434,6 +442,14 @@ describe('Book', () => {
       expect(updated.description).toBe('New description');
     });
 
+    it('should throw RequiredFieldError for empty description in update', () => {
+      expect(() => book.update({ description: '' })).toThrow(RequiredFieldError);
+    });
+
+    it('should throw RequiredFieldError for whitespace-only description in update', () => {
+      expect(() => book.update({ description: '   ' })).toThrow(RequiredFieldError);
+    });
+
     it('should update available', () => {
       const updated = book.update({ available: true });
       expect(updated.available).toBe(true);
@@ -499,12 +515,21 @@ describe('Book', () => {
       expect(() => book.update({ title: '' })).toThrow(RequiredFieldError);
       expect(() => book.update({ type: 'invalid' })).toThrow(InvalidBookTypeError);
     });
+
+    it('should throw RequiredFieldError for empty description on update', () => {
+      expect(() => book.update({ description: '' })).toThrow(RequiredFieldError);
+    });
+
+    it('should throw RequiredFieldError for whitespace-only description on update', () => {
+      expect(() => book.update({ description: '   ' })).toThrow(RequiredFieldError);
+    });
   });
 
   describe('getTextForEmbedding', () => {
-    it('should combine title, author, and category names', () => {
+    it('should combine title, author, category names, and description', () => {
       const book = Book.create(createValidBookProps({
         categories: [programmingCategory, softwareCategory],
+        description: 'A great book about clean code',
       }));
       const text = book.getTextForEmbedding();
 
@@ -512,22 +537,17 @@ describe('Book', () => {
       expect(text).toContain('Robert C. Martin');
       expect(text).toContain('programming');
       expect(text).toContain('software engineering');
-    });
-
-    it('should include description when present', () => {
-      const book = Book.create(
-        createValidBookProps({ description: 'A great book about clean code' })
-      );
-      const text = book.getTextForEmbedding();
-
       expect(text).toContain('A great book about clean code');
     });
 
-    it('should not include description when null', () => {
-      const book = Book.create(createValidBookProps({ description: null }));
+    it('should trim description in embedding text', () => {
+      const book = Book.create(createValidBookProps({
+        description: '  A great book about clean code  ',
+      }));
       const text = book.getTextForEmbedding();
 
-      expect(text).toBe('Clean Code Robert C. Martin programming');
+      expect(text).toContain('A great book about clean code');
+      expect(text).not.toContain('  A great book about clean code  ');
     });
   });
 

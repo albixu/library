@@ -72,11 +72,13 @@ export class ISBN {
 
     let sum = 0;
     for (let i = 0; i < 9; i++) {
-      sum += (10 - i) * parseInt(isbn[i], 10);
+      // Safe: regex above guarantees exactly 10 characters
+      sum += (10 - i) * parseInt(isbn[i]!, 10);
     }
 
     // Last digit can be 'X' representing 10
-    const lastChar = isbn[9];
+    // Safe: regex above guarantees exactly 10 characters
+    const lastChar = isbn[9]!;
     const lastDigit = lastChar === 'X' ? 10 : parseInt(lastChar, 10);
     sum += lastDigit;
 
@@ -94,7 +96,8 @@ export class ISBN {
 
     let sum = 0;
     for (let i = 0; i < 13; i++) {
-      const digit = parseInt(isbn[i], 10);
+      // Safe: regex above guarantees exactly 13 digit characters
+      const digit = parseInt(isbn[i]!, 10);
       sum += i % 2 === 0 ? digit : digit * 3;
     }
 
