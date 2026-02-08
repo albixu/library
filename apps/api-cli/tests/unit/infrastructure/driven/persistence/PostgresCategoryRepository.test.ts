@@ -272,7 +272,7 @@ describe('PostgresCategoryRepository', () => {
       mockDb.query.categories.findMany.mockResolvedValueOnce([]);
 
       await expect(repository.findOrCreateMany(['missing category']))
-        .rejects.toThrow('Failed to find or create categories: missing category');
+        .rejects.toThrow('Failed to find or create the requested categories: missing category');
     });
   });
 
