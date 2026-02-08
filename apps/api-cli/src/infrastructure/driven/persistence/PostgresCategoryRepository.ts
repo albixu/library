@@ -105,7 +105,20 @@ export class PostgresCategoryRepository implements CategoryRepository {
       name: name,
     });
 
-    return this.save(newCategory);
+    try {
+      return await this.save(newCategory);
+    } catch (error) {
+      // Handle concurrent creation: if another process created the category
+      // in between our check and save, return the existing one instead of
+      // propagating a CategoryAlreadyExistsError.
+      if (error instanceof CategoryAlreadyExistsError) {
+        const concurrentExisting = await this.findByName(name);
+        if (concurrentExisting) {
+          return concurrentExisting;
+        }
+      }
+      throw error;
+    }
   }
 
   /**
