@@ -138,7 +138,9 @@ export class CreateBookUseCase {
       if (duplicateCheck.duplicateType === 'isbn') {
         // If duplicate type is 'isbn', the book must have an ISBN
         if (!book.isbn) {
-          throw new Error('Invalid state: ISBN duplicate detected but book has no ISBN');
+          throw new Error(
+            'Internal error: Duplicate check returned ISBN type but book.isbn is null. This indicates a repository inconsistency.'
+          );
         }
         throw new DuplicateISBNError(book.isbn.value);
       } else if (duplicateCheck.duplicateType === 'triad') {
