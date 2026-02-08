@@ -61,13 +61,15 @@ const DEFAULTS = {
 
 /**
  * Safely parses an integer from a string with fallback
+ * Uses strict validation to reject partial numbers (e.g., "15000ms" -> error)
  */
 function safeParseInt(value: string | undefined, defaultValue: number, fieldName: string): number {
   if (value === undefined || value.trim() === '') {
     return defaultValue;
   }
-  const parsed = parseInt(value, 10);
-  if (isNaN(parsed)) {
+  const trimmed = value.trim();
+  const parsed = Number(trimmed);
+  if (!Number.isInteger(parsed)) {
     throw new Error(
       `Invalid integer value for ${fieldName}: "${value}". Expected a valid number.`
     );
