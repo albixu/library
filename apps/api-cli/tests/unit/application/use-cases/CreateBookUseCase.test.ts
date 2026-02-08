@@ -120,11 +120,11 @@ describe('CreateBookUseCase', () => {
     it('should check for duplicates before saving', async () => {
       await useCase.execute(validInput);
 
-      // Note: UseCase passes trimmed values; normalization (lowercase) is done by repository
+      // Note: UseCase passes normalized values (trimmed + lowercased) per BookRepository contract
       expect(mockBookRepository.checkDuplicate).toHaveBeenCalledWith({
         isbn: '9780132350884',
-        author: 'Robert C. Martin',
-        title: 'Clean Code',
+        author: 'robert c. martin',
+        title: 'clean code',
         format: 'pdf',
       });
     });
@@ -262,8 +262,8 @@ describe('CreateBookUseCase', () => {
 
       expect(mockBookRepository.checkDuplicate).toHaveBeenCalledWith({
         isbn: null,
-        author: 'Robert C. Martin',
-        title: 'Clean Code',
+        author: 'robert c. martin',
+        title: 'clean code',
         format: 'pdf',
       });
     });
