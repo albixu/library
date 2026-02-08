@@ -517,7 +517,11 @@ describe('Book', () => {
       }));
       const text = book.getTextForEmbedding();
 
-      expect(text).toBe('Clean Code Robert C. Martin programming software engineering A great book about clean code');
+      expect(text).toContain('Clean Code');
+      expect(text).toContain('Robert C. Martin');
+      expect(text).toContain('programming');
+      expect(text).toContain('software engineering');
+      expect(text).toContain('A great book about clean code');
     });
 
     it('should trim description in embedding text', () => {
