@@ -1,0 +1,114 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { loadEnvConfig, getOllamaConfig } from '../../../../src/infrastructure/config/env.js';
+
+describe('Environment Configuration', () => {
+  let originalEnv: NodeJS.ProcessEnv;
+
+  beforeEach(() => {
+    // Save original environment
+    originalEnv = { ...process.env };
+  });
+
+  afterEach(() => {
+    // Restore original environment
+    process.env = originalEnv;
+  });
+
+  describe('loadEnvConfig', () => {
+    it('should load configuration with all environment variables set', () => {
+      process.env['NODE_ENV'] = 'test';
+      process.env['PORT'] = '4000';
+      process.env['LOG_LEVEL'] = 'info';
+      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
+      process.env['OLLAMA_BASE_URL'] = 'http://localhost:11434';
+      process.env['OLLAMA_MODEL'] = 'test-model';
+      process.env['OLLAMA_TIMEOUT_MS'] = '15000';
+
+      const config = loadEnvConfig();
+
+      expect(config.app.nodeEnv).toBe('test');
+      expect(config.app.port).toBe(4000);
+      expect(config.app.logLevel).toBe('info');
+      expect(config.database.url).toBe('postgresql://test:test@localhost:5432/testdb');
+      expect(config.ollama.baseUrl).toBe('http://localhost:11434');
+      expect(config.ollama.model).toBe('test-model');
+      expect(config.ollama.timeoutMs).toBe(15000);
+    });
+
+    it('should use default values when optional environment variables are not set', () => {
+      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
+      // Clear optional environment variables
+      delete process.env['NODE_ENV'];
+      delete process.env['PORT'];
+      delete process.env['LOG_LEVEL'];
+      delete process.env['OLLAMA_BASE_URL'];
+      delete process.env['OLLAMA_MODEL'];
+      delete process.env['OLLAMA_TIMEOUT_MS'];
+
+      const config = loadEnvConfig();
+
+      expect(config.app.nodeEnv).toBe('development');
+      expect(config.app.port).toBe(3000);
+      expect(config.app.logLevel).toBe('debug');
+      expect(config.database.url).toBe('postgresql://test:test@localhost:5432/testdb');
+      expect(config.ollama.baseUrl).toBe('http://ollama:11434');
+      expect(config.ollama.model).toBe('nomic-embed-text');
+      expect(config.ollama.timeoutMs).toBe(30000);
+    });
+
+    it('should throw error when DATABASE_URL is not set', () => {
+      delete process.env['DATABASE_URL'];
+
+      expect(() => loadEnvConfig()).toThrow(
+        'DATABASE_URL environment variable is required but not set'
+      );
+    });
+
+    it('should throw error when DATABASE_URL is empty string', () => {
+      process.env['DATABASE_URL'] = '';
+
+      expect(() => loadEnvConfig()).toThrow(
+        'DATABASE_URL environment variable is required but not set'
+      );
+    });
+
+    it('should throw error when DATABASE_URL is only whitespace', () => {
+      process.env['DATABASE_URL'] = '   ';
+
+      expect(() => loadEnvConfig()).toThrow(
+        'DATABASE_URL environment variable is required but not set'
+      );
+    });
+
+    it('should include helpful error message with example connection string', () => {
+      delete process.env['DATABASE_URL'];
+
+      expect(() => loadEnvConfig()).toThrow(
+        /Please set it in your environment or \.env file \(e\.g\., postgresql:\/\/user:password@host:5432\/database\)/
+      );
+    });
+  });
+
+  describe('getOllamaConfig', () => {
+    it('should return Ollama configuration when DATABASE_URL is set', () => {
+      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
+      process.env['OLLAMA_BASE_URL'] = 'http://custom:11434';
+      process.env['OLLAMA_MODEL'] = 'custom-model';
+      process.env['OLLAMA_TIMEOUT_MS'] = '20000';
+
+      const config = getOllamaConfig();
+
+      expect(config.baseUrl).toBe('http://custom:11434');
+      expect(config.model).toBe('custom-model');
+      expect(config.timeoutMs).toBe(20000);
+    });
+
+    it('should throw error when DATABASE_URL is not set (via loadEnvConfig)', () => {
+      delete process.env['DATABASE_URL'];
+
+      expect(() => getOllamaConfig()).toThrow(
+        'DATABASE_URL environment variable is required but not set'
+      );
+    });
+  });
+});

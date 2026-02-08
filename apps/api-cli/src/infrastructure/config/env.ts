@@ -65,6 +65,15 @@ const DEFAULTS = {
  * @returns Complete environment configuration object
  */
 export function loadEnvConfig(): EnvConfig {
+  // Validate required environment variables
+  const databaseUrl = process.env['DATABASE_URL'];
+  if (!databaseUrl || databaseUrl.trim() === '') {
+    throw new Error(
+      'DATABASE_URL environment variable is required but not set. ' +
+        'Please set it in your environment or .env file (e.g., postgresql://user:password@host:5432/database)'
+    );
+  }
+
   return {
     app: {
       nodeEnv: process.env['NODE_ENV'] ?? DEFAULTS.NODE_ENV,
@@ -72,7 +81,7 @@ export function loadEnvConfig(): EnvConfig {
       logLevel: process.env['LOG_LEVEL'] ?? DEFAULTS.LOG_LEVEL,
     },
     database: {
-      url: process.env['DATABASE_URL'] ?? '',
+      url: databaseUrl,
     },
     ollama: {
       baseUrl: process.env['OLLAMA_BASE_URL'] ?? DEFAULTS.OLLAMA_BASE_URL,
