@@ -101,7 +101,8 @@ export interface BookRepository {
    *
    * @param params - The book and embedding to save
    * @returns Promise resolving to the saved Book
-   * @throws BookAlreadyExistsError if ISBN or triad duplicate exists
+   * @throws DuplicateISBNError if a book with the same ISBN already exists
+   * @throws DuplicateBookError if a book with the same author, title, and format already exists
    */
   save(params: SaveBookParams): Promise<Book>;
 

@@ -55,6 +55,28 @@ export class BookAlreadyExistsError extends DomainError {
 }
 
 /**
+ * Thrown when trying to create a book with an ISBN that is already registered in the database
+ * This is a specific case of duplicate detection based on ISBN uniqueness constraint
+ */
+export class DuplicateISBNError extends DomainError {
+  constructor(isbn: string) {
+    super(`A book with ISBN "${isbn}" is already registered in the database`);
+  }
+}
+
+/**
+ * Thrown when trying to create a book with a combination of author, title, and format
+ * that already exists in the database (triad uniqueness constraint)
+ */
+export class DuplicateBookError extends DomainError {
+  constructor(author: string, title: string, format: string) {
+    super(
+      `A book with the same author, title, and format already exists: "${author}" - "${title}" (${format})`
+    );
+  }
+}
+
+/**
  * Thrown when a required field is missing or empty
  */
 export class RequiredFieldError extends DomainError {
@@ -109,7 +131,8 @@ export abstract class EmbeddingServiceError extends Error {
     super(message);
     this.name = this.constructor.name;
     Error.captureStackTrace(this, this.constructor);
-
+  }
+}
 
 /**
  * Thrown when the embedding service is not available (connection error, timeout, etc.)

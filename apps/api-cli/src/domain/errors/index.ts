@@ -6,6 +6,8 @@ export {
   DomainError,
   BookNotFoundError,
   BookAlreadyExistsError,
+  DuplicateISBNError,
+  DuplicateBookError,
   CategoryNotFoundError,
   CategoryAlreadyExistsError,
   RequiredFieldError,
