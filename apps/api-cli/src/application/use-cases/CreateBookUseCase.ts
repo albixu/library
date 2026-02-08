@@ -130,18 +130,26 @@ export class CreateBookUseCase {
 
     // 2. Check for duplicates BEFORE creating any resources
     //    This prevents orphaned categories if the book is a duplicate
-    //    Title and author are trimmed to match Book.create()'s normalization
+    //    Title and author are normalized (trim + lowercase) per BookRepository contract
     const duplicateCheck = await this.bookRepository.checkDuplicate({
       isbn: bookIsbn?.value ?? null,
-      author: input.author.trim(),
-      title: input.title.trim(),
+      author: input.author.trim().toLowerCase(),
+      title: input.title.trim().toLowerCase(),
       format: bookFormat.value,
     });
 
     if (duplicateCheck.isDuplicate) {
-      throw new BookAlreadyExistsError(
-        duplicateCheck.message ?? 'Duplicate book found'
-      );
+      if (duplicateCheck.duplicateType === 'isbn' && bookIsbn) {
+        throw new DuplicateISBNError(bookIsbn.value);
+      } else if (duplicateCheck.duplicateType === 'triad') {
+        throw new DuplicateBookError(
+          input.author.trim(),
+          input.title.trim(),
+          bookFormat.value
+        );
+      }
+      // Fallback for unexpected duplicate types (should not happen with current implementation)
+      throw new Error(`Unexpected duplicate type: ${duplicateCheck.duplicateType}`);
     }
 
     // 3. Resolve or create categories (only after duplicate check passes)
@@ -163,29 +171,7 @@ export class CreateBookUseCase {
       path: input.path,
     });
 
-    // 3. Check for duplicates
-    const normalizedAuthor = book.author.trim().toLowerCase();
-    const normalizedTitle = book.title.trim().toLowerCase();
-    const duplicateCheck = await this.bookRepository.checkDuplicate({
-      isbn: book.isbn?.value ?? null,
-      author: normalizedAuthor,
-      title: normalizedTitle,
-      format: book.format.value,
-    });
-
-    if (duplicateCheck.isDuplicate) {
-      if (duplicateCheck.duplicateType === 'isbn') {
-        throw new DuplicateISBNError(book.isbn!.value);
-      } else if (duplicateCheck.duplicateType === 'triad') {
-        throw new DuplicateBookError(normalizedAuthor, normalizedTitle, book.format.value);
-      }
-      // Fallback for any unexpected cases (should never be reached in normal operation)
-      throw new Error(
-        `Unexpected duplicate type encountered: ${duplicateCheck.duplicateType ?? 'unknown'}. ${duplicateCheck.message ?? 'Duplicate book found'}`
-      );
-    }
-
-    // 4. Generate embedding text and validate length
+    // 5. Generate embedding text and validate length
     const embeddingText = book.getTextForEmbedding();
 
     if (embeddingText.length > MAX_EMBEDDING_TEXT_LENGTH) {

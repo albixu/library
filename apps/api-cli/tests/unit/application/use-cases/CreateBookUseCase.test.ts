@@ -11,6 +11,7 @@ import { Category } from '../../../../src/domain/entities/Category.js';
 import { Book } from '../../../../src/domain/entities/Book.js';
 import { DuplicateISBNError, DuplicateBookError } from '../../../../src/domain/errors/DomainErrors.js';
 import {
+  EmbeddingTextTooLongError,
   EmbeddingServiceUnavailableError,
 } from '../../../../src/application/errors/ApplicationErrors.js';
 
@@ -119,6 +120,7 @@ describe('CreateBookUseCase', () => {
     it('should check for duplicates before saving', async () => {
       await useCase.execute(validInput);
 
+      // Note: UseCase passes normalized values (trimmed + lowercased) per BookRepository contract
       expect(mockBookRepository.checkDuplicate).toHaveBeenCalledWith({
         isbn: '9780132350884',
         author: 'robert c. martin',
@@ -155,7 +157,9 @@ describe('CreateBookUseCase', () => {
       };
       (mockBookRepository.checkDuplicate as ReturnType<typeof vi.fn>).mockResolvedValue(duplicateResult);
 
-      await expect(useCase.execute(validInput)).rejects.toThrow(DuplicateISBNError);
+      await expect(useCase.execute(validInput)).rejects.toThrow(
+        new DuplicateISBNError('9780132350884')
+      );
     });
 
     it('should throw DuplicateBookError when triad duplicate found', async () => {
@@ -166,7 +170,9 @@ describe('CreateBookUseCase', () => {
       };
       (mockBookRepository.checkDuplicate as ReturnType<typeof vi.fn>).mockResolvedValue(duplicateResult);
 
-      await expect(useCase.execute(validInput)).rejects.toThrow(DuplicateBookError);
+      await expect(useCase.execute(validInput)).rejects.toThrow(
+        new DuplicateBookError('Robert C. Martin', 'Clean Code', 'pdf')
+      );
     });
 
     it('should NOT create categories when duplicate is detected', async () => {
@@ -177,7 +183,7 @@ describe('CreateBookUseCase', () => {
       };
       (mockBookRepository.checkDuplicate as ReturnType<typeof vi.fn>).mockResolvedValue(duplicateResult);
 
-      await expect(useCase.execute(validInput)).rejects.toThrow(BookAlreadyExistsError);
+      await expect(useCase.execute(validInput)).rejects.toThrow(DuplicateISBNError);
 
       // Verify categories were NOT created (findOrCreateMany should not be called)
       expect(mockCategoryRepository.findOrCreateMany).not.toHaveBeenCalled();
@@ -212,7 +218,7 @@ describe('CreateBookUseCase', () => {
       };
       
       // Mock Book.create to return our special book
-      const createSpy = vi.spyOn(Book, 'create').mockReturnValue(mockLongBook as any);
+      const createSpy = vi.spyOn(Book, 'create').mockReturnValue(mockLongBook as unknown as Book);
 
       await expect(useCase.execute(validInput)).rejects.toThrow(EmbeddingTextTooLongError);
       
