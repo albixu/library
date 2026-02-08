@@ -13,8 +13,6 @@ export {
   InvalidUUIDError,
   TooManyItemsError,
   DuplicateItemError,
-  EmbeddingServiceError,
-  EmbeddingServiceUnavailableError,
   EmbeddingTextTooLongError,
 } from './DomainErrors.js';
 
