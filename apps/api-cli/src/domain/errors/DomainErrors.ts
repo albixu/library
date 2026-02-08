@@ -99,6 +99,33 @@ export class DuplicateItemError extends DomainError {
   }
 }
 
+// ==================== Application/Infrastructure Errors ====================
+
+/**
+ * Base class for embedding service errors
+ */
+export abstract class EmbeddingServiceError extends DomainError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
+ * Thrown when the embedding service is not available (connection error, timeout, etc.)
+ * This should result in a 503 Service Unavailable response
+ */
+export class EmbeddingServiceUnavailableError extends EmbeddingServiceError {
+  constructor(reason?: string) {
+    super(
+      reason
+        ? `Embedding service unavailable: ${reason}`
+        : 'Embedding service unavailable, please try again later'
+    );
+  }
+}
+
+/**
+ * Thrown when the embedding text exceeds the maximum allowed length
 /**
  * Thrown when the embedding text exceeds the maximum allowed length
  * This is a domain validation error as it validates business rules about data constraints
