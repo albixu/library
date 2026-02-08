@@ -166,6 +166,7 @@ describe('OllamaEmbeddingService', () => {
         caughtError = error;
       }
 
+      expect(caughtError).toBeDefined();
       expect(caughtError).toBeInstanceOf(EmbeddingServiceUnavailableError);
       expect((caughtError as EmbeddingServiceUnavailableError).cause).toBe(originalError);
     });
