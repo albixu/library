@@ -20,6 +20,7 @@ import { PostgresBookRepository } from './infrastructure/driven/persistence/Post
 import { PostgresCategoryRepository } from './infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { createLogger } from './infrastructure/driven/logging/PinoLogger.js';
 import { createAddCommand } from './infrastructure/driver/cli/commands/add.js';
+import * as schema from './infrastructure/driven/persistence/drizzle/schema.js';
 
 const { Pool } = pg;
 
@@ -47,10 +48,9 @@ async function createCLI(): Promise<Command> {
     connectionString: config.database.url,
   });
 
-  // Create Drizzle instance
-  // Type assertion needed because our repositories use a simplified DrizzleDb interface
+  // Create Drizzle instance with schema for query builder support
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = drizzle(pool) as any;
+  const db = drizzle(pool, { schema }) as any;
 
   // Create adapters (driven)
   const embeddingService = new OllamaEmbeddingService({

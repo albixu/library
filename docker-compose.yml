@@ -25,6 +25,7 @@ services:
       - ./apps/api-cli/tsconfig.json:/app/tsconfig.json:ro
       - ./apps/api-cli/vitest.config.ts:/app/vitest.config.ts:ro
       - ./apps/api-cli/vitest.integration.config.ts:/app/vitest.integration.config.ts:ro
+      - ./apps/api-cli/vitest.e2e.config.ts:/app/vitest.e2e.config.ts:ro
       - ./apps/api-cli/drizzle.config.ts:/app/drizzle.config.ts:ro
       # Named volume for node_modules (prevents overwrite by host)
       - api_node_modules:/app/node_modules
