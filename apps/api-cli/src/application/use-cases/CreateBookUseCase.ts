@@ -148,7 +148,23 @@ export class CreateBookUseCase {
       path: input.path,
     });
 
-    // 5. Generate embedding text and validate length
+    // 3. Check for duplicates
+    const normalizedAuthor = book.author.trim().toLowerCase();
+    const normalizedTitle = book.title.trim().toLowerCase();
+    const duplicateCheck = await this.bookRepository.checkDuplicate({
+      isbn: book.isbn?.value ?? null,
+      author: normalizedAuthor,
+      title: normalizedTitle,
+      format: book.format.value,
+    });
+
+    if (duplicateCheck.isDuplicate) {
+      throw new BookAlreadyExistsError(
+        duplicateCheck.message ?? 'Duplicate book found'
+      );
+    }
+
+    // 4. Generate embedding text and validate length
     const embeddingText = book.getTextForEmbedding();
 
     if (embeddingText.length > MAX_EMBEDDING_TEXT_LENGTH) {
