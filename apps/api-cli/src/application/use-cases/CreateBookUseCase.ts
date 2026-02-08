@@ -25,8 +25,7 @@ import {
   EmbeddingTextTooLongError,
 } from '../errors/ApplicationErrors.js';
 import {
-  DuplicateISBNError,
-  DuplicateBookError,
+  BookAlreadyExistsError,
 } from '../../domain/errors/DomainErrors.js';
 
 /**
@@ -163,29 +162,7 @@ export class CreateBookUseCase {
       path: input.path,
     });
 
-    // 3. Check for duplicates
-    const normalizedAuthor = book.author.trim().toLowerCase();
-    const normalizedTitle = book.title.trim().toLowerCase();
-    const duplicateCheck = await this.bookRepository.checkDuplicate({
-      isbn: book.isbn?.value ?? null,
-      author: normalizedAuthor,
-      title: normalizedTitle,
-      format: book.format.value,
-    });
-
-    if (duplicateCheck.isDuplicate) {
-      if (duplicateCheck.duplicateType === 'isbn') {
-        throw new DuplicateISBNError(book.isbn!.value);
-      } else if (duplicateCheck.duplicateType === 'triad') {
-        throw new DuplicateBookError(normalizedAuthor, normalizedTitle, book.format.value);
-      }
-      // Fallback for any unexpected cases (should never be reached in normal operation)
-      throw new Error(
-        `Unexpected duplicate type encountered: ${duplicateCheck.duplicateType ?? 'unknown'}. ${duplicateCheck.message ?? 'Duplicate book found'}`
-      );
-    }
-
-    // 4. Generate embedding text and validate length
+    // 5. Generate embedding text and validate length
     const embeddingText = book.getTextForEmbedding();
 
     if (embeddingText.length > MAX_EMBEDDING_TEXT_LENGTH) {
