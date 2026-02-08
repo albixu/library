@@ -13,6 +13,7 @@ export {
   InvalidUUIDError,
   TooManyItemsError,
   DuplicateItemError,
+  EmbeddingTextTooLongError,
 } from './DomainErrors.js';
 
 // Re-export Value Object errors for convenience

@@ -98,3 +98,15 @@ export class DuplicateItemError extends DomainError {
     super(`Duplicate value "${duplicateValue}" in "${fieldName}"`);
   }
 }
+
+/**
+ * Thrown when the embedding text exceeds the maximum allowed length
+ * This is a domain validation error as it validates business rules about data constraints
+ */
+export class EmbeddingTextTooLongError extends DomainError {
+  constructor(actualLength: number, maxLength: number) {
+    super(
+      `Embedding text exceeds maximum length: ${actualLength} characters (max: ${maxLength})`
+    );
+  }
+}
