@@ -109,8 +109,7 @@ export abstract class EmbeddingServiceError extends Error {
     super(message);
     this.name = this.constructor.name;
     Error.captureStackTrace(this, this.constructor);
-  }
-}
+
 
 /**
  * Thrown when the embedding service is not available (connection error, timeout, etc.)
@@ -128,6 +127,7 @@ export class EmbeddingServiceUnavailableError extends EmbeddingServiceError {
 
 /**
  * Thrown when the embedding text exceeds the maximum allowed length
+ * This is a domain validation error as it validates business rules about data constraints
  */
 export class EmbeddingTextTooLongError extends DomainError {
   constructor(actualLength: number, maxLength: number) {

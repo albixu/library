@@ -38,6 +38,8 @@ export interface EmbeddingResult {
  * - Connection errors (throw EmbeddingServiceUnavailableError)
  * - Timeout errors (throw EmbeddingServiceUnavailableError)
  * - Invalid responses (throw EmbeddingServiceError)
+ *
+ * Note: Error classes are defined in application/errors/ApplicationErrors.ts
  */
 export interface EmbeddingService {
   /**

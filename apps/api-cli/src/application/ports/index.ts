@@ -8,10 +8,10 @@ export type {
   EmbeddingResult,
 } from './EmbeddingService.js';
 
-export type { CategoryRepository } from './CategoryRepository.js';
-
 export type {
   BookRepository,
   SaveBookParams,
   DuplicateCheckResult,
 } from './BookRepository.js';
+
+export type { CategoryRepository } from './CategoryRepository.js';
