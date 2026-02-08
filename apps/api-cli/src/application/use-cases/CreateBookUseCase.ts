@@ -129,11 +129,11 @@ export class CreateBookUseCase {
 
     // 2. Check for duplicates BEFORE creating any resources
     //    This prevents orphaned categories if the book is a duplicate
-    //    Title and author are trimmed to match Book.create()'s normalization
+    //    Title and author are normalized (trim + lowercase) per BookRepository contract
     const duplicateCheck = await this.bookRepository.checkDuplicate({
       isbn: bookIsbn?.value ?? null,
-      author: input.author.trim(),
-      title: input.title.trim(),
+      author: input.author.trim().toLowerCase(),
+      title: input.title.trim().toLowerCase(),
       format: bookFormat.value,
     });
 
