@@ -36,7 +36,14 @@ export interface SaveBookParams {
 export interface UpdateBookParams {
   /** The book UUID to update */
   id: string;
-  /** Whether the book is currently available. Omit to keep current value. */
+  /**
+   * Whether the book is currently available. Omit to keep current value.
+   *
+   * Implementations must check for the presence of this property on the
+   * params object (e.g., `'available' in params`) rather than relying on
+   * its truthiness, otherwise `available: false` would be treated as
+   * "not provided".
+   */
   available?: boolean;
   /** File path to the book. Omit to keep current value, set to null to clear. */
   path?: string | null;
