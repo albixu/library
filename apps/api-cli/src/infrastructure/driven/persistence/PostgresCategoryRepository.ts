@@ -140,7 +140,6 @@ export class PostgresCategoryRepository implements CategoryRepository {
     const namesToCreate = normalizedNames.filter((n) => !existingNamesSet.has(n));
 
     // Create new categories if any
-    let newCategories: Category[] = [];
     if (namesToCreate.length > 0) {
       const categoriesToInsert = namesToCreate.map((name) =>
         Category.create({
@@ -151,21 +150,34 @@ export class PostgresCategoryRepository implements CategoryRepository {
 
       const insertRecords = CategoryMapper.toPersistenceList(categoriesToInsert);
       
-      const insertedRecords = await this.db
+      // Insert with onConflictDoNothing - some may be skipped by concurrent writers
+      await this.db
         .insert(categories)
         .values(insertRecords)
         .onConflictDoNothing()
         .returning();
-
-      newCategories = CategoryMapper.toDomainList(insertedRecords);
     }
 
-    // Combine all categories
-    const allCategories = [...existingCategories, ...newCategories];
+    // Re-fetch all categories to ensure we have complete data
+    // This handles race conditions where concurrent writers inserted categories
+    // between our initial check and our insert attempt
+    const allCategories = await this.findByNames(normalizedNames);
     const categoryMap = new Map(allCategories.map((c) => [c.name, c]));
 
-    // Return in input order
-    return normalizedNames.map((name) => categoryMap.get(name)!);
+    // Build result in input order and validate completeness
+    const result: Category[] = [];
+    for (const name of normalizedNames) {
+      const category = categoryMap.get(name);
+      if (!category) {
+        const missingNames = normalizedNames.filter((n) => !categoryMap.has(n));
+        throw new Error(
+          `Failed to find or create the requested categories: ${missingNames.join(', ')}`
+        );
+      }
+      result.push(category);
+    }
+
+    return result;
   }
 
   /**

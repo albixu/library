@@ -167,26 +167,36 @@ describe('PostgresCategoryRepository', () => {
 
   describe('findOrCreateMany', () => {
     it('should find existing and create new categories', async () => {
-      // First find existing
-      mockDb.query.categories.findMany.mockResolvedValue([mockCategoryRecord]);
+      const newCategoryRecord: CategorySelect = {
+        id: '550e8400-e29b-41d4-a716-446655440099',
+        name: 'new category',
+        description: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      // Then insert new ones
+      // First findByNames call - only existing categories
+      mockDb.query.categories.findMany.mockResolvedValueOnce([mockCategoryRecord]);
+
+      // Insert new ones
       const insertChain = {
         values: vi.fn().mockReturnThis(),
         onConflictDoNothing: vi.fn().mockReturnThis(),
-        returning: vi.fn().mockResolvedValue([{
-          id: '550e8400-e29b-41d4-a716-446655440099',
-          name: 'new category',
-          description: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }]),
+        returning: vi.fn().mockResolvedValue([newCategoryRecord]),
       };
       mockDb.insert.mockReturnValue(insertChain);
+
+      // Second findByNames call after insert - all categories
+      mockDb.query.categories.findMany.mockResolvedValueOnce([
+        mockCategoryRecord,
+        newCategoryRecord,
+      ]);
 
       const result = await repository.findOrCreateMany(['programming', 'new category']);
 
       expect(result).toHaveLength(2);
+      expect(result[0].name).toBe('programming');
+      expect(result[1].name).toBe('new category');
     });
 
     it('should return empty array for empty input', async () => {
@@ -196,9 +206,16 @@ describe('PostgresCategoryRepository', () => {
     });
 
     it('should maintain order of input names', async () => {
-      mockDb.query.categories.findMany.mockResolvedValue([
+      // First call - all already exist
+      mockDb.query.categories.findMany.mockResolvedValueOnce([
         mockCategoryRecord2, // software engineering
         mockCategoryRecord,  // programming
+      ]);
+
+      // Second call after insert (no insert needed) - same data
+      mockDb.query.categories.findMany.mockResolvedValueOnce([
+        mockCategoryRecord2,
+        mockCategoryRecord,
       ]);
 
       const result = await repository.findOrCreateMany(['programming', 'software engineering']);
@@ -206,6 +223,56 @@ describe('PostgresCategoryRepository', () => {
       // Should be in input order, not DB return order
       expect(result[0].name).toBe('programming');
       expect(result[1].name).toBe('software engineering');
+    });
+
+    it('should handle race condition where concurrent writer inserts category', async () => {
+      const concurrentCategoryRecord: CategorySelect = {
+        id: '550e8400-e29b-41d4-a716-446655440099',
+        name: 'concurrent category',
+        description: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // First findByNames - category doesn't exist yet
+      mockDb.query.categories.findMany.mockResolvedValueOnce([]);
+
+      // Insert attempt with onConflictDoNothing - returns empty because concurrent writer won
+      const insertChain = {
+        values: vi.fn().mockReturnThis(),
+        onConflictDoNothing: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockResolvedValue([]), // Empty - conflict occurred
+      };
+      mockDb.insert.mockReturnValue(insertChain);
+
+      // Second findByNames after insert - now the category exists (inserted by concurrent writer)
+      mockDb.query.categories.findMany.mockResolvedValueOnce([concurrentCategoryRecord]);
+
+      const result = await repository.findOrCreateMany(['concurrent category']);
+
+      // Should successfully return the category despite the race condition
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('concurrent category');
+      expect(result[0].id).toBe(concurrentCategoryRecord.id);
+    });
+
+    it('should throw error if categories cannot be found or created', async () => {
+      // First findByNames - category doesn't exist
+      mockDb.query.categories.findMany.mockResolvedValueOnce([]);
+
+      // Insert attempt fails
+      const insertChain = {
+        values: vi.fn().mockReturnThis(),
+        onConflictDoNothing: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockResolvedValue([]),
+      };
+      mockDb.insert.mockReturnValue(insertChain);
+
+      // Second findByNames after insert - still doesn't exist (unexpected situation)
+      mockDb.query.categories.findMany.mockResolvedValueOnce([]);
+
+      await expect(repository.findOrCreateMany(['missing category']))
+        .rejects.toThrow('Failed to find or create the requested categories: missing category');
     });
   });
 
