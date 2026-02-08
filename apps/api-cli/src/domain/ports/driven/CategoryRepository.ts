@@ -6,7 +6,7 @@
  * (e.g., PostgresCategoryRepository) will be an adapter in the infrastructure layer.
  */
 
-import type { Category } from '../../domain/entities/Category.js';
+import type { Category } from '../../entities/index.js';
 
 /**
  * CategoryRepository Port Interface

@@ -36,3 +36,14 @@ export {
   InvalidBookFormatError,
   InvalidISBNError,
 } from './errors/index.js';
+
+// Ports
+export type {
+  BookRepository,
+  SaveBookParams,
+  DuplicateCheckResult,
+  CategoryRepository,
+  EmbeddingService,
+  EmbeddingServiceConfig,
+  EmbeddingResult,
+} from './ports/index.js';

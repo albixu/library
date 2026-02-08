@@ -10,7 +10,7 @@
  * during save operations.
  */
 
-import type { Book } from '../../domain/entities/Book.js';
+import type { Book } from '../../entities/index.js';
 
 /**
  * Parameters for saving a book with its embedding
