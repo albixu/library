@@ -136,12 +136,18 @@ export class CreateBookUseCase {
 
     if (duplicateCheck.isDuplicate) {
       if (duplicateCheck.duplicateType === 'isbn') {
-        throw new DuplicateISBNError(book.isbn?.value ?? '');
+        // If duplicate type is 'isbn', the book must have an ISBN
+        if (!book.isbn) {
+          throw new Error('Invalid state: ISBN duplicate detected but book has no ISBN');
+        }
+        throw new DuplicateISBNError(book.isbn.value);
       } else if (duplicateCheck.duplicateType === 'triad') {
         throw new DuplicateBookError(book.author, book.title, book.format.value);
       }
       // Fallback for unexpected duplicate type
-      throw new Error('Unexpected duplicate type');
+      throw new Error(
+        `Unexpected duplicate type: ${duplicateCheck.duplicateType ?? 'undefined'}`
+      );
     }
 
     // 4. Generate embedding text and validate length
