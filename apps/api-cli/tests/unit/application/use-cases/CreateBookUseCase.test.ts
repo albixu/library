@@ -9,7 +9,7 @@ import type { CategoryRepository } from '../../../../src/application/ports/Categ
 import type { EmbeddingService, EmbeddingResult } from '../../../../src/application/ports/EmbeddingService.js';
 import { Category } from '../../../../src/domain/entities/Category.js';
 import { Book } from '../../../../src/domain/entities/Book.js';
-import { BookAlreadyExistsError } from '../../../../src/domain/errors/DomainErrors.js';
+import { DuplicateISBNError, DuplicateBookError } from '../../../../src/domain/errors/DomainErrors.js';
 import {
   EmbeddingTextTooLongError,
   EmbeddingServiceUnavailableError,
@@ -148,7 +148,7 @@ describe('CreateBookUseCase', () => {
       });
     });
 
-    it('should throw BookAlreadyExistsError when ISBN duplicate found', async () => {
+    it('should throw DuplicateISBNError when ISBN duplicate found', async () => {
       const duplicateResult: DuplicateCheckResult = {
         isDuplicate: true,
         duplicateType: 'isbn',
@@ -156,10 +156,10 @@ describe('CreateBookUseCase', () => {
       };
       (mockBookRepository.checkDuplicate as ReturnType<typeof vi.fn>).mockResolvedValue(duplicateResult);
 
-      await expect(useCase.execute(validInput)).rejects.toThrow(BookAlreadyExistsError);
+      await expect(useCase.execute(validInput)).rejects.toThrow(DuplicateISBNError);
     });
 
-    it('should throw BookAlreadyExistsError when triad duplicate found', async () => {
+    it('should throw DuplicateBookError when triad duplicate found', async () => {
       const duplicateResult: DuplicateCheckResult = {
         isDuplicate: true,
         duplicateType: 'triad',
@@ -167,7 +167,7 @@ describe('CreateBookUseCase', () => {
       };
       (mockBookRepository.checkDuplicate as ReturnType<typeof vi.fn>).mockResolvedValue(duplicateResult);
 
-      await expect(useCase.execute(validInput)).rejects.toThrow(BookAlreadyExistsError);
+      await expect(useCase.execute(validInput)).rejects.toThrow(DuplicateBookError);
     });
 
     it('should throw EmbeddingTextTooLongError when text exceeds 7000 chars', async () => {
