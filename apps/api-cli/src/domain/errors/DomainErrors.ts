@@ -56,18 +56,18 @@ export class BookAlreadyExistsError extends DomainError {
 }
 
 /**
- * Thrown when trying to create a book with an ISBN that is already registered in the database
+ * Thrown when trying to create a book with an ISBN that already exists
  * This is a specific case of duplicate detection based on ISBN uniqueness constraint
  */
 export class DuplicateISBNError extends DomainError {
   constructor(isbn: string) {
-    super(`A book with ISBN "${isbn}" is already registered in the database`);
+    super(`A book with ISBN "${isbn}" already exists`);
   }
 }
 
 /**
  * Thrown when trying to create a book with a combination of author, title, and format
- * that already exists in the database (triad uniqueness constraint)
+ * that already exists (triad uniqueness constraint)
  */
 export class DuplicateBookError extends DomainError {
   constructor(author: string, title: string, format: string) {
