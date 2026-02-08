@@ -5,14 +5,18 @@
  * This use case coordinates between domain entities and infrastructure ports.
  *
  * Flow:
- * 1. Validate input
- * 2. Resolve/create categories
- * 3. Create Book entity and check for duplicates (ISBN and triad)
- * 4. Generate embedding from book text
- * 5. Persist book with embedding atomically
+ * 1. Validate input fields (title, author, type, format, isbn, description)
+ * 2. Check for duplicates using normalized fields
+ * 3. Resolve/create categories (only after duplicate check passes)
+ * 4. Create Book entity with validated fields and categories
+ * 5. Generate embedding from book text
+ * 6. Persist book with embedding atomically
  */
 
 import { Book } from '../../domain/entities/Book.js';
+import { BookType } from '../../domain/value-objects/BookType.js';
+import { BookFormat } from '../../domain/value-objects/BookFormat.js';
+import { ISBN } from '../../domain/value-objects/ISBN.js';
 import { generateUUID } from '../../shared/utils/uuid.js';
 import type { BookRepository } from '../ports/BookRepository.js';
 import type { CategoryRepository } from '../ports/CategoryRepository.js';
@@ -27,6 +31,19 @@ import {
 
 /**
  * Maximum length for embedding text (concatenation of book fields)
+ * 
+ * Defense-in-depth guard: With current domain constraints (Book: title 500 + author 300 + 
+ * description 5000 + max 10 categories × 100 chars each), the maximum possible embedding 
+ * text is ~6812 characters, making this 7000-char limit currently unreachable.
+ * 
+ * This guard is intentionally kept as a safety mechanism to prevent future issues if:
+ * - Domain constraints are relaxed (e.g., longer descriptions, more categories)
+ * - New fields are added to the embedding text
+ * - External integrations provide data that bypasses normal validation
+ * 
+ * This prevents expensive embedding service calls that would fail anyway, and provides
+ * a clear error message at the application layer rather than propagating provider-specific
+ * errors from the infrastructure layer.
  */
 const MAX_EMBEDDING_TEXT_LENGTH = 7000;
 
@@ -98,19 +115,41 @@ export class CreateBookUseCase {
    *
    * @param input - The book data to create
    * @returns Promise resolving to the created book output
-   * @throws DuplicateISBNError if duplicate ISBN found
-   * @throws DuplicateBookError if duplicate triad (author+title+format) found
+   * @throws DuplicateISBNError if a book with the same ISBN already exists
+   * @throws DuplicateBookError if a book with the same author, title, and format already exists
    * @throws EmbeddingTextTooLongError if embedding text exceeds 7000 chars
    * @throws EmbeddingServiceUnavailableError if embedding service is down
    * @throws DomainError for validation failures
    */
   async execute(input: CreateBookInput): Promise<CreateBookOutput> {
-    // 1. Resolve or create categories
+    // 1. Validate and normalize fields needed for duplicate detection
+    //    This provides early validation and normalization without persisting anything
+    const bookType = BookType.create(input.type);
+    const bookFormat = BookFormat.create(input.format);
+    const bookIsbn = input.isbn ? ISBN.create(input.isbn) : null;
+
+    // 2. Check for duplicates BEFORE creating any resources
+    //    This prevents orphaned categories if the book is a duplicate
+    //    Title and author are trimmed to match Book.create()'s normalization
+    const duplicateCheck = await this.bookRepository.checkDuplicate({
+      isbn: bookIsbn?.value ?? null,
+      author: input.author.trim(),
+      title: input.title.trim(),
+      format: bookFormat.value,
+    });
+
+    if (duplicateCheck.isDuplicate) {
+      throw new BookAlreadyExistsError(
+        duplicateCheck.message ?? 'Duplicate book found'
+      );
+    }
+
+    // 3. Resolve or create categories (only after duplicate check passes)
     const categories = await this.categoryRepository.findOrCreateMany(
       input.categoryNames
     );
 
-    // 2. Create Book entity (validates all fields)
+    // 4. Create Book entity with validated fields and categories
     const book = Book.create({
       id: generateUUID(),
       title: input.title,
@@ -136,19 +175,13 @@ export class CreateBookUseCase {
 
     if (duplicateCheck.isDuplicate) {
       if (duplicateCheck.duplicateType === 'isbn') {
-        // If duplicate type is 'isbn', the book must have an ISBN
-        if (!book.isbn) {
-          throw new Error(
-            'Internal error: Duplicate check returned ISBN type but book.isbn is null. This indicates a repository inconsistency.'
-          );
-        }
-        throw new DuplicateISBNError(book.isbn.value);
+        throw new DuplicateISBNError(book.isbn!.value);
       } else if (duplicateCheck.duplicateType === 'triad') {
-        throw new DuplicateBookError(book.author, book.title, book.format.value);
+        throw new DuplicateBookError(normalizedAuthor, normalizedTitle, book.format.value);
       }
-      // Fallback for unexpected duplicate type
+      // Fallback for any unexpected cases (should never be reached in normal operation)
       throw new Error(
-        `Unexpected duplicate type: ${duplicateCheck.duplicateType ?? 'undefined'}`
+        `Unexpected duplicate type encountered: ${duplicateCheck.duplicateType ?? 'unknown'}. ${duplicateCheck.message ?? 'Duplicate book found'}`
       );
     }
 
@@ -162,18 +195,18 @@ export class CreateBookUseCase {
       );
     }
 
-    // 5. Generate embedding (may throw EmbeddingServiceUnavailableError)
+    // 6. Generate embedding (may throw EmbeddingServiceUnavailableError)
     const embeddingResult = await this.embeddingService.generateEmbedding(
       embeddingText
     );
 
-    // 6. Persist book with embedding atomically
+    // 7. Persist book with embedding atomically
     const savedBook = await this.bookRepository.save({
       book,
       embedding: embeddingResult.embedding,
     });
 
-    // 7. Return output DTO
+    // 8. Return output DTO
     return this.toOutput(savedBook);
   }
 
