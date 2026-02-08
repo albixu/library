@@ -150,6 +150,24 @@ describe('OllamaEmbeddingService', () => {
       );
     });
 
+    it('should preserve original error as cause when JSON parsing fails', async () => {
+      const originalError = new SyntaxError('Unexpected token < in JSON at position 0');
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => {
+          throw originalError;
+        },
+      });
+
+      try {
+        await service.generateEmbedding('Some text');
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).toBeInstanceOf(EmbeddingServiceUnavailableError);
+        expect((error as EmbeddingServiceUnavailableError).cause).toBe(originalError);
+      }
+    });
+
     it('should use custom model from config', async () => {
       const customConfig: EmbeddingServiceConfig = {
         baseUrl: 'http://custom:11434',
