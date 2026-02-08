@@ -60,6 +60,22 @@ const DEFAULTS = {
 } as const;
 
 /**
+ * Safely parses an integer from a string with fallback
+ */
+function safeParseInt(value: string | undefined, defaultValue: number, fieldName: string): number {
+  if (value === undefined || value.trim() === '') {
+    return defaultValue;
+  }
+  const parsed = parseInt(value, 10);
+  if (isNaN(parsed)) {
+    throw new Error(
+      `Invalid integer value for ${fieldName}: "${value}". Expected a valid number.`
+    );
+  }
+  return parsed;
+}
+
+/**
  * Loads environment configuration with defaults
  *
  * @returns Complete environment configuration object

@@ -102,8 +102,8 @@ describe('Environment Configuration', () => {
       const config = getOllamaConfig();
 
       expect(config).toEqual({
-        baseUrl: 'http://test:11434',
-        model: 'test-model',
+        baseUrl: 'http://custom:11434',
+        model: 'custom-model',
         timeoutMs: 20000,
       });
     });
@@ -122,7 +122,7 @@ describe('Environment Configuration', () => {
       process.env['OLLAMA_TIMEOUT_MS'] = 'bad-value';
 
       expect(() => getOllamaConfig()).toThrow(
-        'Configuration error: OLLAMA_TIMEOUT_MS must be a valid number'
+        'Invalid integer value for OLLAMA_TIMEOUT_MS: "bad-value". Expected a valid number.'
       );
     });
   });
