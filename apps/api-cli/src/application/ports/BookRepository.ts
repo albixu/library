@@ -27,13 +27,18 @@ export interface SaveBookParams {
  *
  * Only includes the book ID and the fields that can be mutated after creation.
  * This prevents accidental persistence of changes to immutable fields.
+ *
+ * For optional fields:
+ * - Omitting the field (undefined) means "don't change this field"
+ * - Setting to null means "explicitly clear this field"
+ * - Setting to a value means "update to this value"
  */
 export interface UpdateBookParams {
   /** The book UUID to update */
   id: string;
-  /** Whether the book is currently available */
+  /** Whether the book is currently available. Omit to keep current value. */
   available?: boolean;
-  /** File path to the book (optional) */
+  /** File path to the book. Omit to keep current value, set to null to clear. */
   path?: string | null;
 }
 
