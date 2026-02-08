@@ -113,12 +113,9 @@ export class CreateBookUseCase {
     const bookFormat = BookFormat.create(input.format);
     const bookIsbn = input.isbn ? ISBN.create(input.isbn) : null;
 
-    // Note: title and author will be validated by Book.create() later
-    // We use the raw input values for duplicate check as they'll be trimmed
-    // consistently by both the validation and the duplicate check
-
     // 2. Check for duplicates BEFORE creating any resources
     //    This prevents orphaned categories if the book is a duplicate
+    //    Title and author are trimmed to match Book.create()'s normalization
     const duplicateCheck = await this.bookRepository.checkDuplicate({
       isbn: bookIsbn?.value ?? null,
       author: input.author.trim(),
