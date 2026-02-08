@@ -442,6 +442,14 @@ describe('Book', () => {
       expect(updated.description).toBe('New description');
     });
 
+    it('should throw RequiredFieldError for empty description in update', () => {
+      expect(() => book.update({ description: '' })).toThrow(RequiredFieldError);
+    });
+
+    it('should throw RequiredFieldError for whitespace-only description in update', () => {
+      expect(() => book.update({ description: '   ' })).toThrow(RequiredFieldError);
+    });
+
     it('should update available', () => {
       const updated = book.update({ available: true });
       expect(updated.available).toBe(true);
