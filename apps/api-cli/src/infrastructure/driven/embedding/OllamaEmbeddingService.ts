@@ -104,12 +104,10 @@ export class OllamaEmbeddingService implements EmbeddingService {
       }
       // Convert JSON parsing errors to EmbeddingServiceUnavailableError
       // Preserve original error as cause for debugging
-      const isError = error instanceof Error;
-      const errorMessage = isError ? error.message : 'Unknown error';
-      const cause = isError ? error : undefined;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new EmbeddingServiceUnavailableError(
         `Failed to parse response: ${errorMessage}`,
-        { cause }
+        { cause: error }
       );
     }
 

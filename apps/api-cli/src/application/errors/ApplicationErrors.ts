@@ -25,13 +25,13 @@ export abstract class EmbeddingServiceError extends Error {
  * This should result in a 503 Service Unavailable response
  */
 export class EmbeddingServiceUnavailableError extends EmbeddingServiceError {
-  constructor(reason?: string, options?: { cause?: Error }) {
+  constructor(reason?: string, options?: { cause?: unknown }) {
     super(
       reason
         ? `Embedding service unavailable: ${reason}`
         : 'Embedding service unavailable, please try again later'
     );
-    if (options?.cause) {
+    if (options?.cause !== undefined) {
       this.cause = options.cause;
     }
   }
