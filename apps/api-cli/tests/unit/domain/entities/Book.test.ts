@@ -540,6 +540,13 @@ describe('Book', () => {
       expect(text).toContain('A great book about clean code');
     });
 
+    it('should always include description in embedding text', () => {
+      const book = Book.create(createValidBookProps({
+        description: 'Short description',
+      }));
+      const text = book.getTextForEmbedding();
+
+      expect(text).toBe('Clean Code Robert C. Martin programming Short description');
     it('should trim description in embedding text', () => {
       const book = Book.create(createValidBookProps({
         description: '  A great book about clean code  ',
