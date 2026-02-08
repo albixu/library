@@ -60,38 +60,20 @@ const DEFAULTS = {
 } as const;
 
 /**
- * Safely parses an integer from a string value
+ * Loads environment configuration with defaults
  *
- * @param value - The string value to parse
- * @param defaultValue - The default value to return if parsing fails
- * @param fieldName - The name of the field being parsed (for error messages)
- * @returns The parsed integer or the default value
- * @throws Error if the parsed value is NaN and no default is provided
+ * @returns Complete environment configuration object
  */
-function safeParseInt(
-  value: string | undefined,
-  defaultValue: number,
-  fieldName: string
-): number {
-  const stringValue = value ?? String(defaultValue);
-  const parsed = parseInt(stringValue, 10);
-
-  if (!Number.isFinite(parsed)) {
+export function loadEnvConfig(): EnvConfig {
+  // Validate required environment variables
+  const databaseUrl = process.env['DATABASE_URL'];
+  if (!databaseUrl || databaseUrl.trim() === '') {
     throw new Error(
-      `Configuration error: ${fieldName} must be a valid number, got: "${stringValue}"`
+      'DATABASE_URL environment variable is required but not set. ' +
+        'Please set it in your environment or .env file (e.g., postgresql://user:password@host:5432/database)'
     );
   }
 
-  return parsed;
-}
-
-/**
- * Loads and validates environment configuration
- *
- * @returns Complete environment configuration object
- * @throws Error if required environment variables are missing
- */
-export function loadEnvConfig(): EnvConfig {
   return {
     app: {
       nodeEnv: process.env['NODE_ENV'] ?? DEFAULTS.NODE_ENV,
@@ -99,7 +81,7 @@ export function loadEnvConfig(): EnvConfig {
       logLevel: process.env['LOG_LEVEL'] ?? DEFAULTS.LOG_LEVEL,
     },
     database: {
-      url: process.env['DATABASE_URL'] ?? '',
+      url: databaseUrl,
     },
     ollama: {
       baseUrl: process.env['OLLAMA_BASE_URL'] ?? DEFAULTS.OLLAMA_BASE_URL,
