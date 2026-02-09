@@ -150,7 +150,7 @@ paths:
                 duplicate_triad:
                   summary: Tríada duplicada (autor + título + formato)
                   value:
-                    error: "A book with the same author, title, and format already exists"
+                    error: "A book with the same author, title, and format already exists: \"Robert C. Martin\" - \"Clean Code\" (paperback)"
         '503':
           description: |
             Servicio no disponible - El servicio de embeddings (Ollama) no está accesible.
