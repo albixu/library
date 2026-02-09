@@ -136,6 +136,7 @@ describe('CreateBookUseCase', () => {
       const callArg = (mockEmbeddingService.generateEmbedding as ReturnType<typeof vi.fn>).mock.calls[0][0];
       expect(callArg).toContain('Clean Code');
       expect(callArg).toContain('Robert C. Martin');
+      expect(callArg).toContain('technical');
       expect(callArg).toContain('programming');
       expect(callArg).toContain('A handbook of agile software craftsmanship');
     });
