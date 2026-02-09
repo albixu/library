@@ -232,8 +232,7 @@ components:
             Las categorías se crean automáticamente si no existen.
           example: ["programming", "software engineering"]
         isbn:
-          type: string
-          nullable: true
+          type: [string, 'null']
           description: |
             ISBN del libro (opcional). Acepta formato ISBN-10 o ISBN-13.
             Se valida el checksum. Puede incluir guiones que serán ignorados.
@@ -244,8 +243,7 @@ components:
           description: Indica si el libro está disponible
           example: true
         path:
-          type: string
-          nullable: true
+          type: [string, 'null']
           maxLength: 1000
           description: Ruta al archivo del libro en el sistema de archivos
           example: "/books/clean-code.pdf"
@@ -303,8 +301,7 @@ components:
             $ref: '#/components/schemas/Category'
           description: Categorías asignadas al libro
         isbn:
-          type: string
-          nullable: true
+          type: [string, 'null']
           description: ISBN del libro (null si no se proporcionó)
           example: "9780132350884"
         available:
@@ -312,8 +309,7 @@ components:
           description: Indica si el libro está disponible
           example: true
         path:
-          type: string
-          nullable: true
+          type: [string, 'null']
           description: Ruta al archivo del libro
           example: "/books/clean-code.pdf"
         createdAt:
