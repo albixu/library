@@ -13,9 +13,10 @@ LABEL maintainer="Library Team" \
 
 # Security: Update packages and install build dependencies
 # Note: python3, make, g++ needed for native module compilation
+# su-exec is used by entrypoint to drop privileges after fixing permissions
 RUN apk update && \
     apk upgrade --no-cache && \
-    apk add --no-cache python3 make g++ && \
+    apk add --no-cache python3 make g++ su-exec && \
     rm -rf /var/cache/apk/*
 
 # Security: Create non-root user with specific UID/GID
@@ -37,8 +38,11 @@ RUN npm install && \
     npm cache clean --force
 
 # Security: Create necessary directories with proper ownership
-RUN mkdir -p /app/src /app/node_modules /app/tmp && \
+RUN mkdir -p /app/src /app/node_modules/.vite/vitest /app/tmp && \
     chown -R nodejs:nodejs /app
+
+# Copy entrypoint script
+COPY --chmod=755 docker/entrypoint.dev.sh /usr/local/bin/entrypoint.sh
 
 # Environment variables
 ENV NODE_ENV=development \
@@ -51,8 +55,10 @@ ENV NODE_ENV=development \
 # Expose API port
 EXPOSE 3000
 
-# Switch to non-root user
-USER nodejs
+# Note: We do NOT switch to nodejs user here because:
+# 1. The entrypoint runs as root to fix volume permissions
+# 2. Then drops privileges to nodejs using su-exec
+# This is required because the node_modules volume mount happens at runtime
 
 # Note: Source code will be mounted as volume from docker-compose
 # The volume mount will override any COPY commands for src/
@@ -60,6 +66,9 @@ USER nodejs
 # Health check for development
 HEALTHCHECK --interval=60s --timeout=5s --start-period=30s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))" || exit 1
+
+# Security: Use entrypoint to fix permissions then drop to nodejs user
+ENTRYPOINT ["entrypoint.sh"]
 
 # Security: Use exec form to avoid shell injection and ensure proper signal handling
 # Uses tsx watch for hot reload
