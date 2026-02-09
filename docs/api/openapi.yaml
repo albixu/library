@@ -116,11 +116,15 @@ paths:
                 missing_field:
                   summary: Campo requerido faltante
                   value:
-                    error: "title is required"
+                    error: "Validation failed"
+                    details:
+                      - "title is required"
                 invalid_type:
                   summary: Tipo de libro inválido
                   value:
-                    error: "Invalid book type: \"invalid\". Valid types are: technical, novel, essay, poetry, biography, reference, manual, other"
+                    error: "Validation failed"
+                    details:
+                      - "type: Invalid enum value. Expected 'technical' | 'novel' | 'essay' | 'poetry' | 'biography' | 'reference' | 'manual' | 'other', received 'invalid'"
                 invalid_isbn:
                   summary: ISBN inválido
                   value:
@@ -128,7 +132,9 @@ paths:
                 too_many_categories:
                   summary: Demasiadas categorías
                   value:
-                    error: "Too many items in categories. Maximum allowed: 10"
+                    error: "Validation failed"
+                    details:
+                      - "categories: Array must contain at most 10 element(s)"
                 embedding_too_long:
                   summary: Texto de embedding muy largo
                   value:
