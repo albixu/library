@@ -124,7 +124,7 @@ paths:
                 invalid_isbn:
                   summary: ISBN inválido
                   value:
-                    error: "Invalid ISBN format or checksum: \"1234567890\""
+                    error: "Invalid ISBN: \"1234567890\". Must be a valid ISBN-10 or ISBN-13 with correct checksum."
                 too_many_categories:
                   summary: Demasiadas categorías
                   value:
