@@ -245,7 +245,13 @@ export class Book {
    */
   getTextForEmbedding(): string {
     const categoryNames = this.categories.map(c => c.name);
-    const parts = [this.title, this.author, ...categoryNames, this.description];
+    const parts = [
+      this.title,
+      this.author,
+      this.type.value,
+      ...categoryNames,
+      this.description,
+    ];
 
     return parts.join(' ');
   }

@@ -526,7 +526,7 @@ describe('Book', () => {
   });
 
   describe('getTextForEmbedding', () => {
-    it('should combine title, author, category names, and description', () => {
+    it('should combine title, author, type, category names, and description', () => {
       const book = Book.create(createValidBookProps({
         categories: [programmingCategory, softwareCategory],
         description: 'A great book about clean code',
@@ -535,6 +535,7 @@ describe('Book', () => {
 
       expect(text).toContain('Clean Code');
       expect(text).toContain('Robert C. Martin');
+      expect(text).toContain('technical');
       expect(text).toContain('programming');
       expect(text).toContain('software engineering');
       expect(text).toContain('A great book about clean code');
@@ -546,7 +547,7 @@ describe('Book', () => {
       }));
       const text = book.getTextForEmbedding();
 
-      expect(text).toBe('Clean Code Robert C. Martin programming Short description');
+      expect(text).toBe('Clean Code Robert C. Martin technical programming Short description');
     });
 
     it('should trim description in embedding text', () => {

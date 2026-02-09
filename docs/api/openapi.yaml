@@ -1,0 +1,359 @@
+openapi: 3.1.0
+info:
+  title: Library API
+  description: |
+    API REST para el sistema de gestión de biblioteca digital personal.
+    
+    Permite catalogar, organizar y buscar libros digitales usando búsqueda semántica
+    potenciada por embeddings vectoriales.
+  version: 0.1.0
+  contact:
+    name: Library Project
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+
+tags:
+  - name: Books
+    description: Operaciones de gestión de libros
+
+paths:
+  /books:
+    post:
+      tags:
+        - Books
+      summary: Crear un nuevo libro
+      description: |
+        Registra un nuevo libro en el catálogo, generando automáticamente su representación 
+        vectorial (embedding) para búsquedas semánticas.
+        
+        ## Comportamiento
+        
+        1. **Sanitización**: Aplica `trim()` a los campos de texto libres (por ejemplo, `title`, `author`, `description`, `categories`, `isbn`, `path`); los campos enum como `type` y `format` se validan tal cual se envían (sin `trim()` previo)
+        2. **Validación de duplicados**: 
+           - Verifica que el ISBN no exista (si se proporciona)
+           - Verifica que la tríada {autor, título, formato} no exista
+        3. **Gestión de categorías**: Crea automáticamente las categorías que no existan
+        4. **Generación de embedding**: Concatena los campos y genera el vector (768 dimensiones)
+        5. **Persistencia**: Guarda el libro de forma atómica
+        
+        ## Atomicidad
+        
+        Si el servicio de embeddings (Ollama) no está disponible, el libro NO se crea 
+        y se retorna error 503.
+      operationId: createBook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookRequest'
+            examples:
+              complete:
+                summary: Libro con todos los campos
+                value:
+                  title: "Clean Code"
+                  author: "Robert C. Martin"
+                  description: "A handbook of agile software craftsmanship that teaches programmers how to write clean, maintainable code."
+                  type: "technical"
+                  format: "pdf"
+                  categories: ["programming", "software engineering", "best practices"]
+                  isbn: "9780132350884"
+                  available: true
+                  path: "/books/clean-code.pdf"
+              minimal:
+                summary: Libro con campos mínimos requeridos
+                value:
+                  title: "The Pragmatic Programmer"
+                  author: "David Thomas, Andrew Hunt"
+                  description: "A guide to becoming a better programmer through practical advice and timeless tips."
+                  type: "technical"
+                  format: "epub"
+                  categories: ["programming"]
+      responses:
+        '201':
+          description: Libro creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookResponse'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                title: "Clean Code"
+                author: "Robert C. Martin"
+                description: "A handbook of agile software craftsmanship that teaches programmers how to write clean, maintainable code."
+                type: "technical"
+                format: "pdf"
+                categories:
+                  - id: "660e8400-e29b-41d4-a716-446655440001"
+                    name: "programming"
+                  - id: "770e8400-e29b-41d4-a716-446655440002"
+                    name: "software engineering"
+                  - id: "880e8400-e29b-41d4-a716-446655440003"
+                    name: "best practices"
+                isbn: "9780132350884"
+                available: true
+                path: "/books/clean-code.pdf"
+                createdAt: "2026-02-09T12:00:00.000Z"
+                updatedAt: "2026-02-09T12:00:00.000Z"
+        '400':
+          description: |
+            Solicitud inválida. Posibles causas:
+            - Campos requeridos faltantes o vacíos
+            - Campos que exceden longitud máxima
+            - Tipo o formato de libro inválido
+            - ISBN con formato o checksum inválido
+            - Más de 10 categorías
+            - Texto de embedding excede 7000 caracteres
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_field:
+                  summary: Campo requerido faltante
+                  value:
+                    error: "Validation failed"
+                    details:
+                      - "title is required"
+                invalid_type:
+                  summary: Tipo de libro inválido
+                  value:
+                    error: "Validation failed"
+                    details:
+                      - "type: Invalid enum value. Expected 'technical' | 'novel' | 'essay' | 'poetry' | 'biography' | 'reference' | 'manual' | 'other', received 'invalid'"
+                invalid_isbn:
+                  summary: ISBN inválido
+                  value:
+                    error: "Invalid ISBN: \"1234567890\". Must be a valid ISBN-10 or ISBN-13 with correct checksum."
+                too_many_categories:
+                  summary: Demasiadas categorías
+                  value:
+                    error: "Validation failed"
+                    details:
+                      - "categories: Array must contain at most 10 element(s)"
+                embedding_too_long:
+                  summary: Texto de embedding muy largo
+                  value:
+                    error: "Embedding text too long (7500 characters). Maximum allowed: 7000 characters"
+        '409':
+          description: |
+            Conflicto - Libro duplicado detectado. Posibles causas:
+            - Ya existe un libro con el mismo ISBN
+            - Ya existe un libro con la misma combinación de autor, título y formato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicate_isbn:
+                  summary: ISBN duplicado
+                  value:
+                    error: "A book with ISBN \"9780132350884\" already exists"
+                duplicate_triad:
+                  summary: Tríada duplicada (autor + título + formato)
+                  value:
+                    error: "A book with the same author, title, and format already exists: \"Robert C. Martin\" - \"Clean Code\" (paperback)"
+        '503':
+          description: |
+            Servicio no disponible - El servicio de embeddings (Ollama) no está accesible.
+            El libro NO se crea en la base de datos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Embedding service unavailable, please try again later"
+
+components:
+  schemas:
+    CreateBookRequest:
+      type: object
+      required:
+        - title
+        - author
+        - description
+        - type
+        - format
+        - categories
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Título del libro
+          example: "Clean Code"
+        author:
+          type: string
+          minLength: 1
+          maxLength: 300
+          description: Autor(es) del libro
+          example: "Robert C. Martin"
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          description: Descripción del contenido del libro. Campo obligatorio usado para generar embeddings.
+          example: "A handbook of agile software craftsmanship that teaches programmers how to write clean, maintainable code."
+        type:
+          type: string
+          enum:
+            - technical
+            - novel
+            - essay
+            - poetry
+            - biography
+            - reference
+            - manual
+            - other
+          description: Tipo/género del libro
+          example: "technical"
+        format:
+          type: string
+          enum:
+            - epub
+            - pdf
+            - mobi
+            - azw3
+            - djvu
+            - cbz
+            - cbr
+            - txt
+            - other
+          description: Formato del archivo digital
+          example: "pdf"
+        categories:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+          minItems: 1
+          maxItems: 10
+          description: |
+            Lista de categorías del libro (1-10). 
+            Las categorías se crean automáticamente si no existen.
+          example: ["programming", "software engineering"]
+        isbn:
+          type: [string, 'null']
+          description: |
+            ISBN del libro (opcional). Acepta formato ISBN-10 o ISBN-13.
+            Se valida el checksum. Puede incluir guiones que serán ignorados.
+          example: "9780132350884"
+        available:
+          type: boolean
+          default: true
+          description: Indica si el libro está disponible
+          example: true
+        path:
+          type: [string, 'null']
+          maxLength: 1000
+          description: Ruta al archivo del libro en el sistema de archivos
+          example: "/books/clean-code.pdf"
+
+    BookResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único del libro (UUID v4)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        title:
+          type: string
+          description: Título del libro
+          example: "Clean Code"
+        author:
+          type: string
+          description: Autor(es) del libro
+          example: "Robert C. Martin"
+        description:
+          type: string
+          description: Descripción del libro
+          example: "A handbook of agile software craftsmanship"
+        type:
+          type: string
+          enum:
+            - technical
+            - novel
+            - essay
+            - poetry
+            - biography
+            - reference
+            - manual
+            - other
+          description: Tipo/género del libro
+          example: "technical"
+        format:
+          type: string
+          enum:
+            - epub
+            - pdf
+            - mobi
+            - azw3
+            - djvu
+            - cbz
+            - cbr
+            - txt
+            - other
+          description: Formato del archivo digital
+          example: "pdf"
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+          description: Categorías asignadas al libro
+        isbn:
+          type: [string, 'null']
+          description: ISBN del libro (null si no se proporcionó)
+          example: "9780132350884"
+        available:
+          type: boolean
+          description: Indica si el libro está disponible
+          example: true
+        path:
+          type: [string, 'null']
+          description: Ruta al archivo del libro
+          example: "/books/clean-code.pdf"
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha de creación (ISO 8601)
+          example: "2026-02-09T12:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Fecha de última actualización (ISO 8601)
+          example: "2026-02-09T12:00:00.000Z"
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único de la categoría
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        name:
+          type: string
+          description: Nombre de la categoría (normalizado a lowercase)
+          example: "programming"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Mensaje descriptivo del error
+          example: "title is required"
+        details:
+          type: array
+          items:
+            type: string
+          description: Detalles adicionales del error (opcional, usado en errores de validación múltiples)
+          example: ["title cannot be empty", "author is required"]

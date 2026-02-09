@@ -35,9 +35,14 @@ npm run build            # Compilar TS
 npm run lint:fix         # ESLint con auto-fix (Estilo Prettier)
 
 # Testing (Ejecutar preferiblemente en Docker)
-docker exec -it library-api-dev npm test                 # Todos los tests
-docker exec -it library-api-dev npm run test:coverage    # Cobertura
-npx vitest run tests/unit/domain/entities/Book.test.ts   # Test específico
+docker exec library-api-dev npm test                 # Tests unitarios
+docker exec library-api-dev npm run test:integration # Tests de integración (PostgreSQL + Ollama)
+docker exec library-api-dev npm run test:e2e         # Tests end-to-end (HTTP + CLI)
+docker exec library-api-dev npm run test:coverage    # Cobertura de código
+
+# Test específico
+docker exec library-api-dev npx vitest run tests/unit/domain/entities/Book.test.ts
+docker exec library-api-dev npx vitest run --config vitest.integration.config.ts tests/integration/...
 
 # Database (Drizzle)
 npm run db:generate && npm run db:migrate
@@ -106,8 +111,9 @@ npm run db:generate && npm run db:migrate
 
 ### Expected Test Counts
 
-- Unit/Integration: ~89
-- E2E: 7
+- Unit: ~345
+- Integration: ~63
+- E2E: ~30 (+ 2 skipped for 503 scenarios)
 
 
 ## 9. Domain-Driven Design (DDD) Rules
