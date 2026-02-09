@@ -32,7 +32,7 @@ paths:
         
         ## Comportamiento
         
-        1. **Sanitización**: Aplica `trim()` a todos los campos de texto
+        1. **Sanitización**: Aplica `trim()` a los campos de texto libres (por ejemplo, `title`, `author`, `description`, `categories`, `isbn`, `path`); los campos enum como `type` y `format` se validan tal cual se envían (sin `trim()` previo)
         2. **Validación de duplicados**: 
            - Verifica que el ISBN no exista (si se proporciona)
            - Verifica que la tríada {autor, título, formato} no exista
