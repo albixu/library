@@ -4,7 +4,6 @@
  * Provides utilities for end-to-end testing:
  * - Fastify server lifecycle management
  * - Database cleanup between tests
- * - CLI execution helpers
  * - Test fixtures
  *
  * Requirements:
@@ -12,8 +11,6 @@
  * - Ollama must have the embedding model loaded
  */
 
-import { spawn, ChildProcess, execFile } from 'child_process';
-import { promisify } from 'util';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import type { FastifyInstance } from 'fastify';
@@ -143,81 +140,6 @@ export async function startTestServer(server: FastifyInstance): Promise<void> {
  */
 export async function stopTestServer(server: FastifyInstance): Promise<void> {
   await server.close();
-}
-
-/**
- * Result from executing a CLI command
- */
-export interface CliResult {
-  exitCode: number;
-  stdout: string;
-  stderr: string;
-}
-
-/**
- * Executes the CLI as a child process
- *
- * @param args - CLI arguments (without 'library' prefix)
- * @param options - Execution options
- * @returns Promise with exit code, stdout, and stderr
- */
-export async function executeCli(
-  args: string[],
-  options: { cwd?: string; env?: Record<string, string>; timeout?: number } = {}
-): Promise<CliResult> {
-  const { cwd = process.cwd(), env = {}, timeout = 60000 } = options;
-
-  return new Promise((resolve, reject) => {
-    const fullEnv = {
-      ...process.env,
-      NODE_ENV: 'test',
-      LOG_LEVEL: 'silent',
-      PATH: process.env['PATH'] || '/usr/local/bin:/usr/bin:/bin',
-      ...env,
-    };
-
-    // Use spawn with explicit PATH to find node
-    // The node process runs tsx as an ESM loader
-    const child: ChildProcess = spawn(
-      'node',
-      ['--import', 'tsx', 'src/cli.ts', ...args],
-      {
-        cwd,
-        env: fullEnv,
-        stdio: ['pipe', 'pipe', 'pipe'],
-      }
-    );
-
-    let stdout = '';
-    let stderr = '';
-
-    child.stdout?.on('data', (data: Buffer) => {
-      stdout += data.toString();
-    });
-
-    child.stderr?.on('data', (data: Buffer) => {
-      stderr += data.toString();
-    });
-
-    const timeoutId = setTimeout(() => {
-      child.kill('SIGTERM');
-      reject(new Error(`CLI execution timed out after ${timeout}ms`));
-    }, timeout);
-
-    child.on('close', (code) => {
-      clearTimeout(timeoutId);
-      resolve({
-        exitCode: code ?? 1,
-        stdout,
-        stderr,
-      });
-    });
-
-    child.on('error', (error) => {
-      clearTimeout(timeoutId);
-      reject(error);
-    });
-  });
 }
 
 /**
