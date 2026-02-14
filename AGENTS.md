@@ -20,11 +20,16 @@ Este documento es la fuente de verdad para los agentes de IA que trabajan en est
 
 ## 3. Git Workflow & Commits
 Se debe seguir esta estructura de ramas jerárquica para cada desarrollo:
-1. **Historia de Usuario:** Rama base desde `main` (ej. `feature/US-123-titulo`).
-2. **Subtareas:** Ramas técnicas desde la rama de historia (ej. `task/US-123-db-schema`).
-3. **Integración:** Cada tarea se integra en la rama de historia mediante **Pull Request**.
-4. **Commits:** Seguir el estándar de **Conventional Commits**:
+1. **Dev:** Rama de desarrollo que sale desde `main`. Esta rama existirá siempre, y es desde donde saldran las ramas de nuevos desarrollos y donde se mergearan para ser probados antes de pasarlos a `main` para ponerlos en producción
+2. **Historia de Usuario:** Rama base desde `dev` (ej. `feature/US-123-titulo`). Es la rama que representa la historia de usuario. Cada historia de usuario tendrá su rama
+3. **Subtareas:** Ramas técnicas desde la rama de historia (ej. `task/US-123-db-schema`).
+4. **Integración:** Cada tarea se integra en la rama de historia mediante **Pull Request**.
+5. **Commits:** Seguir el estándar de **Conventional Commits**:
    - `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `style:`.
+6. **Pase a producción:** Tras probar la funcionalidades completas en la rama `dev` se mergearán a `main` mediante un **Pull Request**
+
+### 3.1 Cosas a evitar en el git workflow.
+El agente no aprobará ningún pull request de forma automática.
 
 ## 4. Build/Lint/Test Commands (apps/api-cli/)
 
@@ -60,7 +65,11 @@ npm run db:generate && npm run db:migrate
 │   │   │   └── shared/      # Utilities
 │   │   └── tests/           # Unit & Functional tests
 │   └── web-client/          # Angular Application (DDD structure)
-├── docs/                    # Design docs & Architecture
+├── docs/                    
+|   |__ api                  # API Documentation (OpenAPI)
+|   |__ desing_docs          # Design docs & Architecture
+|   |__ bd                   # DB structure and initial data
+|
 └── docker/
 
 ```
@@ -103,6 +112,9 @@ npm run db:generate && npm run db:migrate
 * **Unit Tests:** Obligatorios para toda la lógica de negocio en el Domain Layer.
 * **Functional Tests:** Obligatorios para probar la integración de componentes y flujos de la API/Web.
 * **Patrón:** Seguir el formato `describe/it` con nombres claros: `should {expected behavior}`.
+
+### 8.1 Cosas a evitar en el testing.
+El agente no borrará ningún test que falle para hacer que pasen todos los tests.
 
 ### TDD Mandatory
 1. Write test FIRST → run → MUST FAIL
