@@ -13,9 +13,9 @@ import {
   DuplicateISBNError,
   DuplicateBookError,
   RequiredFieldError,
+  InvalidBookTypeError,
 } from '../../../../../../src/domain/errors/DomainErrors.js';
 import { InvalidISBNError } from '../../../../../../src/domain/value-objects/ISBN.js';
-import { InvalidBookTypeError } from '../../../../../../src/domain/value-objects/BookType.js';
 import { InvalidBookFormatError } from '../../../../../../src/domain/value-objects/BookFormat.js';
 import {
   EmbeddingServiceUnavailableError,
@@ -275,15 +275,8 @@ describe('BooksController', () => {
         expect(reply.status).toHaveBeenCalledWith(400);
       });
 
-      it('should return 400 when type is invalid', async () => {
-        const body = { ...validRequestBody, type: 'invalid-type' };
-        const request = createMockRequest(body);
-        const reply = createMockReply();
-
-        await controller.create(request, reply);
-
-        expect(reply.status).toHaveBeenCalledWith(400);
-      });
+      // Note: Type validation removed in TASK-005.
+      // Type validation will be done against database in TASK-010 (TypeRepository).
 
       it('should return 400 when format is invalid', async () => {
         const body = { ...validRequestBody, format: 'invalid-format' };

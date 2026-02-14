@@ -201,7 +201,9 @@ export class PostgresBookRepository implements BookRepository {
     const { book, embedding } = params;
 
     const normalizedTitle = normalizeForDuplicateCheck(book.title);
-    const normalizedAuthor = normalizeForDuplicateCheck(book.author);
+    // TRANSITIONAL: Join all author names for normalization
+    const authorNames = book.authors.map(a => a.name).join(', ');
+    const normalizedAuthor = normalizeForDuplicateCheck(authorNames);
 
     // Prepare book record
     const bookRecord = BookMapper.toPersistence({
@@ -347,12 +349,17 @@ export class PostgresBookRepository implements BookRepository {
       }
 
       // Check if it's a triad duplicate
+      // TRANSITIONAL: Use first author's name for error message
+      // Book.authors is guaranteed to have at least 1 element by domain validation
       if (errorMessage.includes('books_triad_unique_idx') || errorMessage.includes('triad')) {
-        throw new DuplicateBookError(book.author, book.title, book.format.value);
+        const firstAuthor = book.authors[0];
+        throw new DuplicateBookError(firstAuthor?.name ?? '', book.title, book.format.value);
       }
 
       // Generic duplicate error
-      throw new DuplicateBookError(book.author, book.title, book.format.value);
+      // TRANSITIONAL: Use first author's name for error message
+      const firstAuthor = book.authors[0];
+      throw new DuplicateBookError(firstAuthor?.name ?? '', book.title, book.format.value);
     }
 
     throw error;

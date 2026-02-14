@@ -4,6 +4,8 @@ import {
   normalizeForDuplicateCheck,
 } from '../../../../../src/infrastructure/driven/persistence/PostgresBookRepository.js';
 import { Book } from '../../../../../src/domain/entities/Book.js';
+import { Author } from '../../../../../src/domain/entities/Author.js';
+import { BookType } from '../../../../../src/domain/entities/BookType.js';
 import { Category } from '../../../../../src/domain/entities/Category.js';
 import {
   DuplicateISBNError,
@@ -48,6 +50,22 @@ describe('PostgresBookRepository', () => {
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   };
 
+  // Sample author for testing
+  const mockAuthor = Author.fromPersistence({
+    id: '550e8400-e29b-41d4-a716-446655440020',
+    name: 'Robert C. Martin',
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
+  });
+
+  // Sample book type for testing
+  const mockBookType = BookType.fromPersistence({
+    id: '550e8400-e29b-41d4-a716-446655440030',
+    name: 'technical',
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
+  });
+
   // Sample book database record
   const mockBookRecord: BookSelect = {
     id: '550e8400-e29b-41d4-a716-446655440001',
@@ -72,9 +90,9 @@ describe('PostgresBookRepository', () => {
       id: '550e8400-e29b-41d4-a716-446655440001',
       isbn: '9780132350884',
       title: 'Clean Code',
-      author: 'Robert C. Martin',
+      authors: [mockAuthor],
       description: 'A Handbook of Agile Software Craftsmanship',
-      type: 'technical',
+      type: mockBookType,
       format: 'pdf',
       categories: [mockCategory],
       available: true,

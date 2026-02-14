@@ -4,6 +4,8 @@ import {
   type CreateBookProps,
   type BookPersistenceProps,
 } from '../../../../src/domain/entities/Book.js';
+import { Author } from '../../../../src/domain/entities/Author.js';
+import { BookType } from '../../../../src/domain/entities/BookType.js';
 import { Category } from '../../../../src/domain/entities/Category.js';
 import {
   RequiredFieldError,
@@ -12,7 +14,6 @@ import {
   TooManyItemsError,
   DuplicateItemError,
 } from '../../../../src/domain/errors/DomainErrors.js';
-import { InvalidBookTypeError } from '../../../../src/domain/value-objects/BookType.js';
 import { InvalidBookFormatError } from '../../../../src/domain/value-objects/BookFormat.js';
 import { InvalidISBNError } from '../../../../src/domain/value-objects/ISBN.js';
 
@@ -21,10 +22,42 @@ describe('Book', () => {
   const validUUID = '550e8400-e29b-41d4-a716-446655440000';
   const validISBN = '9780132350884';
 
+  // Helper to create Author entities for testing
+  const createAuthor = (id: string, name: string): Author => {
+    return Author.create({ id, name });
+  };
+
+  // Helper to create BookType entities for testing
+  const createBookType = (id: string, name: string): BookType => {
+    return BookType.create({ id, name });
+  };
+
   // Helper to create Category entities for testing
   const createCategory = (id: string, name: string): Category => {
     return Category.create({ id, name });
   };
+
+  const robertMartin = createAuthor(
+    '880e8400-e29b-41d4-a716-446655440001',
+    'Robert C. Martin'
+  );
+  const martinFowler = createAuthor(
+    '990e8400-e29b-41d4-a716-446655440002',
+    'Martin Fowler'
+  );
+  const kentBeck = createAuthor(
+    'aa0e8400-e29b-41d4-a716-446655440003',
+    'Kent Beck'
+  );
+
+  const technicalType = createBookType(
+    'bb0e8400-e29b-41d4-a716-446655440001',
+    'technical'
+  );
+  const novelType = createBookType(
+    'cc0e8400-e29b-41d4-a716-446655440002',
+    'novel'
+  );
 
   const programmingCategory = createCategory(
     '110e8400-e29b-41d4-a716-446655440001',
@@ -42,8 +75,8 @@ describe('Book', () => {
   const createValidBookProps = (overrides?: Partial<CreateBookProps>): CreateBookProps => ({
     id: validUUID,
     title: 'Clean Code',
-    author: 'Robert C. Martin',
-    type: 'technical',
+    authors: [robertMartin],
+    type: technicalType,
     categories: [programmingCategory],
     format: 'pdf',
     description: 'A handbook of agile software craftsmanship',
@@ -55,8 +88,8 @@ describe('Book', () => {
   ): BookPersistenceProps => ({
     id: validUUID,
     title: 'Clean Code',
-    author: 'Robert C. Martin',
-    type: 'technical',
+    authors: [robertMartin],
+    type: technicalType,
     categories: [programmingCategory],
     format: 'pdf',
     isbn: null,
@@ -75,8 +108,9 @@ describe('Book', () => {
 
       expect(book.id).toBe(validUUID);
       expect(book.title).toBe('Clean Code');
-      expect(book.author).toBe('Robert C. Martin');
-      expect(book.type.value).toBe('technical');
+      expect(book.authors).toHaveLength(1);
+      expect(book.authors[0].name).toBe('Robert C. Martin');
+      expect(book.type.name).toBe('technical');
       expect(book.categories).toHaveLength(1);
       expect(book.categories[0].name).toBe('programming');
       expect(book.format.value).toBe('pdf');
@@ -102,16 +136,29 @@ describe('Book', () => {
       expect(book.path).toBe('/books/clean-code.pdf');
     });
 
+    it('should create a Book with multiple authors', () => {
+      const props = createValidBookProps({
+        authors: [robertMartin, martinFowler, kentBeck],
+      });
+
+      const book = Book.create(props);
+
+      expect(book.authors).toHaveLength(3);
+      expect(book.authors.map(a => a.name)).toEqual([
+        'Robert C. Martin',
+        'Martin Fowler',
+        'Kent Beck',
+      ]);
+    });
+
     it('should trim whitespace from string fields', () => {
       const props = createValidBookProps({
         title: '  Clean Code  ',
-        author: '  Robert C. Martin  ',
       });
 
       const book = Book.create(props);
 
       expect(book.title).toBe('Clean Code');
-      expect(book.author).toBe('Robert C. Martin');
     });
 
     it('should allow multiple categories', () => {
@@ -194,18 +241,60 @@ describe('Book', () => {
         });
       });
 
-      describe('author', () => {
-        it('should throw RequiredFieldError for empty author', () => {
-          expect(() => Book.create(createValidBookProps({ author: '' }))).toThrow(
-            RequiredFieldError
-          );
+      describe('authors', () => {
+        it('should throw RequiredFieldError for empty authors array', () => {
+          expect(() =>
+            Book.create(createValidBookProps({ authors: [] }))
+          ).toThrow(RequiredFieldError);
         });
 
-        it('should throw FieldTooLongError for author exceeding 300 chars', () => {
-          const longAuthor = 'A'.repeat(301);
+        it('should throw TooManyItemsError for more than 20 authors', () => {
+          const tooManyAuthors = Array.from({ length: 21 }, (_, i) =>
+            createAuthor(
+              `550e8400-e29b-41d4-a716-4466554400${i.toString().padStart(2, '0')}`,
+              `Author ${i}`
+            )
+          );
           expect(() =>
-            Book.create(createValidBookProps({ author: longAuthor }))
-          ).toThrow(FieldTooLongError);
+            Book.create(createValidBookProps({ authors: tooManyAuthors }))
+          ).toThrow(TooManyItemsError);
+        });
+
+        it('should throw DuplicateItemError for duplicate author IDs', () => {
+          const duplicateAuthor = createAuthor(
+            '880e8400-e29b-41d4-a716-446655440001', // Same ID as robertMartin
+            'Different Name'
+          );
+          expect(() =>
+            Book.create(createValidBookProps({
+              authors: [robertMartin, duplicateAuthor],
+            }))
+          ).toThrow(DuplicateItemError);
+        });
+
+        it('should accept exactly 20 authors', () => {
+          const twentyAuthors = Array.from({ length: 20 }, (_, i) =>
+            createAuthor(
+              `550e8400-e29b-41d4-a716-4466554400${i.toString().padStart(2, '0')}`,
+              `Author ${i}`
+            )
+          );
+          const book = Book.create(createValidBookProps({ authors: twentyAuthors }));
+          expect(book.authors).toHaveLength(20);
+        });
+      });
+
+      describe('type', () => {
+        it('should throw RequiredFieldError for null type', () => {
+          expect(() =>
+            Book.create(createValidBookProps({ type: null as unknown as BookType }))
+          ).toThrow(RequiredFieldError);
+        });
+
+        it('should throw RequiredFieldError for undefined type', () => {
+          expect(() =>
+            Book.create(createValidBookProps({ type: undefined as unknown as BookType }))
+          ).toThrow(RequiredFieldError);
         });
       });
 
@@ -249,14 +338,6 @@ describe('Book', () => {
           );
           const book = Book.create(createValidBookProps({ categories: tenCategories }));
           expect(book.categories).toHaveLength(10);
-        });
-      });
-
-      describe('type', () => {
-        it('should throw InvalidBookTypeError for invalid type', () => {
-          expect(() =>
-            Book.create(createValidBookProps({ type: 'invalid' }))
-          ).toThrow(InvalidBookTypeError);
         });
       });
 
@@ -357,7 +438,9 @@ describe('Book', () => {
 
       expect(book.id).toBe(validUUID);
       expect(book.title).toBe('Clean Code');
-      expect(book.type.value).toBe('technical');
+      expect(book.authors).toHaveLength(1);
+      expect(book.authors[0].name).toBe('Robert C. Martin');
+      expect(book.type.name).toBe('technical');
       expect(book.categories).toHaveLength(1);
       expect(book.available).toBe(false);
       expect(book.path).toBeNull();
@@ -369,6 +452,7 @@ describe('Book', () => {
         description: 'A great book',
         available: true,
         path: '/books/clean-code.pdf',
+        authors: [robertMartin, martinFowler],
         categories: [programmingCategory, softwareCategory],
       });
 
@@ -378,6 +462,7 @@ describe('Book', () => {
       expect(book.description).toBe('A great book');
       expect(book.available).toBe(true);
       expect(book.path).toBe('/books/clean-code.pdf');
+      expect(book.authors).toHaveLength(2);
       expect(book.categories).toHaveLength(2);
     });
   });
@@ -400,14 +485,15 @@ describe('Book', () => {
       expect(book.title).toBe('Clean Code'); // Original unchanged
     });
 
-    it('should update author', () => {
-      const updated = book.update({ author: 'New Author' });
-      expect(updated.author).toBe('New Author');
+    it('should update authors', () => {
+      const updated = book.update({ authors: [martinFowler, kentBeck] });
+      expect(updated.authors).toHaveLength(2);
+      expect(updated.authors.map(a => a.name)).toEqual(['Martin Fowler', 'Kent Beck']);
     });
 
     it('should update type', () => {
-      const updated = book.update({ type: 'novel' });
-      expect(updated.type.value).toBe('novel');
+      const updated = book.update({ type: novelType });
+      expect(updated.type.name).toBe('novel');
     });
 
     it('should update categories', () => {
@@ -475,20 +561,20 @@ describe('Book', () => {
     it('should update multiple fields at once', () => {
       const updated = book.update({
         title: 'New Title',
-        author: 'New Author',
+        authors: [martinFowler],
         description: 'New Description',
       });
 
       expect(updated.title).toBe('New Title');
-      expect(updated.author).toBe('New Author');
+      expect(updated.authors[0].name).toBe('Martin Fowler');
       expect(updated.description).toBe('New Description');
     });
 
     it('should preserve unchanged fields', () => {
       const updated = book.update({ title: 'New Title' });
 
-      expect(updated.author).toBe(book.author);
-      expect(updated.type.value).toBe(book.type.value);
+      expect(updated.authors).toHaveLength(book.authors.length);
+      expect(updated.type.name).toBe(book.type.name);
       expect(updated.categories).toHaveLength(book.categories.length);
       expect(updated.format.value).toBe(book.format.value);
       expect(updated.available).toBe(book.available);
@@ -513,7 +599,10 @@ describe('Book', () => {
 
     it('should validate updated fields', () => {
       expect(() => book.update({ title: '' })).toThrow(RequiredFieldError);
-      expect(() => book.update({ type: 'invalid' })).toThrow(InvalidBookTypeError);
+    });
+
+    it('should throw RequiredFieldError for empty authors on update', () => {
+      expect(() => book.update({ authors: [] })).toThrow(RequiredFieldError);
     });
 
     it('should throw RequiredFieldError for empty description on update', () => {
@@ -526,8 +615,9 @@ describe('Book', () => {
   });
 
   describe('getTextForEmbedding', () => {
-    it('should combine title, author, type, category names, and description', () => {
+    it('should combine title, all author names, type, category names, and description', () => {
       const book = Book.create(createValidBookProps({
+        authors: [robertMartin, martinFowler],
         categories: [programmingCategory, softwareCategory],
         description: 'A great book about clean code',
       }));
@@ -535,10 +625,22 @@ describe('Book', () => {
 
       expect(text).toContain('Clean Code');
       expect(text).toContain('Robert C. Martin');
+      expect(text).toContain('Martin Fowler');
       expect(text).toContain('technical');
       expect(text).toContain('programming');
       expect(text).toContain('software engineering');
       expect(text).toContain('A great book about clean code');
+    });
+
+    it('should concatenate multiple authors in embedding text', () => {
+      const book = Book.create(createValidBookProps({
+        authors: [robertMartin, martinFowler, kentBeck],
+        description: 'Short description',
+      }));
+      const text = book.getTextForEmbedding();
+
+      // Verify all authors are included
+      expect(text).toBe('Clean Code Robert C. Martin Martin Fowler Kent Beck technical programming Short description');
     });
 
     it('should always include description in embedding text', () => {

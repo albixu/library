@@ -37,14 +37,7 @@ export {
 } from './entities/index.js';
 
 // Value Objects
-/**
- * @deprecated BookType VO is being replaced by BookTypeEntity.
- * Use BookTypeEntity from entities for new code.
- */
 export {
-  BookType,
-  BOOK_TYPES,
-  type BookTypeValue,
   BookFormat,
   BOOK_FORMATS,
   type BookFormatValue,

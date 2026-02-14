@@ -11,10 +11,17 @@
  * 4. Create Book entity with validated fields and categories
  * 5. Generate embedding from book text
  * 6. Persist book with embedding atomically
+ *
+ * TRANSITIONAL STATE:
+ * The Book entity now uses `authors: Author[]` and `type: BookType` (entity),
+ * but the API input still accepts `author: string` and `type: string`.
+ * This use case creates temporary Author and BookType entities from the string inputs
+ * until TASK-010 (full use case update) and the infrastructure layers are updated.
  */
 
 import { Book } from '../../domain/entities/Book.js';
-import { BookType } from '../../domain/value-objects/BookType.js';
+import { Author } from '../../domain/entities/Author.js';
+import { BookType } from '../../domain/entities/BookType.js';
 import { BookFormat } from '../../domain/value-objects/BookFormat.js';
 import { ISBN } from '../../domain/value-objects/ISBN.js';
 import { generateUUID } from '../../shared/utils/uuid.js';
@@ -136,7 +143,7 @@ export class CreateBookUseCase {
 
     // 1. Validate and normalize fields needed for duplicate detection
     //    This provides early validation and normalization without persisting anything
-    const bookType = BookType.create(input.type);
+    //    NOTE: Type validation will be done against DB in TASK-010 via TypeRepository.findByName()
     const bookFormat = BookFormat.create(input.format);
     const bookIsbn = input.isbn ? ISBN.create(input.isbn) : null;
 
@@ -181,13 +188,26 @@ export class CreateBookUseCase {
       categories: categories.map((c) => c.name),
     });
 
-    // 4. Create Book entity with validated fields and categories
+    // 4. Create Author and BookType entities for the Book
+    //    TRANSITIONAL: Creates temporary entities from string inputs.
+    //    In TASK-010, this will use AuthorRepository.findOrCreate() and TypeRepository.findByName()
+    const authorEntity = Author.create({
+      id: generateUUID(),
+      name: input.author,
+    });
+
+    const bookTypeEntity = BookType.create({
+      id: generateUUID(),
+      name: input.type,
+    });
+
+    // 5. Create Book entity with validated fields and categories
     const book = Book.create({
       id: generateUUID(),
       title: input.title,
-      author: input.author,
+      authors: [authorEntity],
       description: input.description,
-      type: input.type,
+      type: bookTypeEntity,
       categories,
       format: input.format,
       isbn: input.isbn,
@@ -195,7 +215,7 @@ export class CreateBookUseCase {
       path: input.path,
     });
 
-    // 5. Generate embedding text and validate length
+    // 6. Generate embedding text and validate length
     const embeddingText = book.getTextForEmbedding();
 
     if (embeddingText.length > MAX_EMBEDDING_TEXT_LENGTH) {
@@ -209,7 +229,7 @@ export class CreateBookUseCase {
       );
     }
 
-    // 6. Generate embedding (may throw EmbeddingServiceUnavailableError)
+    // 7. Generate embedding (may throw EmbeddingServiceUnavailableError)
     this.logger.debug('Generating embedding', {
       textLength: embeddingText.length,
     });
@@ -226,7 +246,7 @@ export class CreateBookUseCase {
       throw error;
     }
 
-    // 7. Persist book with embedding atomically
+    // 8. Persist book with embedding atomically
     const savedBook = await this.bookRepository.save({
       book,
       embedding: embeddingResult.embedding,
@@ -235,23 +255,31 @@ export class CreateBookUseCase {
     this.logger.info('Book created successfully', {
       bookId: savedBook.id,
       title: savedBook.title,
-      author: savedBook.author,
+      authors: savedBook.authors.map(a => a.name),
     });
 
-    // 8. Return output DTO
+    // 9. Return output DTO
     return this.toOutput(savedBook);
   }
 
   /**
    * Converts a Book entity to the output DTO
+   *
+   * TRANSITIONAL: Returns first author's name as 'author' string for backward compatibility.
+   * In TASK-010, this will return 'authors' array matching the new API response format.
    */
   private toOutput(book: Book): CreateBookOutput {
+    // TRANSITIONAL: Return first author's name for backward compatibility
+    // Book.authors is guaranteed to have at least 1 element by domain validation
+    const firstAuthor = book.authors[0];
+    const authorName = firstAuthor?.name ?? '';
+
     return {
       id: book.id,
       title: book.title,
-      author: book.author,
+      author: authorName,
       description: book.description,
-      type: book.type.value,
+      type: book.type.name, // BookType entity has .name property
       categories: book.categories.map((c) => ({ id: c.id, name: c.name })),
       format: book.format.value,
       isbn: book.isbn?.value ?? null,
