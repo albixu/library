@@ -8,13 +8,8 @@
  * - Successful book creation (201)
  * - Validation errors (400)
  * - Duplicate ISBN conflict (409)
- * - Duplicate book triad conflict (409)
  * - Embedding service unavailable (503)
  * - Response format verification (no embedding exposed)
- *
- * NOTE: Some tests are SKIPPED until TASK-010 is completed.
- * TASK-010 will add TypeRepository.findByName() and AuthorRepository.findOrCreate()
- * which are required for the CreateBookUseCase to work with the new schema.
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
@@ -43,7 +38,7 @@ describe('POST /api/books (E2E)', () => {
 
   // SKIPPED: Waiting for TASK-010 (TypeRepository + AuthorRepository)
   // Currently CreateBookUseCase creates BookType with generated UUID that doesn't exist in DB
-  describe.skip('Successful Creation', () => {
+  describe('Successful Creation', () => {
     it('should create a book and return 201 with book data', async () => {
       const uniqueISBN = generateUniqueISBN();
       const bookData = {
@@ -234,7 +229,25 @@ describe('POST /api/books (E2E)', () => {
     });
 
     // Note: Type validation removed in TASK-005.
-    // Type validation will be done against database in TASK-010 (TypeRepository).
+    // Type validation against database now done via TypeRepository (TASK-010).
+
+    it('should return 400 when type is invalid', async () => {
+      const bookData = {
+        ...e2eFixtures.validBook,
+        type: 'nonexistent_type',
+      };
+
+      const response = await fetch(`${E2E_BASE_URL}/api/books`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookData),
+      });
+
+      expect(response.status).toBe(400);
+
+      const body = await response.json();
+      expect(body).toHaveProperty('error');
+    });
 
     it('should return 400 when format is invalid', async () => {
       const bookData = {
@@ -273,9 +286,8 @@ describe('POST /api/books (E2E)', () => {
     });
   });
 
-  // SKIPPED: Waiting for TASK-010 (TypeRepository + AuthorRepository)
-  // Tests require successful book creation which depends on TypeRepository
-  describe.skip('Conflict Errors (409)', () => {
+  // Tests for ISBN duplicate - triad duplicate detection was removed with multi-author model
+  describe('Conflict Errors (409)', () => {
     it('should return 409 when ISBN already exists', async () => {
       const isbn = generateUniqueISBN();
       const bookData = {
@@ -312,7 +324,9 @@ describe('POST /api/books (E2E)', () => {
       expect(body.error.toLowerCase()).toContain('isbn');
     });
 
-    it('should return 409 when title/author/format triad is duplicated', async () => {
+    it('should allow same title/author/format without ISBN (no triad check)', async () => {
+      // With multi-author model, triad duplicate detection has been removed
+      // Books without ISBN are considered unique (user responsibility)
       const bookData = {
         title: 'Unique Triad Book',
         author: 'Unique Author',
@@ -330,12 +344,10 @@ describe('POST /api/books (E2E)', () => {
       });
       expect(response1.status).toBe(201);
 
-      // Attempt to create duplicate with same author/title/format triad
-      // (different type and categories don't matter - format is the key)
+      // Create second book with same author/title/format - should succeed now
       const duplicateBook = {
         ...bookData,
         description: 'Second book with same triad.',
-        type: 'novel', // Different type doesn't prevent duplicate
         categories: ['Other Category'],
       };
 
@@ -345,10 +357,8 @@ describe('POST /api/books (E2E)', () => {
         body: JSON.stringify(duplicateBook),
       });
 
-      expect(response2.status).toBe(409);
-
-      const body = await response2.json();
-      expect(body).toHaveProperty('error');
+      // Should now succeed (201) instead of conflict (409)
+      expect(response2.status).toBe(201);
     });
   });
 

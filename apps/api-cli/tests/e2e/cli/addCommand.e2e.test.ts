@@ -12,10 +12,6 @@
  * - Missing required field (exit 1)
  * - Duplicate ISBN (exit 1)
  * - Embedding service unavailable (exit 1)
- *
- * NOTE: Some tests are SKIPPED until TASK-010 is completed.
- * TASK-010 will add TypeRepository.findByName() and AuthorRepository.findOrCreate()
- * which are required for the CreateBookUseCase to work with the new schema.
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
@@ -48,9 +44,8 @@ describe('CLI add command (E2E)', () => {
     await clearTestData(db);
   });
 
-  // SKIPPED: Waiting for TASK-010 (TypeRepository + AuthorRepository)
-  // Currently CreateBookUseCase creates BookType with generated UUID that doesn't exist in DB
-  describe.skip('Successful Creation', () => {
+  // Tests now enabled - TypeRepository and AuthorRepository implemented
+  describe('Successful Creation', () => {
     it('should create a book and exit with code 0', async () => {
       const isbn = generateUniqueISBN();
 
@@ -122,7 +117,7 @@ describe('CLI add command (E2E)', () => {
           '-t', 'Minimal CLI Book',
           '-a', 'Minimal Author',
           '-d', 'A book with only required fields.',
-          '-T', 'essay',
+          '-T', 'biography',
           '-f', 'txt',
           '-c', 'Minimal',
         ],
@@ -237,9 +232,8 @@ describe('CLI add command (E2E)', () => {
     });
   });
 
-  // SKIPPED: Waiting for TASK-010 (TypeRepository + AuthorRepository)
-  // Tests require successful book creation which depends on TypeRepository
-  describe.skip('Duplicate Detection', () => {
+  // Tests for ISBN duplicate - triad duplicate detection was removed with multi-author model
+  describe('Duplicate Detection', () => {
     it('should exit with code 1 when ISBN already exists', async () => {
       const isbn = generateUniqueISBN();
 
@@ -278,7 +272,8 @@ describe('CLI add command (E2E)', () => {
       expect(result2.stderr.toLowerCase()).toContain('isbn');
     });
 
-    it('should exit with code 1 when title/author/format triad is duplicated', async () => {
+    it('should allow same title/author/format without ISBN (no triad check)', async () => {
+      // With multi-author model, triad duplicate detection has been removed
       // First book
       const result1 = await executeCli(
         [
@@ -294,30 +289,42 @@ describe('CLI add command (E2E)', () => {
       );
       expect(result1.exitCode).toBe(0);
 
-      // Second book with same author/title/format triad
-      // (different type doesn't prevent duplicate - format is the key)
+      // Second book with same author/title/format triad - should succeed now
       const result2 = await executeCli(
         [
           'add',
           '-t', 'CLI Triad Book',
           '-a', 'CLI Triad Author',
           '-d', 'Second book with same triad.',
-          '-T', 'novel', // Different type doesn't matter
-          '-f', 'pdf', // Same format = duplicate
+          '-T', 'novel',
+          '-f', 'pdf',
           '-c', 'Other Category',
         ],
         { cwd: cliCwd }
       );
 
-      expect(result2.exitCode).toBe(1);
-      // Error should mention duplicate or already exists (Spanish: "ya existe")
-      expect(result2.stderr.toLowerCase()).toMatch(/duplicate|already exists|conflict|ya existe/);
+      // Should now succeed (exit 0) instead of failing
+      expect(result2.exitCode).toBe(0);
     });
   });
 
   describe('Invalid Input Values', () => {
-    // Note: Type validation removed in TASK-005.
-    // Type validation will be done against database in TASK-010 (TypeRepository).
+    it('should exit with code 1 when type is invalid', async () => {
+      const result = await executeCli(
+        [
+          'add',
+          '-t', 'Invalid Type Book',
+          '-a', 'Author',
+          '-d', 'Description',
+          '-T', 'nonexistent_type',
+          '-f', 'pdf',
+          '-c', 'Testing',
+        ],
+        { cwd: cliCwd }
+      );
+
+      expect(result.exitCode).toBe(1);
+    });
 
     it('should exit with code 1 when format is invalid', async () => {
       const result = await executeCli(

@@ -18,6 +18,8 @@ import { CreateBookUseCase } from './application/use-cases/CreateBookUseCase.js'
 import { OllamaEmbeddingService } from './infrastructure/driven/embedding/OllamaEmbeddingService.js';
 import { PostgresBookRepository } from './infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from './infrastructure/driven/persistence/PostgresCategoryRepository.js';
+import { PostgresTypeRepository } from './infrastructure/driven/persistence/PostgresTypeRepository.js';
+import { PostgresAuthorRepository } from './infrastructure/driven/persistence/PostgresAuthorRepository.js';
 import { createLogger } from './infrastructure/driven/logging/PinoLogger.js';
 import { createAddCommand } from './infrastructure/driver/cli/commands/add.js';
 import * as schema from './infrastructure/driven/persistence/drizzle/schema.js';
@@ -61,11 +63,15 @@ async function createCLI(): Promise<Command> {
 
   const bookRepository = new PostgresBookRepository(db);
   const categoryRepository = new PostgresCategoryRepository(db);
+  const typeRepository = new PostgresTypeRepository(db);
+  const authorRepository = new PostgresAuthorRepository(db);
 
   // Create use cases
   const createBookUseCase = new CreateBookUseCase({
     bookRepository,
     categoryRepository,
+    typeRepository,
+    authorRepository,
     embeddingService,
     logger,
   });
