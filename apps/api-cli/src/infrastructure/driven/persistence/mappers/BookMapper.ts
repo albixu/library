@@ -4,30 +4,31 @@
  * Maps between domain Book entities and database representations.
  * Follows the Data Mapper pattern for clean separation of concerns.
  *
- * Note: The Book entity requires Category entities for reconstruction,
- * so the mapper needs to receive categories as an additional parameter
- * when converting from persistence.
+ * The Book entity requires Author, BookType, and Category entities for reconstruction,
+ * so the mapper needs to receive these as additional parameters when converting
+ * from persistence.
  *
- * TRANSITIONAL STATE:
- * The Book entity now uses `authors: Author[]` and `type: BookType` (entity),
- * but the database still uses `author: string` and `type: string`.
- * This mapper handles the conversion between formats until TASK-006 (DB schema)
- * and TASK-009 (full repository update) are completed.
+ * HU-002 CHANGES:
+ * - Book now uses `authors: Author[]` (N:M via book_authors table)
+ * - Book now uses `type: BookType` entity (N:1 via type_id FK)
+ * - Database schema uses type_id instead of type string
+ * - author/normalized_author columns removed from books table
  */
 
 import { Book, type BookPersistenceProps } from '../../../../domain/entities/Book.js';
-import { Author } from '../../../../domain/entities/Author.js';
-import { BookType } from '../../../../domain/entities/BookType.js';
+import type { Author } from '../../../../domain/entities/Author.js';
+import type { BookType } from '../../../../domain/entities/BookType.js';
 import type { BookFormat } from '../../../../domain/value-objects/BookFormat.js';
 import type { Category } from '../../../../domain/entities/Category.js';
 import type { BookSelect, BookInsert } from '../drizzle/schema.js';
-import { generateUUID } from '../../../../shared/utils/uuid.js';
 
 /**
- * Extended book record that includes categories
- * Used when fetching books with their related categories
+ * Extended book record that includes related entities
+ * Used when fetching books with their relations
  */
-export interface BookWithCategories extends BookSelect {
+export interface BookWithRelations extends BookSelect {
+  authors: Author[];
+  type: BookType;
   categories: Category[];
 }
 
@@ -38,7 +39,6 @@ export interface BookToPersistenceParams {
   book: Book;
   embedding: number[];
   normalizedTitle: string;
-  normalizedAuthor: string;
 }
 
 /**
@@ -48,40 +48,25 @@ export const BookMapper = {
   /**
    * Converts a database record to a domain Book entity
    *
-   * TRANSITIONAL: Creates a single Author entity from the author string column,
-   * and a BookType entity from the type string column.
-   * This will be updated in TASK-009 when the DB schema supports multiple authors.
-   *
    * @param record - The database record from Drizzle
-   * @param categories - The associated Category entities
+   * @param authors - The associated Author entities (from book_authors)
+   * @param type - The associated BookType entity (from types via type_id)
+   * @param categories - The associated Category entities (from book_categories)
    * @returns Book domain entity
    */
-  toDomain(record: BookSelect, categories: Category[]): Book {
-    // TRANSITIONAL: Convert single author string to Author entity array
-    // In TASK-009, this will read from the authors junction table
-    const authorEntity = Author.fromPersistence({
-      id: generateUUID(), // Temporary ID until authors table exists
-      name: record.author,
-      createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
-    });
-
-    // TRANSITIONAL: Convert type string to BookType entity
-    // In TASK-009, this will read from the types table via type_id FK
-    const bookTypeEntity = BookType.fromPersistence({
-      id: generateUUID(), // Temporary ID until types table exists
-      name: record.type,
-      createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
-    });
-
+  toDomain(
+    record: BookSelect,
+    authors: Author[],
+    type: BookType,
+    categories: Category[]
+  ): Book {
     const props: BookPersistenceProps = {
       id: record.id,
       isbn: record.isbn,
       title: record.title,
-      authors: [authorEntity],
+      authors: authors,
       description: record.description,
-      type: bookTypeEntity,
+      type: type,
       format: record.format as BookFormat['value'],
       categories: categories,
       available: record.available,
@@ -95,45 +80,40 @@ export const BookMapper = {
   /**
    * Converts a domain Book entity to a database insert record
    *
-   * TRANSITIONAL: Extracts the first author's name for the author column,
-   * and the type name for the type column.
-   * This will be updated in TASK-009 when the DB schema supports multiple authors.
+   * Note: This only returns the books table record.
+   * The book_authors and book_categories relations must be inserted separately.
    *
-   * @param params - The book, embedding, and normalized fields
-   * @returns Database insert record
+   * @param params - The book, embedding, and normalized title
+   * @returns Database insert record for books table
    */
   toPersistence(params: BookToPersistenceParams): BookInsert {
-    const { book, embedding, normalizedTitle, normalizedAuthor } = params;
-
-    // TRANSITIONAL: Join all author names for storage in single column
-    // In TASK-009, this will insert into the book_authors junction table
-    const authorString = book.authors.map(a => a.name).join(', ');
+    const { book, embedding, normalizedTitle } = params;
 
     return {
       id: book.id,
       isbn: book.isbn?.value ?? null,
       title: book.title,
-      author: authorString,
       description: book.description,
-      type: book.type.name, // BookType entity has .name property
+      typeId: book.type.id, // FK to types table
       format: book.format.value,
       available: book.available,
       path: book.path,
       embedding: embedding,
       normalizedTitle: normalizedTitle,
-      normalizedAuthor: normalizedAuthor,
       createdAt: book.createdAt,
       updatedAt: book.updatedAt,
     };
   },
 
   /**
-   * Converts multiple database records to domain entities
+   * Converts multiple database records with relations to domain entities
    *
-   * @param records - Array of database records with their categories
+   * @param records - Array of database records with their relations
    * @returns Array of Book domain entities
    */
-  toDomainList(records: BookWithCategories[]): Book[] {
-    return records.map((record) => BookMapper.toDomain(record, record.categories));
+  toDomainList(records: BookWithRelations[]): Book[] {
+    return records.map((record) =>
+      BookMapper.toDomain(record, record.authors, record.type, record.categories)
+    );
   },
 };

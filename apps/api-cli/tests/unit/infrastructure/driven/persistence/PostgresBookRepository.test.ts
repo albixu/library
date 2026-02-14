@@ -9,10 +9,9 @@ import { BookType } from '../../../../../src/domain/entities/BookType.js';
 import { Category } from '../../../../../src/domain/entities/Category.js';
 import {
   DuplicateISBNError,
-  DuplicateBookError,
   BookNotFoundError,
 } from '../../../../../src/domain/errors/DomainErrors.js';
-import type { BookSelect, CategorySelect } from '../../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
+import type { BookSelect, CategorySelect, AuthorSelect, TypeSelect } from '../../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 
 // Mock Drizzle database
 type MockDb = {
@@ -24,6 +23,9 @@ type MockDb = {
     books: {
       findFirst: ReturnType<typeof vi.fn>;
       findMany: ReturnType<typeof vi.fn>;
+    };
+    types: {
+      findFirst: ReturnType<typeof vi.fn>;
     };
   };
   transaction: ReturnType<typeof vi.fn>;
@@ -58,6 +60,13 @@ describe('PostgresBookRepository', () => {
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   });
 
+  const mockAuthorRecord: AuthorSelect = {
+    id: '550e8400-e29b-41d4-a716-446655440020',
+    name: 'Robert C. Martin',
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
+  };
+
   // Sample book type for testing
   const mockBookType = BookType.fromPersistence({
     id: '550e8400-e29b-41d4-a716-446655440030',
@@ -66,20 +75,25 @@ describe('PostgresBookRepository', () => {
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   });
 
-  // Sample book database record
+  const mockBookTypeRecord: TypeSelect = {
+    id: '550e8400-e29b-41d4-a716-446655440030',
+    name: 'technical',
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
+  };
+
+  // Sample book database record (new schema without author/normalizedAuthor, with typeId)
   const mockBookRecord: BookSelect = {
     id: '550e8400-e29b-41d4-a716-446655440001',
     isbn: '9780132350884',
     title: 'Clean Code',
-    author: 'Robert C. Martin',
     description: 'A Handbook of Agile Software Craftsmanship',
-    type: 'technical',
+    typeId: '550e8400-e29b-41d4-a716-446655440030',
     format: 'pdf',
     available: true,
     path: '/books/clean-code.pdf',
     embedding: Array(768).fill(0.1),
     normalizedTitle: 'clean code',
-    normalizedAuthor: 'robert c martin',
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   };
@@ -128,6 +142,9 @@ describe('PostgresBookRepository', () => {
           findFirst: vi.fn(),
           findMany: vi.fn(),
         },
+        types: {
+          findFirst: vi.fn().mockResolvedValue(mockBookTypeRecord),
+        },
       },
       transaction: vi.fn((fn) => fn(mockDb)),
     };
@@ -168,12 +185,22 @@ describe('PostgresBookRepository', () => {
   describe('findById', () => {
     it('should return book when found', async () => {
       mockDb.query.books.findFirst.mockResolvedValue(mockBookRecord);
+      mockDb.query.types.findFirst.mockResolvedValue(mockBookTypeRecord);
 
-      // Mock the categories fetch
+      // Mock select for authors, types, and categories fetches
+      // The repository calls select().from().innerJoin().where() for each relation
+      let callCount = 0;
       const selectChain = {
         from: vi.fn().mockReturnThis(),
         innerJoin: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([{ categories: mockCategoryRecord }]),
+        where: vi.fn().mockImplementation(() => {
+          callCount++;
+          // First call: authors, Second call: categories
+          if (callCount === 1) {
+            return Promise.resolve([{ authors: mockAuthorRecord }]);
+          }
+          return Promise.resolve([{ categories: mockCategoryRecord }]);
+        }),
       };
       mockDb.select.mockReturnValue(selectChain);
 
@@ -182,6 +209,9 @@ describe('PostgresBookRepository', () => {
       expect(result).not.toBeNull();
       expect(result?.id).toBe(mockBookRecord.id);
       expect(result?.title).toBe('Clean Code');
+      expect(result?.authors).toHaveLength(1);
+      expect(result?.authors[0].name).toBe('Robert C. Martin');
+      expect(result?.type.name).toBe('technical');
       expect(result?.categories).toHaveLength(1);
     });
 
@@ -197,11 +227,19 @@ describe('PostgresBookRepository', () => {
   describe('findByIsbn', () => {
     it('should return book when found by ISBN', async () => {
       mockDb.query.books.findFirst.mockResolvedValue(mockBookRecord);
+      mockDb.query.types.findFirst.mockResolvedValue(mockBookTypeRecord);
 
+      let callCount = 0;
       const selectChain = {
         from: vi.fn().mockReturnThis(),
         innerJoin: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([{ categories: mockCategoryRecord }]),
+        where: vi.fn().mockImplementation(() => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve([{ authors: mockAuthorRecord }]);
+          }
+          return Promise.resolve([{ categories: mockCategoryRecord }]);
+        }),
       };
       mockDb.select.mockReturnValue(selectChain);
 
@@ -246,32 +284,6 @@ describe('PostgresBookRepository', () => {
     });
   });
 
-  describe('existsByTriad', () => {
-    it('should return true when triad exists', async () => {
-      const selectChain = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([{ count: 1 }]),
-      };
-      mockDb.select.mockReturnValue(selectChain);
-
-      const result = await repository.existsByTriad('robert c martin', 'clean code', 'pdf');
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false when triad does not exist', async () => {
-      const selectChain = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([{ count: 0 }]),
-      };
-      mockDb.select.mockReturnValue(selectChain);
-
-      const result = await repository.existsByTriad('unknown author', 'unknown title', 'pdf');
-
-      expect(result).toBe(false);
-    });
-  });
-
   describe('checkDuplicate', () => {
     it('should detect ISBN duplicate', async () => {
       // existsByIsbn returns true
@@ -283,9 +295,6 @@ describe('PostgresBookRepository', () => {
 
       const result = await repository.checkDuplicate({
         isbn: '9780132350884',
-        author: 'robert c martin',
-        title: 'clean code',
-        format: 'pdf',
       });
 
       expect(result.isDuplicate).toBe(true);
@@ -293,24 +302,7 @@ describe('PostgresBookRepository', () => {
       expect(result.message).toContain('9780132350884');
     });
 
-    it('should detect triad duplicate when no ISBN', async () => {
-      const selectChain = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([{ count: 1 }]),
-      };
-      mockDb.select.mockReturnValue(selectChain);
-
-      const result = await repository.checkDuplicate({
-        author: 'robert c martin',
-        title: 'clean code',
-        format: 'pdf',
-      });
-
-      expect(result.isDuplicate).toBe(true);
-      expect(result.duplicateType).toBe('triad');
-    });
-
-    it('should return no duplicate when book is unique', async () => {
+    it('should return no duplicate when ISBN does not exist', async () => {
       const selectChain = {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockResolvedValue([{ count: 0 }]),
@@ -319,10 +311,21 @@ describe('PostgresBookRepository', () => {
 
       const result = await repository.checkDuplicate({
         isbn: '9781234567890',
-        author: 'new author',
-        title: 'new title',
-        format: 'epub',
       });
+
+      expect(result.isDuplicate).toBe(false);
+      expect(result.duplicateType).toBeUndefined();
+    });
+
+    it('should return no duplicate when no ISBN provided', async () => {
+      const result = await repository.checkDuplicate({});
+
+      expect(result.isDuplicate).toBe(false);
+      expect(result.duplicateType).toBeUndefined();
+    });
+
+    it('should return no duplicate when ISBN is null', async () => {
+      const result = await repository.checkDuplicate({ isbn: null });
 
       expect(result.isDuplicate).toBe(false);
       expect(result.duplicateType).toBeUndefined();
@@ -330,7 +333,7 @@ describe('PostgresBookRepository', () => {
   });
 
   describe('save', () => {
-    it('should save book with embedding and categories', async () => {
+    it('should save book with embedding, authors, and categories', async () => {
       const book = createMockBook();
       const embedding = Array(768).fill(0.1);
 
@@ -338,6 +341,12 @@ describe('PostgresBookRepository', () => {
       const bookInsertChain = {
         values: vi.fn().mockReturnThis(),
         returning: vi.fn().mockResolvedValue([mockBookRecord]),
+      };
+
+      // Mock insert chain for book_authors
+      const authorInsertChain = {
+        values: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockResolvedValue([]),
       };
 
       // Mock insert chain for book_categories
@@ -348,6 +357,7 @@ describe('PostgresBookRepository', () => {
 
       mockDb.insert
         .mockReturnValueOnce(bookInsertChain)
+        .mockReturnValueOnce(authorInsertChain)
         .mockReturnValueOnce(categoryInsertChain);
 
       const result = await repository.save({ book, embedding });
@@ -371,19 +381,19 @@ describe('PostgresBookRepository', () => {
       await expect(repository.save({ book, embedding })).rejects.toThrow(DuplicateISBNError);
     });
 
-    it('should throw DuplicateBookError on triad conflict', async () => {
+    it('should throw DuplicateISBNError on generic duplicate key error', async () => {
       const book = createMockBook();
       const embedding = Array(768).fill(0.1);
 
       const bookInsertChain = {
         values: vi.fn().mockReturnThis(),
         returning: vi.fn().mockRejectedValue(
-          new Error('duplicate key value violates unique constraint "books_triad_unique_idx"')
+          new Error('duplicate key value violates unique constraint')
         ),
       };
       mockDb.insert.mockReturnValue(bookInsertChain);
 
-      await expect(repository.save({ book, embedding })).rejects.toThrow(DuplicateBookError);
+      await expect(repository.save({ book, embedding })).rejects.toThrow(DuplicateISBNError);
     });
   });
 
@@ -396,12 +406,20 @@ describe('PostgresBookRepository', () => {
         returning: vi.fn().mockResolvedValue([updatedRecord]),
       };
       mockDb.update.mockReturnValue(updateChain);
+      mockDb.query.types.findFirst.mockResolvedValue(mockBookTypeRecord);
 
-      // Mock categories fetch
+      // Mock select for authors and categories fetch
+      let callCount = 0;
       const selectChain = {
         from: vi.fn().mockReturnThis(),
         innerJoin: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([{ categories: mockCategoryRecord }]),
+        where: vi.fn().mockImplementation(() => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve([{ authors: mockAuthorRecord }]);
+          }
+          return Promise.resolve([{ categories: mockCategoryRecord }]);
+        }),
       };
       mockDb.select.mockReturnValue(selectChain);
 
@@ -421,11 +439,19 @@ describe('PostgresBookRepository', () => {
         returning: vi.fn().mockResolvedValue([updatedRecord]),
       };
       mockDb.update.mockReturnValue(updateChain);
+      mockDb.query.types.findFirst.mockResolvedValue(mockBookTypeRecord);
 
+      let callCount = 0;
       const selectChain = {
         from: vi.fn().mockReturnThis(),
         innerJoin: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([{ categories: mockCategoryRecord }]),
+        where: vi.fn().mockImplementation(() => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve([{ authors: mockAuthorRecord }]);
+          }
+          return Promise.resolve([{ categories: mockCategoryRecord }]);
+        }),
       };
       mockDb.select.mockReturnValue(selectChain);
 
@@ -474,13 +500,21 @@ describe('PostgresBookRepository', () => {
   });
 
   describe('findAll', () => {
-    it('should return all books with categories', async () => {
+    it('should return all books with authors, type, and categories', async () => {
       mockDb.query.books.findMany.mockResolvedValue([mockBookRecord]);
+      mockDb.query.types.findFirst.mockResolvedValue(mockBookTypeRecord);
 
+      let callCount = 0;
       const selectChain = {
         from: vi.fn().mockReturnThis(),
         innerJoin: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([{ categories: mockCategoryRecord }]),
+        where: vi.fn().mockImplementation(() => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve([{ authors: mockAuthorRecord }]);
+          }
+          return Promise.resolve([{ categories: mockCategoryRecord }]);
+        }),
       };
       mockDb.select.mockReturnValue(selectChain);
 
@@ -488,6 +522,8 @@ describe('PostgresBookRepository', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].title).toBe('Clean Code');
+      expect(result[0].authors).toHaveLength(1);
+      expect(result[0].type.name).toBe('technical');
       expect(result[0].categories).toHaveLength(1);
     });
 

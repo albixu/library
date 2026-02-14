@@ -6,7 +6,7 @@
  *
  * Flow:
  * 1. Validate input fields (title, author, type, format, isbn, description)
- * 2. Check for duplicates using normalized fields
+ * 2. Check for ISBN duplicates (triad check removed with multi-author model)
  * 3. Resolve/create categories (only after duplicate check passes)
  * 4. Create Book entity with validated fields and categories
  * 5. Generate embedding from book text
@@ -35,7 +35,6 @@ import {
 } from '../errors/ApplicationErrors.js';
 import {
   DuplicateISBNError,
-  DuplicateBookError,
 } from '../../domain/errors/DomainErrors.js';
 
 /**
@@ -104,7 +103,7 @@ export interface CreateBookUseCaseDeps {
  *
  * Orchestrates the complete book creation flow including:
  * - Input validation (delegated to Book entity)
- * - Duplicate detection (ISBN and author+title+format triad)
+ * - ISBN duplicate detection (triad check removed with multi-author model)
  * - Category auto-creation
  * - Embedding generation
  * - Atomic persistence
@@ -128,7 +127,6 @@ export class CreateBookUseCase {
    * @param input - The book data to create
    * @returns Promise resolving to the created book output
    * @throws DuplicateISBNError if a book with the same ISBN already exists
-   * @throws DuplicateBookError if a book with the same author, title, and format already exists
    * @throws EmbeddingTextTooLongError if embedding text exceeds 7000 chars
    * @throws EmbeddingServiceUnavailableError if embedding service is down
    * @throws DomainError for validation failures
@@ -147,14 +145,12 @@ export class CreateBookUseCase {
     const bookFormat = BookFormat.create(input.format);
     const bookIsbn = input.isbn ? ISBN.create(input.isbn) : null;
 
-    // 2. Check for duplicates BEFORE creating any resources
+    // 2. Check for ISBN duplicates BEFORE creating any resources
     //    This prevents orphaned categories if the book is a duplicate
-    //    Title and author are normalized (trim + lowercase) per BookRepository contract
+    //    NOTE: Triad check (author+title+format) was removed with multi-author model
+    //    because comparing "same authors" with N:M relationships is complex and ambiguous
     const duplicateCheck = await this.bookRepository.checkDuplicate({
       isbn: bookIsbn?.value ?? null,
-      author: input.author.trim().toLowerCase(),
-      title: input.title.trim().toLowerCase(),
-      format: bookFormat.value,
     });
 
     if (duplicateCheck.isDuplicate) {
@@ -163,17 +159,6 @@ export class CreateBookUseCase {
           isbn: bookIsbn.value,
         });
         throw new DuplicateISBNError(bookIsbn.value);
-      } else if (duplicateCheck.duplicateType === 'triad') {
-        this.logger.warn('Duplicate book detected (author/title/format)', {
-          author: input.author.trim(),
-          title: input.title.trim(),
-          format: bookFormat.value,
-        });
-        throw new DuplicateBookError(
-          input.author.trim(),
-          input.title.trim(),
-          bookFormat.value
-        );
       }
       // Fallback for unexpected duplicate types (should not happen with current implementation)
       throw new Error(`Unexpected duplicate type: ${duplicateCheck.duplicateType}`);
