@@ -39,6 +39,8 @@ services:
       - PORT=3000
       - DATABASE_URL=postgresql://library:library@postgres:5432/library
       - OLLAMA_BASE_URL=http://ollama:11434
+      # Set AUTO_SEED=true to seed database on first run if empty
+      - AUTO_SEED=false
     depends_on:
       postgres:
         condition: service_healthy
