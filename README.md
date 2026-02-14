@@ -15,8 +15,8 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 ## Características
 
 - 🔍 **Búsqueda semántica**: Encuentra libros describiendo lo que buscas en lenguaje natural
-- 🖥️ **CLI**: Gestiona tu biblioteca desde la terminal
 - 🌐 **API REST**: Integra con cualquier cliente web
+- 📦 **Carga de datos automática**: Importa libros desde archivos JSON
 - 🐳 **Dockerizado**: Todo el sistema corre en contenedores
 - 💰 **Costo $0**: Usa tecnologías 100% gratuitas y open source
 
@@ -28,7 +28,6 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 | Base de datos | PostgreSQL 16 + pgvector |
 | Embeddings | Ollama + nomic-embed-text |
 | API | Fastify |
-| CLI | Commander.js |
 | ORM | Drizzle ORM |
 | Testing | Vitest |
 
@@ -85,6 +84,44 @@ npm run db:migrate
 
 ¡Listo! La API está disponible en `http://localhost:3000`
 
+## Carga de Datos Inicial
+
+### Consolidar archivos JSON
+
+Si tienes múltiples archivos JSON con datos de libros, puedes consolidarlos en un único archivo:
+
+```bash
+# Desde el contenedor
+docker exec -it library-api-dev npm run consolidate:books
+
+# Los archivos fuente deben estar en apps/api-cli/data/source/
+# El resultado se guarda en docs/db/books.json
+```
+
+### Sembrar la base de datos
+
+Para cargar los libros consolidados en la base de datos:
+
+```bash
+# Ejecución manual
+docker exec -it library-api-dev npm run seed:database
+
+# Variables de entorno opcionales:
+# BATCH_SIZE=50      - Libros a procesar por lote
+# MAX_RETRIES=3      - Reintentos en caso de error de embedding
+```
+
+### Carga automática al iniciar
+
+Puedes configurar la carga automática de datos al iniciar el contenedor:
+
+```bash
+# En docker-compose.yml o .env
+AUTO_SEED=true
+
+# Solo cargará datos si la base de datos está vacía
+```
+
 ## Uso
 
 ### API REST
@@ -92,14 +129,14 @@ npm run db:migrate
 #### Crear un libro
 
 ```bash
-curl -X POST http://localhost:3000/books \
+curl -X POST http://localhost:3000/api/books \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Clean Code",
-    "author": "Robert C. Martin",
+    "authors": ["Robert C. Martin"],
     "description": "A handbook of agile software craftsmanship",
     "type": "technical",
-    "category": "programming",
+    "categories": ["programming"],
     "format": "pdf"
   }'
 ```
@@ -107,63 +144,35 @@ curl -X POST http://localhost:3000/books \
 #### Buscar libros (búsqueda semántica)
 
 ```bash
-curl "http://localhost:3000/books/search?q=libros%20sobre%20buenas%20practicas%20de%20programacion"
+curl "http://localhost:3000/api/books/search?q=libros%20sobre%20buenas%20practicas%20de%20programacion"
 ```
 
 #### Obtener un libro por ID
 
 ```bash
-curl http://localhost:3000/books/{id}
+curl http://localhost:3000/api/books/{id}
 ```
 
 #### Listar todos los libros
 
 ```bash
-curl http://localhost:3000/books
+curl http://localhost:3000/api/books
 ```
 
 #### Actualizar un libro
 
 ```bash
-curl -X PUT http://localhost:3000/books/{id} \
+curl -X PUT http://localhost:3000/api/books/{id} \
   -H "Content-Type: application/json" \
   -d '{
-    "description": "Nueva descripción actualizada"
+    "available": false
   }'
 ```
 
 #### Eliminar un libro
 
 ```bash
-curl -X DELETE http://localhost:3000/books/{id}
-```
-
-### CLI
-
-```bash
-# Entrar al contenedor
-docker exec -it library-api-dev sh
-
-# Ver comandos disponibles
-npm run cli -- --help
-
-# Añadir un libro
-npm run cli -- add
-
-# Buscar libros
-npm run cli -- search "novelas de misterio"
-
-# Listar libros
-npm run cli -- list
-
-# Obtener un libro
-npm run cli -- get <id>
-
-# Actualizar un libro
-npm run cli -- update <id>
-
-# Eliminar un libro
-npm run cli -- delete <id>
+curl -X DELETE http://localhost:3000/api/books/{id}
 ```
 
 ## Desarrollo
@@ -173,12 +182,13 @@ npm run cli -- delete <id>
 ```
 library/
 ├── apps/
-│   ├── api-cli/          # Backend: API REST + CLI
+│   ├── api-cli/          # Backend: API REST + Scripts
 │   │   ├── src/
 │   │   │   ├── domain/           # Lógica de negocio pura
 │   │   │   ├── application/      # Casos de uso
-│   │   │   ├── infrastructure/   # Adaptadores (DB, HTTP, CLI)
+│   │   │   ├── infrastructure/   # Adaptadores (DB, HTTP)
 │   │   │   └── shared/           # Utilidades compartidas
+│   │   ├── scripts/              # Consolidación y seeding
 │   │   ├── tests/
 │   │   └── docker/
 │   │
@@ -187,6 +197,7 @@ library/
 ├── docker-compose.yml        # Desarrollo
 ├── docker-compose.prod.yml   # Producción
 └── docs/
+    ├── api/                  # OpenAPI spec
     └── design_docs/          # Documentación de diseño
 ```
 
@@ -297,9 +308,6 @@ cp .env.example .env
 
 # Iniciar en modo desarrollo
 npm run dev
-
-# Ejecutar CLI
-npm run cli -- --help
 ```
 
 ## Producción
