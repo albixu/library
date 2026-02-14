@@ -24,7 +24,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "consolidate:books": "tsx scripts/consolidate-books.ts"
+    "consolidate:books": "tsx scripts/consolidate-books.ts",
+    "seed:database": "tsx scripts/seed-database.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.38.3",
