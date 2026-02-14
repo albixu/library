@@ -308,22 +308,8 @@ describe('CLI add command (E2E)', () => {
   });
 
   describe('Invalid Input Values', () => {
-    it('should exit with code 1 when type is invalid', async () => {
-      const result = await executeCli(
-        [
-          'add',
-          '-t', 'Invalid Type Book',
-          '-a', 'Author',
-          '-d', 'Description',
-          '-T', 'invalid_type',
-          '-f', 'pdf',
-          '-c', 'Testing',
-        ],
-        { cwd: cliCwd }
-      );
-
-      expect(result.exitCode).toBe(1);
-    });
+    // Note: Type validation removed in TASK-005.
+    // Type validation will be done against database in TASK-010 (TypeRepository).
 
     it('should exit with code 1 when format is invalid', async () => {
       const result = await executeCli(

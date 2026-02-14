@@ -21,7 +21,8 @@ async function bootstrap(): Promise<void> {
   const env = loadEnvConfig();
 
   // Initialize logger
-  const logger = new PinoLogger({ level: env.app.logLevel });
+  const isPretty = env.app.nodeEnv !== 'production' && env.app.nodeEnv !== 'test';
+  const logger = new PinoLogger({ level: env.app.logLevel, prettyPrint: isPretty });
   const bootstrapLogger = logger.child({ name: 'Bootstrap' });
 
   bootstrapLogger.info('Starting Library API server...', { 
@@ -40,11 +41,10 @@ async function bootstrap(): Promise<void> {
     const embeddingService = new OllamaEmbeddingService({
       baseUrl: env.ollama.baseUrl,
       model: env.ollama.model,
-      logger,
     });
 
-    const bookRepository = new PostgresBookRepository(db as any, logger);
-    const categoryRepository = new PostgresCategoryRepository(db as any, logger);
+    const bookRepository = new PostgresBookRepository(db as any);
+    const categoryRepository = new PostgresCategoryRepository(db as any);
 
     // Initialize use cases
     const createBookUseCase = new CreateBookUseCase({

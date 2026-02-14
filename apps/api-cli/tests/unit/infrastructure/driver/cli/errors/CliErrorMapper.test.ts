@@ -17,9 +17,9 @@ import {
   FieldTooLongError,
   TooManyItemsError,
   DuplicateItemError,
+  InvalidBookTypeError,
 } from '../../../../../../src/domain/errors/DomainErrors.js';
 import { InvalidISBNError } from '../../../../../../src/domain/value-objects/ISBN.js';
-import { InvalidBookTypeError } from '../../../../../../src/domain/value-objects/BookType.js';
 import { InvalidBookFormatError } from '../../../../../../src/domain/value-objects/BookFormat.js';
 import {
   EmbeddingServiceUnavailableError,
