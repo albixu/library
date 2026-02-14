@@ -8,7 +8,13 @@
  * - Immutable
  * - Compared by value, not identity
  * - Self-validating
+ *
+ * @deprecated This Value Object is being replaced by the BookType Entity.
+ * Use src/domain/entities/BookType.ts for new code.
+ * This file will be removed in TASK-005 when Book entity is updated.
  */
+
+import { InvalidBookTypeError } from '../errors/DomainErrors.js';
 
 export const BOOK_TYPES = [
   'technical',
@@ -36,7 +42,7 @@ export class BookType {
     const normalizedValue = value.toLowerCase().trim();
 
     if (!BookType.isValid(normalizedValue)) {
-      throw new InvalidBookTypeError(value);
+      throw new InvalidBookTypeError(value, BOOK_TYPES);
     }
 
     return new BookType(normalizedValue as BookTypeValue);
@@ -76,14 +82,5 @@ export class BookType {
   }
 }
 
-/**
- * Error thrown when an invalid book type is provided
- */
-export class InvalidBookTypeError extends Error {
-  constructor(value: string) {
-    super(
-      `Invalid book type: "${value}". Valid types are: ${BOOK_TYPES.join(', ')}`
-    );
-    this.name = 'InvalidBookTypeError';
-  }
-}
+// Re-export error for backward compatibility
+export { InvalidBookTypeError } from '../errors/DomainErrors.js';
