@@ -6,27 +6,24 @@
  *
  * Flow:
  * 1. Validate input fields (title, author, type, format, isbn, description)
- * 2. Check for ISBN duplicates (triad check removed with multi-author model)
- * 3. Resolve/create categories (only after duplicate check passes)
- * 4. Create Book entity with validated fields and categories
- * 5. Generate embedding from book text
- * 6. Persist book with embedding atomically
- *
- * TRANSITIONAL STATE:
- * The Book entity now uses `authors: Author[]` and `type: BookType` (entity),
- * but the API input still accepts `author: string` and `type: string`.
- * This use case creates temporary Author and BookType entities from the string inputs
- * until TASK-010 (full use case update) and the infrastructure layers are updated.
+ * 2. Validate type exists in database via TypeRepository
+ * 3. Check for ISBN duplicates (triad check removed with multi-author model)
+ * 4. Resolve/create categories (only after duplicate check passes)
+ * 5. Resolve/create author via AuthorRepository
+ * 6. Create Book entity with validated fields, type, author, and categories
+ * 7. Generate embedding from book text
+ * 8. Persist book with embedding atomically
  */
 
 import { Book } from '../../domain/entities/Book.js';
-import { Author } from '../../domain/entities/Author.js';
-import { BookType } from '../../domain/entities/BookType.js';
 import { BookFormat } from '../../domain/value-objects/BookFormat.js';
 import { ISBN } from '../../domain/value-objects/ISBN.js';
+import { DEFAULT_BOOK_TYPES } from '../../domain/entities/BookType.js';
 import { generateUUID } from '../../shared/utils/uuid.js';
 import type { BookRepository } from '../ports/BookRepository.js';
 import type { CategoryRepository } from '../ports/CategoryRepository.js';
+import type { TypeRepository } from '../ports/TypeRepository.js';
+import type { AuthorRepository } from '../ports/AuthorRepository.js';
 import type { EmbeddingService } from '../ports/EmbeddingService.js';
 import type { Logger } from '../ports/Logger.js';
 import { noopLogger } from '../ports/Logger.js';
@@ -35,6 +32,7 @@ import {
 } from '../errors/ApplicationErrors.js';
 import {
   DuplicateISBNError,
+  InvalidBookTypeError,
 } from '../../domain/errors/DomainErrors.js';
 
 /**
@@ -94,6 +92,8 @@ export interface CreateBookOutput {
 export interface CreateBookUseCaseDeps {
   bookRepository: BookRepository;
   categoryRepository: CategoryRepository;
+  typeRepository: TypeRepository;
+  authorRepository: AuthorRepository;
   embeddingService: EmbeddingService;
   logger?: Logger;
 }
@@ -103,20 +103,26 @@ export interface CreateBookUseCaseDeps {
  *
  * Orchestrates the complete book creation flow including:
  * - Input validation (delegated to Book entity)
+ * - Type validation against database
  * - ISBN duplicate detection (triad check removed with multi-author model)
  * - Category auto-creation
+ * - Author auto-creation
  * - Embedding generation
  * - Atomic persistence
  */
 export class CreateBookUseCase {
   private readonly bookRepository: BookRepository;
   private readonly categoryRepository: CategoryRepository;
+  private readonly typeRepository: TypeRepository;
+  private readonly authorRepository: AuthorRepository;
   private readonly embeddingService: EmbeddingService;
   private readonly logger: Logger;
 
   constructor(deps: CreateBookUseCaseDeps) {
     this.bookRepository = deps.bookRepository;
     this.categoryRepository = deps.categoryRepository;
+    this.typeRepository = deps.typeRepository;
+    this.authorRepository = deps.authorRepository;
     this.embeddingService = deps.embeddingService;
     this.logger = deps.logger?.child({ name: 'CreateBookUseCase' }) ?? noopLogger;
   }
@@ -126,6 +132,7 @@ export class CreateBookUseCase {
    *
    * @param input - The book data to create
    * @returns Promise resolving to the created book output
+   * @throws InvalidBookTypeError if the type does not exist in the database
    * @throws DuplicateISBNError if a book with the same ISBN already exists
    * @throws EmbeddingTextTooLongError if embedding text exceeds 7000 chars
    * @throws EmbeddingServiceUnavailableError if embedding service is down
@@ -141,11 +148,17 @@ export class CreateBookUseCase {
 
     // 1. Validate and normalize fields needed for duplicate detection
     //    This provides early validation and normalization without persisting anything
-    //    NOTE: Type validation will be done against DB in TASK-010 via TypeRepository.findByName()
     const bookFormat = BookFormat.create(input.format);
     const bookIsbn = input.isbn ? ISBN.create(input.isbn) : null;
 
-    // 2. Check for ISBN duplicates BEFORE creating any resources
+    // 2. Validate type exists in database
+    const bookType = await this.typeRepository.findByName(input.type);
+    if (!bookType) {
+      this.logger.warn('Invalid book type', { type: input.type });
+      throw new InvalidBookTypeError(input.type, DEFAULT_BOOK_TYPES);
+    }
+
+    // 3. Check for ISBN duplicates BEFORE creating any resources
     //    This prevents orphaned categories if the book is a duplicate
     //    NOTE: Triad check (author+title+format) was removed with multi-author model
     //    because comparing "same authors" with N:M relationships is complex and ambiguous
@@ -164,7 +177,7 @@ export class CreateBookUseCase {
       throw new Error(`Unexpected duplicate type: ${duplicateCheck.duplicateType}`);
     }
 
-    // 3. Resolve or create categories (only after duplicate check passes)
+    // 4. Resolve or create categories (only after duplicate check passes)
     const categories = await this.categoryRepository.findOrCreateMany(
       input.categoryNames
     );
@@ -173,26 +186,21 @@ export class CreateBookUseCase {
       categories: categories.map((c) => c.name),
     });
 
-    // 4. Create Author and BookType entities for the Book
-    //    TRANSITIONAL: Creates temporary entities from string inputs.
-    //    In TASK-010, this will use AuthorRepository.findOrCreate() and TypeRepository.findByName()
-    const authorEntity = Author.create({
-      id: generateUUID(),
-      name: input.author,
+    // 5. Resolve or create author via AuthorRepository
+    const authorEntity = await this.authorRepository.findOrCreate(input.author);
+
+    this.logger.debug('Author resolved', {
+      authorId: authorEntity.id,
+      authorName: authorEntity.name,
     });
 
-    const bookTypeEntity = BookType.create({
-      id: generateUUID(),
-      name: input.type,
-    });
-
-    // 5. Create Book entity with validated fields and categories
+    // 6. Create Book entity with validated fields, type, author, and categories
     const book = Book.create({
       id: generateUUID(),
       title: input.title,
       authors: [authorEntity],
       description: input.description,
-      type: bookTypeEntity,
+      type: bookType,
       categories,
       format: input.format,
       isbn: input.isbn,
@@ -200,7 +208,7 @@ export class CreateBookUseCase {
       path: input.path,
     });
 
-    // 6. Generate embedding text and validate length
+    // 7. Generate embedding text and validate length
     const embeddingText = book.getTextForEmbedding();
 
     if (embeddingText.length > MAX_EMBEDDING_TEXT_LENGTH) {
@@ -214,7 +222,7 @@ export class CreateBookUseCase {
       );
     }
 
-    // 7. Generate embedding (may throw EmbeddingServiceUnavailableError)
+    // 8. Generate embedding (may throw EmbeddingServiceUnavailableError)
     this.logger.debug('Generating embedding', {
       textLength: embeddingText.length,
     });
@@ -231,7 +239,7 @@ export class CreateBookUseCase {
       throw error;
     }
 
-    // 8. Persist book with embedding atomically
+    // 9. Persist book with embedding atomically
     const savedBook = await this.bookRepository.save({
       book,
       embedding: embeddingResult.embedding,
@@ -243,18 +251,18 @@ export class CreateBookUseCase {
       authors: savedBook.authors.map(a => a.name),
     });
 
-    // 9. Return output DTO
+    // 10. Return output DTO
     return this.toOutput(savedBook);
   }
 
   /**
    * Converts a Book entity to the output DTO
    *
-   * TRANSITIONAL: Returns first author's name as 'author' string for backward compatibility.
-   * In TASK-010, this will return 'authors' array matching the new API response format.
+   * Returns first author's name as 'author' string for backward compatibility
+   * with the current API contract.
    */
   private toOutput(book: Book): CreateBookOutput {
-    // TRANSITIONAL: Return first author's name for backward compatibility
+    // Return first author's name for backward compatibility
     // Book.authors is guaranteed to have at least 1 element by domain validation
     const firstAuthor = book.authors[0];
     const authorName = firstAuthor?.name ?? '';

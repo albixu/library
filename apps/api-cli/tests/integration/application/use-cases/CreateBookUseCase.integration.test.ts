@@ -8,13 +8,6 @@
  * Requires Docker containers: docker-compose up -d
  *
  * Run with: npm run test:integration
- *
- * NOTE: These tests are SKIPPED until TASK-010 is completed.
- * TASK-010 will add TypeRepository.findByName() and AuthorRepository.findOrCreate()
- * which are required for the CreateBookUseCase to work with the new schema.
- *
- * Currently, CreateBookUseCase creates in-memory BookType entities with generated UUIDs,
- * which don't match the types in the database (seeded via init-db.sql).
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
@@ -23,22 +16,24 @@ import pg from 'pg';
 import { CreateBookUseCase, type CreateBookInput } from '../../../../src/application/use-cases/CreateBookUseCase.js';
 import { PostgresBookRepository } from '../../../../src/infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from '../../../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
+import { PostgresTypeRepository } from '../../../../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
+import { PostgresAuthorRepository } from '../../../../src/infrastructure/driven/persistence/PostgresAuthorRepository.js';
 import { OllamaEmbeddingService } from '../../../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
-import { DuplicateISBNError } from '../../../../src/domain/errors/DomainErrors.js';
+import { DuplicateISBNError, InvalidBookTypeError } from '../../../../src/domain/errors/DomainErrors.js';
 import { InvalidISBNError, InvalidBookFormatError } from '../../../../src/domain/errors/DomainErrors.js';
 import * as schema from '../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 
 const { Pool } = pg;
 const { categories, books, bookCategories, bookAuthors, authors } = schema;
 
-// SKIPPED: Waiting for TASK-010 (TypeRepository + AuthorRepository)
-// Currently CreateBookUseCase creates BookType with generated UUID that doesn't exist in DB
-describe.skip('CreateBookUseCase Integration', () => {
+describe('CreateBookUseCase Integration', () => {
   let pool: pg.Pool;
   let db: ReturnType<typeof drizzle<typeof schema>>;
   let useCase: CreateBookUseCase;
   let bookRepository: PostgresBookRepository;
   let categoryRepository: PostgresCategoryRepository;
+  let typeRepository: PostgresTypeRepository;
+  let authorRepository: PostgresAuthorRepository;
   let embeddingService: OllamaEmbeddingService;
 
   // Configuration
@@ -59,6 +54,10 @@ describe.skip('CreateBookUseCase Integration', () => {
     bookRepository = new PostgresBookRepository(db as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     categoryRepository = new PostgresCategoryRepository(db as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    typeRepository = new PostgresTypeRepository(db as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    authorRepository = new PostgresAuthorRepository(db as any);
     embeddingService = new OllamaEmbeddingService({
       baseUrl: OLLAMA_BASE_URL,
       model: 'nomic-embed-text',
@@ -68,6 +67,8 @@ describe.skip('CreateBookUseCase Integration', () => {
     useCase = new CreateBookUseCase({
       bookRepository,
       categoryRepository,
+      typeRepository,
+      authorRepository,
       embeddingService,
     });
 
@@ -263,8 +264,11 @@ describe.skip('CreateBookUseCase Integration', () => {
       await expect(useCase.execute(input)).rejects.toThrow(InvalidISBNError);
     });
 
-    // Note: Book type validation was removed in TASK-005.
-    // Type validation will be done against database in TASK-010 (TypeRepository).
+    it('should reject invalid book type', async () => {
+      const input = createValidInput({ type: 'nonexistent-type' });
+
+      await expect(useCase.execute(input)).rejects.toThrow(InvalidBookTypeError);
+    });
 
     it('should reject invalid book format', async () => {
       const input = createValidInput({ format: 'invalid-format' });

@@ -23,10 +23,12 @@ import { CreateBookUseCase } from '../../src/application/use-cases/CreateBookUse
 import { OllamaEmbeddingService } from '../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
 import { PostgresBookRepository } from '../../src/infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from '../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
+import { PostgresTypeRepository } from '../../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
+import { PostgresAuthorRepository } from '../../src/infrastructure/driven/persistence/PostgresAuthorRepository.js';
 import { noopLogger } from '../../src/application/ports/Logger.js';
 
 const { Pool } = pg;
-const { books, categories, bookCategories } = schema;
+const { books, categories, bookCategories, bookAuthors, authors } = schema;
 
 /**
  * Database instance type for E2E tests
@@ -78,9 +80,13 @@ export async function closeTestDb(db: TestDb): Promise<void> {
  * Clears all test data from tables
  */
 export async function clearTestData(db: TestDb): Promise<void> {
+  // Order matters due to FK constraints
   await db.delete(bookCategories);
+  await db.delete(bookAuthors);
   await db.delete(books);
   await db.delete(categories);
+  await db.delete(authors);
+  // Note: types table has seed data, don't delete it
 }
 
 /**
@@ -101,11 +107,17 @@ export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
   const bookRepository = new PostgresBookRepository(db as any);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const categoryRepository = new PostgresCategoryRepository(db as any);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const typeRepository = new PostgresTypeRepository(db as any);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const authorRepository = new PostgresAuthorRepository(db as any);
 
   // Create use case
   const createBookUseCase = new CreateBookUseCase({
     bookRepository,
     categoryRepository,
+    typeRepository,
+    authorRepository,
     embeddingService,
     logger: noopLogger,
   });
