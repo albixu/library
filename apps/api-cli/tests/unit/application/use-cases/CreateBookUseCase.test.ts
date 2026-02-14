@@ -9,7 +9,7 @@ import type { CategoryRepository } from '../../../../src/application/ports/Categ
 import type { EmbeddingService, EmbeddingResult } from '../../../../src/application/ports/EmbeddingService.js';
 import { Category } from '../../../../src/domain/entities/Category.js';
 import { Book } from '../../../../src/domain/entities/Book.js';
-import { DuplicateISBNError, DuplicateBookError } from '../../../../src/domain/errors/DomainErrors.js';
+import { DuplicateISBNError } from '../../../../src/domain/errors/DomainErrors.js';
 import {
   EmbeddingTextTooLongError,
   EmbeddingServiceUnavailableError,
@@ -57,7 +57,6 @@ describe('CreateBookUseCase', () => {
       findById: vi.fn(),
       findByIsbn: vi.fn(),
       existsByIsbn: vi.fn(),
-      existsByTriad: vi.fn(),
       checkDuplicate: vi.fn().mockResolvedValue(noDuplicateResult),
       save: vi.fn().mockImplementation(async ({ book }) => book),
       update: vi.fn(),
@@ -117,15 +116,12 @@ describe('CreateBookUseCase', () => {
       ]);
     });
 
-    it('should check for duplicates before saving', async () => {
+    it('should check for ISBN duplicates before saving', async () => {
       await useCase.execute(validInput);
 
-      // Note: UseCase passes normalized values (trimmed + lowercased) per BookRepository contract
+      // Note: With multi-author model, only ISBN is checked for duplicates
       expect(mockBookRepository.checkDuplicate).toHaveBeenCalledWith({
         isbn: '9780132350884',
-        author: 'robert c. martin',
-        title: 'clean code',
-        format: 'pdf',
       });
     });
 
@@ -160,19 +156,6 @@ describe('CreateBookUseCase', () => {
 
       await expect(useCase.execute(validInput)).rejects.toThrow(
         new DuplicateISBNError('9780132350884')
-      );
-    });
-
-    it('should throw DuplicateBookError when triad duplicate found', async () => {
-      const duplicateResult: DuplicateCheckResult = {
-        isDuplicate: true,
-        duplicateType: 'triad',
-        message: 'A book with the same author, title, and format already exists',
-      };
-      (mockBookRepository.checkDuplicate as ReturnType<typeof vi.fn>).mockResolvedValue(duplicateResult);
-
-      await expect(useCase.execute(validInput)).rejects.toThrow(
-        new DuplicateBookError('Robert C. Martin', 'Clean Code', 'pdf')
       );
     });
 
@@ -265,11 +248,9 @@ describe('CreateBookUseCase', () => {
 
       await useCase.execute(inputWithoutIsbn);
 
+      // With multi-author model, only ISBN is checked - null means no duplicate check needed
       expect(mockBookRepository.checkDuplicate).toHaveBeenCalledWith({
         isbn: null,
-        author: 'robert c. martin',
-        title: 'clean code',
-        format: 'pdf',
       });
     });
   });

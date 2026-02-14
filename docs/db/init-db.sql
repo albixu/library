@@ -10,19 +10,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- ENUM Types
 -- ================================
 
--- Book type classification
-CREATE TYPE book_type AS ENUM (
-    'technical',
-    'novel',
-    'essay',
-    'poetry',
-    'biography',
-    'reference',
-    'manual',
-    'other'
-);
-
--- Book file format
+-- Book file format (kept as enum - fixed set of values)
 CREATE TYPE book_format AS ENUM (
     'epub',
     'pdf',
@@ -38,6 +26,32 @@ CREATE TYPE book_format AS ENUM (
 -- ================================
 -- Tables
 -- ================================
+
+-- Types table (replaces book_type enum - dynamic types stored in DB)
+CREATE TABLE IF NOT EXISTS types (
+    -- Primary key (UUID v4)
+    id UUID PRIMARY KEY,
+    
+    -- Required fields
+    name VARCHAR(50) NOT NULL UNIQUE,
+    
+    -- Timestamps
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Authors table (new - N:M relationship with books)
+CREATE TABLE IF NOT EXISTS authors (
+    -- Primary key (UUID v4)
+    id UUID PRIMARY KEY,
+    
+    -- Required fields
+    name VARCHAR(300) NOT NULL UNIQUE,
+    
+    -- Timestamps
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 -- Categories table (reusable categories for books)
 CREATE TABLE IF NOT EXISTS categories (
@@ -55,15 +69,14 @@ CREATE TABLE IF NOT EXISTS categories (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Books table
+-- Books table (updated - removed author column, added type_id reference)
 CREATE TABLE IF NOT EXISTS books (
     -- Primary key (UUID v4)
     id UUID PRIMARY KEY,
     
     -- Required fields
     title VARCHAR(500) NOT NULL,
-    author VARCHAR(300) NOT NULL,
-    type book_type NOT NULL,
+    type_id UUID NOT NULL REFERENCES types(id),
     format book_format NOT NULL,
     available BOOLEAN NOT NULL DEFAULT FALSE,
     
@@ -72,12 +85,27 @@ CREATE TABLE IF NOT EXISTS books (
     description VARCHAR(5000),
     path VARCHAR(1000),
     
+    -- Normalized field for duplicate detection (stored lowercase)
+    normalized_title VARCHAR(500) NOT NULL,
+    
     -- Vector embedding for semantic search (nomic-embed-text: 768 dimensions)
     embedding vector(768),
     
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Junction table for many-to-many relationship between books and authors
+CREATE TABLE IF NOT EXISTS book_authors (
+    book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+    author_id UUID NOT NULL REFERENCES authors(id) ON DELETE RESTRICT,
+    
+    -- Composite primary key
+    PRIMARY KEY (book_id, author_id),
+    
+    -- Timestamp for when the relationship was created
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Junction table for many-to-many relationship between books and categories
@@ -95,6 +123,14 @@ CREATE TABLE IF NOT EXISTS book_categories (
 -- ================================
 -- Indexes
 -- ================================
+
+-- Types indexes
+CREATE INDEX IF NOT EXISTS idx_types_name 
+    ON types (name);
+
+-- Authors indexes
+CREATE INDEX IF NOT EXISTS idx_authors_name 
+    ON authors (name);
 
 -- Categories indexes
 CREATE INDEX IF NOT EXISTS idx_categories_name 
@@ -114,18 +150,27 @@ CREATE INDEX IF NOT EXISTS idx_books_isbn
     ON books (isbn) 
     WHERE isbn IS NOT NULL;
 
--- Index for type filtering
-CREATE INDEX IF NOT EXISTS idx_books_type 
-    ON books (type);
+-- Index for type filtering (by type_id)
+CREATE INDEX IF NOT EXISTS idx_books_type_id 
+    ON books (type_id);
 
--- Index for author search
-CREATE INDEX IF NOT EXISTS idx_books_author 
-    ON books (author);
+-- Index for title search
+CREATE INDEX IF NOT EXISTS idx_books_title 
+    ON books (title);
 
 -- Index for filtering by availability
 CREATE INDEX IF NOT EXISTS idx_books_available 
     ON books (available) 
     WHERE available = TRUE;
+
+-- Book authors junction table indexes
+-- Index for finding all authors of a book
+CREATE INDEX IF NOT EXISTS idx_book_authors_book_id 
+    ON book_authors (book_id);
+
+-- Index for finding all books by an author
+CREATE INDEX IF NOT EXISTS idx_book_authors_author_id 
+    ON book_authors (author_id);
 
 -- Book categories junction table indexes
 -- Index for finding all categories of a book
@@ -149,6 +194,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE TRIGGER trigger_types_updated_at
+    BEFORE UPDATE ON types
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trigger_authors_updated_at
+    BEFORE UPDATE ON authors
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER trigger_books_updated_at
     BEFORE UPDATE ON books
     FOR EACH ROW
@@ -160,12 +215,23 @@ CREATE TRIGGER trigger_categories_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- ================================
--- Constraints
+-- Initial Data: Book Types
+-- ================================
+
+INSERT INTO types (id, name) VALUES
+    (gen_random_uuid(), 'technical'),
+    (gen_random_uuid(), 'novel'),
+    (gen_random_uuid(), 'biography')
+ON CONFLICT (name) DO NOTHING;
+
+-- ================================
+-- Constraints Notes
 -- ================================
 
 -- Ensure a book has at least one category (enforced at application level)
--- Note: This cannot be enforced at DB level without triggers
--- The application layer will validate this constraint
+-- Ensure a book has at least one author (enforced at application level)
+-- Note: These cannot be enforced at DB level without triggers
+-- The application layer will validate these constraints
 
 -- ================================
 -- Confirmation

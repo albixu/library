@@ -6,22 +6,45 @@
  *
  * Handles:
  * - Book persistence with embedding vectors (pgvector)
- * - Duplicate detection via ISBN and normalized triad (author, title, format)
+ * - Duplicate detection via ISBN (unique constraint)
+ * - Many-to-many relationship with authors via book_authors table
  * - Many-to-many relationship with categories via book_categories table
+ * - Many-to-one relationship with types via type_id FK
+ *
+ * HU-002 CHANGES:
+ * - Added support for N:M authors relationship
+ * - Added support for type_id FK to types table
+ * - Removed triad duplicate detection (author+title+format)
+ * - Duplicate detection now only uses ISBN
  */
 
-import { eq, and, count } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 import type { Book } from '../../../domain/entities/Book.js';
+import type { Author } from '../../../domain/entities/Author.js';
+import type { BookType } from '../../../domain/entities/BookType.js';
 import type { Category } from '../../../domain/entities/Category.js';
-import { DuplicateISBNError, DuplicateBookError, BookNotFoundError } from '../../../domain/errors/DomainErrors.js';
+import { DuplicateISBNError, BookNotFoundError } from '../../../domain/errors/DomainErrors.js';
 import type {
   BookRepository,
   SaveBookParams,
   UpdateBookParams,
   DuplicateCheckResult,
 } from '../../../application/ports/BookRepository.js';
-import { books, bookCategories, categories, type BookSelect, type CategorySelect } from './drizzle/schema.js';
+import {
+  books,
+  bookAuthors,
+  bookCategories,
+  authors,
+  categories,
+  types,
+  type BookSelect,
+  type AuthorSelect,
+  type TypeSelect,
+  type CategorySelect,
+} from './drizzle/schema.js';
 import { BookMapper } from './mappers/BookMapper.js';
+import { AuthorMapper } from './mappers/AuthorMapper.js';
+import { TypeMapper } from './mappers/TypeMapper.js';
 import { CategoryMapper } from './mappers/CategoryMapper.js';
 
 /**
@@ -51,14 +74,14 @@ export function normalizeForDuplicateCheck(text: string): string {
  */
 interface DrizzleDb {
   select: (fields?: Record<string, unknown>) => {
-    from: (table: typeof books | typeof bookCategories | typeof categories) => {
+    from: (table: typeof books | typeof bookAuthors | typeof bookCategories | typeof authors | typeof categories | typeof types) => {
       where: (condition: unknown) => Promise<unknown[]>;
-      innerJoin: (table: typeof categories, condition: unknown) => {
+      innerJoin: (table: typeof authors | typeof categories | typeof types, condition: unknown) => {
         where: (condition: unknown) => Promise<unknown[]>;
       };
     };
   };
-  insert: (table: typeof books | typeof bookCategories) => {
+  insert: (table: typeof books | typeof bookAuthors | typeof bookCategories) => {
     values: (data: unknown) => {
       returning: () => Promise<BookSelect[]>;
     };
@@ -70,13 +93,16 @@ interface DrizzleDb {
       };
     };
   };
-  delete: (table: typeof books | typeof bookCategories) => {
+  delete: (table: typeof books | typeof bookAuthors | typeof bookCategories) => {
     where: (condition: unknown) => Promise<{ rowCount: number }>;
   };
   query: {
     books: {
       findFirst: (options?: { where?: unknown }) => Promise<BookSelect | null>;
       findMany: (options?: { where?: unknown }) => Promise<BookSelect[]>;
+    };
+    types: {
+      findFirst: (options?: { where?: unknown }) => Promise<TypeSelect | null>;
     };
   };
   // Transaction support
@@ -104,8 +130,17 @@ export class PostgresBookRepository implements BookRepository {
       return null;
     }
 
-    const bookCategories = await this.fetchCategoriesForBook(id);
-    return BookMapper.toDomain(bookRecord, bookCategories);
+    const [bookAuthors, bookType, bookCategories] = await Promise.all([
+      this.fetchAuthorsForBook(id),
+      this.fetchTypeForBook(bookRecord.typeId),
+      this.fetchCategoriesForBook(id),
+    ]);
+
+    if (!bookType) {
+      throw new Error(`Book type not found for type_id: ${bookRecord.typeId}`);
+    }
+
+    return BookMapper.toDomain(bookRecord, bookAuthors, bookType, bookCategories);
   }
 
   /**
@@ -120,8 +155,17 @@ export class PostgresBookRepository implements BookRepository {
       return null;
     }
 
-    const bookCats = await this.fetchCategoriesForBook(bookRecord.id);
-    return BookMapper.toDomain(bookRecord, bookCats);
+    const [bookAuthors, bookType, bookCategories] = await Promise.all([
+      this.fetchAuthorsForBook(bookRecord.id),
+      this.fetchTypeForBook(bookRecord.typeId),
+      this.fetchCategoriesForBook(bookRecord.id),
+    ]);
+
+    if (!bookType) {
+      throw new Error(`Book type not found for type_id: ${bookRecord.typeId}`);
+    }
+
+    return BookMapper.toDomain(bookRecord, bookAuthors, bookType, bookCategories);
   }
 
   /**
@@ -137,34 +181,16 @@ export class PostgresBookRepository implements BookRepository {
   }
 
   /**
-   * Checks if a book with the given triad (author, title, format) already exists
-   * The parameters should already be normalized by the caller.
-   */
-  async existsByTriad(author: string, title: string, format: string): Promise<boolean> {
-    const result = await this.db
-      .select({ count: count() })
-      .from(books)
-      .where(
-        and(
-          eq(books.normalizedAuthor, author),
-          eq(books.normalizedTitle, title),
-          eq(books.format, format)
-        )
-      ) as { count: number }[];
-
-    return (result[0]?.count ?? 0) > 0;
-  }
-
-  /**
-   * Performs a comprehensive duplicate check for both ISBN and triad
+   * Performs a duplicate check based on ISBN
+   * 
+   * Note: Triad duplicate detection (author+title+format) has been removed in HU-002.
+   * With multiple authors, this constraint no longer makes sense.
+   * Duplicate detection is now based solely on ISBN uniqueness.
    */
   async checkDuplicate(params: {
     isbn?: string | null;
-    author: string;
-    title: string;
-    format: string;
   }): Promise<DuplicateCheckResult> {
-    // Check ISBN first if provided
+    // Check ISBN if provided
     if (params.isbn) {
       const isbnExists = await this.existsByIsbn(params.isbn);
       if (isbnExists) {
@@ -176,16 +202,6 @@ export class PostgresBookRepository implements BookRepository {
       }
     }
 
-    // Check triad (author + title + format)
-    const triadExists = await this.existsByTriad(params.author, params.title, params.format);
-    if (triadExists) {
-      return {
-        isDuplicate: true,
-        duplicateType: 'triad',
-        message: `A book by "${params.author}" titled "${params.title}" in format "${params.format}" already exists`,
-      };
-    }
-
     return { isDuplicate: false };
   }
 
@@ -193,24 +209,20 @@ export class PostgresBookRepository implements BookRepository {
    * Saves a new book with its embedding vector
    *
    * This operation:
-   * 1. Normalizes author and title for duplicate detection
-   * 2. Inserts the book record with embedding
+   * 1. Inserts the book record with embedding
+   * 2. Creates book_authors relationships
    * 3. Creates book_categories relationships
    */
   async save(params: SaveBookParams): Promise<Book> {
     const { book, embedding } = params;
 
     const normalizedTitle = normalizeForDuplicateCheck(book.title);
-    // TRANSITIONAL: Join all author names for normalization
-    const authorNames = book.authors.map(a => a.name).join(', ');
-    const normalizedAuthor = normalizeForDuplicateCheck(authorNames);
 
     // Prepare book record
     const bookRecord = BookMapper.toPersistence({
       book,
       embedding,
       normalizedTitle,
-      normalizedAuthor,
     });
 
     try {
@@ -227,6 +239,16 @@ export class PostgresBookRepository implements BookRepository {
           throw new Error('Failed to insert book - no record returned');
         }
 
+        // Insert book_authors relationships
+        if (book.authors.length > 0) {
+          const authorRelations = book.authors.map((author) => ({
+            bookId: book.id,
+            authorId: author.id,
+          }));
+
+          await tx.insert(bookAuthors).values(authorRelations).returning();
+        }
+
         // Insert book_categories relationships
         if (book.categories.length > 0) {
           const categoryRelations = book.categories.map((category) => ({
@@ -237,8 +259,13 @@ export class PostgresBookRepository implements BookRepository {
           await tx.insert(bookCategories).values(categoryRelations).returning();
         }
 
-        // Return the domain entity with categories
-        return BookMapper.toDomain(insertedBook, [...book.categories]);
+        // Return the domain entity with all relations
+        return BookMapper.toDomain(
+          insertedBook,
+          [...book.authors],
+          book.type,
+          [...book.categories]
+        );
       });
     } catch (error) {
       this.handleSaveError(error, book);
@@ -276,15 +303,24 @@ export class PostgresBookRepository implements BookRepository {
       throw new BookNotFoundError(id);
     }
 
-    const bookCats = await this.fetchCategoriesForBook(id);
-    return BookMapper.toDomain(updatedBook, bookCats);
+    const [bookAuthors, bookType, bookCategories] = await Promise.all([
+      this.fetchAuthorsForBook(id),
+      this.fetchTypeForBook(updatedBook.typeId),
+      this.fetchCategoriesForBook(id),
+    ]);
+
+    if (!bookType) {
+      throw new Error(`Book type not found for type_id: ${updatedBook.typeId}`);
+    }
+
+    return BookMapper.toDomain(updatedBook, bookAuthors, bookType, bookCategories);
   }
 
   /**
    * Deletes a book by its ID
    */
   async delete(id: string): Promise<boolean> {
-    // book_categories will be deleted via CASCADE
+    // book_authors and book_categories will be deleted via CASCADE
     const result = await this.db
       .delete(books)
       .where(eq(books.id, id));
@@ -298,15 +334,24 @@ export class PostgresBookRepository implements BookRepository {
   async findAll(): Promise<Book[]> {
     const bookRecords = await this.db.query.books.findMany();
 
-    // Fetch categories for all books
-    const booksWithCategories = await Promise.all(
+    // Fetch relations for all books
+    const booksWithRelations = await Promise.all(
       bookRecords.map(async (record) => {
-        const cats = await this.fetchCategoriesForBook(record.id);
-        return BookMapper.toDomain(record, cats);
+        const [bookAuthors, bookType, bookCategories] = await Promise.all([
+          this.fetchAuthorsForBook(record.id),
+          this.fetchTypeForBook(record.typeId),
+          this.fetchCategoriesForBook(record.id),
+        ]);
+
+        if (!bookType) {
+          throw new Error(`Book type not found for type_id: ${record.typeId}`);
+        }
+
+        return BookMapper.toDomain(record, bookAuthors, bookType, bookCategories);
       })
     );
 
-    return booksWithCategories;
+    return booksWithRelations;
   }
 
   /**
@@ -322,6 +367,34 @@ export class PostgresBookRepository implements BookRepository {
   }
 
   // ==================== Private Helpers ====================
+
+  /**
+   * Fetches authors for a specific book
+   */
+  private async fetchAuthorsForBook(bookId: string): Promise<Author[]> {
+    const results = await this.db
+      .select()
+      .from(bookAuthors)
+      .innerJoin(authors, eq(bookAuthors.authorId, authors.id))
+      .where(eq(bookAuthors.bookId, bookId)) as { authors: AuthorSelect }[];
+
+    return results.map((r) => AuthorMapper.toDomain(r.authors));
+  }
+
+  /**
+   * Fetches the type for a specific book
+   */
+  private async fetchTypeForBook(typeId: string): Promise<BookType | null> {
+    const typeRecord = await this.db.query.types.findFirst({
+      where: eq(types.id, typeId),
+    });
+
+    if (!typeRecord) {
+      return null;
+    }
+
+    return TypeMapper.toDomain(typeRecord);
+  }
 
   /**
    * Fetches categories for a specific book
@@ -348,18 +421,8 @@ export class PostgresBookRepository implements BookRepository {
         throw new DuplicateISBNError(book.isbn?.value ?? 'unknown');
       }
 
-      // Check if it's a triad duplicate
-      // TRANSITIONAL: Use first author's name for error message
-      // Book.authors is guaranteed to have at least 1 element by domain validation
-      if (errorMessage.includes('books_triad_unique_idx') || errorMessage.includes('triad')) {
-        const firstAuthor = book.authors[0];
-        throw new DuplicateBookError(firstAuthor?.name ?? '', book.title, book.format.value);
-      }
-
-      // Generic duplicate error
-      // TRANSITIONAL: Use first author's name for error message
-      const firstAuthor = book.authors[0];
-      throw new DuplicateBookError(firstAuthor?.name ?? '', book.title, book.format.value);
+      // Generic duplicate error - treat as ISBN duplicate
+      throw new DuplicateISBNError(book.isbn?.value ?? 'unknown');
     }
 
     throw error;
