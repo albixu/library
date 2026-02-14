@@ -16,5 +16,7 @@ export type {
 
 export type { CategoryRepository } from './CategoryRepository.js';
 
+export type { AuthorRepository } from './AuthorRepository.js';
+
 export type { Logger, LogContext, ChildLoggerOptions } from './Logger.js';
 export { noopLogger } from './Logger.js';

@@ -10,6 +10,7 @@ export {
   DuplicateBookError,
   CategoryNotFoundError,
   CategoryAlreadyExistsError,
+  AuthorAlreadyExistsError,
   RequiredFieldError,
   FieldTooLongError,
   InvalidUUIDError,

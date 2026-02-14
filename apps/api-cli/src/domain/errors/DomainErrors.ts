@@ -46,6 +46,15 @@ export class CategoryAlreadyExistsError extends DomainError {
 }
 
 /**
+ * Thrown when trying to create an author with a name that already exists
+ */
+export class AuthorAlreadyExistsError extends DomainError {
+  constructor(name: string) {
+    super(`An author with name "${name}" already exists`);
+  }
+}
+
+/**
  * Thrown when trying to create a book with an ISBN that already exists
  * @deprecated Use DuplicateISBNError for ISBN duplicates or DuplicateBookError for triad duplicates
  */
