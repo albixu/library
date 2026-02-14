@@ -14,9 +14,10 @@
  * concern for semantic search, managed exclusively at the persistence layer.
  */
 
-import { BookType, type BookTypeValue } from '../value-objects/BookType.js';
 import { BookFormat, type BookFormatValue } from '../value-objects/BookFormat.js';
 import { ISBN } from '../value-objects/ISBN.js';
+import { Author } from './Author.js';
+import { BookType } from './BookType.js';
 import { Category } from './Category.js';
 import {
   RequiredFieldError,
@@ -31,9 +32,9 @@ import {
  */
 const FIELD_CONSTRAINTS = {
   TITLE_MAX_LENGTH: 500,
-  AUTHOR_MAX_LENGTH: 300,
   DESCRIPTION_MAX_LENGTH: 5000,
   MAX_CATEGORIES: 10,
+  MAX_AUTHORS: 20,
   PATH_MAX_LENGTH: 1000,
 } as const;
 
@@ -48,8 +49,8 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9
 export interface CreateBookProps {
   id: string;
   title: string;
-  author: string;
-  type: string;
+  authors: Author[];
+  type: BookType;
   categories: Category[];
   format: string;
   description: string;
@@ -69,8 +70,8 @@ export interface CreateBookProps {
 export interface BookPersistenceProps {
   id: string;
   title: string;
-  author: string;
-  type: BookTypeValue;
+  authors: Author[];
+  type: BookType;
   categories: Category[];
   format: BookFormatValue;
   isbn: string | null;
@@ -86,8 +87,8 @@ export interface BookPersistenceProps {
  */
 export interface UpdateBookProps {
   title?: string;
-  author?: string;
-  type?: string;
+  authors?: Author[];
+  type?: BookType;
   categories?: Category[];
   format?: string;
   isbn?: string | null;
@@ -103,7 +104,7 @@ export class Book {
   private constructor(
     public readonly id: string,
     public readonly title: string,
-    public readonly author: string,
+    public readonly authors: readonly Author[],
     public readonly type: BookType,
     public readonly categories: readonly Category[],
     public readonly format: BookFormat,
@@ -125,12 +126,14 @@ export class Book {
     // Validate required fields
     const id = Book.validateId(props.id);
     const title = Book.validateTitle(props.title);
-    const author = Book.validateAuthor(props.author);
+    const authors = Book.validateAuthors(props.authors);
     const categories = Book.validateCategories(props.categories);
     const description = Book.validateDescription(props.description);
 
+    // Validate type (must be a valid BookType entity)
+    const type = Book.validateType(props.type);
+
     // Validate and create value objects
-    const type = BookType.create(props.type);
     const format = BookFormat.create(props.format);
 
     // Validate optional fields
@@ -147,7 +150,7 @@ export class Book {
     return new Book(
       id,
       title,
-      author,
+      authors,
       type,
       categories,
       format,
@@ -168,8 +171,8 @@ export class Book {
     return new Book(
       props.id,
       props.title,
-      props.author,
-      BookType.fromPersistence(props.type),
+      Object.freeze([...props.authors]),
+      props.type,
       Object.freeze([...props.categories]),
       BookFormat.fromPersistence(props.format),
       props.isbn ? ISBN.fromPersistence(props.isbn) : null,
@@ -189,12 +192,12 @@ export class Book {
       ? Book.validateTitle(props.title)
       : this.title;
 
-    const author = props.author !== undefined
-      ? Book.validateAuthor(props.author)
-      : this.author;
+    const authors = props.authors !== undefined
+      ? Book.validateAuthors(props.authors)
+      : this.authors;
 
     const type = props.type !== undefined
-      ? BookType.create(props.type)
+      ? Book.validateType(props.type)
       : this.type;
 
     const categories = props.categories !== undefined
@@ -224,7 +227,7 @@ export class Book {
     return new Book(
       this.id,
       title,
-      author,
+      authors,
       type,
       categories,
       format,
@@ -244,11 +247,12 @@ export class Book {
    * layer to use when generating vector embeddings for semantic search.
    */
   getTextForEmbedding(): string {
+    const authorNames = this.authors.map(a => a.name);
     const categoryNames = this.categories.map(c => c.name);
     const parts = [
       this.title,
-      this.author,
-      this.type.value,
+      ...authorNames,
+      this.type.name,
       ...categoryNames,
       this.description,
     ];
@@ -293,18 +297,33 @@ export class Book {
     return trimmedTitle;
   }
 
-  private static validateAuthor(author: string): string {
-    if (!author || author.trim().length === 0) {
-      throw new RequiredFieldError('author');
+  private static validateAuthors(authors: Author[]): readonly Author[] {
+    if (!authors || authors.length === 0) {
+      throw new RequiredFieldError('authors');
     }
 
-    const trimmedAuthor = author.trim();
-
-    if (trimmedAuthor.length > FIELD_CONSTRAINTS.AUTHOR_MAX_LENGTH) {
-      throw new FieldTooLongError('author', FIELD_CONSTRAINTS.AUTHOR_MAX_LENGTH);
+    if (authors.length > FIELD_CONSTRAINTS.MAX_AUTHORS) {
+      throw new TooManyItemsError('authors', FIELD_CONSTRAINTS.MAX_AUTHORS);
     }
 
-    return trimmedAuthor;
+    const seen = new Set<string>();
+
+    for (const author of authors) {
+      if (seen.has(author.id)) {
+        throw new DuplicateItemError('authors', author.name);
+      }
+      seen.add(author.id);
+    }
+
+    return Object.freeze([...authors]);
+  }
+
+  private static validateType(type: BookType): BookType {
+    if (!type) {
+      throw new RequiredFieldError('type');
+    }
+
+    return type;
   }
 
   private static validateCategories(categories: Category[]): readonly Category[] {
