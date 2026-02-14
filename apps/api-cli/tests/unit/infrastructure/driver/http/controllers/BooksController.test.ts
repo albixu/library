@@ -134,7 +134,7 @@ describe('BooksController', () => {
 
         expect(mockUseCase.execute).toHaveBeenCalledWith({
           title: 'Clean Code',
-          author: 'Robert C. Martin', // Controller extracts first author from array
+          authors: ['Robert C. Martin'],
           description: 'A Handbook of Agile Software Craftsmanship',
           type: 'technical',
           format: 'pdf',
@@ -182,7 +182,7 @@ describe('BooksController', () => {
         expect(mockUseCase.execute).toHaveBeenCalledWith(
           expect.objectContaining({
             title: 'Clean Code',
-            author: 'Robert C. Martin',
+            authors: ['Robert C. Martin'],
           })
         );
       });

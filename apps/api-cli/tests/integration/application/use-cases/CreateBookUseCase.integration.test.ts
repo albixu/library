@@ -102,7 +102,7 @@ describe('CreateBookUseCase Integration', () => {
   function createValidInput(overrides: Partial<CreateBookInput> = {}): CreateBookInput {
     return {
       title: 'Clean Code',
-      author: 'Robert C. Martin',
+      authors: ['Robert C. Martin'],
       description: 'A handbook of agile software craftsmanship',
       type: 'technical',
       categoryNames: ['Programming', 'Software Engineering'],
@@ -135,6 +135,20 @@ describe('CreateBookUseCase Integration', () => {
       expect(result.categories.map((c) => c.name)).toContain('software engineering');
       expect(result.createdAt).toBeInstanceOf(Date);
       expect(result.updatedAt).toBeInstanceOf(Date);
+    });
+
+    it('should create a book with multiple authors', async () => {
+      const input = createValidInput({
+        authors: ['Author One', 'Author Two', 'Author Three'],
+        isbn: '9780135957059', // Use different ISBN to avoid conflict
+      });
+
+      const result = await useCase.execute(input);
+
+      expect(result.authors).toHaveLength(3);
+      expect(result.authors.map((a) => a.name)).toContain('Author One');
+      expect(result.authors.map((a) => a.name)).toContain('Author Two');
+      expect(result.authors.map((a) => a.name)).toContain('Author Three');
     });
 
     it('should create a book without ISBN', async () => {
@@ -205,7 +219,7 @@ describe('CreateBookUseCase Integration', () => {
       // Try to create book with same ISBN but different title/author
       const input2 = createValidInput({
         title: 'Different Title',
-        author: 'Different Author',
+        authors: ['Different Author'],
         isbn: '9780132350884', // Same ISBN
       });
 
@@ -249,7 +263,7 @@ describe('CreateBookUseCase Integration', () => {
       // Same title by different author should be allowed
       // Using a valid ISBN-13: 9780201633610 (Design Patterns)
       const input2 = createValidInput({
-        author: 'Different Author',
+        authors: ['Different Author'],
         isbn: '9780201633610',
       });
       const result = await useCase.execute(input2);

@@ -5,12 +5,12 @@
  * This use case coordinates between domain entities and infrastructure ports.
  *
  * Flow:
- * 1. Validate input fields (title, author, type, format, isbn, description)
+ * 1. Validate input fields (title, authors, type, format, isbn, description)
  * 2. Validate type exists in database via TypeRepository
  * 3. Check for ISBN duplicates (triad check removed with multi-author model)
  * 4. Resolve/create categories (only after duplicate check passes)
- * 5. Resolve/create author via AuthorRepository
- * 6. Create Book entity with validated fields, type, author, and categories
+ * 5. Resolve/create authors via AuthorRepository
+ * 6. Create Book entity with validated fields, type, authors, and categories
  * 7. Generate embedding from book text
  * 8. Persist book with embedding atomically
  */
@@ -58,7 +58,7 @@ const MAX_EMBEDDING_TEXT_LENGTH = 7000;
  */
 export interface CreateBookInput {
   title: string;
-  author: string;
+  authors: string[];
   description: string;
   type: string;
   categoryNames: string[];
@@ -141,7 +141,7 @@ export class CreateBookUseCase {
   async execute(input: CreateBookInput): Promise<CreateBookOutput> {
     this.logger.debug('Starting book creation', {
       title: input.title,
-      author: input.author,
+      authors: input.authors,
       isbn: input.isbn ?? null,
       categoryCount: input.categoryNames.length,
     });
@@ -186,19 +186,18 @@ export class CreateBookUseCase {
       categories: categories.map((c) => c.name),
     });
 
-    // 5. Resolve or create author via AuthorRepository
-    const authorEntity = await this.authorRepository.findOrCreate(input.author);
+    // 5. Resolve or create authors via AuthorRepository
+    const authorEntities = await this.authorRepository.findOrCreateMany(input.authors);
 
-    this.logger.debug('Author resolved', {
-      authorId: authorEntity.id,
-      authorName: authorEntity.name,
+    this.logger.debug('Authors resolved', {
+      authors: authorEntities.map(a => ({ id: a.id, name: a.name })),
     });
 
-    // 6. Create Book entity with validated fields, type, author, and categories
+    // 6. Create Book entity with validated fields, type, authors, and categories
     const book = Book.create({
       id: generateUUID(),
       title: input.title,
-      authors: [authorEntity],
+      authors: authorEntities,
       description: input.description,
       type: bookType,
       categories,

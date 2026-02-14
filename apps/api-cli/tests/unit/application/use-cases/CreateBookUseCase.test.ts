@@ -31,7 +31,7 @@ describe('CreateBookUseCase', () => {
   // Test data
   const validInput: CreateBookInput = {
     title: 'Clean Code',
-    author: 'Robert C. Martin',
+    authors: ['Robert C. Martin'],
     description: 'A handbook of agile software craftsmanship',
     type: 'technical',
     categoryNames: ['programming', 'software engineering'],
@@ -111,8 +111,8 @@ describe('CreateBookUseCase', () => {
       findById: vi.fn(),
       findByName: vi.fn(),
       findByNames: vi.fn(),
-      findOrCreate: vi.fn().mockResolvedValue(mockAuthor),
-      findOrCreateMany: vi.fn(),
+      findOrCreate: vi.fn(),
+      findOrCreateMany: vi.fn().mockResolvedValue([mockAuthor]),
       save: vi.fn(),
       findAll: vi.fn(),
       count: vi.fn(),
@@ -168,10 +168,35 @@ describe('CreateBookUseCase', () => {
       await expect(useCase.execute(invalidInput)).rejects.toThrow(InvalidBookTypeError);
     });
 
-    it('should resolve or create author', async () => {
+    it('should resolve or create authors', async () => {
       await useCase.execute(validInput);
 
-      expect(mockAuthorRepository.findOrCreate).toHaveBeenCalledWith('Robert C. Martin');
+      expect(mockAuthorRepository.findOrCreateMany).toHaveBeenCalledWith(['Robert C. Martin']);
+    });
+
+    it('should resolve or create multiple authors', async () => {
+      const multiAuthorInput: CreateBookInput = {
+        ...validInput,
+        authors: ['Author One', 'Author Two', 'Author Three'],
+      };
+
+      const mockAuthors = [
+        Author.create({ id: '550e8400-e29b-41d4-a716-446655440030', name: 'Author One' }),
+        Author.create({ id: '550e8400-e29b-41d4-a716-446655440031', name: 'Author Two' }),
+        Author.create({ id: '550e8400-e29b-41d4-a716-446655440032', name: 'Author Three' }),
+      ];
+
+      (mockAuthorRepository.findOrCreateMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockAuthors);
+
+      const result = await useCase.execute(multiAuthorInput);
+
+      expect(mockAuthorRepository.findOrCreateMany).toHaveBeenCalledWith([
+        'Author One',
+        'Author Two',
+        'Author Three',
+      ]);
+      expect(result.authors).toHaveLength(3);
+      expect(result.authors.map((a) => a.name)).toEqual(['Author One', 'Author Two', 'Author Three']);
     });
 
     it('should resolve or create categories', async () => {
@@ -290,7 +315,7 @@ describe('CreateBookUseCase', () => {
     it('should work without optional fields', async () => {
       const minimalInput: CreateBookInput = {
         title: 'Minimal Book',
-        author: 'Unknown Author',
+        authors: ['Unknown Author'],
         description: 'A minimal book description',
         type: 'novel',
         categoryNames: ['fiction'],
@@ -302,7 +327,7 @@ describe('CreateBookUseCase', () => {
         name: 'Unknown Author',
       });
 
-      (mockAuthorRepository.findOrCreate as ReturnType<typeof vi.fn>).mockResolvedValue(unknownAuthor);
+      (mockAuthorRepository.findOrCreateMany as ReturnType<typeof vi.fn>).mockResolvedValue([unknownAuthor]);
       (mockCategoryRepository.findOrCreateMany as ReturnType<typeof vi.fn>).mockResolvedValue([
         Category.create({ id: '330e8400-e29b-41d4-a716-446655440003', name: 'fiction' }),
       ]);

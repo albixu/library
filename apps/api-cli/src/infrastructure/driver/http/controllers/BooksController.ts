@@ -72,12 +72,9 @@ export class BooksController {
       const input = parseResult.data;
 
       // 2. Execute use case
-      // Currently use case accepts single author, we pass the first from the array
-      // Note: Zod schema guarantees at least 1 author (min(1)), so authors[0] is safe
-      const firstAuthor = input.authors[0] as string;
       const result = await this.createBookUseCase.execute({
         title: input.title,
-        author: firstAuthor,
+        authors: input.authors,
         description: input.description,
         type: input.type,
         format: input.format,
