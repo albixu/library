@@ -57,7 +57,7 @@ function createMockReply(): FastifyReply {
  */
 const validRequestBody = {
   title: 'Clean Code',
-  author: 'Robert C. Martin',
+  authors: ['Robert C. Martin'],
   description: 'A Handbook of Agile Software Craftsmanship',
   type: 'technical',
   format: 'pdf',
@@ -73,7 +73,9 @@ const validRequestBody = {
 const mockBookOutput: CreateBookOutput = {
   id: '550e8400-e29b-41d4-a716-446655440000',
   title: 'Clean Code',
-  author: 'Robert C. Martin',
+  authors: [
+    { id: '550e8400-e29b-41d4-a716-446655440020', name: 'Robert C. Martin' },
+  ],
   description: 'A Handbook of Agile Software Craftsmanship',
   type: 'technical',
   format: 'pdf',
@@ -110,7 +112,7 @@ describe('BooksController', () => {
         expect(reply.send).toHaveBeenCalledWith({
           id: mockBookOutput.id,
           title: mockBookOutput.title,
-          author: mockBookOutput.author,
+          authors: mockBookOutput.authors,
           description: mockBookOutput.description,
           type: mockBookOutput.type,
           format: mockBookOutput.format,
@@ -132,7 +134,7 @@ describe('BooksController', () => {
 
         expect(mockUseCase.execute).toHaveBeenCalledWith({
           title: 'Clean Code',
-          author: 'Robert C. Martin',
+          author: 'Robert C. Martin', // Controller extracts first author from array
           description: 'A Handbook of Agile Software Craftsmanship',
           type: 'technical',
           format: 'pdf',
@@ -168,7 +170,7 @@ describe('BooksController', () => {
         const bodyWithWhitespace = {
           ...validRequestBody,
           title: '  Clean Code  ',
-          author: '  Robert C. Martin  ',
+          authors: ['  Robert C. Martin  '],
         };
 
         vi.mocked(mockUseCase.execute).mockResolvedValue(mockBookOutput);
@@ -251,10 +253,33 @@ describe('BooksController', () => {
         );
       });
 
-      it('should return 400 when author is missing', async () => {
+      it('should return 400 when authors is missing', async () => {
         const body = { ...validRequestBody };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (body as any).author;
+        delete (body as any).authors;
+        const request = createMockRequest(body);
+        const reply = createMockReply();
+
+        await controller.create(request, reply);
+
+        expect(reply.status).toHaveBeenCalledWith(400);
+      });
+
+      it('should return 400 when authors array is empty', async () => {
+        const body = { ...validRequestBody, authors: [] };
+        const request = createMockRequest(body);
+        const reply = createMockReply();
+
+        await controller.create(request, reply);
+
+        expect(reply.status).toHaveBeenCalledWith(400);
+      });
+
+      it('should return 400 when authors exceeds 10', async () => {
+        const body = {
+          ...validRequestBody,
+          authors: Array(11).fill('Author Name'),
+        };
         const request = createMockRequest(body);
         const reply = createMockReply();
 

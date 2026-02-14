@@ -22,7 +22,9 @@ describe('AddCommand', () => {
   const baseBook: CreateBookOutput = {
     id: '550e8400-e29b-41d4-a716-446655440000',
     title: 'Clean Code',
-    author: 'Robert C. Martin',
+    authors: [
+      { id: '550e8400-e29b-41d4-a716-446655440020', name: 'Robert C. Martin' },
+    ],
     description: 'A handbook of agile software craftsmanship',
     type: 'technical',
     format: 'pdf',

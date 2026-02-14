@@ -25,11 +25,16 @@ export const createBookSchema = z.object({
     .max(500, 'title exceeds maximum length of 500 characters')
     .transform((val) => val.trim()),
 
-  author: z
-    .string({ required_error: 'author is required' })
-    .min(1, 'author cannot be empty')
-    .max(300, 'author exceeds maximum length of 300 characters')
-    .transform((val) => val.trim()),
+  authors: z
+    .array(
+      z
+        .string()
+        .min(1, 'author name cannot be empty')
+        .max(300, 'author name exceeds maximum length of 300 characters')
+        .transform((val) => val.trim())
+    )
+    .min(1, 'at least one author is required')
+    .max(10, 'maximum of 10 authors allowed'),
 
   description: z
     .string({ required_error: 'description is required' })
@@ -86,7 +91,12 @@ export type CreateBookRequest = z.infer<typeof createBookSchema>;
 export const bookResponseSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
-  author: z.string(),
+  authors: z.array(
+    z.object({
+      id: z.string().uuid(),
+      name: z.string(),
+    })
+  ),
   description: z.string(),
   type: z.string(),
   format: z.enum(BOOK_FORMATS),

@@ -74,7 +74,7 @@ export interface CreateBookInput {
 export interface CreateBookOutput {
   id: string;
   title: string;
-  author: string;
+  authors: Array<{ id: string; name: string }>;
   description: string;
   type: string;
   categories: Array<{ id: string; name: string }>;
@@ -257,20 +257,12 @@ export class CreateBookUseCase {
 
   /**
    * Converts a Book entity to the output DTO
-   *
-   * Returns first author's name as 'author' string for backward compatibility
-   * with the current API contract.
    */
   private toOutput(book: Book): CreateBookOutput {
-    // Return first author's name for backward compatibility
-    // Book.authors is guaranteed to have at least 1 element by domain validation
-    const firstAuthor = book.authors[0];
-    const authorName = firstAuthor?.name ?? '';
-
     return {
       id: book.id,
       title: book.title,
-      author: authorName,
+      authors: book.authors.map((a) => ({ id: a.id, name: a.name })),
       description: book.description,
       type: book.type.name, // BookType entity has .name property
       categories: book.categories.map((c) => ({ id: c.id, name: c.name })),

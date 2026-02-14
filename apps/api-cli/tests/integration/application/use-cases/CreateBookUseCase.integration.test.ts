@@ -122,7 +122,8 @@ describe('CreateBookUseCase Integration', () => {
 
       expect(result.id).toBeDefined();
       expect(result.title).toBe('Clean Code');
-      expect(result.author).toBe('Robert C. Martin');
+      expect(result.authors).toHaveLength(1);
+      expect(result.authors[0].name).toBe('Robert C. Martin');
       expect(result.description).toBe('A handbook of agile software craftsmanship');
       expect(result.type).toBe('technical');
       expect(result.format).toBe('pdf');
@@ -253,7 +254,7 @@ describe('CreateBookUseCase Integration', () => {
       });
       const result = await useCase.execute(input2);
 
-      expect(result.author).toBe('Different Author');
+      expect(result.authors[0].name).toBe('Different Author');
     });
   });
 

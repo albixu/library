@@ -11,7 +11,7 @@
 export interface BookFormatInput {
   id: string;
   title: string;
-  author: string;
+  authors: Array<{ id: string; name: string }>;
   description: string;
   type: string;
   format: string;
@@ -62,7 +62,8 @@ export function formatBookCreated(book: BookFormatInput): string {
   lines.push(`├${'─'.repeat(BOX_WIDTH - 2)}┤`);
 
   // Book details
-  lines.push(formatField('Autor', book.author, BOX_WIDTH));
+  const authorNames = book.authors.map((a) => a.name).join(', ');
+  lines.push(formatField('Autor(es)', authorNames, BOX_WIDTH));
   lines.push(formatField('Tipo', book.type, BOX_WIDTH));
   lines.push(formatField('Formato', book.format, BOX_WIDTH));
   lines.push(

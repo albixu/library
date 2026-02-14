@@ -139,7 +139,11 @@ describe('CreateBookUseCase', () => {
       const result = await useCase.execute(validInput);
 
       expect(result.title).toBe('Clean Code');
-      expect(result.author).toBe('Robert C. Martin');
+      expect(result.authors).toHaveLength(1);
+      expect(result.authors[0]).toMatchObject({
+        id: mockAuthor.id,
+        name: 'Robert C. Martin',
+      });
       expect(result.description).toBe('A handbook of agile software craftsmanship');
       expect(result.type).toBe('technical');
       expect(result.format).toBe('pdf');

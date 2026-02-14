@@ -60,7 +60,6 @@ describe('POST /api/books (E2E)', () => {
       expect(body).toMatchObject({
         id: expect.any(String),
         title: bookData.title,
-        author: bookData.author,
         description: bookData.description,
         type: bookData.type,
         format: bookData.format,
@@ -69,6 +68,13 @@ describe('POST /api/books (E2E)', () => {
         path: bookData.path,
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
+      });
+
+      // Verify authors (new array format with id and name)
+      expect(body.authors).toHaveLength(1);
+      expect(body.authors[0]).toMatchObject({
+        id: expect.any(String),
+        name: bookData.authors[0],
       });
 
       // Verify categories (names are normalized to lowercase by the system)
@@ -112,7 +118,7 @@ describe('POST /api/books (E2E)', () => {
     it('should create book without optional fields (isbn, path)', async () => {
       const bookData = {
         title: 'Book Without Optional Fields',
-        author: 'Test Author',
+        authors: ['Test Author'],
         description: 'A book without ISBN and path.',
         type: 'novel',
         format: 'epub',
@@ -136,7 +142,7 @@ describe('POST /api/books (E2E)', () => {
     it('should create book with multiple categories', async () => {
       const bookData = {
         title: 'Multi-Category Book',
-        author: 'Test Author',
+        authors: ['Test Author'],
         description: 'A book with multiple categories.',
         type: 'technical',
         format: 'pdf',
@@ -180,13 +186,13 @@ describe('POST /api/books (E2E)', () => {
       expect(body.details.some((d: string) => d.toLowerCase().includes('title'))).toBe(true);
     });
 
-    it('should return 400 when author is missing', async () => {
-      const { author, ...bookWithoutAuthor } = e2eFixtures.validBook;
+    it('should return 400 when authors is missing', async () => {
+      const { authors, ...bookWithoutAuthors } = e2eFixtures.validBook;
 
       const response = await fetch(`${E2E_BASE_URL}/api/books`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookWithoutAuthor),
+        body: JSON.stringify(bookWithoutAuthors),
       });
 
       expect(response.status).toBe(400);
@@ -303,11 +309,11 @@ describe('POST /api/books (E2E)', () => {
       });
       expect(response1.status).toBe(201);
 
-      // Attempt to create duplicate with same ISBN but different title/author
+      // Attempt to create duplicate with same ISBN but different title/authors
       const duplicateBook = {
         ...e2eFixtures.validBook,
         title: 'Different Title',
-        author: 'Different Author',
+        authors: ['Different Author'],
         isbn,
       };
 
@@ -324,12 +330,12 @@ describe('POST /api/books (E2E)', () => {
       expect(body.error.toLowerCase()).toContain('isbn');
     });
 
-    it('should allow same title/author/format without ISBN (no triad check)', async () => {
+    it('should allow same title/authors/format without ISBN (no triad check)', async () => {
       // With multi-author model, triad duplicate detection has been removed
       // Books without ISBN are considered unique (user responsibility)
       const bookData = {
         title: 'Unique Triad Book',
-        author: 'Unique Author',
+        authors: ['Unique Author'],
         description: 'First book with this triad.',
         type: 'technical',
         format: 'pdf',
@@ -344,7 +350,7 @@ describe('POST /api/books (E2E)', () => {
       });
       expect(response1.status).toBe(201);
 
-      // Create second book with same author/title/format - should succeed now
+      // Create second book with same authors/title/format - should succeed now
       const duplicateBook = {
         ...bookData,
         description: 'Second book with same triad.',

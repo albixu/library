@@ -285,7 +285,7 @@ export function generateUniqueISBN(): string {
 export const e2eFixtures = {
   validBook: {
     title: 'E2E Test Book',
-    author: 'E2E Author',
+    authors: ['E2E Author'],
     description: 'A book created during E2E testing to verify system functionality.',
     type: 'technical' as const,
     format: 'pdf' as const,
@@ -296,7 +296,7 @@ export const e2eFixtures = {
   },
 
   bookWithoutTitle: {
-    author: 'E2E Author',
+    authors: ['E2E Author'],
     description: 'A book without title.',
     type: 'technical' as const,
     format: 'pdf' as const,
@@ -305,7 +305,7 @@ export const e2eFixtures = {
 
   bookWithInvalidType: {
     title: 'Invalid Type Book',
-    author: 'E2E Author',
+    authors: ['E2E Author'],
     description: 'A book with invalid type.',
     type: 'invalid_type',
     format: 'pdf',
