@@ -3,6 +3,13 @@
  */
 
 export {
+  Author,
+  type CreateAuthorProps,
+  type AuthorPersistenceProps,
+  type UpdateAuthorProps,
+} from './Author.js';
+
+export {
   Book,
   type CreateBookProps,
   type BookPersistenceProps,
