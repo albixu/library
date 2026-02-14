@@ -1,0 +1,46 @@
+[
+  {
+    "id": "9780134494166",
+    "language": "en",
+    "level": "Intermediate to advanced",
+    "title": "Clean Architecture: A Craftsman's Guide to Software Structure and Design",
+    "authors": ["Robert C. Martin"],
+    "pages": "432",
+    "publication_date": "September 2017",
+    "description": "By applying universal rules of software architecture, you can dramatically improve developer productivity throughout the life of any software system. Now, building upon the success of his best-selling books Clean Code and The Clean Coder, legendary software craftsman Robert C. Martin reveals those rules.",
+    "tags": ["Software Architecture", "Clean Code", "Design Principles"]
+  },
+  {
+    "id": "9780132350884",
+    "language": "en",
+    "level": "Intermediate to advanced",
+    "title": "Clean Code: A Handbook of Agile Software Craftsmanship",
+    "authors": ["Robert C. Martin"],
+    "pages": "464",
+    "publication_date": "August 2008",
+    "description": "Even bad code can function. But if code isn't clean, it can bring a development organization to its knees. Every year, countless hours and significant resources are lost because of poorly written code. But it doesn't have to be that way.",
+    "tags": ["Software Engineering", "Clean Code", "Best Practices", "Agile"]
+  },
+  {
+    "id": "9780321125217",
+    "language": "en",
+    "level": "Advanced",
+    "title": "Domain-Driven Design: Tackling Complexity in the Heart of Software",
+    "authors": ["Eric Evans"],
+    "pages": "560",
+    "publication_date": "August 2003",
+    "description": "Eric Evans has written a fantastic book on how you can make the design of your software match your mental model of the problem domain you are addressing. His book is very compatible with XP. It is not about drawing pictures of a domain; it is about how you think of it, the language you use to talk about it, and how you organize your software to reflect your improving understanding of it.",
+    "tags": ["Domain-Driven Design", "DDD", "Software Architecture", "Enterprise"]
+  },
+  {
+    "id": "9780137081073",
+    "language": "en",
+    "level": "Intermediate",
+    "title": "The Clean Coder: A Code of Conduct for Professional Programmers",
+    "authors": ["Robert C. Martin"],
+    "pages": "256",
+    "publication_date": "May 2011",
+    "description": "Programmers who endure and succeed amidst swirling uncertainty and nonstop pressure share a common attribute: They care deeply about the practice of creating software. They treat it as a craft. They are professionals. In The Clean Coder, legendary software expert Robert C. Martin introduces the disciplines, techniques, tools, and practices of true software craftsmanship.",
+    "tags": ["Professionalism", "Software Engineering", "Career"]
+  }
+]
