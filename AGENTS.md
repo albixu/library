@@ -28,8 +28,15 @@ Se debe seguir esta estructura de ramas jerárquica para cada desarrollo:
    - `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `style:`.
 6. **Pase a producción:** Tras probar la funcionalidades completas en la rama `dev` se mergearán a `main` mediante un **Pull Request**
 
-### 3.1 Cosas a evitar en el git workflow.
-El agente no aprobará ningún pull request de forma automática.
+### 3.1 Cosas trabajar con las tareas y las ramas.
+1. Una vez realizada una subtarea, se realizará un PR automático de la subtarea a la rama de la historia correspondiente y se aprobará y mergeará automáticamente.
+2. A continuación se actualizará la rama de la historia y se realizará la siguiente subtarea siguiendo el mismo proceso.
+3. Así hasta terminar con todas las subtareas.
+4. Una vez realizadas todas las subtareas y estar todas estas mergeadas en la rama de la historia, se creará un PR de la rama de la historia a la rama dev. Esta no podrá ser aprobada ni mergeada por el agente. Requiere de una revisión y aprobado manual.
+
+**Importante**
+Ten en cuenta que SI tienes permisos para aprobar y mergear los PR que son subtareas y van a las ramas de las historias.
+NO tienes permisos para aprobar ni mergear PR de historias que van a la rama dev.
 
 ## 4. Build/Lint/Test Commands (apps/api-cli/)
 
