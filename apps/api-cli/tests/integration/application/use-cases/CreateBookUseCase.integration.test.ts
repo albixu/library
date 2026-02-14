@@ -18,7 +18,7 @@ import { PostgresBookRepository } from '../../../../src/infrastructure/driven/pe
 import { PostgresCategoryRepository } from '../../../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { OllamaEmbeddingService } from '../../../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
 import { DuplicateISBNError, DuplicateBookError } from '../../../../src/domain/errors/DomainErrors.js';
-import { InvalidISBNError, InvalidBookTypeError, InvalidBookFormatError } from '../../../../src/domain/errors/DomainErrors.js';
+import { InvalidISBNError, InvalidBookFormatError } from '../../../../src/domain/errors/DomainErrors.js';
 import * as schema from '../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 
 const { Pool } = pg;
@@ -247,11 +247,8 @@ describe('CreateBookUseCase Integration', () => {
       await expect(useCase.execute(input)).rejects.toThrow(InvalidISBNError);
     });
 
-    it('should reject invalid book type', async () => {
-      const input = createValidInput({ type: 'invalid-type' });
-
-      await expect(useCase.execute(input)).rejects.toThrow(InvalidBookTypeError);
-    });
+    // Note: Book type validation was removed in TASK-005.
+    // Type validation will be done against database in TASK-010 (TypeRepository).
 
     it('should reject invalid book format', async () => {
       const input = createValidInput({ format: 'invalid-format' });

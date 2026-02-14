@@ -21,8 +21,7 @@
 
 import { Book } from '../../domain/entities/Book.js';
 import { Author } from '../../domain/entities/Author.js';
-import { BookType as BookTypeEntity } from '../../domain/entities/BookType.js';
-import { BookType as BookTypeVO } from '../../domain/value-objects/BookType.js';
+import { BookType } from '../../domain/entities/BookType.js';
 import { BookFormat } from '../../domain/value-objects/BookFormat.js';
 import { ISBN } from '../../domain/value-objects/ISBN.js';
 import { generateUUID } from '../../shared/utils/uuid.js';
@@ -144,8 +143,7 @@ export class CreateBookUseCase {
 
     // 1. Validate and normalize fields needed for duplicate detection
     //    This provides early validation and normalization without persisting anything
-    //    BookTypeVO is used for validation only (will throw InvalidBookTypeError if invalid)
-    BookTypeVO.create(input.type);
+    //    NOTE: Type validation will be done against DB in TASK-010 via TypeRepository.findByName()
     const bookFormat = BookFormat.create(input.format);
     const bookIsbn = input.isbn ? ISBN.create(input.isbn) : null;
 
@@ -198,7 +196,7 @@ export class CreateBookUseCase {
       name: input.author,
     });
 
-    const bookTypeEntity = BookTypeEntity.create({
+    const bookTypeEntity = BookType.create({
       id: generateUUID(),
       name: input.type,
     });

@@ -7,7 +7,6 @@
  */
 
 import { z } from 'zod';
-import { BOOK_TYPES } from '../../../../domain/value-objects/BookType.js';
 import { BOOK_FORMATS } from '../../../../domain/value-objects/BookFormat.js';
 
 /**
@@ -15,6 +14,9 @@ import { BOOK_FORMATS } from '../../../../domain/value-objects/BookFormat.js';
  *
  * Field constraints mirror domain entity rules but are enforced at API boundary
  * for better error messages and early rejection of invalid requests.
+ *
+ * Note: Book type validation is deferred to database lookup (TASK-010).
+ * Currently accepts any non-empty string.
  */
 export const createBookSchema = z.object({
   title: z
@@ -35,10 +37,13 @@ export const createBookSchema = z.object({
     .max(5000, 'description exceeds maximum length of 5000 characters')
     .transform((val) => val.trim()),
 
-  type: z.enum(BOOK_TYPES, {
-    required_error: 'type is required',
-    invalid_type_error: `type must be one of: ${BOOK_TYPES.join(', ')}`,
-  }),
+  // Type validation deferred to TASK-010 (TypeRepository).
+  // Accepts any non-empty string; validated against DB types later.
+  type: z
+    .string({ required_error: 'type is required' })
+    .min(1, 'type cannot be empty')
+    .max(100, 'type exceeds maximum length of 100 characters')
+    .transform((val) => val.trim().toLowerCase()),
 
   format: z.enum(BOOK_FORMATS, {
     required_error: 'format is required',
@@ -83,7 +88,7 @@ export const bookResponseSchema = z.object({
   title: z.string(),
   author: z.string(),
   description: z.string(),
-  type: z.enum(BOOK_TYPES),
+  type: z.string(),
   format: z.enum(BOOK_FORMATS),
   categories: z.array(
     z.object({

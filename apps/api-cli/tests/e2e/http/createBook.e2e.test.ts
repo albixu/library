@@ -227,22 +227,8 @@ describe('POST /api/books (E2E)', () => {
       expect(body).toHaveProperty('error');
     });
 
-    it('should return 400 when type is invalid', async () => {
-      const response = await fetch(`${E2E_BASE_URL}/api/books`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(e2eFixtures.bookWithInvalidType),
-      });
-
-      expect(response.status).toBe(400);
-
-      const body = await response.json();
-      expect(body).toHaveProperty('error');
-      // Zod errors return "Validation failed" in error and field details in details array
-      expect(body.error.toLowerCase()).toContain('validation');
-      expect(body.details).toBeDefined();
-      expect(body.details.some((d: string) => d.toLowerCase().includes('type'))).toBe(true);
-    });
+    // Note: Type validation removed in TASK-005.
+    // Type validation will be done against database in TASK-010 (TypeRepository).
 
     it('should return 400 when format is invalid', async () => {
       const bookData = {
