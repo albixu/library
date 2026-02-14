@@ -12,6 +12,8 @@ import { PinoLogger } from './infrastructure/driven/logging/PinoLogger.js';
 import { OllamaEmbeddingService } from './infrastructure/driven/embedding/OllamaEmbeddingService.js';
 import { PostgresBookRepository } from './infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from './infrastructure/driven/persistence/PostgresCategoryRepository.js';
+import { PostgresTypeRepository } from './infrastructure/driven/persistence/PostgresTypeRepository.js';
+import { PostgresAuthorRepository } from './infrastructure/driven/persistence/PostgresAuthorRepository.js';
 import { CreateBookUseCase } from './application/use-cases/CreateBookUseCase.js';
 import { createServer, startServer } from './infrastructure/driver/http/server.js';
 import * as schema from './infrastructure/driven/persistence/drizzle/schema.js';
@@ -45,11 +47,15 @@ async function bootstrap(): Promise<void> {
 
     const bookRepository = new PostgresBookRepository(db as any);
     const categoryRepository = new PostgresCategoryRepository(db as any);
+    const typeRepository = new PostgresTypeRepository(db as any);
+    const authorRepository = new PostgresAuthorRepository(db as any);
 
     // Initialize use cases
     const createBookUseCase = new CreateBookUseCase({
       bookRepository,
       categoryRepository,
+      typeRepository,
+      authorRepository,
       embeddingService,
       logger,
     });
