@@ -122,6 +122,18 @@ export class DuplicateItemError extends DomainError {
   }
 }
 
+/**
+ * Thrown when an invalid book type is provided
+ */
+export class InvalidBookTypeError extends DomainError {
+  constructor(value: string, validTypes?: readonly string[]) {
+    const validTypesMessage = validTypes
+      ? `. Valid types are: ${validTypes.join(', ')}`
+      : '';
+    super(`Invalid book type: "${value}"${validTypesMessage}`);
+  }
+}
+
 // ==================== Application/Infrastructure Errors ====================
 
 /**

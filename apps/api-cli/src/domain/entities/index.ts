@@ -17,6 +17,15 @@ export {
 } from './Book.js';
 
 export {
+  BookType,
+  DEFAULT_BOOK_TYPES,
+  type DefaultBookTypeName,
+  type CreateBookTypeProps,
+  type BookTypePersistenceProps,
+  type UpdateBookTypeProps,
+} from './BookType.js';
+
+export {
   Category,
   type CreateCategoryProps,
   type CategoryPersistenceProps,

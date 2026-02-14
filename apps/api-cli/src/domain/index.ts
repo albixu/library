@@ -13,7 +13,34 @@ export {
   type UpdateBookProps,
 } from './entities/index.js';
 
+export {
+  Author,
+  type CreateAuthorProps,
+  type AuthorPersistenceProps,
+  type UpdateAuthorProps,
+} from './entities/index.js';
+
+export {
+  BookType as BookTypeEntity,
+  DEFAULT_BOOK_TYPES,
+  type DefaultBookTypeName,
+  type CreateBookTypeProps,
+  type BookTypePersistenceProps,
+  type UpdateBookTypeProps,
+} from './entities/index.js';
+
+export {
+  Category,
+  type CreateCategoryProps,
+  type CategoryPersistenceProps,
+  type UpdateCategoryProps,
+} from './entities/index.js';
+
 // Value Objects
+/**
+ * @deprecated BookType VO is being replaced by BookTypeEntity.
+ * Use BookTypeEntity from entities for new code.
+ */
 export {
   BookType,
   BOOK_TYPES,
