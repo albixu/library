@@ -84,7 +84,7 @@ function transformBook(source: SourceBook): ConsolidatedBook {
     description: source.description,
     type: 'technical',
     categories: Object.freeze(source.tags ? [...source.tags] : []),
-    format: 'pdf',
+    format: 'epub',
     available: false,
   });
 }

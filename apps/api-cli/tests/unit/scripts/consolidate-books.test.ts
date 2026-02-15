@@ -33,7 +33,7 @@ describe('consolidate-books', () => {
       expect(result.description).toBe('A test description');
       expect(result.type).toBe('technical');
       expect(result.categories).toEqual(['JavaScript', 'TypeScript']);
-      expect(result.format).toBe('pdf');
+      expect(result.format).toBe('epub');
       expect(result.available).toBe(false);
     });
 
@@ -104,7 +104,7 @@ describe('consolidate-books', () => {
       expect(result.type).toBe('technical');
     });
 
-    it('should always set format to pdf', () => {
+    it('should always set format to epub', () => {
       const source: SourceBook = {
         id: '5555555555555',
         title: 'Any Book',
@@ -114,7 +114,7 @@ describe('consolidate-books', () => {
 
       const result = transformBook(source);
 
-      expect(result.format).toBe('pdf');
+      expect(result.format).toBe('epub');
     });
 
     it('should always set available to false', () => {
@@ -444,7 +444,7 @@ describe('consolidate-books', () => {
         description: 'Description',
         type: 'technical',
         categories: ['Category'],
-        format: 'pdf',
+        format: 'epub',
         available: false,
       };
 
@@ -455,7 +455,7 @@ describe('consolidate-books', () => {
       expect(book.description).toBe('Description');
       expect(book.type).toBe('technical');
       expect(book.categories).toEqual(['Category']);
-      expect(book.format).toBe('pdf');
+      expect(book.format).toBe('epub');
       expect(book.available).toBe(false);
     });
   });
