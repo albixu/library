@@ -13,11 +13,31 @@ export {
   type UpdateBookProps,
 } from './entities/index.js';
 
+export {
+  Author,
+  type CreateAuthorProps,
+  type AuthorPersistenceProps,
+  type UpdateAuthorProps,
+} from './entities/index.js';
+
+export {
+  BookType as BookTypeEntity,
+  DEFAULT_BOOK_TYPES,
+  type DefaultBookTypeName,
+  type CreateBookTypeProps,
+  type BookTypePersistenceProps,
+  type UpdateBookTypeProps,
+} from './entities/index.js';
+
+export {
+  Category,
+  type CreateCategoryProps,
+  type CategoryPersistenceProps,
+  type UpdateCategoryProps,
+} from './entities/index.js';
+
 // Value Objects
 export {
-  BookType,
-  BOOK_TYPES,
-  type BookTypeValue,
   BookFormat,
   BOOK_FORMATS,
   type BookFormatValue,

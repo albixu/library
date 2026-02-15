@@ -74,7 +74,7 @@ export class BooksController {
       // 2. Execute use case
       const result = await this.createBookUseCase.execute({
         title: input.title,
-        author: input.author,
+        authors: input.authors,
         description: input.description,
         type: input.type,
         format: input.format,
@@ -93,7 +93,7 @@ export class BooksController {
       return reply.status(201).send({
         id: result.id,
         title: result.title,
-        author: result.author,
+        authors: result.authors,
         description: result.description,
         type: result.type,
         format: result.format,

@@ -46,6 +46,15 @@ export class CategoryAlreadyExistsError extends DomainError {
 }
 
 /**
+ * Thrown when trying to create an author with a name that already exists
+ */
+export class AuthorAlreadyExistsError extends DomainError {
+  constructor(name: string) {
+    super(`An author with name "${name}" already exists`);
+  }
+}
+
+/**
  * Thrown when trying to create a book with an ISBN that already exists
  * @deprecated Use DuplicateISBNError for ISBN duplicates or DuplicateBookError for triad duplicates
  */
@@ -119,6 +128,18 @@ export class TooManyItemsError extends DomainError {
 export class DuplicateItemError extends DomainError {
   constructor(fieldName: string, duplicateValue: string) {
     super(`Duplicate value "${duplicateValue}" in "${fieldName}"`);
+  }
+}
+
+/**
+ * Thrown when an invalid book type is provided
+ */
+export class InvalidBookTypeError extends DomainError {
+  constructor(value: string, validTypes?: readonly string[]) {
+    const validTypesMessage = validTypes
+      ? `. Valid types are: ${validTypes.join(', ')}`
+      : '';
+    super(`Invalid book type: "${value}"${validTypesMessage}`);
   }
 }
 

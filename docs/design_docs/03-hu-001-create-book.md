@@ -27,7 +27,6 @@
 | Criterio | Descripción |
 |----------|-------------|
 | **Sanitización** | El sistema debe aplicar `trim()` a todos los campos de texto antes de procesarlos |
-| **Normalización para duplicados** | Para la detección de duplicados, el sistema genera una versión normalizada (lowercase, sin caracteres especiales) de los campos: Autor, Título y Formato. Los valores originales se preservan para mostrar al usuario |
 | **Descripción obligatoria** | La descripción es un campo **obligatorio** y no puede estar vacío ni ser nulo |
 
 ### 2.2 Reglas de Validación de Duplicados
@@ -35,21 +34,23 @@
 | Regla | Descripción |
 |-------|-------------|
 | **ISBN único** | Si se provee ISBN, debe tener formato válido (10 o 13 dígitos con checksum correcto). No puede estar repetido en la base de datos |
-| **Tríada única** | El sistema debe impedir el registro si la combinación normalizada de `{Autor, Título, Formato}` ya existe en la base de datos |
 
-### 2.3 Gestión de Categorías
+### 2.3 Gestión de Entidades Relacionadas
 
 | Regla | Descripción |
 |-------|-------------|
+| **Múltiples autores** | Un libro puede tener entre 1 y 10 autores |
+| **Auto-creación de autores** | Si el libro incluye un autor que no existe en el sistema, se creará automáticamente |
 | **Múltiples categorías** | Un libro puede tener entre 1 y 10 categorías |
-| **Auto-creación** | Si el libro incluye una categoría que no existe en el sistema, se creará automáticamente |
-| **Sin duplicados** | No se permiten categorías duplicadas en el mismo libro (validación por ID) |
+| **Auto-creación de categorías** | Si el libro incluye una categoría que no existe en el sistema, se creará automáticamente |
+| **Tipo de libro dinámico** | El tipo de libro (`type`) es una entidad dinámica, no un enum fijo. Se crea automáticamente si no existe |
+| **Sin duplicados** | No se permiten autores o categorías duplicadas en el mismo libro (validación por ID) |
 
 ### 2.4 Generación de Embeddings
 
 | Paso | Descripción |
 |------|-------------|
-| **Concatenación** | Se unifica en un string: `autor + título + tipo + categorías + descripción` |
+| **Concatenación** | Se unifica en un string: `autores + título + tipo + categorías + descripción` |
 | **Límite de caracteres** | El string resultante no debe superar los **7000 caracteres**. Si supera este límite, se rechaza la creación con error de validación |
 | **Servicio** | Se llama al servicio local de embeddings (Ollama + nomic-embed-text en Docker) |
 | **Atomicidad** | El proceso es síncrono y atómico: si el servicio de embedding no responde, el libro NO se crea en la base de datos |
@@ -59,14 +60,13 @@
 
 | Interfaz | Comportamiento |
 |----------|----------------|
-| **CLI** | Al finalizar, se muestra un resumen visual de los datos guardados. El vector (embedding) es interno y NO se muestra al usuario |
 | **API** | Retorna el libro creado en formato JSON (sin el embedding) |
 
 #### Logs del Sistema
 
 El sistema debe registrar logs detallados de:
 - Errores de conexión con el servicio de embedding
-- Intentos de creación de duplicados (ISBN o tríada)
+- Intentos de creación de duplicados (ISBN)
 - Errores de validación de ISBN
 - Creación exitosa de libros (nivel INFO)
 
@@ -108,8 +108,10 @@ El sistema está diseñado para un **único usuario administrador**. No se requi
 | Campo | Límite | Validación |
 |-------|--------|------------|
 | `title` | 500 caracteres | Obligatorio |
-| `author` | 300 caracteres | Obligatorio |
+| `authors` | 1-10 autores | Obligatorio (mínimo 1) |
+| `author.name` | 300 caracteres | Obligatorio |
 | `description` | 5000 caracteres | **Obligatorio** |
+| `type` | 100 caracteres | Obligatorio, auto-creado si no existe |
 | `categories` | 1-10 categorías | Obligatorio (mínimo 1) |
 | `category.name` | 100 caracteres | Obligatorio |
 | `path` | 1000 caracteres | Opcional |
@@ -124,7 +126,7 @@ El sistema está diseñado para un **único usuario administrador**. No se requi
 |--------|-----------|
 | `201 Created` | Libro creado exitosamente |
 | `400 Bad Request` | Validación fallida (campos inválidos, texto de embedding > 7000 chars) |
-| `409 Conflict` | Duplicado detectado (ISBN repetido o tríada autor+título+formato existente) |
+| `409 Conflict` | Duplicado detectado (ISBN repetido) |
 | `503 Service Unavailable` | Servicio de embeddings no disponible |
 
 ---
@@ -143,29 +145,33 @@ El sistema está diseñado para un **único usuario administrador**. No se requi
 │    - Validar campos obligatorios                                    │
 │    - Validar formato ISBN (si existe)                               │
 │    - Validar límites de caracteres                                  │
-│    - Validar máximo 10 categorías                                   │
+│    - Validar máximo 10 autores y 10 categorías                      │
 └─────────────────────────────────────────────────────────────────────┘
                                   │
                                   ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │ 2. VERIFICAR DUPLICADOS (Repository)                                │
 │    - Si ISBN existe → Error 409 "ISBN ya registrado"                │
-│    - Si tríada {autor, título, formato} existe → Error 409          │
-│      "Ya existe un libro con el mismo autor, título y formato"      │
 └─────────────────────────────────────────────────────────────────────┘
                                   │
                                   ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│ 3. GESTIONAR CATEGORÍAS                                             │
+│ 3. GESTIONAR ENTIDADES RELACIONADAS                                 │
+│    - Por cada autor:                                                │
+│      - Si existe → usar el existente                                │
+│      - Si no existe → crear nuevo autor                             │
 │    - Por cada categoría:                                            │
 │      - Si existe → usar la existente                                │
 │      - Si no existe → crear nueva categoría                         │
+│    - Para el tipo de libro:                                         │
+│      - Si existe → usar el existente                                │
+│      - Si no existe → crear nuevo tipo                              │
 └─────────────────────────────────────────────────────────────────────┘
                                   │
                                   ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │ 4. GENERAR EMBEDDING                                                │
-│    - Concatenar: autor + título + tipo + categorías + descripción   │
+│    - Concatenar: autores + título + tipo + categorías + descripción │
 │    - Validar longitud ≤ 7000 chars                                  │
 │    - Llamar a EmbeddingService (Ollama)                             │
 │    - Si falla → Error 503, NO se crea el libro                      │
@@ -175,8 +181,11 @@ El sistema está diseñado para un **único usuario administrador**. No se requi
 ┌─────────────────────────────────────────────────────────────────────┐
 │ 5. PERSISTIR (Transacción atómica)                                  │
 │    BEGIN TRANSACTION                                                │
+│      - INSERT autores nuevos                                        │
+│      - INSERT tipo nuevo (si aplica)                                │
 │      - INSERT categorías nuevas                                     │
 │      - INSERT libro                                                 │
+│      - INSERT relaciones book_authors                               │
 │      - INSERT relaciones book_categories                            │
 │    COMMIT                                                           │
 └─────────────────────────────────────────────────────────────────────┘
@@ -184,7 +193,6 @@ El sistema está diseñado para un **único usuario administrador**. No se requi
                                   ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │ 6. RETORNAR RESULTADO                                               │
-│    - CLI: Mostrar resumen visual                                    │
 │    - API: Retornar JSON del libro (sin embedding)                   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -197,16 +205,20 @@ El sistema está diseñado para un **único usuario administrador**. No se requi
 
 La lógica de validación reside en el Core (Dominio/Aplicación):
 - Entidad `Book` con validaciones de negocio
+- Entidad `Author` para autores
 - Entidad `Category` para categorías
-- Value Objects: `ISBN`, `BookType`, `BookFormat`
+- Entidad `BookType` para tipos de libro (dinámico, no enum)
+- Value Objects: `ISBN`, `BookFormat`
 - Errores de dominio específicos
 
 ### 7.2 Puertos de Salida (Driven)
 
 | Puerto | Responsabilidad |
 |--------|-----------------|
-| `BookRepository` | Verificar duplicados (ISBN, tríada), persistir libro |
+| `BookRepository` | Verificar duplicados (ISBN), persistir libro |
+| `AuthorRepository` | Buscar/crear autores |
 | `CategoryRepository` | Buscar/crear categorías |
+| `TypeRepository` | Buscar/crear tipos de libro |
 | `EmbeddingService` | Comunicación con Ollama para generar vectores |
 
 ### 7.3 Puertos de Entrada (Driver)
@@ -220,25 +232,26 @@ La lógica de validación reside en el Core (Dominio/Aplicación):
 | Adaptador | Tipo | Descripción |
 |-----------|------|-------------|
 | HTTP Controller (Fastify) | Driver | Recibe POST /books, llama al servicio, formatea respuesta JSON |
-| CLI Command | Driver | Recibe comando `add`, llama al servicio, formatea salida en terminal |
 | PostgresBookRepository | Driven | Implementa persistencia con Drizzle ORM |
+| PostgresAuthorRepository | Driven | Implementa persistencia de autores |
 | PostgresCategoryRepository | Driven | Implementa persistencia de categorías |
+| PostgresTypeRepository | Driven | Implementa persistencia de tipos de libro |
 | OllamaEmbeddingService | Driven | Llama a Ollama API para generar embeddings |
 
 ---
 
 ## 8. Modelo de Datos
 
-### 8.1 Entidad Book (actualización)
+### 8.1 Entidad Book
 
 ```typescript
 interface Book {
   id: UUID;
   isbn: ISBN | null;
   title: string;              // max 500
-  author: string;             // max 300
+  authors: Author[];          // 1-10 autores
   description: string;        // max 5000, OBLIGATORIO
-  type: BookType;
+  type: BookType;             // entidad dinámica
   categories: Category[];     // 1-10
   format: BookFormat;
   available: boolean;
@@ -249,17 +262,27 @@ interface Book {
 }
 ```
 
-### 8.2 Campos Normalizados para Duplicados
-
-Para la detección de duplicados se almacenan versiones normalizadas:
+### 8.2 Entidad Author
 
 ```typescript
-// Generado internamente, no expuesto al usuario
-normalizedAuthor: string;   // lowercase, sin caracteres especiales
-normalizedTitle: string;    // lowercase, sin caracteres especiales
+interface Author {
+  id: UUID;
+  name: string;               // max 300, normalizado
+  createdAt: Date;
+  updatedAt: Date;
+}
 ```
 
-Alternativa: calcular la normalización on-the-fly en las queries de duplicados.
+### 8.3 Entidad BookType
+
+```typescript
+interface BookType {
+  id: UUID;
+  name: string;               // max 100, normalizado a lowercase
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
 
 ---
 
@@ -301,11 +324,6 @@ Modificar `Book.ts` para que `description` sea requerido:
 - Añadir validación `RequiredFieldError` si está vacío
 - Actualizar tests correspondientes
 
-### 10.2 Tests a actualizar
-
-- `Book.test.ts`: Actualizar todos los tests que usan `description: null`
-- Añadir test: "should throw RequiredFieldError for empty description"
-
 ---
 
 ## 11. Definición de Hecho (DoD)
@@ -313,10 +331,10 @@ Modificar `Book.ts` para que `description` sea requerido:
 - [ ] Código limpio (Lint/Typecheck OK)
 - [ ] Mínimo 80% de tests unitarios y 100% de tests funcionales nuevos/afectados
 - [ ] Campo `description` obligatorio en dominio
-- [ ] Validación de duplicados implementada (ISBN + tríada)
+- [ ] Validación de duplicados implementada (ISBN)
+- [ ] Auto-creación de autores, categorías y tipos
 - [ ] Integración con servicio de embeddings
 - [ ] Endpoint API `POST /books` funcionando
-- [ ] Comando CLI `add` funcionando
 - [ ] Logs implementados para errores y operaciones
 - [ ] Documentación actualizada si el diseño cambia
 - [ ] 0 lint errors, 0 type errors, all tests green, build success

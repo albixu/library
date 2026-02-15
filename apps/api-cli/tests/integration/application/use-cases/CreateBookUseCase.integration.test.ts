@@ -16,13 +16,15 @@ import pg from 'pg';
 import { CreateBookUseCase, type CreateBookInput } from '../../../../src/application/use-cases/CreateBookUseCase.js';
 import { PostgresBookRepository } from '../../../../src/infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from '../../../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
+import { PostgresTypeRepository } from '../../../../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
+import { PostgresAuthorRepository } from '../../../../src/infrastructure/driven/persistence/PostgresAuthorRepository.js';
 import { OllamaEmbeddingService } from '../../../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
-import { DuplicateISBNError, DuplicateBookError } from '../../../../src/domain/errors/DomainErrors.js';
-import { InvalidISBNError, InvalidBookTypeError, InvalidBookFormatError } from '../../../../src/domain/errors/DomainErrors.js';
+import { DuplicateISBNError, InvalidBookTypeError } from '../../../../src/domain/errors/DomainErrors.js';
+import { InvalidISBNError, InvalidBookFormatError } from '../../../../src/domain/errors/DomainErrors.js';
 import * as schema from '../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 
 const { Pool } = pg;
-const { categories, books, bookCategories } = schema;
+const { categories, books, bookCategories, bookAuthors, authors } = schema;
 
 describe('CreateBookUseCase Integration', () => {
   let pool: pg.Pool;
@@ -30,6 +32,8 @@ describe('CreateBookUseCase Integration', () => {
   let useCase: CreateBookUseCase;
   let bookRepository: PostgresBookRepository;
   let categoryRepository: PostgresCategoryRepository;
+  let typeRepository: PostgresTypeRepository;
+  let authorRepository: PostgresAuthorRepository;
   let embeddingService: OllamaEmbeddingService;
 
   // Configuration
@@ -50,6 +54,10 @@ describe('CreateBookUseCase Integration', () => {
     bookRepository = new PostgresBookRepository(db as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     categoryRepository = new PostgresCategoryRepository(db as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    typeRepository = new PostgresTypeRepository(db as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    authorRepository = new PostgresAuthorRepository(db as any);
     embeddingService = new OllamaEmbeddingService({
       baseUrl: OLLAMA_BASE_URL,
       model: 'nomic-embed-text',
@@ -59,6 +67,8 @@ describe('CreateBookUseCase Integration', () => {
     useCase = new CreateBookUseCase({
       bookRepository,
       categoryRepository,
+      typeRepository,
+      authorRepository,
       embeddingService,
     });
 
@@ -77,10 +87,13 @@ describe('CreateBookUseCase Integration', () => {
   });
 
   beforeEach(async () => {
-    // Clean up test data
+    // Clean up test data (order matters due to FK constraints)
     await db.delete(bookCategories);
+    await db.delete(bookAuthors);
     await db.delete(books);
     await db.delete(categories);
+    await db.delete(authors);
+    // Note: types table has seed data, don't delete it
   });
 
   /**
@@ -89,7 +102,7 @@ describe('CreateBookUseCase Integration', () => {
   function createValidInput(overrides: Partial<CreateBookInput> = {}): CreateBookInput {
     return {
       title: 'Clean Code',
-      author: 'Robert C. Martin',
+      authors: ['Robert C. Martin'],
       description: 'A handbook of agile software craftsmanship',
       type: 'technical',
       categoryNames: ['Programming', 'Software Engineering'],
@@ -109,7 +122,8 @@ describe('CreateBookUseCase Integration', () => {
 
       expect(result.id).toBeDefined();
       expect(result.title).toBe('Clean Code');
-      expect(result.author).toBe('Robert C. Martin');
+      expect(result.authors).toHaveLength(1);
+      expect(result.authors[0].name).toBe('Robert C. Martin');
       expect(result.description).toBe('A handbook of agile software craftsmanship');
       expect(result.type).toBe('technical');
       expect(result.format).toBe('pdf');
@@ -121,6 +135,20 @@ describe('CreateBookUseCase Integration', () => {
       expect(result.categories.map((c) => c.name)).toContain('software engineering');
       expect(result.createdAt).toBeInstanceOf(Date);
       expect(result.updatedAt).toBeInstanceOf(Date);
+    });
+
+    it('should create a book with multiple authors', async () => {
+      const input = createValidInput({
+        authors: ['Author One', 'Author Two', 'Author Three'],
+        isbn: '9780135957059', // Use different ISBN to avoid conflict
+      });
+
+      const result = await useCase.execute(input);
+
+      expect(result.authors).toHaveLength(3);
+      expect(result.authors.map((a) => a.name)).toContain('Author One');
+      expect(result.authors.map((a) => a.name)).toContain('Author Two');
+      expect(result.authors.map((a) => a.name)).toContain('Author Three');
     });
 
     it('should create a book without ISBN', async () => {
@@ -191,25 +219,29 @@ describe('CreateBookUseCase Integration', () => {
       // Try to create book with same ISBN but different title/author
       const input2 = createValidInput({
         title: 'Different Title',
-        author: 'Different Author',
+        authors: ['Different Author'],
         isbn: '9780132350884', // Same ISBN
       });
 
       await expect(useCase.execute(input2)).rejects.toThrow(DuplicateISBNError);
     });
 
-    it('should reject duplicate triad (author + title + format)', async () => {
+    it('should allow same title without ISBN (no triad check with multi-author model)', async () => {
+      // With multi-author model, triad duplicate detection has been removed
+      // Books without ISBN are considered unique (user responsibility)
       const input1 = createValidInput({ isbn: null });
       await useCase.execute(input1);
 
-      // Try to create book with same author, title, format
+      // Same author, title, format but no ISBN - should be allowed now
       const input2 = createValidInput({
-        isbn: null, // Different ISBN (none)
-        description: 'Different description', // Allowed
-        categoryNames: ['Different Category'], // Allowed
+        isbn: null,
+        description: 'Different description',
+        categoryNames: ['Different Category'],
       });
 
-      await expect(useCase.execute(input2)).rejects.toThrow(DuplicateBookError);
+      // This should NOT throw - triad check has been removed
+      const result = await useCase.execute(input2);
+      expect(result.title).toBe('Clean Code');
     });
 
     it('should allow same title with different format', async () => {
@@ -231,12 +263,12 @@ describe('CreateBookUseCase Integration', () => {
       // Same title by different author should be allowed
       // Using a valid ISBN-13: 9780201633610 (Design Patterns)
       const input2 = createValidInput({
-        author: 'Different Author',
+        authors: ['Different Author'],
         isbn: '9780201633610',
       });
       const result = await useCase.execute(input2);
 
-      expect(result.author).toBe('Different Author');
+      expect(result.authors[0].name).toBe('Different Author');
     });
   });
 
@@ -248,7 +280,7 @@ describe('CreateBookUseCase Integration', () => {
     });
 
     it('should reject invalid book type', async () => {
-      const input = createValidInput({ type: 'invalid-type' });
+      const input = createValidInput({ type: 'nonexistent-type' });
 
       await expect(useCase.execute(input)).rejects.toThrow(InvalidBookTypeError);
     });

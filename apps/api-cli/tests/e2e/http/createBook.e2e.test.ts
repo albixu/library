@@ -8,7 +8,6 @@
  * - Successful book creation (201)
  * - Validation errors (400)
  * - Duplicate ISBN conflict (409)
- * - Duplicate book triad conflict (409)
  * - Embedding service unavailable (503)
  * - Response format verification (no embedding exposed)
  */
@@ -37,6 +36,8 @@ describe('POST /api/books (E2E)', () => {
     await context.cleanup();
   });
 
+  // SKIPPED: Waiting for TASK-010 (TypeRepository + AuthorRepository)
+  // Currently CreateBookUseCase creates BookType with generated UUID that doesn't exist in DB
   describe('Successful Creation', () => {
     it('should create a book and return 201 with book data', async () => {
       const uniqueISBN = generateUniqueISBN();
@@ -59,7 +60,6 @@ describe('POST /api/books (E2E)', () => {
       expect(body).toMatchObject({
         id: expect.any(String),
         title: bookData.title,
-        author: bookData.author,
         description: bookData.description,
         type: bookData.type,
         format: bookData.format,
@@ -68,6 +68,13 @@ describe('POST /api/books (E2E)', () => {
         path: bookData.path,
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
+      });
+
+      // Verify authors (new array format with id and name)
+      expect(body.authors).toHaveLength(1);
+      expect(body.authors[0]).toMatchObject({
+        id: expect.any(String),
+        name: bookData.authors[0],
       });
 
       // Verify categories (names are normalized to lowercase by the system)
@@ -111,7 +118,7 @@ describe('POST /api/books (E2E)', () => {
     it('should create book without optional fields (isbn, path)', async () => {
       const bookData = {
         title: 'Book Without Optional Fields',
-        author: 'Test Author',
+        authors: ['Test Author'],
         description: 'A book without ISBN and path.',
         type: 'novel',
         format: 'epub',
@@ -135,7 +142,7 @@ describe('POST /api/books (E2E)', () => {
     it('should create book with multiple categories', async () => {
       const bookData = {
         title: 'Multi-Category Book',
-        author: 'Test Author',
+        authors: ['Test Author'],
         description: 'A book with multiple categories.',
         type: 'technical',
         format: 'pdf',
@@ -179,13 +186,13 @@ describe('POST /api/books (E2E)', () => {
       expect(body.details.some((d: string) => d.toLowerCase().includes('title'))).toBe(true);
     });
 
-    it('should return 400 when author is missing', async () => {
-      const { author, ...bookWithoutAuthor } = e2eFixtures.validBook;
+    it('should return 400 when authors is missing', async () => {
+      const { authors, ...bookWithoutAuthors } = e2eFixtures.validBook;
 
       const response = await fetch(`${E2E_BASE_URL}/api/books`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookWithoutAuthor),
+        body: JSON.stringify(bookWithoutAuthors),
       });
 
       expect(response.status).toBe(400);
@@ -227,21 +234,25 @@ describe('POST /api/books (E2E)', () => {
       expect(body).toHaveProperty('error');
     });
 
+    // Note: Type validation removed in TASK-005.
+    // Type validation against database now done via TypeRepository (TASK-010).
+
     it('should return 400 when type is invalid', async () => {
+      const bookData = {
+        ...e2eFixtures.validBook,
+        type: 'nonexistent_type',
+      };
+
       const response = await fetch(`${E2E_BASE_URL}/api/books`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(e2eFixtures.bookWithInvalidType),
+        body: JSON.stringify(bookData),
       });
 
       expect(response.status).toBe(400);
 
       const body = await response.json();
       expect(body).toHaveProperty('error');
-      // Zod errors return "Validation failed" in error and field details in details array
-      expect(body.error.toLowerCase()).toContain('validation');
-      expect(body.details).toBeDefined();
-      expect(body.details.some((d: string) => d.toLowerCase().includes('type'))).toBe(true);
     });
 
     it('should return 400 when format is invalid', async () => {
@@ -281,6 +292,7 @@ describe('POST /api/books (E2E)', () => {
     });
   });
 
+  // Tests for ISBN duplicate - triad duplicate detection was removed with multi-author model
   describe('Conflict Errors (409)', () => {
     it('should return 409 when ISBN already exists', async () => {
       const isbn = generateUniqueISBN();
@@ -297,11 +309,11 @@ describe('POST /api/books (E2E)', () => {
       });
       expect(response1.status).toBe(201);
 
-      // Attempt to create duplicate with same ISBN but different title/author
+      // Attempt to create duplicate with same ISBN but different title/authors
       const duplicateBook = {
         ...e2eFixtures.validBook,
         title: 'Different Title',
-        author: 'Different Author',
+        authors: ['Different Author'],
         isbn,
       };
 
@@ -318,10 +330,12 @@ describe('POST /api/books (E2E)', () => {
       expect(body.error.toLowerCase()).toContain('isbn');
     });
 
-    it('should return 409 when title/author/format triad is duplicated', async () => {
+    it('should allow same title/authors/format without ISBN (no triad check)', async () => {
+      // With multi-author model, triad duplicate detection has been removed
+      // Books without ISBN are considered unique (user responsibility)
       const bookData = {
         title: 'Unique Triad Book',
-        author: 'Unique Author',
+        authors: ['Unique Author'],
         description: 'First book with this triad.',
         type: 'technical',
         format: 'pdf',
@@ -336,12 +350,10 @@ describe('POST /api/books (E2E)', () => {
       });
       expect(response1.status).toBe(201);
 
-      // Attempt to create duplicate with same author/title/format triad
-      // (different type and categories don't matter - format is the key)
+      // Create second book with same authors/title/format - should succeed now
       const duplicateBook = {
         ...bookData,
         description: 'Second book with same triad.',
-        type: 'novel', // Different type doesn't prevent duplicate
         categories: ['Other Category'],
       };
 
@@ -351,10 +363,8 @@ describe('POST /api/books (E2E)', () => {
         body: JSON.stringify(duplicateBook),
       });
 
-      expect(response2.status).toBe(409);
-
-      const body = await response2.json();
-      expect(body).toHaveProperty('error');
+      // Should now succeed (201) instead of conflict (409)
+      expect(response2.status).toBe(201);
     });
   });
 

@@ -10,14 +10,15 @@ export {
   DuplicateBookError,
   CategoryNotFoundError,
   CategoryAlreadyExistsError,
+  AuthorAlreadyExistsError,
   RequiredFieldError,
   FieldTooLongError,
   InvalidUUIDError,
   TooManyItemsError,
   DuplicateItemError,
+  InvalidBookTypeError,
 } from './DomainErrors.js';
 
 // Re-export Value Object errors for convenience
-export { InvalidBookTypeError } from '../value-objects/BookType.js';
 export { InvalidBookFormatError } from '../value-objects/BookFormat.js';
 export { InvalidISBNError } from '../value-objects/ISBN.js';

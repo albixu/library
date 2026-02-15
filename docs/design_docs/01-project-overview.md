@@ -14,7 +14,7 @@
 
 **Library** es un sistema de gestión de biblioteca digital personal que permite catalogar, organizar y buscar libros digitales mediante búsqueda semántica potenciada por IA.
 
-El sistema está diseñado para manejar una colección de aproximadamente **60.000 libros** con capacidad de crecimiento, ofreciendo dos interfaces de acceso: una **CLI** para uso desde terminal y una **API REST** para clientes web.
+El sistema está diseñado para manejar una colección de aproximadamente **60.000 libros** con capacidad de crecimiento, ofreciendo una **API REST** para clientes web y scripts de carga de datos desde ficheros JSON.
 
 ---
 
@@ -32,7 +32,7 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 
 - Almacenar metadatos de libros digitales de forma estructurada
 - Permitir búsqueda semántica mediante embeddings (el usuario describe lo que busca en lenguaje natural)
-- Ofrecer interfaz CLI para operaciones rápidas y scripting
+- Cargar datos iniciales desde ficheros JSON consolidados
 - Exponer API REST para integración con clientes web
 - **Costo operativo mínimo o nulo** (proyecto personal)
 - Arquitectura mantenible y extensible
@@ -46,20 +46,40 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `id` | UUID | Sí | Identificador único generado por el sistema |
-| `isbn` | string | No | ISBN del libro (no todos los libros lo tienen) |
-| `title` | string | Sí | Título del libro |
-| `author` | string | Sí | Autor del libro |
-| `description` | string | No | Sinopsis o descripción del contenido |
-| `type` | enum | Sí | Tipo de libro (technical, novel, essay, etc.) |
-| `categories` | Category[] | Sí | Lista de categorías asociadas (máx. 10) - Relación N:M |
-| `format` | enum | Sí | Formato del archivo (epub, pdf, mobi, etc.) |
+| `isbn` | ISBN | No | ISBN del libro (único cuando presente) |
+| `title` | string | Sí | Título del libro (max 500) |
+| `authors` | Author[] | Sí | Lista de autores (mínimo 1) - Relación N:M |
+| `description` | string | Sí | Sinopsis del contenido (max 5000) |
+| `type` | BookType | Sí | Referencia a entidad Type - Relación N:1 |
+| `categories` | Category[] | Sí | Lista de categorías (1-10) - Relación N:M |
+| `format` | BookFormat | Sí | Formato del archivo (enum) |
 | `available` | boolean | Sí | Indica si el libro está disponible (default: false) |
-| `path` | string | No | Ruta del archivo en el sistema de archivos |
-| `embedding` | vector | No | Vector de 768 dimensiones para búsqueda semántica |
+| `path` | string | No | Ruta del archivo (max 1000) |
+| `embedding` | vector | No | Vector 768 dimensiones |
+| `createdAt` | timestamp | Sí | Fecha de creación |
+| `updatedAt` | timestamp | Sí | Fecha de modificación |
+
+### 3.2 Entidad: Author
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `id` | UUID | Sí | Identificador único generado por el sistema |
+| `name` | string | Sí | Nombre del autor (único, max 300 chars) |
 | `createdAt` | timestamp | Sí | Fecha de creación del registro |
 | `updatedAt` | timestamp | Sí | Fecha de última modificación |
 
-### 3.2 Entidad: Category
+### 3.3 Entidad: BookType
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `id` | UUID | Sí | Identificador único generado por el sistema |
+| `name` | string | Sí | Nombre del tipo (único, max 50 chars) |
+| `createdAt` | timestamp | Sí | Fecha de creación del registro |
+| `updatedAt` | timestamp | Sí | Fecha de última modificación |
+
+**Valores iniciales:** `technical`, `novel`, `biography`
+
+### 3.4 Entidad: Category
 
 Entidad independiente para gestionar categorías reutilizables.
 
@@ -71,12 +91,39 @@ Entidad independiente para gestionar categorías reutilizables.
 | `createdAt` | timestamp | Sí | Fecha de creación del registro |
 | `updatedAt` | timestamp | Sí | Fecha de última modificación |
 
-### 3.3 Value Objects
+### 3.5 Value Objects
 
-- **BookType**: `technical` | `novel` | `essay` | `poetry` | `biography` | `reference` | `manual` | `other`
 - **BookFormat**: `epub` | `pdf` | `mobi` | `azw3` | `djvu` | `cbz` | `cbr` | `txt` | `other`
+- **ISBN**: Validado (ISBN-10 o ISBN-13), normalizado sin guiones
 
-### 3.4 Relaciones
+### 3.6 Relaciones
+
+```
+┌─────────────┐       N:M       ┌─────────────┐
+│   Author    │◄───────────────►│    Book     │
+└─────────────┘                 └─────────────┘
+                                      │
+                                      │ N:1
+                                      ▼
+                                ┌─────────────┐
+                                │  BookType   │
+                                └─────────────┘
+                                      │
+                                      │ N:M
+                                      ▼
+                                ┌─────────────┐
+                                │  Category   │
+                                └─────────────┘
+```
+
+- **Book ↔ Author**: Relación muchos-a-muchos (N:M)
+  - Un libro puede tener múltiples autores
+  - Un autor puede tener múltiples libros
+  - Se gestiona mediante tabla de unión `book_authors`
+
+- **Book → BookType**: Relación muchos-a-uno (N:1)
+  - Un libro tiene exactamente un tipo
+  - Un tipo puede estar asociado a múltiples libros
 
 - **Book ↔ Category**: Relación muchos-a-muchos (N:M)
   - Un libro puede tener múltiples categorías (máximo 10)
@@ -153,20 +200,7 @@ Entidad independiente para gestionar categorías reutilizables.
 
 ---
 
-### 4.6 CLI Framework
-
-| Opción | Pros | Contras | Decisión |
-|--------|------|---------|----------|
-| **Commander.js + Inquirer** | Maduro, flexible, Inquirer para modo interactivo | Dos librerías separadas | ✅ **Seleccionado** |
-| oclif | Framework completo, plugins | Overkill, más complejo | ❌ Descartado |
-| yargs | Popular, auto-help | Menos elegante que Commander | ❌ Descartado |
-| Cliffy (Deno) | Moderno | Requiere Deno | ❌ Descartado |
-
-**Justificación**: Commander.js es el estándar de facto para CLIs en Node.js. Combinado con Inquirer para prompts interactivos, ofrece la mejor experiencia tanto para uso directo como para scripting.
-
----
-
-### 4.7 Validación
+### 4.6 Validación
 
 | Opción | Pros | Contras | Decisión |
 |--------|------|---------|----------|
@@ -179,7 +213,7 @@ Entidad independiente para gestionar categorías reutilizables.
 
 ---
 
-### 4.8 Testing
+### 4.7 Testing
 
 | Opción | Pros | Contras | Decisión |
 |--------|------|---------|----------|
@@ -201,7 +235,6 @@ Entidad independiente para gestionar categorías reutilizables.
 | **Embeddings** | Ollama + nomic-embed-text |
 | **Framework HTTP** | Fastify 4.x |
 | **ORM** | Drizzle ORM |
-| **CLI** | Commander.js + Inquirer |
 | **Validación** | Zod |
 | **Testing** | Vitest |
 | **Containerización** | Docker + Docker Compose |

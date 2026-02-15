@@ -61,7 +61,7 @@ La Arquitectura Hexagonal propone:
 |-----------|----------------------|
 | **Testabilidad** | Podemos testear el dominio sin base de datos ni Ollama |
 | **Flexibilidad** | Cambiar de PostgreSQL a otro motor solo requiere un nuevo adapter |
-| **CLI + API** | Ambos son simplemente adapters diferentes del mismo dominio |
+| **API REST** | La API es simplemente un adapter del dominio |
 | **Embeddings intercambiables** | Ollama hoy, HuggingFace mañana, sin tocar el dominio |
 
 ---
@@ -73,72 +73,66 @@ El proyecto sigue una estructura **monorepo** con múltiples aplicaciones bajo e
 ```
 library/
 ├── docs/
+│   ├── api/
+│   │   └── openapi.yaml
+│   ├── db/
+│   │   ├── init-db.sql                  # Script de inicialización BD
+│   │   └── books.json                   # Datos consolidados para seeding
 │   └── design_docs/
 │       ├── 01-project-overview.md
-│       └── 02-project-structure.md
+│       ├── 02-project-structure.md
+│       ├── 03-hu-001-create-book.md
+│       └── 04-hu-002-initial-data-load.md
 │
 ├── apps/
-│   ├── api-cli/                             # 🖥️ Backend: API REST + CLI
+│   ├── api-cli/                             # 🖥️ Backend: API REST
 │   │   ├── src/
 │   │   │   ├── domain/                      # 💎 NÚCLEO - Lógica de negocio pura
 │   │   │   │   ├── entities/
-│   │   │   │   │   └── Book.ts
+│   │   │   │   │   ├── Book.ts
+│   │   │   │   │   ├── Author.ts            # Entidad Author (N:M con Book)
+│   │   │   │   │   ├── BookType.ts          # Entidad BookType (N:1 con Book)
+│   │   │   │   │   └── Category.ts
 │   │   │   │   ├── value-objects/
-│   │   │   │   │   ├── BookType.ts
 │   │   │   │   │   ├── BookFormat.ts
 │   │   │   │   │   └── ISBN.ts
-│   │   │   │   ├── ports/
-│   │   │   │   │   ├── driven/
-│   │   │   │   │   │   ├── BookRepository.ts
-│   │   │   │   │   │   └── EmbeddingService.ts
-│   │   │   │   │   └── driver/
-│   │   │   │   │       └── BookService.ts
 │   │   │   │   └── errors/
 │   │   │   │       └── DomainErrors.ts
 │   │   │   │
 │   │   │   ├── application/                 # 🔄 CASOS DE USO
-│   │   │   │   ├── commands/
-│   │   │   │   │   ├── CreateBook.ts
-│   │   │   │   │   ├── UpdateBook.ts
-│   │   │   │   │   └── DeleteBook.ts
-│   │   │   │   ├── queries/
-│   │   │   │   │   ├── SearchBooks.ts
-│   │   │   │   │   ├── GetBookById.ts
-│   │   │   │   │   └── ListBooks.ts
-│   │   │   │   └── services/
-│   │   │   │       └── BookApplicationService.ts
+│   │   │   │   ├── use-cases/
+│   │   │   │   │   └── CreateBookUseCase.ts
+│   │   │   │   ├── ports/
+│   │   │   │   │   ├── BookRepository.ts
+│   │   │   │   │   ├── AuthorRepository.ts
+│   │   │   │   │   ├── TypeRepository.ts
+│   │   │   │   │   ├── CategoryRepository.ts
+│   │   │   │   │   ├── EmbeddingService.ts
+│   │   │   │   │   └── Logger.ts
+│   │   │   │   └── errors/
+│   │   │   │       └── ApplicationErrors.ts
 │   │   │   │
 │   │   │   ├── infrastructure/              # 🔌 ADAPTADORES
 │   │   │   │   ├── driven/
 │   │   │   │   │   ├── persistence/
 │   │   │   │   │   │   ├── PostgresBookRepository.ts
+│   │   │   │   │   │   ├── PostgresAuthorRepository.ts
+│   │   │   │   │   │   ├── PostgresTypeRepository.ts
+│   │   │   │   │   │   ├── PostgresCategoryRepository.ts
 │   │   │   │   │   │   ├── drizzle/
-│   │   │   │   │   │   │   ├── schema.ts
-│   │   │   │   │   │   │   ├── client.ts
-│   │   │   │   │   │   │   └── migrations/
+│   │   │   │   │   │   │   └── schema.ts
 │   │   │   │   │   │   └── mappers/
-│   │   │   │   │   │       └── BookMapper.ts
-│   │   │   │   │   └── embedding/
-│   │   │   │   │       ├── OllamaEmbeddingService.ts
-│   │   │   │   │       └── HuggingFaceEmbeddingService.ts
+│   │   │   │   │   │       ├── BookMapper.ts
+│   │   │   │   │   │       ├── AuthorMapper.ts
+│   │   │   │   │   │       └── TypeMapper.ts
+│   │   │   │   │   ├── embedding/
+│   │   │   │   │   │   └── OllamaEmbeddingService.ts
+│   │   │   │   │   └── logging/
+│   │   │   │   │       └── PinoLogger.ts
 │   │   │   │   │
 │   │   │   │   ├── driver/
-│   │   │   │   │   ├── cli/
-│   │   │   │   │   │   ├── index.ts
-│   │   │   │   │   │   ├── commands/
-│   │   │   │   │   │   │   ├── add.ts
-│   │   │   │   │   │   │   ├── search.ts
-│   │   │   │   │   │   │   ├── list.ts
-│   │   │   │   │   │   │   ├── get.ts
-│   │   │   │   │   │   │   ├── update.ts
-│   │   │   │   │   │   │   └── delete.ts
-│   │   │   │   │   │   └── utils/
-│   │   │   │   │   │       ├── prompts.ts
-│   │   │   │   │   │       └── formatters.ts
 │   │   │   │   │   └── http/
 │   │   │   │   │       ├── server.ts
-│   │   │   │   │       ├── plugins/
-│   │   │   │   │       │   └── errorHandler.ts
 │   │   │   │   │       ├── routes/
 │   │   │   │   │       │   └── books.routes.ts
 │   │   │   │   │       ├── controllers/
@@ -147,34 +141,37 @@ library/
 │   │   │   │   │           └── book.schemas.ts
 │   │   │   │   │
 │   │   │   │   └── config/
-│   │   │   │       ├── container.ts
-│   │   │   │       ├── env.ts
-│   │   │   │       └── logger.ts
+│   │   │   │       └── env.ts
 │   │   │   │
 │   │   │   ├── shared/                      # 🛠️ UTILIDADES COMPARTIDAS
-│   │   │   │   ├── types/
-│   │   │   │   │   └── index.ts
 │   │   │   │   └── utils/
 │   │   │   │       └── uuid.ts
 │   │   │   │
-│   │   │   ├── main.ts                      # Entry point principal
-│   │   │   ├── cli.ts                       # Entry point CLI
 │   │   │   └── server.ts                    # Entry point HTTP server
+│   │   │
+│   │   ├── scripts/                         # 📜 Scripts de utilidad
+│   │   │   ├── consolidate-books.ts         # Consolida JSONs de origen
+│   │   │   └── seed-database.ts             # Carga datos en BD
+│   │   │
+│   │   ├── data/
+│   │   │   └── source/                      # Ficheros JSON de origen
 │   │   │
 │   │   ├── tests/
 │   │   │   ├── unit/
 │   │   │   │   ├── domain/
-│   │   │   │   └── application/
+│   │   │   │   ├── application/
+│   │   │   │   └── scripts/
 │   │   │   ├── integration/
 │   │   │   │   └── infrastructure/
 │   │   │   └── e2e/
-│   │   │       ├── cli/
 │   │   │       └── http/
 │   │   │
 │   │   ├── docker/
 │   │   │   ├── Dockerfile
-│   │   │   └── Dockerfile.dev
+│   │   │   ├── Dockerfile.dev
+│   │   │   └── entrypoint.dev.sh
 │   │   │
+│   │   ├── drizzle/                         # Migraciones Drizzle
 │   │   ├── .env.example
 │   │   ├── drizzle.config.ts
 │   │   ├── package.json
@@ -186,6 +183,7 @@ library/
 │
 ├── docker-compose.yml                       # 🐳 Orquestación desarrollo
 ├── docker-compose.prod.yml                  # 🐳 Orquestación producción
+├── AGENTS.md                                # 📋 Guías para agentes IA
 ├── .gitignore
 └── README.md
 ```
@@ -200,7 +198,7 @@ El proyecto se organiza como un **monorepo** con múltiples aplicaciones:
 
 | Directorio | Propósito |
 |------------|-----------|
-| `apps/api-cli/` | Backend con API REST y CLI - Contiene toda la lógica de negocio |
+| `apps/api-cli/` | Backend con API REST - Contiene toda la lógica de negocio |
 | `apps/web-client/` | Cliente web futuro - Consumirá la API REST |
 
 **Beneficios:**
@@ -464,22 +462,6 @@ export class OllamaEmbeddingService implements EmbeddingService {
 
 Consumen los puertos de entrada y exponen el sistema al mundo exterior.
 
-**`cli/`**
-
-```typescript
-// commands/search.ts
-export function createSearchCommand(bookService: BookService) {
-  return new Command('search')
-    .description('Search books using natural language')
-    .argument('<query>', 'Search query')
-    .option('-l, --limit <number>', 'Max results', '10')
-    .action(async (query, options) => {
-      const books = await bookService.searchBooks(query);
-      // Formatear y mostrar resultados
-    });
-}
-```
-
 **`http/`**
 
 ```typescript
@@ -551,7 +533,7 @@ Estructura espejo del código fuente, separada por tipo de test.
 |---------|-----------|--------------|
 | `unit/` | Testear dominio y application en aislamiento | Mocks de puertos |
 | `integration/` | Testear adapters con sus dependencias reales | Testcontainers |
-| `e2e/` | Testear el sistema completo | Docker compose |
+| `e2e/` | Testear el sistema completo via HTTP | Docker compose |
 
 ---
 
@@ -569,7 +551,6 @@ Estructura espejo del código fuente, separada por tipo de test.
 │  │   (Node.js)     │  │   + pgvector    │  │  (embeddings)   │ │
 │  │                 │  │                 │  │                 │ │
 │  │  - API: 3000    │  │  - Port: 5432   │  │  - Port: 11434  │ │
-│  │  - CLI          │  │                 │  │                 │ │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
 │          │                    │                    │           │
 │          └────────────────────┴────────────────────┘           │

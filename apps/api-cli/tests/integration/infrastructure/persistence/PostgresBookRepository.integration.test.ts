@@ -13,13 +13,15 @@ import pg from 'pg';
 import { PostgresBookRepository } from '../../../../src/infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from '../../../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { Book } from '../../../../src/domain/entities/Book.js';
+import { Author } from '../../../../src/domain/entities/Author.js';
+import { BookType } from '../../../../src/domain/entities/BookType.js';
 import { Category } from '../../../../src/domain/entities/Category.js';
-import { DuplicateISBNError, DuplicateBookError, BookNotFoundError } from '../../../../src/domain/errors/DomainErrors.js';
+import { DuplicateISBNError, BookNotFoundError } from '../../../../src/domain/errors/DomainErrors.js';
 import * as schema from '../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 import { generateUUID } from '../../../../src/shared/utils/uuid.js';
 
 const { Pool } = pg;
-const { categories, books, bookCategories } = schema;
+const { categories, books, bookCategories, bookAuthors, authors, types } = schema;
 
 /**
  * Creates a valid 768-dimension embedding vector for tests
@@ -37,6 +39,14 @@ describe('PostgresBookRepository Integration', () => {
   // Reusable test categories
   let programmingCategory: Category;
   let softwareCategory: Category;
+
+  // Reusable test authors
+  let robertMartin: Author;
+  let martinFowler: Author;
+
+  // Reusable test book types
+  let technicalType: BookType;
+  let novelType: BookType;
 
   beforeAll(async () => {
     const databaseUrl = process.env['DATABASE_URL'] ?? 'postgresql://library:library@localhost:5432/library';
@@ -61,10 +71,13 @@ describe('PostgresBookRepository Integration', () => {
   });
 
   beforeEach(async () => {
-    // Clean up test data
+    // Clean up test data (order matters due to FK constraints)
     await db.delete(bookCategories);
+    await db.delete(bookAuthors);
     await db.delete(books);
     await db.delete(categories);
+    await db.delete(authors);
+    // Note: types table has seed data, don't delete it
 
     // Create reusable test categories
     programmingCategory = await categoryRepository.save(
@@ -73,16 +86,50 @@ describe('PostgresBookRepository Integration', () => {
     softwareCategory = await categoryRepository.save(
       Category.create({ id: generateUUID(), name: 'Software Engineering' })
     );
+
+    // Insert test authors into DB
+    robertMartin = Author.create({ id: generateUUID(), name: 'Robert C. Martin' });
+    martinFowler = Author.create({ id: generateUUID(), name: 'Martin Fowler' });
+    
+    await db.insert(authors).values([
+      { id: robertMartin.id, name: robertMartin.name },
+      { id: martinFowler.id, name: martinFowler.name },
+    ]);
+
+    // Fetch existing types from DB (seed data from init-db.sql)
+    const technicalTypeRecord = await db.query.types.findFirst({
+      where: (t, { eq }) => eq(t.name, 'technical'),
+    });
+    const novelTypeRecord = await db.query.types.findFirst({
+      where: (t, { eq }) => eq(t.name, 'novel'),
+    });
+
+    if (!technicalTypeRecord || !novelTypeRecord) {
+      throw new Error('Required book types not found in database. Run init-db.sql first.');
+    }
+
+    technicalType = BookType.fromPersistence({
+      id: technicalTypeRecord.id,
+      name: technicalTypeRecord.name,
+      createdAt: technicalTypeRecord.createdAt,
+      updatedAt: technicalTypeRecord.updatedAt,
+    });
+    novelType = BookType.fromPersistence({
+      id: novelTypeRecord.id,
+      name: novelTypeRecord.name,
+      createdAt: novelTypeRecord.createdAt,
+      updatedAt: novelTypeRecord.updatedAt,
+    });
   });
 
   describe('save', () => {
-    it('should save a book with embedding and categories', async () => {
+    it('should save a book with embedding, authors, and categories', async () => {
       const book = Book.create({
         id: generateUUID(),
         title: 'Clean Code',
-        author: 'Robert C. Martin',
+        authors: [robertMartin],
         description: 'A handbook of agile software craftsmanship',
-        type: 'technical',
+        type: technicalType,
         format: 'pdf',
         categories: [programmingCategory, softwareCategory],
         isbn: '9780132350884',
@@ -95,18 +142,23 @@ describe('PostgresBookRepository Integration', () => {
 
       expect(saved.id).toBe(book.id);
       expect(saved.title).toBe('Clean Code');
-      expect(saved.author).toBe('Robert C. Martin');
+      expect(saved.authors).toHaveLength(1);
+      expect(saved.authors[0].name).toBe('Robert C. Martin');
+      expect(saved.type.name).toBe('technical');
       expect(saved.categories).toHaveLength(2);
       expect(saved.isbn?.value).toBe('9780132350884');
     });
 
     it('should save a book without ISBN', async () => {
+      const unknownAuthor = Author.create({ id: generateUUID(), name: 'Unknown Author' });
+      await db.insert(authors).values({ id: unknownAuthor.id, name: unknownAuthor.name });
+
       const book = Book.create({
         id: generateUUID(),
         title: 'No ISBN Book',
-        author: 'Unknown Author',
+        authors: [unknownAuthor],
         description: 'A book without ISBN',
-        type: 'novel',
+        type: novelType,
         format: 'epub',
         categories: [programmingCategory],
       });
@@ -120,12 +172,15 @@ describe('PostgresBookRepository Integration', () => {
     });
 
     it('should throw DuplicateISBNError for duplicate ISBN', async () => {
+      const authorOne = Author.create({ id: generateUUID(), name: 'Author One' });
+      await db.insert(authors).values({ id: authorOne.id, name: authorOne.name });
+
       const book1 = Book.create({
         id: generateUUID(),
         title: 'First Book',
-        author: 'Author One',
+        authors: [authorOne],
         description: 'Description one',
-        type: 'technical',
+        type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
         isbn: '9780132350884',
@@ -133,12 +188,15 @@ describe('PostgresBookRepository Integration', () => {
 
       await bookRepository.save({ book: book1, embedding: generateTestEmbedding() });
 
+      const differentAuthor = Author.create({ id: generateUUID(), name: 'Different Author' });
+      await db.insert(authors).values({ id: differentAuthor.id, name: differentAuthor.name });
+
       const book2 = Book.create({
         id: generateUUID(),
         title: 'Different Book',
-        author: 'Different Author',
+        authors: [differentAuthor],
         description: 'Description two',
-        type: 'novel',
+        type: novelType,
         format: 'epub',
         categories: [programmingCategory],
         isbn: '9780132350884', // Same ISBN
@@ -149,43 +207,55 @@ describe('PostgresBookRepository Integration', () => {
       ).rejects.toThrow(DuplicateISBNError);
     });
 
-    it('should throw DuplicateBookError for duplicate triad (author+title+format)', async () => {
+    it('should allow books with same title and different authors (no triad check)', async () => {
+      // With multi-author model, there's no triad duplicate detection
+      // Same title/format with different authors should be allowed
+      const sameAuthor = Author.create({ id: generateUUID(), name: 'Same Author' });
+      await db.insert(authors).values({ id: sameAuthor.id, name: sameAuthor.name });
+
       const book1 = Book.create({
         id: generateUUID(),
         title: 'Same Title',
-        author: 'Same Author',
+        authors: [sameAuthor],
         description: 'Description one',
-        type: 'technical',
+        type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
       });
 
       await bookRepository.save({ book: book1, embedding: generateTestEmbedding() });
 
+      // Different author, same title/format - should be allowed now
+      const differentAuthor = Author.create({ id: generateUUID(), name: 'Different Author' });
+      await db.insert(authors).values({ id: differentAuthor.id, name: differentAuthor.name });
+
       const book2 = Book.create({
         id: generateUUID(),
-        title: 'same title', // Same title, different case
-        author: 'SAME AUTHOR', // Same author, different case
+        title: 'Same Title',
+        authors: [differentAuthor],
         description: 'Different description',
-        type: 'novel',
+        type: novelType,
         format: 'pdf', // Same format
         categories: [softwareCategory],
       });
 
-      await expect(
-        bookRepository.save({ book: book2, embedding: generateTestEmbedding() })
-      ).rejects.toThrow(DuplicateBookError);
+      // This should NOT throw - triad check has been removed
+      const saved = await bookRepository.save({ book: book2, embedding: generateTestEmbedding() });
+      expect(saved.title).toBe('Same Title');
     });
   });
 
   describe('findById', () => {
-    it('should find an existing book with categories', async () => {
+    it('should find an existing book with authors, type, and categories', async () => {
+      const testAuthor = Author.create({ id: generateUUID(), name: 'Test Author' });
+      await db.insert(authors).values({ id: testAuthor.id, name: testAuthor.name });
+
       const book = Book.create({
         id: generateUUID(),
         title: 'Findable Book',
-        author: 'Test Author',
+        authors: [testAuthor],
         description: 'Test description',
-        type: 'technical',
+        type: technicalType,
         format: 'pdf',
         categories: [programmingCategory, softwareCategory],
       });
@@ -197,6 +267,9 @@ describe('PostgresBookRepository Integration', () => {
       expect(found).not.toBeNull();
       expect(found!.id).toBe(book.id);
       expect(found!.title).toBe('Findable Book');
+      expect(found!.authors).toHaveLength(1);
+      expect(found!.authors[0].name).toBe('Test Author');
+      expect(found!.type.name).toBe('technical');
       expect(found!.categories).toHaveLength(2);
     });
 
@@ -208,12 +281,15 @@ describe('PostgresBookRepository Integration', () => {
 
   describe('findByIsbn', () => {
     it('should find a book by ISBN', async () => {
+      const isbnAuthor = Author.create({ id: generateUUID(), name: 'ISBN Author' });
+      await db.insert(authors).values({ id: isbnAuthor.id, name: isbnAuthor.name });
+
       const book = Book.create({
         id: generateUUID(),
         title: 'ISBN Book',
-        author: 'ISBN Author',
+        authors: [isbnAuthor],
         description: 'Test description',
-        type: 'technical',
+        type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
         isbn: '9780132350884',
@@ -235,12 +311,15 @@ describe('PostgresBookRepository Integration', () => {
 
   describe('checkDuplicate', () => {
     it('should detect ISBN duplicate', async () => {
+      const existingAuthor = Author.create({ id: generateUUID(), name: 'Existing Author' });
+      await db.insert(authors).values({ id: existingAuthor.id, name: existingAuthor.name });
+
       const book = Book.create({
         id: generateUUID(),
         title: 'Existing Book',
-        author: 'Existing Author',
+        authors: [existingAuthor],
         description: 'Description',
-        type: 'technical',
+        type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
         isbn: '9780132350884',
@@ -250,45 +329,28 @@ describe('PostgresBookRepository Integration', () => {
 
       const result = await bookRepository.checkDuplicate({
         isbn: '9780132350884',
-        author: 'different author',
-        title: 'different title',
-        format: 'epub',
       });
 
       expect(result.isDuplicate).toBe(true);
       expect(result.duplicateType).toBe('isbn');
     });
 
-    it('should detect triad duplicate', async () => {
-      const book = Book.create({
-        id: generateUUID(),
-        title: 'Triad Book',
-        author: 'Triad Author',
-        description: 'Description',
-        type: 'technical',
-        format: 'pdf',
-        categories: [programmingCategory],
-      });
-
-      await bookRepository.save({ book, embedding: generateTestEmbedding() });
-
-      const result = await bookRepository.checkDuplicate({
-        author: 'triad author', // Same normalized
-        title: 'triad book', // Same normalized
-        format: 'pdf', // Same format
-      });
-
-      expect(result.isDuplicate).toBe(true);
-      expect(result.duplicateType).toBe('triad');
-    });
-
-    it('should return isDuplicate false when no duplicate exists', async () => {
+    it('should return isDuplicate false when no ISBN duplicate exists', async () => {
       const result = await bookRepository.checkDuplicate({
         isbn: '9780132350884',
-        author: 'unique author',
-        title: 'unique title',
-        format: 'pdf',
       });
+
+      expect(result.isDuplicate).toBe(false);
+    });
+
+    it('should return isDuplicate false when no ISBN provided', async () => {
+      const result = await bookRepository.checkDuplicate({});
+
+      expect(result.isDuplicate).toBe(false);
+    });
+
+    it('should return isDuplicate false when ISBN is null', async () => {
+      const result = await bookRepository.checkDuplicate({ isbn: null });
 
       expect(result.isDuplicate).toBe(false);
     });
@@ -296,12 +358,15 @@ describe('PostgresBookRepository Integration', () => {
 
   describe('update', () => {
     it('should update mutable fields (available, path)', async () => {
+      const updateAuthor = Author.create({ id: generateUUID(), name: 'Update Author' });
+      await db.insert(authors).values({ id: updateAuthor.id, name: updateAuthor.name });
+
       const book = Book.create({
         id: generateUUID(),
         title: 'Updatable Book',
-        author: 'Update Author',
+        authors: [updateAuthor],
         description: 'Description',
-        type: 'technical',
+        type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
         available: false,
@@ -332,12 +397,15 @@ describe('PostgresBookRepository Integration', () => {
 
   describe('delete', () => {
     it('should delete an existing book', async () => {
+      const deleteAuthor = Author.create({ id: generateUUID(), name: 'Delete Author' });
+      await db.insert(authors).values({ id: deleteAuthor.id, name: deleteAuthor.name });
+
       const book = Book.create({
         id: generateUUID(),
         title: 'Deletable Book',
-        author: 'Delete Author',
+        authors: [deleteAuthor],
         description: 'Description',
-        type: 'technical',
+        type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
       });
@@ -359,12 +427,19 @@ describe('PostgresBookRepository Integration', () => {
 
   describe('findAll and count', () => {
     it('should return all books', async () => {
+      const authorOne = Author.create({ id: generateUUID(), name: 'Author One' });
+      const authorTwo = Author.create({ id: generateUUID(), name: 'Author Two' });
+      await db.insert(authors).values([
+        { id: authorOne.id, name: authorOne.name },
+        { id: authorTwo.id, name: authorTwo.name },
+      ]);
+
       const book1 = Book.create({
         id: generateUUID(),
         title: 'Book One',
-        author: 'Author One',
+        authors: [authorOne],
         description: 'Desc one',
-        type: 'technical',
+        type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
       });
@@ -372,9 +447,9 @@ describe('PostgresBookRepository Integration', () => {
       const book2 = Book.create({
         id: generateUUID(),
         title: 'Book Two',
-        author: 'Author Two',
+        authors: [authorTwo],
         description: 'Desc two',
-        type: 'novel',
+        type: novelType,
         format: 'epub',
         categories: [softwareCategory],
       });

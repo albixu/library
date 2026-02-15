@@ -32,11 +32,10 @@ paths:
         
         ## Comportamiento
         
-        1. **Sanitización**: Aplica `trim()` a los campos de texto libres (por ejemplo, `title`, `author`, `description`, `categories`, `isbn`, `path`); los campos enum como `type` y `format` se validan tal cual se envían (sin `trim()` previo)
+        1. **Sanitización**: Aplica `trim()` a los campos de texto libres (por ejemplo, `title`, `authors`, `description`, `categories`, `isbn`, `path`); los campos enum como `type` y `format` se validan tal cual se envían (sin `trim()` previo)
         2. **Validación de duplicados**: 
            - Verifica que el ISBN no exista (si se proporciona)
-           - Verifica que la tríada {autor, título, formato} no exista
-        3. **Gestión de categorías**: Crea automáticamente las categorías que no existan
+        3. **Gestión de entidades**: Crea automáticamente categorías y autores que no existan
         4. **Generación de embedding**: Concatena los campos y genera el vector (768 dimensiones)
         5. **Persistencia**: Guarda el libro de forma atómica
         
@@ -56,7 +55,7 @@ paths:
                 summary: Libro con todos los campos
                 value:
                   title: "Clean Code"
-                  author: "Robert C. Martin"
+                  authors: ["Robert C. Martin"]
                   description: "A handbook of agile software craftsmanship that teaches programmers how to write clean, maintainable code."
                   type: "technical"
                   format: "pdf"
@@ -68,7 +67,7 @@ paths:
                 summary: Libro con campos mínimos requeridos
                 value:
                   title: "The Pragmatic Programmer"
-                  author: "David Thomas, Andrew Hunt"
+                  authors: ["David Thomas", "Andrew Hunt"]
                   description: "A guide to becoming a better programmer through practical advice and timeless tips."
                   type: "technical"
                   format: "epub"
@@ -83,7 +82,9 @@ paths:
               example:
                 id: "550e8400-e29b-41d4-a716-446655440000"
                 title: "Clean Code"
-                author: "Robert C. Martin"
+                authors:
+                  - id: "990e8400-e29b-41d4-a716-446655440004"
+                    name: "Robert C. Martin"
                 description: "A handbook of agile software craftsmanship that teaches programmers how to write clean, maintainable code."
                 type: "technical"
                 format: "pdf"
@@ -141,22 +142,14 @@ paths:
                     error: "Embedding text too long (7500 characters). Maximum allowed: 7000 characters"
         '409':
           description: |
-            Conflicto - Libro duplicado detectado. Posibles causas:
-            - Ya existe un libro con el mismo ISBN
-            - Ya existe un libro con la misma combinación de autor, título y formato
+            Conflicto - Libro duplicado detectado.
+            Ya existe un libro con el mismo ISBN.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                duplicate_isbn:
-                  summary: ISBN duplicado
-                  value:
-                    error: "A book with ISBN \"9780132350884\" already exists"
-                duplicate_triad:
-                  summary: Tríada duplicada (autor + título + formato)
-                  value:
-                    error: "A book with the same author, title, and format already exists: \"Robert C. Martin\" - \"Clean Code\" (paperback)"
+              example:
+                error: "A book with ISBN \"9780132350884\" already exists"
         '503':
           description: |
             Servicio no disponible - El servicio de embeddings (Ollama) no está accesible.
@@ -174,7 +167,7 @@ components:
       type: object
       required:
         - title
-        - author
+        - authors
         - description
         - type
         - format
@@ -186,12 +179,18 @@ components:
           maxLength: 500
           description: Título del libro
           example: "Clean Code"
-        author:
-          type: string
-          minLength: 1
-          maxLength: 300
-          description: Autor(es) del libro
-          example: "Robert C. Martin"
+        authors:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 300
+          minItems: 1
+          maxItems: 10
+          description: |
+            Lista de autores del libro (1-10).
+            Los autores se crean automáticamente si no existen.
+          example: ["Robert C. Martin"]
         description:
           type: string
           minLength: 1
@@ -200,16 +199,12 @@ components:
           example: "A handbook of agile software craftsmanship that teaches programmers how to write clean, maintainable code."
         type:
           type: string
-          enum:
-            - technical
-            - novel
-            - essay
-            - poetry
-            - biography
-            - reference
-            - manual
-            - other
-          description: Tipo/género del libro
+          minLength: 1
+          maxLength: 100
+          description: |
+            Tipo/género del libro. Se valida contra los tipos existentes en la base de datos.
+            Los tipos se crean automáticamente si no existen.
+            Ejemplos: "technical", "novel", "essay", "poetry", "biography", etc.
           example: "technical"
         format:
           type: string
@@ -266,26 +261,18 @@ components:
           type: string
           description: Título del libro
           example: "Clean Code"
-        author:
-          type: string
-          description: Autor(es) del libro
-          example: "Robert C. Martin"
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+          description: Autores del libro
         description:
           type: string
           description: Descripción del libro
           example: "A handbook of agile software craftsmanship"
         type:
           type: string
-          enum:
-            - technical
-            - novel
-            - essay
-            - poetry
-            - biography
-            - reference
-            - manual
-            - other
-          description: Tipo/género del libro
+          description: Tipo/género del libro (entidad dinámica)
           example: "technical"
         format:
           type: string
@@ -341,6 +328,19 @@ components:
           type: string
           description: Nombre de la categoría (normalizado a lowercase)
           example: "programming"
+
+    Author:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único del autor
+          example: "770e8400-e29b-41d4-a716-446655440002"
+        name:
+          type: string
+          description: Nombre del autor
+          example: "Robert C. Martin"
 
     ErrorResponse:
       type: object

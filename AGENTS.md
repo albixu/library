@@ -23,13 +23,20 @@ Se debe seguir esta estructura de ramas jerárquica para cada desarrollo:
 1. **Dev:** Rama de desarrollo que sale desde `main`. Esta rama existirá siempre, y es desde donde saldran las ramas de nuevos desarrollos y donde se mergearan para ser probados antes de pasarlos a `main` para ponerlos en producción
 2. **Historia de Usuario:** Rama base desde `dev` (ej. `feature/US-123-titulo`). Es la rama que representa la historia de usuario. Cada historia de usuario tendrá su rama
 3. **Subtareas:** Ramas técnicas desde la rama de historia (ej. `task/US-123-db-schema`).
-4. **Integración:** Cada tarea se integra en la rama de historia mediante **Pull Request**.
+4. **Integración:** Cada subtarea se integra en la rama de historia mediante **merge**. La rama de la historia se integra con la rama `dev` mediante una **Pull request**
 5. **Commits:** Seguir el estándar de **Conventional Commits**:
    - `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `style:`.
 6. **Pase a producción:** Tras probar la funcionalidades completas en la rama `dev` se mergearán a `main` mediante un **Pull Request**
 
-### 3.1 Cosas a evitar en el git workflow.
-El agente no aprobará ningún pull request de forma automática.
+### 3.1 Cosas trabajar con las tareas y las ramas.
+1. Una vez realizada una subtarea, se realizará un merge automático de la subtarea a la rama de la historia correspondiente.
+2. A continuación se actualizará la rama de la historia y se realizará la siguiente subtarea siguiendo el mismo proceso.
+3. Así hasta terminar con todas las subtareas.
+4. Una vez realizadas todas las subtareas y estar todas estas mergeadas en la rama de la historia, se creará un PR de la rama de la historia a la rama dev. Esta no podrá ser aprobada ni mergeada por el agente. Requiere de una revisión y aprobado manual.
+
+**Importante**
+Ten en cuenta que SI tienes permisos para mergear las ramas de las subtareas en las ramas de las historias.
+NO tienes permisos para aprobar ni mergear PR de historias que van a la rama dev.
 
 ## 4. Build/Lint/Test Commands (apps/api-cli/)
 

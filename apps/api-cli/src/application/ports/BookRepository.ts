@@ -51,12 +51,18 @@ export interface UpdateBookParams {
 
 /**
  * Result of a duplicate check operation
+ *
+ * With the multi-author model, duplicate detection is now ISBN-only.
+ * The triad (author+title+format) detection was removed because:
+ * - With N:M author relationships, comparing "same authors" is complex and ambiguous
+ * - ISBN is the canonical unique identifier for published books
+ * - Books without ISBN are considered unique (user responsibility)
  */
 export interface DuplicateCheckResult {
   /** Whether a duplicate was found */
   isDuplicate: boolean;
-  /** The type of duplicate found, if any */
-  duplicateType?: 'isbn' | 'triad';
+  /** The type of duplicate found (currently only 'isbn') */
+  duplicateType?: 'isbn';
   /** Human-readable message describing the duplicate */
   message?: string;
 }
@@ -93,40 +99,19 @@ export interface BookRepository {
   existsByIsbn(isbn: string): Promise<boolean>;
 
   /**
-   * Checks if a book with the given triad (author, title, format) already exists
+   * Performs duplicate check for ISBN
    *
-   * The check is performed using normalized values (lowercase, no special chars)
-   * to ensure consistent duplicate detection.
-   *
-   * @param author - The normalized author name (lowercase, trimmed)
-   * @param title - The normalized book title (lowercase, trimmed)
-   * @param format - The book format (e.g., 'pdf', 'epub')
-   * @returns Promise resolving to true if triad exists, false otherwise
-   *
-   * @remarks The application layer must normalize author and title before calling this method.
-   * Normalization: lowercase conversion and trimming of whitespace.
-   */
-  existsByTriad(author: string, title: string, format: string): Promise<boolean>;
-
-  /**
-   * Performs a comprehensive duplicate check for both ISBN and triad
-   *
+   * With the multi-author model, duplicate detection is ISBN-only.
    * Use this before creating a book to get detailed duplicate information.
    *
-   * @param params - Object containing isbn (optional, already-normalized string, typically ISBN.value), author (normalized), title (normalized), and format
+   * @param params - Object containing isbn (optional, already-normalized string, typically ISBN.value)
    * @returns Promise resolving to duplicate check result
    *
-   * @remarks The application layer must:
-   * - pass the ISBN as an already-normalized string produced by the ISBN value object (without hyphens, uppercase).
-   * - normalize author and title before calling this method.
-   * Author/Title normalization: lowercase conversion and trimming of whitespace.
+   * @remarks The application layer must pass the ISBN as an already-normalized
+   * string produced by the ISBN value object (without hyphens, uppercase).
+   * If isbn is null/undefined, no duplicate check is performed and isDuplicate will be false.
    */
-  checkDuplicate(params: {
-    isbn?: string | null;
-    author: string;
-    title: string;
-    format: string;
-  }): Promise<DuplicateCheckResult>;
+  checkDuplicate(params: { isbn?: string | null }): Promise<DuplicateCheckResult>;
 
   /**
    * Saves a new book with its embedding vector

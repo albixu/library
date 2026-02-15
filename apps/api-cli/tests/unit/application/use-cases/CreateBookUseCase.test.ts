@@ -6,10 +6,14 @@ import {
 } from '../../../../src/application/use-cases/CreateBookUseCase.js';
 import type { BookRepository, DuplicateCheckResult } from '../../../../src/application/ports/BookRepository.js';
 import type { CategoryRepository } from '../../../../src/application/ports/CategoryRepository.js';
+import type { TypeRepository } from '../../../../src/application/ports/TypeRepository.js';
+import type { AuthorRepository } from '../../../../src/application/ports/AuthorRepository.js';
 import type { EmbeddingService, EmbeddingResult } from '../../../../src/application/ports/EmbeddingService.js';
 import { Category } from '../../../../src/domain/entities/Category.js';
+import { BookType } from '../../../../src/domain/entities/BookType.js';
+import { Author } from '../../../../src/domain/entities/Author.js';
 import { Book } from '../../../../src/domain/entities/Book.js';
-import { DuplicateISBNError, DuplicateBookError } from '../../../../src/domain/errors/DomainErrors.js';
+import { DuplicateISBNError, InvalidBookTypeError } from '../../../../src/domain/errors/DomainErrors.js';
 import {
   EmbeddingTextTooLongError,
   EmbeddingServiceUnavailableError,
@@ -19,13 +23,15 @@ describe('CreateBookUseCase', () => {
   // Mock dependencies
   let mockBookRepository: BookRepository;
   let mockCategoryRepository: CategoryRepository;
+  let mockTypeRepository: TypeRepository;
+  let mockAuthorRepository: AuthorRepository;
   let mockEmbeddingService: EmbeddingService;
   let useCase: CreateBookUseCase;
 
   // Test data
   const validInput: CreateBookInput = {
     title: 'Clean Code',
-    author: 'Robert C. Martin',
+    authors: ['Robert C. Martin'],
     description: 'A handbook of agile software craftsmanship',
     type: 'technical',
     categoryNames: ['programming', 'software engineering'],
@@ -39,6 +45,21 @@ describe('CreateBookUseCase', () => {
     Category.create({ id: '110e8400-e29b-41d4-a716-446655440001', name: 'programming' }),
     Category.create({ id: '220e8400-e29b-41d4-a716-446655440002', name: 'software engineering' }),
   ];
+
+  const mockTechnicalType = BookType.create({
+    id: '550e8400-e29b-41d4-a716-446655440010',
+    name: 'technical',
+  });
+
+  const mockNovelType = BookType.create({
+    id: '550e8400-e29b-41d4-a716-446655440011',
+    name: 'novel',
+  });
+
+  const mockAuthor = Author.create({
+    id: '550e8400-e29b-41d4-a716-446655440020',
+    name: 'Robert C. Martin',
+  });
 
   const mockEmbedding: number[] = new Array(768).fill(0.1);
 
@@ -57,7 +78,6 @@ describe('CreateBookUseCase', () => {
       findById: vi.fn(),
       findByIsbn: vi.fn(),
       existsByIsbn: vi.fn(),
-      existsByTriad: vi.fn(),
       checkDuplicate: vi.fn().mockResolvedValue(noDuplicateResult),
       save: vi.fn().mockImplementation(async ({ book }) => book),
       update: vi.fn(),
@@ -76,6 +96,28 @@ describe('CreateBookUseCase', () => {
       findAll: vi.fn(),
     };
 
+    mockTypeRepository = {
+      findById: vi.fn(),
+      findByName: vi.fn().mockImplementation(async (name: string) => {
+        if (name === 'technical') return mockTechnicalType;
+        if (name === 'novel') return mockNovelType;
+        return null;
+      }),
+      findAll: vi.fn().mockResolvedValue([mockTechnicalType, mockNovelType]),
+      count: vi.fn().mockResolvedValue(2),
+    };
+
+    mockAuthorRepository = {
+      findById: vi.fn(),
+      findByName: vi.fn(),
+      findByNames: vi.fn(),
+      findOrCreate: vi.fn(),
+      findOrCreateMany: vi.fn().mockResolvedValue([mockAuthor]),
+      save: vi.fn(),
+      findAll: vi.fn(),
+      count: vi.fn(),
+    };
+
     mockEmbeddingService = {
       generateEmbedding: vi.fn().mockResolvedValue(mockEmbeddingResult),
       isAvailable: vi.fn().mockResolvedValue(true),
@@ -84,6 +126,8 @@ describe('CreateBookUseCase', () => {
     const deps: CreateBookUseCaseDeps = {
       bookRepository: mockBookRepository,
       categoryRepository: mockCategoryRepository,
+      typeRepository: mockTypeRepository,
+      authorRepository: mockAuthorRepository,
       embeddingService: mockEmbeddingService,
     };
 
@@ -95,7 +139,11 @@ describe('CreateBookUseCase', () => {
       const result = await useCase.execute(validInput);
 
       expect(result.title).toBe('Clean Code');
-      expect(result.author).toBe('Robert C. Martin');
+      expect(result.authors).toHaveLength(1);
+      expect(result.authors[0]).toMatchObject({
+        id: mockAuthor.id,
+        name: 'Robert C. Martin',
+      });
       expect(result.description).toBe('A handbook of agile software craftsmanship');
       expect(result.type).toBe('technical');
       expect(result.format).toBe('pdf');
@@ -108,6 +156,49 @@ describe('CreateBookUseCase', () => {
       expect(result.updatedAt).toBeDefined();
     });
 
+    it('should validate type exists in database', async () => {
+      await useCase.execute(validInput);
+
+      expect(mockTypeRepository.findByName).toHaveBeenCalledWith('technical');
+    });
+
+    it('should throw InvalidBookTypeError for non-existent type', async () => {
+      const invalidInput = { ...validInput, type: 'nonexistent' };
+
+      await expect(useCase.execute(invalidInput)).rejects.toThrow(InvalidBookTypeError);
+    });
+
+    it('should resolve or create authors', async () => {
+      await useCase.execute(validInput);
+
+      expect(mockAuthorRepository.findOrCreateMany).toHaveBeenCalledWith(['Robert C. Martin']);
+    });
+
+    it('should resolve or create multiple authors', async () => {
+      const multiAuthorInput: CreateBookInput = {
+        ...validInput,
+        authors: ['Author One', 'Author Two', 'Author Three'],
+      };
+
+      const mockAuthors = [
+        Author.create({ id: '550e8400-e29b-41d4-a716-446655440030', name: 'Author One' }),
+        Author.create({ id: '550e8400-e29b-41d4-a716-446655440031', name: 'Author Two' }),
+        Author.create({ id: '550e8400-e29b-41d4-a716-446655440032', name: 'Author Three' }),
+      ];
+
+      (mockAuthorRepository.findOrCreateMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockAuthors);
+
+      const result = await useCase.execute(multiAuthorInput);
+
+      expect(mockAuthorRepository.findOrCreateMany).toHaveBeenCalledWith([
+        'Author One',
+        'Author Two',
+        'Author Three',
+      ]);
+      expect(result.authors).toHaveLength(3);
+      expect(result.authors.map((a) => a.name)).toEqual(['Author One', 'Author Two', 'Author Three']);
+    });
+
     it('should resolve or create categories', async () => {
       await useCase.execute(validInput);
 
@@ -117,15 +208,12 @@ describe('CreateBookUseCase', () => {
       ]);
     });
 
-    it('should check for duplicates before saving', async () => {
+    it('should check for ISBN duplicates before saving', async () => {
       await useCase.execute(validInput);
 
-      // Note: UseCase passes normalized values (trimmed + lowercased) per BookRepository contract
+      // Note: With multi-author model, only ISBN is checked for duplicates
       expect(mockBookRepository.checkDuplicate).toHaveBeenCalledWith({
         isbn: '9780132350884',
-        author: 'robert c. martin',
-        title: 'clean code',
-        format: 'pdf',
       });
     });
 
@@ -163,19 +251,6 @@ describe('CreateBookUseCase', () => {
       );
     });
 
-    it('should throw DuplicateBookError when triad duplicate found', async () => {
-      const duplicateResult: DuplicateCheckResult = {
-        isDuplicate: true,
-        duplicateType: 'triad',
-        message: 'A book with the same author, title, and format already exists',
-      };
-      (mockBookRepository.checkDuplicate as ReturnType<typeof vi.fn>).mockResolvedValue(duplicateResult);
-
-      await expect(useCase.execute(validInput)).rejects.toThrow(
-        new DuplicateBookError('Robert C. Martin', 'Clean Code', 'pdf')
-      );
-    });
-
     it('should NOT create categories when duplicate is detected', async () => {
       const duplicateResult: DuplicateCheckResult = {
         isDuplicate: true,
@@ -207,12 +282,13 @@ describe('CreateBookUseCase', () => {
         title: 'Test Book',
         author: 'Test Author',
         description: 'Test Description',
-        type: { value: 'technical' },
+        type: { value: 'technical', name: 'technical' },
         format: { value: 'pdf' },
         isbn: null,
         available: false,
         path: null,
         categories: mockCategories,
+        authors: [mockAuthor],
         createdAt: new Date(),
         updatedAt: new Date(),
         getTextForEmbedding: () => longText, // This exceeds the limit
@@ -239,13 +315,19 @@ describe('CreateBookUseCase', () => {
     it('should work without optional fields', async () => {
       const minimalInput: CreateBookInput = {
         title: 'Minimal Book',
-        author: 'Unknown Author',
+        authors: ['Unknown Author'],
         description: 'A minimal book description',
         type: 'novel',
         categoryNames: ['fiction'],
         format: 'epub',
       };
 
+      const unknownAuthor = Author.create({
+        id: '550e8400-e29b-41d4-a716-446655440021',
+        name: 'Unknown Author',
+      });
+
+      (mockAuthorRepository.findOrCreateMany as ReturnType<typeof vi.fn>).mockResolvedValue([unknownAuthor]);
       (mockCategoryRepository.findOrCreateMany as ReturnType<typeof vi.fn>).mockResolvedValue([
         Category.create({ id: '330e8400-e29b-41d4-a716-446655440003', name: 'fiction' }),
       ]);
@@ -265,11 +347,9 @@ describe('CreateBookUseCase', () => {
 
       await useCase.execute(inputWithoutIsbn);
 
+      // With multi-author model, only ISBN is checked - null means no duplicate check needed
       expect(mockBookRepository.checkDuplicate).toHaveBeenCalledWith({
         isbn: null,
-        author: 'robert c. martin',
-        title: 'clean code',
-        format: 'pdf',
       });
     });
   });

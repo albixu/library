@@ -21,6 +21,8 @@ services:
       # Mount source code for hot reload
       - ./apps/api-cli/src:/app/src:ro
       - ./apps/api-cli/tests:/app/tests:ro
+      - ./apps/api-cli/scripts:/app/scripts:ro
+      - ./apps/api-cli/data:/app/data:ro
       - ./apps/api-cli/package.json:/app/package.json:ro
       - ./apps/api-cli/tsconfig.json:/app/tsconfig.json:ro
       - ./apps/api-cli/vitest.config.ts:/app/vitest.config.ts:ro
@@ -28,6 +30,8 @@ services:
       - ./apps/api-cli/vitest.e2e.config.ts:/app/vitest.e2e.config.ts:ro
       - ./apps/api-cli/drizzle.config.ts:/app/drizzle.config.ts:ro
       - ./apps/api-cli/drizzle:/app/drizzle:ro
+      # Docs directory for consolidated output
+      - ./docs:/app/docs
       # Named volume for node_modules (prevents overwrite by host)
       - api_node_modules:/app/node_modules
     environment:
@@ -35,6 +39,8 @@ services:
       - PORT=3000
       - DATABASE_URL=postgresql://library:library@postgres:5432/library
       - OLLAMA_BASE_URL=http://ollama:11434
+      # Set AUTO_SEED=true to seed database on first run if empty
+      - AUTO_SEED=false
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,7 +63,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Init script to enable pgvector extension
-      - ./apps/api-cli/docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+      - ./docs/db/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U library -d library"]
       interval: 10s
