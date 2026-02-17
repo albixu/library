@@ -82,7 +82,8 @@ library/
 │       ├── 01-project-overview.md
 │       ├── 02-project-structure.md
 │       ├── 03-hu-001-create-book.md
-│       └── 04-hu-002-initial-data-load.md
+│       ├── 04-hu-002-initial-data-load.md
+│       └── 05-hu-003-book-level.md
 │
 ├── apps/
 │   ├── api-cli/                             # 🖥️ Backend: API REST
@@ -95,6 +96,7 @@ library/
 │   │   │   │   │   └── Category.ts
 │   │   │   │   ├── value-objects/
 │   │   │   │   │   ├── BookFormat.ts
+│   │   │   │   │   ├── BookLevel.ts
 │   │   │   │   │   └── ISBN.ts
 │   │   │   │   └── errors/
 │   │   │   │       └── DomainErrors.ts

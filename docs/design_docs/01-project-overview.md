@@ -53,6 +53,7 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | `type` | BookType | Sí | Referencia a entidad Type - Relación N:1 |
 | `categories` | Category[] | Sí | Lista de categorías (1-10) - Relación N:M |
 | `format` | BookFormat | Sí | Formato del archivo (enum) |
+| `level` | BookLevel | No | Nivel de dificultad del libro (enum) |
 | `available` | boolean | Sí | Indica si el libro está disponible (default: false) |
 | `path` | string | No | Ruta del archivo (max 1000) |
 | `embedding` | vector | No | Vector 768 dimensiones |
@@ -94,6 +95,7 @@ Entidad independiente para gestionar categorías reutilizables.
 ### 3.5 Value Objects
 
 - **BookFormat**: `epub` | `pdf` | `mobi` | `azw3` | `djvu` | `cbz` | `cbr` | `txt` | `other`
+- **BookLevel**: `Beginner` | `Intermediate` | `Advanced` | `Beginner to intermediate` | `Intermediate to advanced`
 - **ISBN**: Validado (ISBN-10 o ISBN-13), normalizado sin guiones
 
 ### 3.6 Relaciones
