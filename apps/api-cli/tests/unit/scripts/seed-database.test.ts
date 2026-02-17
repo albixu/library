@@ -346,6 +346,69 @@ describe('seed-database', () => {
 
       expect(isValidConsolidatedBook(book)).toBe(false);
     });
+
+    it('should return true for book with valid level', () => {
+      const book = {
+        isbn: '9781234567890',
+        title: 'Book With Level',
+        authors: ['Author'],
+        description: 'Description',
+        type: 'technical',
+        categories: [],
+        format: 'pdf',
+        available: false,
+        level: 'Beginner',
+      };
+
+      expect(isValidConsolidatedBook(book)).toBe(true);
+    });
+
+    it('should return true for book without level (optional field)', () => {
+      const book = {
+        isbn: '9781234567890',
+        title: 'Book Without Level',
+        authors: ['Author'],
+        description: 'Description',
+        type: 'technical',
+        categories: [],
+        format: 'pdf',
+        available: false,
+      };
+
+      expect(isValidConsolidatedBook(book)).toBe(true);
+    });
+
+    it('should return true for book with null level', () => {
+      const book = {
+        isbn: '9781234567890',
+        title: 'Book With Null Level',
+        authors: ['Author'],
+        description: 'Description',
+        type: 'technical',
+        categories: [],
+        format: 'pdf',
+        available: false,
+        level: null,
+      };
+
+      expect(isValidConsolidatedBook(book)).toBe(true);
+    });
+
+    it('should return false for book with non-string level', () => {
+      const book = {
+        isbn: '9781234567890',
+        title: 'Book With Numeric Level',
+        authors: ['Author'],
+        description: 'Description',
+        type: 'technical',
+        categories: [],
+        format: 'pdf',
+        available: false,
+        level: 123,
+      };
+
+      expect(isValidConsolidatedBook(book)).toBe(false);
+    });
   });
 
   describe('toCreateBookInput', () => {
@@ -372,6 +435,42 @@ describe('seed-database', () => {
       expect(result.isbn).toBe('9781234567890');
       expect(result.available).toBe(false);
       expect(result.path).toBeNull();
+      expect(result.level).toBeNull();
+    });
+
+    it('should include level when provided', () => {
+      const book: ConsolidatedBook = {
+        isbn: '9781234567890',
+        title: 'Test Book With Level',
+        authors: ['Author'],
+        description: 'Description',
+        type: 'technical',
+        categories: [],
+        format: 'pdf',
+        available: false,
+        level: 'Intermediate',
+      };
+
+      const result = toCreateBookInput(book);
+
+      expect(result.level).toBe('Intermediate');
+    });
+
+    it('should set level to null when not provided', () => {
+      const book: ConsolidatedBook = {
+        isbn: '9781234567890',
+        title: 'Test Book Without Level',
+        authors: ['Author'],
+        description: 'Description',
+        type: 'technical',
+        categories: [],
+        format: 'pdf',
+        available: false,
+      };
+
+      const result = toCreateBookInput(book);
+
+      expect(result.level).toBeNull();
     });
 
     it('should use first author from authors array', () => {

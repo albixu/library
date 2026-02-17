@@ -17,6 +17,7 @@ import {
 } from '../../../../../../src/domain/errors/DomainErrors.js';
 import { InvalidISBNError } from '../../../../../../src/domain/value-objects/ISBN.js';
 import { InvalidBookFormatError } from '../../../../../../src/domain/value-objects/BookFormat.js';
+import { InvalidBookLevelError } from '../../../../../../src/domain/value-objects/BookLevel.js';
 import {
   EmbeddingServiceUnavailableError,
   EmbeddingTextTooLongError,
@@ -65,6 +66,7 @@ const validRequestBody = {
   isbn: '9780132350884',
   available: true,
   path: '/books/clean-code.pdf',
+  level: 'Intermediate',
 };
 
 /**
@@ -86,6 +88,7 @@ const mockBookOutput: CreateBookOutput = {
   isbn: '9780132350884',
   available: true,
   path: '/books/clean-code.pdf',
+  level: 'Intermediate',
   createdAt: new Date('2026-02-08T12:00:00Z'),
   updatedAt: new Date('2026-02-08T12:00:00Z'),
 };
@@ -120,6 +123,7 @@ describe('BooksController', () => {
           isbn: mockBookOutput.isbn,
           available: mockBookOutput.available,
           path: mockBookOutput.path,
+          level: mockBookOutput.level,
           createdAt: '2026-02-08T12:00:00.000Z',
           updatedAt: '2026-02-08T12:00:00.000Z',
         });
@@ -142,6 +146,7 @@ describe('BooksController', () => {
           isbn: '9780132350884',
           available: true,
           path: '/books/clean-code.pdf',
+          level: 'Intermediate',
         });
       });
 
@@ -311,6 +316,78 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
+      });
+
+      it('should return 400 when level is invalid', async () => {
+        const body = { ...validRequestBody, level: 'expert' };
+        const request = createMockRequest(body);
+        const reply = createMockReply();
+
+        await controller.create(request, reply);
+
+        expect(reply.status).toHaveBeenCalledWith(400);
+        expect(reply.send).toHaveBeenCalledWith(
+          expect.objectContaining({
+            error: 'Validation failed',
+            details: expect.arrayContaining([expect.stringContaining('level')]),
+          })
+        );
+      });
+
+      it('should accept null level', async () => {
+        const body = { ...validRequestBody, level: null };
+        const outputWithNullLevel: CreateBookOutput = {
+          ...mockBookOutput,
+          level: null,
+        };
+
+        vi.mocked(mockUseCase.execute).mockResolvedValue(outputWithNullLevel);
+        const request = createMockRequest(body);
+        const reply = createMockReply();
+
+        await controller.create(request, reply);
+
+        expect(reply.status).toHaveBeenCalledWith(201);
+        expect(mockUseCase.execute).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: null,
+          })
+        );
+      });
+
+      it('should accept undefined level (omitted)', async () => {
+        const body = { ...validRequestBody };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (body as any).level;
+        const outputWithNullLevel: CreateBookOutput = {
+          ...mockBookOutput,
+          level: null,
+        };
+
+        vi.mocked(mockUseCase.execute).mockResolvedValue(outputWithNullLevel);
+        const request = createMockRequest(body);
+        const reply = createMockReply();
+
+        await controller.create(request, reply);
+
+        expect(reply.status).toHaveBeenCalledWith(201);
+      });
+
+      it('should return 400 for invalid book level from domain', async () => {
+        vi.mocked(mockUseCase.execute).mockRejectedValue(
+          new InvalidBookLevelError('invalid-level')
+        );
+        const request = createMockRequest(validRequestBody);
+        const reply = createMockReply();
+
+        await controller.create(request, reply);
+
+        expect(reply.status).toHaveBeenCalledWith(400);
+        expect(reply.send).toHaveBeenCalledWith(
+          expect.objectContaining({
+            error: expect.stringContaining('Invalid book level'),
+          })
+        );
       });
 
       it('should return 400 when categories is empty', async () => {

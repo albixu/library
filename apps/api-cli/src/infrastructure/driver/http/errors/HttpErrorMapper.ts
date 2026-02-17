@@ -18,6 +18,7 @@ import {
 } from '../../../../domain/errors/DomainErrors.js';
 import { InvalidISBNError } from '../../../../domain/value-objects/ISBN.js';
 import { InvalidBookFormatError } from '../../../../domain/value-objects/BookFormat.js';
+import { InvalidBookLevelError } from '../../../../domain/value-objects/BookLevel.js';
 import {
   EmbeddingServiceUnavailableError,
   EmbeddingTextTooLongError,
@@ -110,6 +111,13 @@ export function mapErrorToHttpResponse(error: unknown): HttpErrorResponse {
   }
 
   if (error instanceof InvalidBookFormatError) {
+    return {
+      statusCode: 400,
+      body: { error: error.message },
+    };
+  }
+
+  if (error instanceof InvalidBookLevelError) {
     return {
       statusCode: 400,
       body: { error: error.message },

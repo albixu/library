@@ -80,6 +80,7 @@ export class BooksController {
         format: input.format,
         categoryNames: input.categories,
         isbn: input.isbn,
+        level: input.level,
         available: input.available,
         path: input.path,
       });
@@ -97,6 +98,7 @@ export class BooksController {
         description: result.description,
         type: result.type,
         format: result.format,
+        level: result.level,
         categories: result.categories,
         isbn: result.isbn,
         available: result.available,

@@ -15,7 +15,7 @@ import { sql } from 'drizzle-orm';
 import * as schema from '../../src/infrastructure/driven/persistence/drizzle/schema.js';
 
 const { Pool } = pg;
-const { books, categories, bookCategories } = schema;
+const { books, categories, bookCategories, bookAuthors, authors } = schema;
 
 /**
  * Database instance type for integration tests
@@ -58,12 +58,19 @@ export async function closeTestDb(db: TestDb): Promise<void> {
 /**
  * Clears all test data from tables
  * Order matters due to foreign key constraints
+ *
+ * IMPORTANT: Integration and E2E tests share the same database.
+ * This function must clean ALL tables that tests might modify
+ * to prevent foreign key violations when tests run in parallel.
  */
 export async function clearTestData(db: TestDb): Promise<void> {
   // Delete in order: junction tables first, then main tables
   await db.delete(bookCategories);
+  await db.delete(bookAuthors);
   await db.delete(books);
   await db.delete(categories);
+  await db.delete(authors);
+  // Note: types table has seed data, don't delete it
 }
 
 /**

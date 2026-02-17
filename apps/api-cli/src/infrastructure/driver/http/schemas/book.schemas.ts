@@ -8,6 +8,7 @@
 
 import { z } from 'zod';
 import { BOOK_FORMATS } from '../../../../domain/value-objects/BookFormat.js';
+import { BOOK_LEVELS } from '../../../../domain/value-objects/BookLevel.js';
 
 /**
  * Schema for creating a book via POST /api/books
@@ -71,6 +72,13 @@ export const createBookSchema = z.object({
     .nullish()
     .transform((val) => (val === '' ? null : val?.trim() ?? null)),
 
+  level: z
+    .enum(BOOK_LEVELS, {
+      invalid_type_error: `level must be one of: ${BOOK_LEVELS.join(', ')}`,
+    })
+    .nullish()
+    .transform((val) => val ?? null),
+
   available: z.boolean().optional().default(true),
 
   path: z
@@ -100,6 +108,7 @@ export const bookResponseSchema = z.object({
   description: z.string(),
   type: z.string(),
   format: z.enum(BOOK_FORMATS),
+  level: z.enum(BOOK_LEVELS).nullable(),
   categories: z.array(
     z.object({
       id: z.string().uuid(),

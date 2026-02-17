@@ -64,6 +64,7 @@ export interface CreateBookInput {
   categoryNames: string[];
   format: string;
   isbn?: string | null;
+  level?: string | null;
   available?: boolean;
   path?: string | null;
 }
@@ -80,6 +81,7 @@ export interface CreateBookOutput {
   categories: Array<{ id: string; name: string }>;
   format: string;
   isbn: string | null;
+  level: string | null;
   available: boolean;
   path: string | null;
   createdAt: Date;
@@ -203,6 +205,7 @@ export class CreateBookUseCase {
       categories,
       format: input.format,
       isbn: input.isbn,
+      level: input.level,
       available: input.available,
       path: input.path,
     });
@@ -267,6 +270,7 @@ export class CreateBookUseCase {
       categories: book.categories.map((c) => ({ id: c.id, name: c.name })),
       format: book.format.value,
       isbn: book.isbn?.value ?? null,
+      level: book.level?.value ?? null,
       available: book.available,
       path: book.path,
       createdAt: book.createdAt,

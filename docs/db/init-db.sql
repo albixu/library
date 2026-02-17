@@ -23,6 +23,15 @@ CREATE TYPE book_format AS ENUM (
     'other'
 );
 
+-- Book difficulty level (HU-003 - case-sensitive values)
+CREATE TYPE book_level AS ENUM (
+    'Beginner',
+    'Intermediate',
+    'Advanced',
+    'Beginner to Intermediate',
+    'Intermediate to Advanced'
+);
+
 -- ================================
 -- Tables
 -- ================================
@@ -69,7 +78,7 @@ CREATE TABLE IF NOT EXISTS categories (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Books table (updated - removed author column, added type_id reference)
+-- Books table (updated - removed author column, added type_id reference, added level)
 CREATE TABLE IF NOT EXISTS books (
     -- Primary key (UUID v4)
     id UUID PRIMARY KEY,
@@ -84,6 +93,7 @@ CREATE TABLE IF NOT EXISTS books (
     isbn VARCHAR(13) UNIQUE,
     description VARCHAR(5000),
     path VARCHAR(1000),
+    level book_level,
     
     -- Normalized field for duplicate detection (stored lowercase)
     normalized_title VARCHAR(500) NOT NULL,
@@ -162,6 +172,11 @@ CREATE INDEX IF NOT EXISTS idx_books_title
 CREATE INDEX IF NOT EXISTS idx_books_available 
     ON books (available) 
     WHERE available = TRUE;
+
+-- Index for filtering by level
+CREATE INDEX IF NOT EXISTS idx_books_level 
+    ON books (level) 
+    WHERE level IS NOT NULL;
 
 -- Book authors junction table indexes
 -- Index for finding all authors of a book
