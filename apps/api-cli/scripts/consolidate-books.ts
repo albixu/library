@@ -202,11 +202,24 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
   return result;
 }
 
-// Run if executed directly
-consolidateBooks().catch((error: unknown) => {
-  console.error('Consolidation failed:', error);
-  process.exit(1);
-});
+/**
+ * Determines if this module is being run directly (not imported)
+ * Uses argv[1] comparison since import.meta.url check is unreliable with tsx
+ */
+function isMainModule(): boolean {
+  // When run with tsx: process.argv[1] contains the script path
+  // When imported: process.argv[1] contains vitest/node path
+  const scriptPath = process.argv[1] ?? '';
+  return scriptPath.includes('consolidate-books');
+}
+
+// Run only if executed directly (not when imported for testing)
+if (isMainModule()) {
+  consolidateBooks().catch((error: unknown) => {
+    console.error('Consolidation failed:', error);
+    process.exit(1);
+  });
+}
 
 export { consolidateBooks, transformBook, isValidSourceBook };
 export type { SourceBook, ConsolidatedBook, ConsolidationResult };
