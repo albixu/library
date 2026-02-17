@@ -15,6 +15,7 @@
  */
 
 import { BookFormat, type BookFormatValue } from '../value-objects/BookFormat.js';
+import { BookLevel, type BookLevelValue } from '../value-objects/BookLevel.js';
 import { ISBN } from '../value-objects/ISBN.js';
 import { Author } from './Author.js';
 import { BookType } from './BookType.js';
@@ -55,6 +56,7 @@ export interface CreateBookProps {
   format: string;
   description: string;
   isbn?: string | null;
+  level?: string | null;
   available?: boolean;
   path?: string | null;
   createdAt?: Date;
@@ -75,6 +77,7 @@ export interface BookPersistenceProps {
   categories: Category[];
   format: BookFormatValue;
   isbn: string | null;
+  level: BookLevelValue | null;
   description: string;
   available: boolean;
   path: string | null;
@@ -109,6 +112,7 @@ export class Book {
     public readonly categories: readonly Category[],
     public readonly format: BookFormat,
     public readonly isbn: ISBN | null,
+    public readonly level: BookLevel | null,
     public readonly description: string,
     public readonly available: boolean,
     public readonly path: string | null,
@@ -138,6 +142,7 @@ export class Book {
 
     // Validate optional fields
     const isbn = props.isbn ? ISBN.create(props.isbn) : null;
+    const level = props.level ? BookLevel.create(props.level) : null;
 
     // Available defaults to false, path is optional
     const available = props.available ?? false;
@@ -155,6 +160,7 @@ export class Book {
       categories,
       format,
       isbn,
+      level,
       description,
       available,
       path,
@@ -176,6 +182,7 @@ export class Book {
       Object.freeze([...props.categories]),
       BookFormat.fromPersistence(props.format),
       props.isbn ? ISBN.fromPersistence(props.isbn) : null,
+      props.level ? BookLevel.fromPersistence(props.level) : null,
       props.description,
       props.available,
       props.path,
@@ -186,6 +193,7 @@ export class Book {
 
   /**
    * Updates the book with new values, returning a new instance
+   * Note: level is NOT editable after creation (semantic content)
    */
   update(props: UpdateBookProps): Book {
     const title = props.title !== undefined
@@ -232,6 +240,7 @@ export class Book {
       categories,
       format,
       isbn,
+      this.level, // level is NOT editable after creation
       description,
       available,
       path,
