@@ -23,6 +23,7 @@
 ## 2. Resumen de Cambios
 
 Esta historia de usuario añade una nueva propiedad opcional a los libros para clasificarlos por nivel de dificultad.
+No hay que añadir el campo level en el fichero de datos iniciales books.json.
 
 ### 2.1 Cambios en el Modelo de Dominio
 
@@ -344,46 +345,41 @@ export const books = pgTable('books', {
 
 ---
 
-## 9. Subtareas (Ordenadas por Dependencia)
+## 8. Subtareas (Ordenadas por Dependencia)
 
 ### Grafo de Dependencias
 
 ```
-                    ┌─────────────────────┐
-                    │  7. books-json      │
-                    │  (datos iniciales)  │
-                    └─────────┬───────────┘
-                              │
-┌─────────────────────┐       │
-│  1. domain-level-vo │       │
-│  (Value Object)     │       │
-└─────────┬───────────┘       │
-          │                   │
-          ▼                   │
-┌─────────────────────┐       │       ┌─────────────────────┐
-│  2. entity-book     │       │       │  3. db-schema       │
-│  (Entidad Book)     │       │       │  (Drizzle + Enum)   │
-└─────────┬───────────┘       │       └─────────┬───────────┘
-          │                   │                 │
-          ├───────────────────┼─────────────────┤
-          │                   │                 │
-          ▼                   │                 ▼
-┌─────────────────────┐       │       ┌─────────────────────┐
-│  4. persistence     │◄──────┼───────│                     │
-│  (Mapper + Repo)    │       │       │                     │
-└─────────┬───────────┘       │       └─────────────────────┘
-          │                   │
-          ▼                   │
-┌─────────────────────┐       │
-│  5. use-case        │       │
-│  (CreateBookUseCase)│       │
-└─────────┬───────────┘       │
-          │                   │
+┌─────────────────────┐       
+│  1. domain-level-vo │       
+│  (Value Object)     │       
+└─────────┬───────────┘       
+          │                   
+          ▼                   
+┌─────────────────────┐              ┌─────────────────────┐
+│  2. entity-book     │              │  3. db-schema       │
+│  (Entidad Book)     │              │  (Drizzle + Enum)   │
+└─────────┬───────────┘              └─────────┬───────────┘
+          │                                    │
+          ├────────────────────────────────────┤
+          │                                    │
+          ▼                                    ▼
+┌─────────────────────┐              ┌─────────────────────┐
+│  4. persistence     │◄─────────────│                     │
+│  (Mapper + Repo)    │              │                     │
+└─────────┬───────────┘              └─────────────────────┘
+          │                   
+          ▼                   
+┌─────────────────────┐       
+│  5. use-case        │       
+│  (CreateBookUseCase)│       
+└─────────┬───────────┘       
+          │                   
           ├───────────────────┤
           │                   │
           ▼                   ▼
 ┌─────────────────┐   ┌─────────────────┐
-│  6. http-layer  │   │  8. seed-script │
+│  6. http-layer  │   │  7. seed-script │
 │  (API HTTP)     │   │  (Carga inicial)│
 └─────────┬───────┘   └─────────┬───────┘
           │                     │
@@ -391,7 +387,7 @@ export const books = pgTable('books', {
                                 │
                                 ▼
                     ┌─────────────────────┐
-                    │  9. integration-e2e │
+                    │  8. integration-e2e │
                     │  (Tests finales)    │
                     └─────────────────────┘
 ```
