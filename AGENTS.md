@@ -29,7 +29,8 @@ Se debe seguir esta estructura de ramas jerárquica para cada desarrollo:
 6. **Pase a producción:** Tras probar la funcionalidades completas en la rama `dev` se mergearán a `main` mediante un **Pull Request**
 
 ### 3.1 Cosas trabajar con las tareas y las ramas.
-1. Una vez realizada una subtarea, se realizará un merge automático de la subtarea a la rama de la historia correspondiente.
+Quiero que se vayan realizando todas las tareas de una historia de forma continua hasta realizar todas y que estas esten mergeadas en la rama de la historia. En este punto se realizará un PR de la rama de la historia a dev que la revisaré yo manualmente. Acontinuación defino los paso a seguir:
+1. Una vez realizada una subtarea, se realizará un merge automático de la subtarea a la rama de la historia correspondiente y se eliminará la rama de la tarea realizada..
 2. A continuación se actualizará la rama de la historia y se realizará la siguiente subtarea siguiendo el mismo proceso.
 3. Así hasta terminar con todas las subtareas.
 4. Una vez realizadas todas las subtareas y estar todas estas mergeadas en la rama de la historia, se creará un PR de la rama de la historia a la rama dev. Esta no podrá ser aprobada ni mergeada por el agente. Requiere de una revisión y aprobado manual.
