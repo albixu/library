@@ -60,6 +60,7 @@ paths:
                   type: "technical"
                   format: "pdf"
                   categories: ["programming", "software engineering", "best practices"]
+                  level: "Intermediate"
                   isbn: "9780132350884"
                   available: true
                   path: "/books/clean-code.pdf"
@@ -88,6 +89,7 @@ paths:
                 description: "A handbook of agile software craftsmanship that teaches programmers how to write clean, maintainable code."
                 type: "technical"
                 format: "pdf"
+                level: "Intermediate"
                 categories:
                   - id: "660e8400-e29b-41d4-a716-446655440001"
                     name: "programming"
@@ -106,6 +108,7 @@ paths:
             - Campos requeridos faltantes o vacíos
             - Campos que exceden longitud máxima
             - Tipo o formato de libro inválido
+            - Nivel de dificultad inválido
             - ISBN con formato o checksum inválido
             - Más de 10 categorías
             - Texto de embedding excede 7000 caracteres
@@ -140,6 +143,12 @@ paths:
                   summary: Texto de embedding muy largo
                   value:
                     error: "Embedding text too long (7500 characters). Maximum allowed: 7000 characters"
+                invalid_level:
+                  summary: Nivel de dificultad inválido
+                  value:
+                    error: "Validation failed"
+                    details:
+                      - "level: Invalid enum value. Expected 'Beginner' | 'Intermediate' | 'Advanced' | 'Beginner to Intermediate' | 'Intermediate to Advanced', received 'expert'"
         '409':
           description: |
             Conflicto - Libro duplicado detectado.
@@ -248,6 +257,18 @@ components:
           maxLength: 1000
           description: Ruta al archivo del libro en el sistema de archivos
           example: "/books/clean-code.pdf"
+        level:
+          type: [string, 'null']
+          enum:
+            - Beginner
+            - Intermediate
+            - Advanced
+            - Beginner to Intermediate
+            - Intermediate to Advanced
+          description: |
+            Nivel de dificultad del libro (opcional). Case-sensitive.
+            Útil para libros técnicos donde el nivel determina los conocimientos previos necesarios.
+          example: "Intermediate"
 
     BookResponse:
       type: object
@@ -288,6 +309,16 @@ components:
             - other
           description: Formato del archivo digital
           example: "pdf"
+        level:
+          type: [string, 'null']
+          enum:
+            - Beginner
+            - Intermediate
+            - Advanced
+            - Beginner to Intermediate
+            - Intermediate to Advanced
+          description: Nivel de dificultad del libro (null si no se especificó)
+          example: "Intermediate"
         categories:
           type: array
           items:
