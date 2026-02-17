@@ -50,7 +50,6 @@ Esta historia de usuario añade una nueva propiedad opcional a los libros para c
 
 | Cambio | Descripción |
 |--------|-------------|
-| **books.json** | Se añade campo `level` a los libros que aplique |
 | **seed-database.ts** | Actualizado para leer y persistir el nivel |
 
 ---
@@ -62,8 +61,8 @@ Esta historia de usuario añade una nueva propiedad opcional a los libros para c
 | `Beginner` | Para principiantes sin experiencia previa |
 | `Intermediate` | Para desarrolladores con conocimientos básicos |
 | `Advanced` | Para profesionales experimentados |
-| `Beginner to Intermediate` | Cubre desde principiante hasta nivel intermedio |
-| `Intermediate to Advanced` | Cubre desde intermedio hasta nivel avanzado |
+| `Beginner to intermediate` | Cubre desde principiante hasta nivel intermedio |
+| `Intermediate to advanced` | Cubre desde intermedio hasta nivel avanzado |
 
 **Nota:** El campo es **nullable**. Libros sin nivel asignado (ej: certificaciones, referencias) tendrán `level: null`.
 
@@ -407,9 +406,8 @@ export const books = pgTable('books', {
 | 4 | `task/HU-003-persistence` | Actualizar `BookMapper` y `PostgresBookRepository` | 2, 3 | M |
 | 5 | `task/HU-003-use-case` | Modificar `CreateBookUseCase` para aceptar `level` | 2, 4 | S |
 | 6 | `task/HU-003-http-layer` | Actualizar schemas Zod, controller y rutas HTTP | 5 | M |
-| 7 | `task/HU-003-books-json` | Añadir campo `level` al JSON de datos iniciales | - | S |
-| 8 | `task/HU-003-seed-script` | Actualizar script de carga inicial para leer campo `level` | 5, 7 | M |
-| 9 | `task/HU-003-integration-e2e` | Tests de integración y E2E | 6, 8 | M |
+| 7 | `task/HU-003-seed-script` | Actualizar script de carga inicial para leer campo `level` | 5, 7 | M |
+| 8 | `task/HU-003-integration-e2e` | Tests de integración y E2E | 6, 8 | M |
 
 **Leyenda estimaciones:** S = Small (< 1h), M = Medium (1-3h)
 
@@ -424,9 +422,8 @@ export const books = pgTable('books', {
 4. task/HU-003-persistence       → Mapper y Repository
 5. task/HU-003-use-case          → CreateBookUseCase
 6. task/HU-003-http-layer        → Controller, schemas, rutas
-7. task/HU-003-books-json        → Datos iniciales con level
-8. task/HU-003-seed-script       → Script de carga
-9. task/HU-003-integration-e2e   → Tests integración y E2E
+7. task/HU-003-seed-script       → Script de carga
+8. task/HU-003-integration-e2e   → Tests integración y E2E
 ```
 
 ---
@@ -518,18 +515,7 @@ export const books = pgTable('books', {
 
 ---
 
-### TASK-007: Añadir level a books.json
-
-**Branch:** `task/HU-003-books-json`
-
-**Descripción:** Añadir el campo `level` a los libros en el JSON de datos iniciales.
-
-**Entregables:**
-- Actualizar `docs/db/books.json` añadiendo campo `level` donde aplique
-
----
-
-### TASK-008: Actualizar script de carga
+### TASK-007: Actualizar script de carga
 
 **Branch:** `task/HU-003-seed-script`
 
@@ -541,7 +527,7 @@ export const books = pgTable('books', {
 
 ---
 
-### TASK-009: Tests de integración y E2E
+### TASK-008: Tests de integración y E2E
 
 **Branch:** `task/HU-003-integration-e2e`
 
