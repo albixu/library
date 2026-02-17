@@ -14,6 +14,7 @@ import { BookType } from '../../../../src/domain/entities/BookType.js';
 import { Author } from '../../../../src/domain/entities/Author.js';
 import { Book } from '../../../../src/domain/entities/Book.js';
 import { DuplicateISBNError, InvalidBookTypeError } from '../../../../src/domain/errors/DomainErrors.js';
+import { InvalidBookLevelError } from '../../../../src/domain/value-objects/BookLevel.js';
 import {
   EmbeddingTextTooLongError,
   EmbeddingServiceUnavailableError,
@@ -37,6 +38,7 @@ describe('CreateBookUseCase', () => {
     categoryNames: ['programming', 'software engineering'],
     format: 'pdf',
     isbn: '9780132350884',
+    level: 'Intermediate',
     available: true,
     path: '/books/clean-code.pdf',
   };
@@ -148,6 +150,7 @@ describe('CreateBookUseCase', () => {
       expect(result.type).toBe('technical');
       expect(result.format).toBe('pdf');
       expect(result.isbn).toBe('9780132350884');
+      expect(result.level).toBe('Intermediate');
       expect(result.available).toBe(true);
       expect(result.path).toBe('/books/clean-code.pdf');
       expect(result.categories).toHaveLength(2);
@@ -335,8 +338,51 @@ describe('CreateBookUseCase', () => {
       const result = await useCase.execute(minimalInput);
 
       expect(result.isbn).toBeNull();
+      expect(result.level).toBeNull();
       expect(result.available).toBe(false);
       expect(result.path).toBeNull();
+    });
+
+    it('should create book with level', async () => {
+      const inputWithLevel: CreateBookInput = {
+        ...validInput,
+        level: 'Advanced',
+      };
+
+      const result = await useCase.execute(inputWithLevel);
+
+      expect(result.level).toBe('Advanced');
+    });
+
+    it('should create book with compound level', async () => {
+      const inputWithCompoundLevel: CreateBookInput = {
+        ...validInput,
+        level: 'Beginner to Intermediate',
+      };
+
+      const result = await useCase.execute(inputWithCompoundLevel);
+
+      expect(result.level).toBe('Beginner to Intermediate');
+    });
+
+    it('should create book without level (null)', async () => {
+      const inputWithoutLevel: CreateBookInput = {
+        ...validInput,
+        level: null,
+      };
+
+      const result = await useCase.execute(inputWithoutLevel);
+
+      expect(result.level).toBeNull();
+    });
+
+    it('should throw InvalidBookLevelError for invalid level', async () => {
+      const inputWithInvalidLevel: CreateBookInput = {
+        ...validInput,
+        level: 'expert', // invalid - not in enum
+      };
+
+      await expect(useCase.execute(inputWithInvalidLevel)).rejects.toThrow(InvalidBookLevelError);
     });
 
     it('should handle null ISBN in duplicate check', async () => {
