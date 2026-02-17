@@ -11,9 +11,23 @@
  * - Modified 'books' table: removed author column, added type_id reference
  */
 
-import { pgTable, uuid, varchar, text, timestamp, boolean, index, uniqueIndex, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, varchar, text, timestamp, boolean, index, uniqueIndex, primaryKey } from 'drizzle-orm/pg-core';
 import { vector } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+
+/**
+ * Book level enum
+ *
+ * Represents the difficulty level of a technical book.
+ * Values are case-sensitive and must match exactly.
+ */
+export const bookLevelEnum = pgEnum('book_level', [
+  'Beginner',
+  'Intermediate',
+  'Advanced',
+  'Beginner to Intermediate',
+  'Intermediate to Advanced',
+]);
 
 /**
  * Types table
@@ -72,6 +86,9 @@ export const categories = pgTable('categories', {
  * - Removed 'author' and 'normalized_author' columns (now N:M via book_authors)
  * - Added 'type_id' foreign key to types table
  * - Removed 'type' column (was string, now referenced)
+ *
+ * Changes in HU-003:
+ * - Added 'level' column using book_level enum (nullable)
  */
 export const books = pgTable('books', {
   id: uuid('id').primaryKey(),
@@ -80,6 +97,7 @@ export const books = pgTable('books', {
   description: text('description').notNull(),
   typeId: uuid('type_id').notNull().references(() => types.id),
   format: varchar('format', { length: 50 }).notNull(),
+  level: bookLevelEnum('level'),
   available: boolean('available').notNull().default(false),
   path: varchar('path', { length: 1000 }),
   embedding: vector('embedding', { dimensions: 768 }),
@@ -93,6 +111,8 @@ export const books = pgTable('books', {
   // Index for common queries
   index('books_title_idx').on(table.title),
   index('books_type_id_idx').on(table.typeId),
+  // Index for level filtering (nullable)
+  index('books_level_idx').on(table.level),
 ]);
 
 /**
