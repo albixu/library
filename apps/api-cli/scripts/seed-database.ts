@@ -64,6 +64,7 @@ interface ConsolidatedBook {
   readonly categories: readonly string[];
   readonly format: string;
   readonly available: boolean;
+  readonly level?: string;
 }
 
 /**
@@ -93,6 +94,12 @@ function isValidConsolidatedBook(obj: unknown): obj is ConsolidatedBook {
 
   const book = obj as Record<string, unknown>;
 
+  // level is optional - if present, must be string or null/undefined
+  const levelValid =
+    book.level === undefined ||
+    book.level === null ||
+    typeof book.level === 'string';
+
   return (
     typeof book.isbn === 'string' &&
     typeof book.title === 'string' &&
@@ -104,7 +111,8 @@ function isValidConsolidatedBook(obj: unknown): obj is ConsolidatedBook {
     Array.isArray(book.categories) &&
     book.categories.every((c) => typeof c === 'string') &&
     typeof book.format === 'string' &&
-    typeof book.available === 'boolean'
+    typeof book.available === 'boolean' &&
+    levelValid
   );
 }
 
@@ -147,6 +155,7 @@ function toCreateBookInput(book: ConsolidatedBook): CreateBookInput {
     isbn: book.isbn,
     available: book.available,
     path: null,
+    level: book.level ?? null,
   };
 }
 
