@@ -90,7 +90,7 @@ Esta historia de usuario añade una nueva propiedad opcional a los libros para c
 ### 4.3 Mensaje de Error para Nivel Inválido
 
 ```
-Invalid book level: "{value}". Valid levels are: Beginner, Intermediate, Advanced, Beginner to Intermediate, Intermediate to Advanced
+Invalid book level: "{value}". Valid levels are: Beginner, Intermediate, Advanced, Beginner to intermediate, Intermediate to advanced
 ```
 
 ### 4.4 Carga Inicial
@@ -111,8 +111,8 @@ export const BOOK_LEVELS = [
   'Beginner',
   'Intermediate',
   'Advanced',
-  'Beginner to Intermediate',
-  'Intermediate to Advanced',
+  'Beginner to intermediate',
+  'Intermediate to advanced',
 ] as const;
 
 export type BookLevelValue = (typeof BOOK_LEVELS)[number];
@@ -198,8 +198,8 @@ CREATE TYPE book_level AS ENUM (
     'Beginner',
     'Intermediate',
     'Advanced',
-    'Beginner to Intermediate',
-    'Intermediate to Advanced'
+    'Beginner to intermediate',
+    'Intermediate to advanced'
 );
 ```
 
@@ -217,8 +217,8 @@ export const bookLevelEnum = pgEnum('book_level', [
   'Beginner',
   'Intermediate',
   'Advanced',
-  'Beginner to Intermediate',
-  'Intermediate to Advanced',
+  'Beginner to intermediate',
+  'Intermediate to advanced',
 ]);
 
 // En la tabla books
@@ -315,7 +315,7 @@ export const books = pgTable('books', {
     "categories": ["Software Development", "C#"],
     "format": "epub",
     "available": false,
-    "level": "Intermediate to Advanced"
+    "level": "Intermediate to advanced"
   },
   {
     "isbn": "9781394254699",
@@ -337,9 +337,9 @@ export const books = pgTable('books', {
 | Libro | Nivel | Justificación |
 |-------|-------|---------------|
 | Head First C# | `Beginner` | "No experience needed" en descripción |
-| C# 12 in a Nutshell | `Intermediate to Advanced` | "intermediate and advanced programmers" |
+| C# 12 in a Nutshell | `Intermediate to advanced` | "intermediate and advanced programmers" |
 | Clean Architecture with .NET | `Advanced` | Requiere experiencia previa en arquitectura |
-| C# 14 and .NET 10 Fundamentals | `Beginner to Intermediate` | "beginners and intermediate programmers" |
+| C# 14 and .NET 10 Fundamentals | `Beginner to intermediate` | "beginners and intermediate programmers" |
 | CISSP Study Guide | `null` | Material de certificación, nivel no aplica |
 
 ---
@@ -566,7 +566,7 @@ Los valores deben coincidir exactamente:
 | `Beginner` | ✅ |
 | `beginner` | ❌ |
 | `BEGINNER` | ❌ |
-| `Intermediate to Advanced` | ✅ |
+| `Intermediate to advanced` | ✅ |
 | `intermediate to advanced` | ❌ |
 
 ---
