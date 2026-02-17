@@ -90,6 +90,7 @@ describe('PostgresBookRepository', () => {
     description: 'A Handbook of Agile Software Craftsmanship',
     typeId: '550e8400-e29b-41d4-a716-446655440030',
     format: 'pdf',
+    level: 'Intermediate',
     available: true,
     path: '/books/clean-code.pdf',
     embedding: Array(768).fill(0.1),
@@ -108,6 +109,7 @@ describe('PostgresBookRepository', () => {
       description: 'A Handbook of Agile Software Craftsmanship',
       type: mockBookType,
       format: 'pdf',
+      level: 'Intermediate',
       categories: [mockCategory],
       available: true,
       path: '/books/clean-code.pdf',
@@ -209,10 +211,36 @@ describe('PostgresBookRepository', () => {
       expect(result).not.toBeNull();
       expect(result?.id).toBe(mockBookRecord.id);
       expect(result?.title).toBe('Clean Code');
+      expect(result?.level?.value).toBe('Intermediate');
       expect(result?.authors).toHaveLength(1);
       expect(result?.authors[0].name).toBe('Robert C. Martin');
       expect(result?.type.name).toBe('technical');
       expect(result?.categories).toHaveLength(1);
+    });
+
+    it('should return book with null level when level is null in database', async () => {
+      const recordWithNullLevel = { ...mockBookRecord, level: null };
+      mockDb.query.books.findFirst.mockResolvedValue(recordWithNullLevel);
+      mockDb.query.types.findFirst.mockResolvedValue(mockBookTypeRecord);
+
+      let callCount = 0;
+      const selectChain = {
+        from: vi.fn().mockReturnThis(),
+        innerJoin: vi.fn().mockReturnThis(),
+        where: vi.fn().mockImplementation(() => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve([{ authors: mockAuthorRecord }]);
+          }
+          return Promise.resolve([{ categories: mockCategoryRecord }]);
+        }),
+      };
+      mockDb.select.mockReturnValue(selectChain);
+
+      const result = await repository.findById(mockBookRecord.id);
+
+      expect(result).not.toBeNull();
+      expect(result?.level).toBeNull();
     });
 
     it('should return null when not found', async () => {

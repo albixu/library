@@ -147,6 +147,45 @@ describe('PostgresBookRepository Integration', () => {
       expect(saved.type.name).toBe('technical');
       expect(saved.categories).toHaveLength(2);
       expect(saved.isbn?.value).toBe('9780132350884');
+      expect(saved.level).toBeNull(); // No level specified
+    });
+
+    it('should save a book with level', async () => {
+      const book = Book.create({
+        id: generateUUID(),
+        title: 'Advanced TypeScript',
+        authors: [martinFowler],
+        description: 'Deep dive into TypeScript advanced patterns',
+        type: technicalType,
+        format: 'pdf',
+        categories: [programmingCategory],
+        level: 'Advanced',
+      });
+
+      const embedding = generateTestEmbedding();
+      const saved = await bookRepository.save({ book, embedding });
+
+      expect(saved.id).toBe(book.id);
+      expect(saved.title).toBe('Advanced TypeScript');
+      expect(saved.level?.value).toBe('Advanced');
+    });
+
+    it('should save a book with compound level', async () => {
+      const book = Book.create({
+        id: generateUUID(),
+        title: 'Intermediate to Advanced Patterns',
+        authors: [robertMartin],
+        description: 'Bridge course for intermediate developers',
+        type: technicalType,
+        format: 'epub',
+        categories: [softwareCategory],
+        level: 'Intermediate to Advanced',
+      });
+
+      const embedding = generateTestEmbedding();
+      const saved = await bookRepository.save({ book, embedding });
+
+      expect(saved.level?.value).toBe('Intermediate to Advanced');
     });
 
     it('should save a book without ISBN', async () => {
@@ -271,6 +310,52 @@ describe('PostgresBookRepository Integration', () => {
       expect(found!.authors[0].name).toBe('Test Author');
       expect(found!.type.name).toBe('technical');
       expect(found!.categories).toHaveLength(2);
+    });
+
+    it('should find a book with level', async () => {
+      const testAuthor = Author.create({ id: generateUUID(), name: 'Level Test Author' });
+      await db.insert(authors).values({ id: testAuthor.id, name: testAuthor.name });
+
+      const book = Book.create({
+        id: generateUUID(),
+        title: 'Book With Level',
+        authors: [testAuthor],
+        description: 'Test description with level',
+        type: technicalType,
+        format: 'pdf',
+        categories: [programmingCategory],
+        level: 'Beginner',
+      });
+
+      await bookRepository.save({ book, embedding: generateTestEmbedding() });
+
+      const found = await bookRepository.findById(book.id);
+
+      expect(found).not.toBeNull();
+      expect(found!.level?.value).toBe('Beginner');
+    });
+
+    it('should find a book with null level', async () => {
+      const testAuthor = Author.create({ id: generateUUID(), name: 'Null Level Author' });
+      await db.insert(authors).values({ id: testAuthor.id, name: testAuthor.name });
+
+      const book = Book.create({
+        id: generateUUID(),
+        title: 'Book Without Level',
+        authors: [testAuthor],
+        description: 'Test description without level',
+        type: technicalType,
+        format: 'epub',
+        categories: [softwareCategory],
+        // No level specified
+      });
+
+      await bookRepository.save({ book, embedding: generateTestEmbedding() });
+
+      const found = await bookRepository.findById(book.id);
+
+      expect(found).not.toBeNull();
+      expect(found!.level).toBeNull();
     });
 
     it('should return null for non-existent ID', async () => {
@@ -462,6 +547,46 @@ describe('PostgresBookRepository Integration', () => {
 
       const count = await bookRepository.count();
       expect(count).toBe(2);
+    });
+
+    it('should return books with different levels', async () => {
+      const authorOne = Author.create({ id: generateUUID(), name: 'Level Author One' });
+      const authorTwo = Author.create({ id: generateUUID(), name: 'Level Author Two' });
+      await db.insert(authors).values([
+        { id: authorOne.id, name: authorOne.name },
+        { id: authorTwo.id, name: authorTwo.name },
+      ]);
+
+      const beginnerBook = Book.create({
+        id: generateUUID(),
+        title: 'Beginner Book',
+        authors: [authorOne],
+        description: 'For beginners',
+        type: technicalType,
+        format: 'pdf',
+        categories: [programmingCategory],
+        level: 'Beginner',
+      });
+
+      const advancedBook = Book.create({
+        id: generateUUID(),
+        title: 'Advanced Book',
+        authors: [authorTwo],
+        description: 'For experts',
+        type: technicalType,
+        format: 'pdf',
+        categories: [programmingCategory],
+        level: 'Advanced',
+      });
+
+      await bookRepository.save({ book: beginnerBook, embedding: generateTestEmbedding() });
+      await bookRepository.save({ book: advancedBook, embedding: generateTestEmbedding() });
+
+      const allBooks = await bookRepository.findAll();
+      expect(allBooks).toHaveLength(2);
+
+      const levels = allBooks.map(b => b.level?.value).sort();
+      expect(levels).toEqual(['Advanced', 'Beginner']);
     });
 
     it('should return empty array and count 0 when no books exist', async () => {
