@@ -79,29 +79,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BookResponse'
+                $ref: '#/components/schemas/BookSuccessResponse'
               example:
-                id: "550e8400-e29b-41d4-a716-446655440000"
-                title: "Clean Code"
-                authors:
-                  - id: "990e8400-e29b-41d4-a716-446655440004"
-                    name: "Robert C. Martin"
-                description: "A handbook of agile software craftsmanship that teaches programmers how to write clean, maintainable code."
-                type: "technical"
-                format: "pdf"
-                level: "Intermediate"
-                categories:
-                  - id: "660e8400-e29b-41d4-a716-446655440001"
-                    name: "programming"
-                  - id: "770e8400-e29b-41d4-a716-446655440002"
-                    name: "software engineering"
-                  - id: "880e8400-e29b-41d4-a716-446655440003"
-                    name: "best practices"
-                isbn: "9780132350884"
-                available: true
-                path: "/books/clean-code.pdf"
-                createdAt: "2026-02-09T12:00:00.000Z"
-                updatedAt: "2026-02-09T12:00:00.000Z"
+                success: true
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440000"
+                  title: "Clean Code"
+                  authors:
+                    - id: "990e8400-e29b-41d4-a716-446655440004"
+                      name: "Robert C. Martin"
+                  description: "A handbook of agile software craftsmanship that teaches programmers how to write clean, maintainable code."
+                  type: "technical"
+                  format: "pdf"
+                  level: "Intermediate"
+                  categories:
+                    - id: "660e8400-e29b-41d4-a716-446655440001"
+                      name: "programming"
+                    - id: "770e8400-e29b-41d4-a716-446655440002"
+                      name: "software engineering"
+                    - id: "880e8400-e29b-41d4-a716-446655440003"
+                      name: "best practices"
+                  isbn: "9780132350884"
+                  available: true
+                  path: "/books/clean-code.pdf"
+                  createdAt: "2026-02-09T12:00:00.000Z"
+                  updatedAt: "2026-02-09T12:00:00.000Z"
+                error: null
         '400':
           description: |
             Solicitud inválida. Posibles causas:
@@ -115,40 +118,58 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               examples:
                 missing_field:
                   summary: Campo requerido faltante
                   value:
-                    error: "Validation failed"
-                    details:
-                      - "title is required"
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "title is required"
                 invalid_type:
                   summary: Tipo de libro inválido
                   value:
-                    error: "Validation failed"
-                    details:
-                      - "type: Invalid enum value. Expected 'technical' | 'novel' | 'essay' | 'poetry' | 'biography' | 'reference' | 'manual' | 'other', received 'invalid'"
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "type: Invalid enum value. Expected 'technical' | 'novel' | 'essay' | 'poetry' | 'biography' | 'reference' | 'manual' | 'other', received 'invalid'"
                 invalid_isbn:
                   summary: ISBN inválido
                   value:
-                    error: "Invalid ISBN: \"1234567890\". Must be a valid ISBN-10 or ISBN-13 with correct checksum."
+                    success: false
+                    data: null
+                    error:
+                      message: "Invalid ISBN: \"1234567890\". Must be a valid ISBN-10 or ISBN-13 with correct checksum."
                 too_many_categories:
                   summary: Demasiadas categorías
                   value:
-                    error: "Validation failed"
-                    details:
-                      - "categories: Array must contain at most 10 element(s)"
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "categories: Array must contain at most 10 element(s)"
                 embedding_too_long:
                   summary: Texto de embedding muy largo
                   value:
-                    error: "Embedding text too long (7500 characters). Maximum allowed: 7000 characters"
+                    success: false
+                    data: null
+                    error:
+                      message: "Embedding text too long (7500 characters). Maximum allowed: 7000 characters"
                 invalid_level:
                   summary: Nivel de dificultad inválido
                   value:
-                    error: "Validation failed"
-                    details:
-                      - "level: Invalid enum value. Expected 'Beginner' | 'Intermediate' | 'Advanced' | 'Beginner to Intermediate' | 'Intermediate to Advanced', received 'expert'"
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "level: Invalid enum value. Expected 'Beginner' | 'Intermediate' | 'Advanced' | 'Beginner to Intermediate' | 'Intermediate to Advanced', received 'expert'"
         '409':
           description: |
             Conflicto - Libro duplicado detectado.
@@ -156,9 +177,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
-                error: "A book with ISBN \"9780132350884\" already exists"
+                success: false
+                data: null
+                error:
+                  message: "A book with ISBN \"9780132350884\" already exists"
         '503':
           description: |
             Servicio no disponible - El servicio de embeddings (Ollama) no está accesible.
@@ -166,9 +190,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
-                error: "Embedding service unavailable, please try again later"
+                success: false
+                data: null
+                error:
+                  message: "Embedding service unavailable, please try again later"
 
 components:
   schemas:
@@ -373,18 +400,61 @@ components:
           description: Nombre del autor
           example: "Robert C. Martin"
 
-    ErrorResponse:
+    ApiError:
       type: object
       required:
-        - error
+        - message
       properties:
-        error:
+        message:
           type: string
           description: Mensaje descriptivo del error
-          example: "title is required"
+          example: "Validation failed"
         details:
           type: array
           items:
             type: string
           description: Detalles adicionales del error (opcional, usado en errores de validación múltiples)
-          example: ["title cannot be empty", "author is required"]
+          example: ["title is required", "authors is required"]
+
+    ApiSuccessResponse:
+      type: object
+      required:
+        - success
+        - data
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+          description: Siempre true en respuestas exitosas
+        data:
+          type: object
+          description: Datos de la respuesta
+        error:
+          type: 'null'
+          description: Siempre null en respuestas exitosas
+
+    ApiErrorResponse:
+      type: object
+      required:
+        - success
+        - data
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+          description: Siempre false en respuestas de error
+        data:
+          type: 'null'
+          description: Siempre null en respuestas de error
+        error:
+          $ref: '#/components/schemas/ApiError'
+
+    BookSuccessResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiSuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/BookResponse'

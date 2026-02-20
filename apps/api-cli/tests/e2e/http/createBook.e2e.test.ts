@@ -56,8 +56,15 @@ describe('POST /api/books (E2E)', () => {
 
       const body = await response.json();
 
-      // Verify response structure
-      expect(body).toMatchObject({
+      // Verify standardized API response structure
+      expect(body).toHaveProperty('success', true);
+      expect(body).toHaveProperty('data');
+      expect(body).toHaveProperty('error', null);
+
+      const { data } = body;
+
+      // Verify book data structure
+      expect(data).toMatchObject({
         id: expect.any(String),
         title: bookData.title,
         description: bookData.description,
@@ -71,27 +78,27 @@ describe('POST /api/books (E2E)', () => {
       });
 
       // Verify authors (new array format with id and name)
-      expect(body.authors).toHaveLength(1);
-      expect(body.authors[0]).toMatchObject({
+      expect(data.authors).toHaveLength(1);
+      expect(data.authors[0]).toMatchObject({
         id: expect.any(String),
         name: bookData.authors[0],
       });
 
       // Verify categories (names are normalized to lowercase by the system)
-      expect(body.categories).toHaveLength(1);
-      expect(body.categories[0]).toMatchObject({
+      expect(data.categories).toHaveLength(1);
+      expect(data.categories[0]).toMatchObject({
         id: expect.any(String),
         name: 'e2e testing',
       });
 
       // Verify UUID format
-      expect(body.id).toMatch(
+      expect(data.id).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
       );
 
       // Verify ISO date format
-      expect(new Date(body.createdAt).toISOString()).toBe(body.createdAt);
-      expect(new Date(body.updatedAt).toISOString()).toBe(body.updatedAt);
+      expect(new Date(data.createdAt).toISOString()).toBe(data.createdAt);
+      expect(new Date(data.updatedAt).toISOString()).toBe(data.updatedAt);
     });
 
     it('should not include embedding in the response', async () => {
@@ -110,9 +117,14 @@ describe('POST /api/books (E2E)', () => {
 
       const body = await response.json();
 
+      // Verify standardized response structure
+      expect(body).toHaveProperty('success', true);
+      expect(body).toHaveProperty('data');
+      expect(body).toHaveProperty('error', null);
+
       // CRITICAL: Embedding should never be exposed in API response
-      expect(body).not.toHaveProperty('embedding');
-      expect(body).not.toHaveProperty('embeddings');
+      expect(body.data).not.toHaveProperty('embedding');
+      expect(body.data).not.toHaveProperty('embeddings');
     });
 
     it('should create book without optional fields (isbn, path)', async () => {
@@ -134,9 +146,15 @@ describe('POST /api/books (E2E)', () => {
       expect(response.status).toBe(201);
 
       const body = await response.json();
-      expect(body.isbn).toBeNull();
-      expect(body.path).toBeNull();
-      expect(body.available).toBe(true); // Default value
+
+      // Verify standardized response structure
+      expect(body).toHaveProperty('success', true);
+      expect(body).toHaveProperty('data');
+      expect(body).toHaveProperty('error', null);
+
+      expect(body.data.isbn).toBeNull();
+      expect(body.data.path).toBeNull();
+      expect(body.data.available).toBe(true); // Default value
     });
 
     it('should create book with multiple categories', async () => {
@@ -159,9 +177,15 @@ describe('POST /api/books (E2E)', () => {
       expect(response.status).toBe(201);
 
       const body = await response.json();
-      expect(body.categories).toHaveLength(3);
+
+      // Verify standardized response structure
+      expect(body).toHaveProperty('success', true);
+      expect(body).toHaveProperty('data');
+      expect(body).toHaveProperty('error', null);
+
+      expect(body.data.categories).toHaveLength(3);
       // Category names are normalized to lowercase by the system
-      const categoryNames = body.categories.map((c: { name: string }) => c.name.toLowerCase());
+      const categoryNames = body.data.categories.map((c: { name: string }) => c.name.toLowerCase());
       expect(categoryNames).toContain('programming');
       expect(categoryNames).toContain('software engineering');
       expect(categoryNames).toContain('best practices');
@@ -179,11 +203,17 @@ describe('POST /api/books (E2E)', () => {
       expect(response.status).toBe(400);
 
       const body = await response.json();
+
+      // Verify standardized error response structure
+      expect(body).toHaveProperty('success', false);
+      expect(body).toHaveProperty('data', null);
       expect(body).toHaveProperty('error');
-      // Zod errors return "Validation failed" in error and field details in details array
-      expect(body.error.toLowerCase()).toContain('validation');
-      expect(body.details).toBeDefined();
-      expect(body.details.some((d: string) => d.toLowerCase().includes('title'))).toBe(true);
+      expect(body.error).toHaveProperty('message');
+
+      // Zod errors return "Validation failed" in message and field details in details array
+      expect(body.error.message.toLowerCase()).toContain('validation');
+      expect(body.error.details).toBeDefined();
+      expect(body.error.details.some((d: string) => d.toLowerCase().includes('title'))).toBe(true);
     });
 
     it('should return 400 when authors is missing', async () => {
@@ -198,7 +228,12 @@ describe('POST /api/books (E2E)', () => {
       expect(response.status).toBe(400);
 
       const body = await response.json();
+
+      // Verify standardized error response structure
+      expect(body).toHaveProperty('success', false);
+      expect(body).toHaveProperty('data', null);
       expect(body).toHaveProperty('error');
+      expect(body.error).toHaveProperty('message');
     });
 
     it('should return 400 when description is missing', async () => {
@@ -213,7 +248,12 @@ describe('POST /api/books (E2E)', () => {
       expect(response.status).toBe(400);
 
       const body = await response.json();
+
+      // Verify standardized error response structure
+      expect(body).toHaveProperty('success', false);
+      expect(body).toHaveProperty('data', null);
       expect(body).toHaveProperty('error');
+      expect(body.error).toHaveProperty('message');
     });
 
     it('should return 400 when categories is empty', async () => {
@@ -231,7 +271,12 @@ describe('POST /api/books (E2E)', () => {
       expect(response.status).toBe(400);
 
       const body = await response.json();
+
+      // Verify standardized error response structure
+      expect(body).toHaveProperty('success', false);
+      expect(body).toHaveProperty('data', null);
       expect(body).toHaveProperty('error');
+      expect(body.error).toHaveProperty('message');
     });
 
     // Note: Type validation removed in TASK-005.
@@ -252,7 +297,12 @@ describe('POST /api/books (E2E)', () => {
       expect(response.status).toBe(400);
 
       const body = await response.json();
+
+      // Verify standardized error response structure
+      expect(body).toHaveProperty('success', false);
+      expect(body).toHaveProperty('data', null);
       expect(body).toHaveProperty('error');
+      expect(body.error).toHaveProperty('message');
     });
 
     it('should return 400 when format is invalid', async () => {
@@ -270,7 +320,12 @@ describe('POST /api/books (E2E)', () => {
       expect(response.status).toBe(400);
 
       const body = await response.json();
+
+      // Verify standardized error response structure
+      expect(body).toHaveProperty('success', false);
+      expect(body).toHaveProperty('data', null);
       expect(body).toHaveProperty('error');
+      expect(body.error).toHaveProperty('message');
     });
 
     it('should return 400 when ISBN format is invalid', async () => {
@@ -288,7 +343,12 @@ describe('POST /api/books (E2E)', () => {
       expect(response.status).toBe(400);
 
       const body = await response.json();
+
+      // Verify standardized error response structure
+      expect(body).toHaveProperty('success', false);
+      expect(body).toHaveProperty('data', null);
       expect(body).toHaveProperty('error');
+      expect(body.error).toHaveProperty('message');
     });
   });
 
@@ -326,8 +386,13 @@ describe('POST /api/books (E2E)', () => {
       expect(response2.status).toBe(409);
 
       const body = await response2.json();
+
+      // Verify standardized error response structure
+      expect(body).toHaveProperty('success', false);
+      expect(body).toHaveProperty('data', null);
       expect(body).toHaveProperty('error');
-      expect(body.error.toLowerCase()).toContain('isbn');
+      expect(body.error).toHaveProperty('message');
+      expect(body.error.message.toLowerCase()).toContain('isbn');
     });
 
     it('should allow same title/authors/format without ISBN (no triad check)', async () => {

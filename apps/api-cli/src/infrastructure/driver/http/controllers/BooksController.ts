@@ -3,6 +3,8 @@
  *
  * HTTP request handlers for book-related endpoints.
  * Follows the thin controller pattern - delegates business logic to use cases.
+ *
+ * Updated for HU-004: Standardized API response structure
  */
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
@@ -10,6 +12,7 @@ import type { CreateBookUseCase } from '../../../../application/use-cases/Create
 import type { Logger } from '../../../../application/ports/Logger.js';
 import { noopLogger } from '../../../../application/ports/Logger.js';
 import { createBookSchema } from '../schemas/book.schemas.js';
+import { successResponse } from '../schemas/common.schemas.js';
 import { mapErrorToHttpResponse } from '../errors/HttpErrorMapper.js';
 
 /**
@@ -27,7 +30,7 @@ export interface BooksControllerDeps {
  * Responsibilities:
  * - Parse and validate request body (Zod)
  * - Call appropriate use case
- * - Map responses to HTTP format
+ * - Map responses to standardized API format
  * - Handle errors with appropriate status codes
  */
 export class BooksController {
@@ -43,6 +46,8 @@ export class BooksController {
    * POST /api/books
    *
    * Creates a new book in the catalog.
+   *
+   * Response format: { success: true, data: BookResponse, error: null }
    *
    * @returns 201 Created with book data (without embedding)
    * @returns 400 Bad Request for validation errors
@@ -85,13 +90,13 @@ export class BooksController {
         path: input.path,
       });
 
-      // 3. Return created book (with dates as ISO strings)
+      // 3. Return created book with standardized response structure
       this.logger.info('Book created via API', {
         bookId: result.id,
         title: result.title,
       });
 
-      return reply.status(201).send({
+      const bookData = {
         id: result.id,
         title: result.title,
         authors: result.authors,
@@ -105,7 +110,9 @@ export class BooksController {
         path: result.path,
         createdAt: result.createdAt.toISOString(),
         updatedAt: result.updatedAt.toISOString(),
-      });
+      };
+
+      return reply.status(201).send(successResponse(bookData));
     } catch (error) {
       const errorResponse = mapErrorToHttpResponse(error);
 
@@ -117,7 +124,7 @@ export class BooksController {
       } else {
         this.logger.debug('Book creation rejected', {
           statusCode: errorResponse.statusCode,
-          error: errorResponse.body.error,
+          error: errorResponse.body.error?.message,
         });
       }
 
