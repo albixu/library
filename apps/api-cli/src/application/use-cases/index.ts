@@ -8,3 +8,8 @@ export {
   type CreateBookOutput,
   type CreateBookUseCaseDeps,
 } from './CreateBookUseCase.js';
+
+export {
+  ListBookTypesUseCase,
+  type BookTypeListItem,
+} from './ListBookTypesUseCase.js';
