@@ -9,36 +9,11 @@ import { eq, inArray, count } from 'drizzle-orm';
 import { Category } from '../../../domain/entities/Category.js';
 import { CategoryAlreadyExistsError } from '../../../domain/errors/DomainErrors.js';
 import type { CategoryRepository } from '../../../application/ports/CategoryRepository.js';
-import { categories, type CategorySelect } from './drizzle/schema.js';
+import { categories } from './drizzle/schema.js';
 import { CategoryMapper } from './mappers/CategoryMapper.js';
 import { generateUUID } from '../../../shared/utils/uuid.js';
 import { isDuplicateKeyError } from './utils.js';
-
-/**
- * Database type that supports our operations
- * This is a generic interface that works with any Drizzle PostgreSQL connection
- */
-interface DrizzleDb {
-  select: (fields?: Record<string, unknown>) => {
-    from: (table: typeof categories) => Promise<unknown[]> & {
-      where: (condition: unknown) => Promise<CategorySelect[]>;
-    };
-  };
-  insert: (table: typeof categories) => {
-    values: (data: unknown) => {
-      returning: () => Promise<CategorySelect[]>;
-      onConflictDoNothing: () => {
-        returning: () => Promise<CategorySelect[]>;
-      };
-    };
-  };
-  query: {
-    categories: {
-      findFirst: (options?: { where?: unknown }) => Promise<CategorySelect | null>;
-      findMany: (options?: { where?: unknown }) => Promise<CategorySelect[]>;
-    };
-  };
-}
+import type { DatabaseClient } from './types.js';
 
 /**
  * PostgresCategoryRepository
@@ -47,7 +22,7 @@ interface DrizzleDb {
  * Provides CRUD operations for categories with case-insensitive name handling.
  */
 export class PostgresCategoryRepository implements CategoryRepository {
-  constructor(readonly db: DrizzleDb) {}
+  constructor(readonly db: DatabaseClient) {}
 
   /**
    * Finds a category by its unique identifier

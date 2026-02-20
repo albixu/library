@@ -37,9 +37,7 @@ import {
   authors,
   categories,
   types,
-  type BookSelect,
   type AuthorSelect,
-  type TypeSelect,
   type CategorySelect,
 } from './drizzle/schema.js';
 import { BookMapper } from './mappers/BookMapper.js';
@@ -47,6 +45,7 @@ import { AuthorMapper } from './mappers/AuthorMapper.js';
 import { TypeMapper } from './mappers/TypeMapper.js';
 import { CategoryMapper } from './mappers/CategoryMapper.js';
 import { isDuplicateKeyError } from './utils.js';
+import type { DatabaseClient } from './types.js';
 
 /**
  * Normalizes text for duplicate detection
@@ -70,54 +69,13 @@ export function normalizeForDuplicateCheck(text: string): string {
 }
 
 /**
- * Database type that supports our operations
- * This is a generic interface that works with any Drizzle PostgreSQL connection
- */
-interface DrizzleDb {
-  select: (fields?: Record<string, unknown>) => {
-    from: (table: typeof books | typeof bookAuthors | typeof bookCategories | typeof authors | typeof categories | typeof types) => Promise<unknown[]> & {
-      where: (condition: unknown) => Promise<unknown[]>;
-      innerJoin: (table: typeof authors | typeof categories | typeof types, condition: unknown) => {
-        where: (condition: unknown) => Promise<unknown[]>;
-      };
-    };
-  };
-  insert: (table: typeof books | typeof bookAuthors | typeof bookCategories) => {
-    values: (data: unknown) => {
-      returning: () => Promise<BookSelect[]>;
-    };
-  };
-  update: (table: typeof books) => {
-    set: (data: unknown) => {
-      where: (condition: unknown) => {
-        returning: () => Promise<BookSelect[]>;
-      };
-    };
-  };
-  delete: (table: typeof books | typeof bookAuthors | typeof bookCategories) => {
-    where: (condition: unknown) => Promise<{ rowCount: number }>;
-  };
-  query: {
-    books: {
-      findFirst: (options?: { where?: unknown }) => Promise<BookSelect | null>;
-      findMany: (options?: { where?: unknown }) => Promise<BookSelect[]>;
-    };
-    types: {
-      findFirst: (options?: { where?: unknown }) => Promise<TypeSelect | null>;
-    };
-  };
-  // Transaction support
-  transaction: <T>(fn: (tx: DrizzleDb) => Promise<T>) => Promise<T>;
-}
-
-/**
  * PostgresBookRepository
  *
  * Adapter that implements BookRepository using Drizzle ORM.
  * Provides CRUD operations for books with duplicate detection and embedding storage.
  */
 export class PostgresBookRepository implements BookRepository {
-  constructor(readonly db: DrizzleDb) {}
+  constructor(readonly db: DatabaseClient) {}
 
   /**
    * Finds a book by its unique identifier
@@ -326,7 +284,7 @@ export class PostgresBookRepository implements BookRepository {
       .delete(books)
       .where(eq(books.id, id));
 
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   /**

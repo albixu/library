@@ -9,36 +9,11 @@ import { eq, inArray, count } from 'drizzle-orm';
 import { Author } from '../../../domain/entities/Author.js';
 import { AuthorAlreadyExistsError } from '../../../domain/errors/DomainErrors.js';
 import type { AuthorRepository } from '../../../application/ports/AuthorRepository.js';
-import { authors, type AuthorSelect } from './drizzle/schema.js';
+import { authors } from './drizzle/schema.js';
 import { AuthorMapper } from './mappers/AuthorMapper.js';
 import { generateUUID } from '../../../shared/utils/uuid.js';
 import { isDuplicateKeyError } from './utils.js';
-
-/**
- * Database type that supports our operations
- * This is a generic interface that works with any Drizzle PostgreSQL connection
- */
-interface DrizzleDb {
-  select: (fields?: Record<string, unknown>) => {
-    from: (table: typeof authors) => Promise<unknown[]> & {
-      where: (condition: unknown) => Promise<AuthorSelect[]>;
-    };
-  };
-  insert: (table: typeof authors) => {
-    values: (data: unknown) => {
-      returning: () => Promise<AuthorSelect[]>;
-      onConflictDoNothing: () => {
-        returning: () => Promise<AuthorSelect[]>;
-      };
-    };
-  };
-  query: {
-    authors: {
-      findFirst: (options?: { where?: unknown }) => Promise<AuthorSelect | null>;
-      findMany: (options?: { where?: unknown }) => Promise<AuthorSelect[]>;
-    };
-  };
-}
+import type { DatabaseClient } from './types.js';
 
 /**
  * PostgresAuthorRepository
@@ -47,7 +22,7 @@ interface DrizzleDb {
  * Provides CRUD operations for authors with unique name constraint.
  */
 export class PostgresAuthorRepository implements AuthorRepository {
-  constructor(readonly db: DrizzleDb) {}
+  constructor(readonly db: DatabaseClient) {}
 
   /**
    * Finds an author by its unique identifier

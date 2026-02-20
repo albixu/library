@@ -11,18 +11,17 @@
  */
 
 import { count, asc } from 'drizzle-orm';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { TypeRepository } from '../../../application/ports/TypeRepository.js';
 import type { BookType } from '../../../domain/entities/BookType.js';
 import { types } from './drizzle/schema.js';
 import { TypeMapper } from './mappers/TypeMapper.js';
-import type * as schema from './drizzle/schema.js';
+import type { DatabaseClient } from './types.js';
 
 /**
  * PostgreSQL implementation of TypeRepository
  */
 export class PostgresTypeRepository implements TypeRepository {
-  constructor(public readonly db: PostgresJsDatabase<typeof schema>) {}
+  constructor(public readonly db: DatabaseClient) {}
 
   /**
    * Finds a book type by its unique identifier
