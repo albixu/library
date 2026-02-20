@@ -19,6 +19,8 @@ servers:
 tags:
   - name: Books
     description: Operaciones de gestión de libros
+  - name: Book Types
+    description: Operaciones de consulta de tipos de libro
 
 paths:
   /books:
@@ -196,6 +198,62 @@ paths:
                 data: null
                 error:
                   message: "Embedding service unavailable, please try again later"
+
+  /book-types:
+    get:
+      tags:
+        - Book Types
+      summary: Listar todos los tipos de libro
+      description: |
+        Devuelve todos los tipos de libro disponibles, ordenados alfabéticamente por nombre.
+        
+        ## Uso
+        
+        Este endpoint está diseñado para poblar dropdowns y selects en el frontend.
+        Cada tipo incluye solo su `id` y `name` (sin timestamps).
+        
+        ## Ordenamiento
+        
+        Los tipos se devuelven ordenados alfabéticamente (A-Z) por el campo `name`.
+      operationId: listBookTypes
+      responses:
+        '200':
+          description: Lista de tipos de libro obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookTypeListResponse'
+              example:
+                success: true
+                data:
+                  - id: "550e8400-e29b-41d4-a716-446655440001"
+                    name: "biography"
+                  - id: "550e8400-e29b-41d4-a716-446655440002"
+                    name: "essay"
+                  - id: "550e8400-e29b-41d4-a716-446655440003"
+                    name: "manual"
+                  - id: "550e8400-e29b-41d4-a716-446655440004"
+                    name: "novel"
+                  - id: "550e8400-e29b-41d4-a716-446655440005"
+                    name: "other"
+                  - id: "550e8400-e29b-41d4-a716-446655440006"
+                    name: "poetry"
+                  - id: "550e8400-e29b-41d4-a716-446655440007"
+                    name: "reference"
+                  - id: "550e8400-e29b-41d4-a716-446655440008"
+                    name: "technical"
+                error: null
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Database connection failed"
 
 components:
   schemas:
@@ -458,3 +516,30 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/BookResponse'
+
+    BookTypeListItem:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único del tipo de libro (UUID v4)
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        name:
+          type: string
+          description: Nombre del tipo de libro
+          example: "technical"
+
+    BookTypeListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiSuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/BookTypeListItem'
+              description: Lista de tipos de libro ordenados alfabéticamente
