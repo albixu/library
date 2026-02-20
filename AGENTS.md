@@ -29,16 +29,21 @@ Se debe seguir esta estructura de ramas jerárquica para cada desarrollo:
 6. **Pase a producción:** Tras probar la funcionalidades completas en la rama `dev` se mergearán a `main` mediante un **Pull Request**
 
 ### 3.1 Cosas trabajar con las tareas y las ramas.
-Quiero que se vayan realizando todas las tareas de una historia de forma continua hasta realizar todas y que estas esten mergeadas en la rama de la historia. Para ello se generará un issue en github de la historia, y sub-issues con las tareas de la historia.
+Una vez que se genere el documento de la historia de usuario se creará una rama de la  historia de usuario y se comiteará y pusheara esa nueva rama con el nuevo documento de la historia.
 
-Una vez estén creadas las issues y sub-issues en github se irán realizando las tareas de forma ordenada hasta finalizarlas todas. Y al final se realizará un PR de la rama de la tarea en la de dev para que lo revise manualmente.
+Una vez hecho esto, se generara una issue en github para la historia de usuario, y sub-issues con las tareas correspondientes a la historia de usuario.
+
+Cuando se hayan creado la issue y las sub-issues en github indicarmelo para una verificación manual antes de empezar con la implementación.
+
+Preguntar si la verificación manual ha sido exitosa. En este caso se iniciará la implementación de la historia de usuario siguiendo las tareas en orden de definición.
+
+Por cada tarea se creará una rama a partir de la rama de la historia, se implementará la tarea, se comiteará y se pusheara a github. Una vez esté tarea completada y pusheada a github, se mergeará la rama de la tarea a la rama de la  historia, se marcará el sub-issue correspondiente de github como completada, y se eliminará la rama de la tarea.
+
+Una vez realizado este proceso, se actualizará la rama de la historia en local, y se continuará con la siguiente tarea siguiendo exactamente los mismos pasos.
+
+Una vez finalizadas todas las tareas, y estando todas mergeadas en la rama de la historia, se realizará un PR de la rama de la historia de usuario en la de dev para que lo revise manualmente.
 
 Acontinuación defino los paso a seguir:
-
-1. Una vez realizada una subtarea, se realizará un merge automático de la subtarea a la rama de la historia correspondiente y se eliminará la rama de la tarea realizada y marcará la tarea como completada en github.
-2. A continuación se actualizará la rama de la historia y se realizará la siguiente subtarea siguiendo el mismo proceso.
-3. Así hasta terminar con todas las subtareas.
-4. Una vez realizadas todas las subtareas y estar todas estas mergeadas en la rama de la historia, se creará un PR de la rama de la historia a la rama dev. Esta no podrá ser aprobada ni mergeada por el agente. Requiere de una revisión y aprobado manual.
 
 **Importante**
 Ten en cuenta que SI tienes permisos para mergear las ramas de las subtareas en las ramas de las historias.
