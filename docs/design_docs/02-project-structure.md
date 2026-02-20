@@ -83,7 +83,9 @@ library/
 │       ├── 02-project-structure.md
 │       ├── 03-hu-001-create-book.md
 │       ├── 04-hu-002-initial-data-load.md
-│       └── 05-hu-003-book-level.md
+│       ├── 05-hu-003-book-level.md
+│       ├── 06-hu-004-standardize-api-responses.md
+│       └── 07-hu-005-list-book-types.md
 │
 ├── apps/
 │   ├── api-cli/                             # 🖥️ Backend: API REST
@@ -93,26 +95,38 @@ library/
 │   │   │   │   │   ├── Book.ts
 │   │   │   │   │   ├── Author.ts            # Entidad Author (N:M con Book)
 │   │   │   │   │   ├── BookType.ts          # Entidad BookType (N:1 con Book)
-│   │   │   │   │   └── Category.ts
+│   │   │   │   │   ├── Category.ts
+│   │   │   │   │   └── index.ts
 │   │   │   │   ├── value-objects/
 │   │   │   │   │   ├── BookFormat.ts
 │   │   │   │   │   ├── BookLevel.ts
-│   │   │   │   │   └── ISBN.ts
-│   │   │   │   └── errors/
-│   │   │   │       └── DomainErrors.ts
+│   │   │   │   │   ├── ISBN.ts
+│   │   │   │   │   └── index.ts
+│   │   │   │   ├── validators/
+│   │   │   │   │   ├── uuid.ts              # Validación UUID compartida
+│   │   │   │   │   └── index.ts
+│   │   │   │   ├── errors/
+│   │   │   │   │   ├── DomainErrors.ts
+│   │   │   │   │   └── index.ts
+│   │   │   │   └── index.ts
 │   │   │   │
 │   │   │   ├── application/                 # 🔄 CASOS DE USO
 │   │   │   │   ├── use-cases/
-│   │   │   │   │   └── CreateBookUseCase.ts
+│   │   │   │   │   ├── CreateBookUseCase.ts
+│   │   │   │   │   ├── ListBookTypesUseCase.ts
+│   │   │   │   │   └── index.ts
 │   │   │   │   ├── ports/
 │   │   │   │   │   ├── BookRepository.ts
 │   │   │   │   │   ├── AuthorRepository.ts
 │   │   │   │   │   ├── TypeRepository.ts
 │   │   │   │   │   ├── CategoryRepository.ts
 │   │   │   │   │   ├── EmbeddingService.ts
-│   │   │   │   │   └── Logger.ts
-│   │   │   │   └── errors/
-│   │   │   │       └── ApplicationErrors.ts
+│   │   │   │   │   ├── Logger.ts
+│   │   │   │   │   └── index.ts
+│   │   │   │   ├── errors/
+│   │   │   │   │   ├── ApplicationErrors.ts
+│   │   │   │   │   └── index.ts
+│   │   │   │   └── index.ts
 │   │   │   │
 │   │   │   ├── infrastructure/              # 🔌 ADAPTADORES
 │   │   │   │   ├── driven/
@@ -121,33 +135,51 @@ library/
 │   │   │   │   │   │   ├── PostgresAuthorRepository.ts
 │   │   │   │   │   │   ├── PostgresTypeRepository.ts
 │   │   │   │   │   │   ├── PostgresCategoryRepository.ts
+│   │   │   │   │   │   ├── types.ts              # DatabaseClient type
+│   │   │   │   │   │   ├── utils.ts              # Utilidades (isDuplicateKeyError)
 │   │   │   │   │   │   ├── drizzle/
 │   │   │   │   │   │   │   └── schema.ts
-│   │   │   │   │   │   └── mappers/
-│   │   │   │   │   │       ├── BookMapper.ts
-│   │   │   │   │   │       ├── AuthorMapper.ts
-│   │   │   │   │   │       └── TypeMapper.ts
+│   │   │   │   │   │   ├── mappers/
+│   │   │   │   │   │   │   ├── BookMapper.ts
+│   │   │   │   │   │   │   ├── AuthorMapper.ts
+│   │   │   │   │   │   │   ├── CategoryMapper.ts
+│   │   │   │   │   │   │   ├── TypeMapper.ts
+│   │   │   │   │   │   │   └── index.ts
+│   │   │   │   │   │   └── index.ts
 │   │   │   │   │   ├── embedding/
-│   │   │   │   │   │   └── OllamaEmbeddingService.ts
+│   │   │   │   │   │   ├── OllamaEmbeddingService.ts
+│   │   │   │   │   │   └── index.ts
 │   │   │   │   │   └── logging/
-│   │   │   │   │       └── PinoLogger.ts
+│   │   │   │   │       ├── PinoLogger.ts
+│   │   │   │   │       └── index.ts
 │   │   │   │   │
 │   │   │   │   ├── driver/
 │   │   │   │   │   └── http/
 │   │   │   │   │       ├── server.ts
 │   │   │   │   │       ├── routes/
-│   │   │   │   │       │   └── books.routes.ts
+│   │   │   │   │       │   ├── books.routes.ts
+│   │   │   │   │       │   └── book-types.routes.ts
 │   │   │   │   │       ├── controllers/
-│   │   │   │   │       │   └── BooksController.ts
-│   │   │   │   │       └── schemas/
-│   │   │   │   │           └── book.schemas.ts
+│   │   │   │   │       │   ├── BooksController.ts
+│   │   │   │   │       │   └── BookTypesController.ts
+│   │   │   │   │       ├── errors/
+│   │   │   │   │       │   └── HttpErrorMapper.ts
+│   │   │   │   │       ├── schemas/
+│   │   │   │   │       │   ├── book.schemas.ts
+│   │   │   │   │       │   └── common.schemas.ts
+│   │   │   │   │       └── index.ts
 │   │   │   │   │
-│   │   │   │   └── config/
-│   │   │   │       └── env.ts
+│   │   │   │   ├── config/
+│   │   │   │   │   ├── env.ts
+│   │   │   │   │   └── index.ts
+│   │   │   │   │
+│   │   │   │   └── index.ts
 │   │   │   │
 │   │   │   ├── shared/                      # 🛠️ UTILIDADES COMPARTIDAS
-│   │   │   │   └── utils/
-│   │   │   │       └── uuid.ts
+│   │   │   │   ├── utils/
+│   │   │   │   │   ├── uuid.ts
+│   │   │   │   │   └── index.ts
+│   │   │   │   └── index.ts
 │   │   │   │
 │   │   │   └── server.ts                    # Entry point HTTP server
 │   │   │
@@ -162,11 +194,15 @@ library/
 │   │   │   ├── unit/
 │   │   │   │   ├── domain/
 │   │   │   │   ├── application/
+│   │   │   │   ├── infrastructure/
 │   │   │   │   └── scripts/
 │   │   │   ├── integration/
-│   │   │   │   └── infrastructure/
+│   │   │   │   ├── application/
+│   │   │   │   ├── infrastructure/
+│   │   │   │   └── setup.ts
 │   │   │   └── e2e/
-│   │   │       └── http/
+│   │   │       ├── http/
+│   │   │       └── setup.ts
 │   │   │
 │   │   ├── docker/
 │   │   │   ├── Dockerfile
@@ -176,9 +212,12 @@ library/
 │   │   ├── drizzle/                         # Migraciones Drizzle
 │   │   ├── .env.example
 │   │   ├── drizzle.config.ts
+│   │   ├── eslint.config.js
 │   │   ├── package.json
 │   │   ├── tsconfig.json
-│   │   └── vitest.config.ts
+│   │   ├── vitest.config.ts
+│   │   ├── vitest.integration.config.ts
+│   │   └── vitest.e2e.config.ts
 │   │
 │   └── web-client/                          # 🌐 Frontend: Cliente Web (futuro)
 │       └── .gitkeep
@@ -257,153 +296,85 @@ export class Book {
 Objetos inmutables que representan conceptos del dominio sin identidad propia.
 
 ```typescript
-// BookType.ts
-export class BookType {
-  private static readonly VALID_TYPES = ['technical', 'novel', 'essay', ...];
+// BookFormat.ts
+export class BookFormat {
+  private static readonly VALID_FORMATS = ['epub', 'pdf', 'mobi', ...];
   
   private constructor(public readonly value: string) {}
   
-  static create(value: string): BookType {
-    if (!this.VALID_TYPES.includes(value)) {
-      throw new InvalidBookTypeError(value);
+  static create(value: string): BookFormat {
+    if (!this.VALID_FORMATS.includes(value)) {
+      throw new InvalidBookFormatError(value);
     }
-    return new BookType(value);
+    return new BookFormat(value);
   }
 }
 ```
 
+### 5.2 Application (`src/application/`)
+
+> Orquesta los casos de uso. Coordina entidades del dominio y llama a los puertos necesarios.
+
 #### `ports/`
 
-Interfaces que definen los contratos de comunicación.
-
-**`driven/` (Secondary Ports - Output)**
-
-Son las interfaces que el dominio NECESITA para funcionar. El dominio las define, otros las implementan.
+Interfaces que definen los contratos de comunicación con adaptadores externos (driven/secondary ports).
 
 ```typescript
 // BookRepository.ts
 export interface BookRepository {
-  save(book: Book): Promise<void>;
+  save(params: SaveBookParams): Promise<Book>;
   findById(id: string): Promise<Book | null>;
   findByIsbn(isbn: string): Promise<Book | null>;
-  search(query: string, limit: number): Promise<Book[]>;
-  delete(id: string): Promise<void>;
+  findAll(): Promise<Book[]>;
+  delete(id: string): Promise<boolean>;
+  count(): Promise<number>;
 }
 
 // EmbeddingService.ts
 export interface EmbeddingService {
   generateEmbedding(text: string): Promise<number[]>;
 }
+
+// Logger.ts
+export interface Logger {
+  info(message: string, context?: object): void;
+  error(message: string, context?: object): void;
+  warn(message: string, context?: object): void;
+  debug(message: string, context?: object): void;
+}
 ```
 
-**`driver/` (Primary Ports - Input)**
+#### `use-cases/`
 
-Son las interfaces que exponen las capacidades del dominio al mundo exterior.
+Casos de uso que orquestan la lógica de negocio.
 
 ```typescript
-// BookService.ts
-export interface BookService {
-  createBook(data: CreateBookDTO): Promise<Book>;
-  getBook(id: string): Promise<Book>;
-  searchBooks(query: string): Promise<Book[]>;
-  updateBook(id: string, data: UpdateBookDTO): Promise<Book>;
-  deleteBook(id: string): Promise<void>;
+// CreateBookUseCase.ts
+export class CreateBookUseCase {
+  constructor(
+    private readonly bookRepository: BookRepository,
+    private readonly embeddingService: EmbeddingService,
+    // ...
+  ) {}
+
+  async execute(input: CreateBookInput): Promise<Book> {
+    // Orquesta la creación del libro
+  }
 }
 ```
 
 #### `errors/`
 
-Errores específicos del dominio.
+Errores específicos de la capa de aplicación.
 
 ```typescript
-// DomainErrors.ts
-export class BookNotFoundError extends Error {
-  constructor(id: string) {
-    super(`Book with id ${id} not found`);
-  }
-}
-
-export class InvalidISBNError extends Error {
-  constructor(isbn: string) {
-    super(`Invalid ISBN format: ${isbn}`);
+// ApplicationErrors.ts
+export class EmbeddingTextTooLongError extends Error {
+  constructor(length: number, maxLength: number) {
+    super(`Embedding text too long (${length} characters). Maximum: ${maxLength}`);
   }
 }
 ```
-
----
-
-### 5.2 Application (`src/application/`)
-
-> Orquesta los casos de uso. Coordina entidades del dominio y llama a los puertos necesarios.
-
-#### `commands/`
-
-Operaciones que modifican el estado del sistema (escritura).
-
-```typescript
-// CreateBook.ts
-export class CreateBookCommand {
-  constructor(
-    private readonly bookRepository: BookRepository,
-    private readonly embeddingService: EmbeddingService
-  ) {}
-
-  async execute(data: CreateBookDTO): Promise<Book> {
-    const embedding = await this.embeddingService.generateEmbedding(
-      `${data.title} ${data.description}`
-    );
-    
-    const book = Book.create({ ...data, embedding });
-    await this.bookRepository.save(book);
-    
-    return book;
-  }
-}
-```
-
-#### `queries/`
-
-Operaciones de solo lectura.
-
-```typescript
-// SearchBooks.ts
-export class SearchBooksQuery {
-  constructor(
-    private readonly bookRepository: BookRepository,
-    private readonly embeddingService: EmbeddingService
-  ) {}
-
-  async execute(searchText: string, limit = 10): Promise<Book[]> {
-    const queryEmbedding = await this.embeddingService.generateEmbedding(searchText);
-    return this.bookRepository.searchByEmbedding(queryEmbedding, limit);
-  }
-}
-```
-
-#### `services/`
-
-Facade que agrupa comandos y queries relacionados.
-
-```typescript
-// BookApplicationService.ts
-export class BookApplicationService implements BookService {
-  constructor(
-    private readonly createBookCommand: CreateBookCommand,
-    private readonly searchBooksQuery: SearchBooksQuery,
-    // ...
-  ) {}
-
-  async createBook(data: CreateBookDTO): Promise<Book> {
-    return this.createBookCommand.execute(data);
-  }
-
-  async searchBooks(query: string): Promise<Book[]> {
-    return this.searchBooksQuery.execute(query);
-  }
-}
-```
-
----
 
 ### 5.3 Infrastructure (`src/infrastructure/`)
 
@@ -462,53 +433,63 @@ export class OllamaEmbeddingService implements EmbeddingService {
 
 #### `driver/` (Primary Adapters)
 
-Consumen los puertos de entrada y exponen el sistema al mundo exterior.
+Exponen el sistema al mundo exterior a través de HTTP.
 
 **`http/`**
 
 ```typescript
+// controllers/BooksController.ts
+export class BooksController {
+  constructor(private readonly createBookUseCase: CreateBookUseCase) {}
+
+  async createBook(request: FastifyRequest, reply: FastifyReply) {
+    const result = await this.createBookUseCase.execute(request.body);
+    return reply.status(201).send({
+      success: true,
+      data: BookResponseMapper.toResponse(result),
+      error: null,
+    });
+  }
+}
+
 // routes/books.routes.ts
-export async function booksRoutes(
+export function registerBooksRoutes(
   fastify: FastifyInstance,
-  bookService: BookService
+  controller: BooksController
 ) {
   fastify.post('/books', {
     schema: createBookSchema,
-    handler: async (request, reply) => {
-      const book = await bookService.createBook(request.body);
-      return reply.status(201).send(book);
-    }
+    handler: controller.createBook.bind(controller),
   });
+}
+```
 
-  fastify.get('/books/search', {
-    schema: searchBooksSchema,
-    handler: async (request, reply) => {
-      const { q, limit } = request.query;
-      const books = await bookService.searchBooks(q);
-      return reply.send(books);
+**`errors/`**
+
+```typescript
+// HttpErrorMapper.ts - Mapea errores de dominio a respuestas HTTP
+export class HttpErrorMapper {
+  static toHttpError(error: Error): { statusCode: number; message: string } {
+    if (error instanceof DuplicateISBNError) {
+      return { statusCode: 409, message: error.message };
     }
-  });
+    // ...
+  }
 }
 ```
 
 #### `config/`
 
-Configuración y composición de dependencias.
+Configuración de variables de entorno con Zod.
 
 ```typescript
-// container.ts - Dependency Injection manual
-export function createContainer(config: Config) {
-  // Driven adapters
-  const db = createDrizzleClient(config.database);
-  const bookRepository = new PostgresBookRepository(db);
-  const embeddingService = new OllamaEmbeddingService(config.ollama.baseUrl);
-
-  // Application services
-  const createBookCommand = new CreateBookCommand(bookRepository, embeddingService);
-  const searchBooksQuery = new SearchBooksQuery(bookRepository, embeddingService);
-  const bookService = new BookApplicationService(createBookCommand, searchBooksQuery);
-
-  return { bookService, db };
+// env.ts
+export function loadEnvConfig(): EnvConfig {
+  const result = envSchema.safeParse(process.env);
+  if (!result.success) {
+    throw new Error('Invalid environment configuration');
+  }
+  return result.data;
 }
 ```
 
