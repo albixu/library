@@ -46,6 +46,16 @@ export interface TypeRepository {
   findAll(): Promise<BookType[]>;
 
   /**
+   * Retrieves all book types sorted alphabetically by name
+   *
+   * Used by the ListBookTypes use case to provide a consistent ordering
+   * for frontend dropdowns and selects.
+   *
+   * @returns Promise resolving to an array of BookTypes sorted by name (A-Z)
+   */
+  findAllSorted(): Promise<BookType[]>;
+
+  /**
    * Counts the total number of book types
    *
    * @returns Promise resolving to the total count

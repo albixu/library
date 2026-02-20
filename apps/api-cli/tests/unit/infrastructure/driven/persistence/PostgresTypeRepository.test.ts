@@ -190,6 +190,54 @@ describe('PostgresTypeRepository', () => {
     });
   });
 
+  describe('findAllSorted', () => {
+    it('should return all types sorted alphabetically by name', async () => {
+      mockDb.query.types.findMany.mockResolvedValue([
+        mockTypeRecord3, // biography
+        mockTypeRecord2, // novel
+        mockTypeRecord,  // technical
+      ]);
+
+      const result = await repository.findAllSorted();
+
+      expect(result).toHaveLength(3);
+      expect(result[0].name).toBe('biography');
+      expect(result[1].name).toBe('novel');
+      expect(result[2].name).toBe('technical');
+    });
+
+    it('should return empty array when no types exist', async () => {
+      mockDb.query.types.findMany.mockResolvedValue([]);
+
+      const result = await repository.findAllSorted();
+
+      expect(result).toEqual([]);
+    });
+
+    it('should call findMany with orderBy configuration', async () => {
+      mockDb.query.types.findMany.mockResolvedValue([]);
+
+      await repository.findAllSorted();
+
+      expect(mockDb.query.types.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: expect.any(Function),
+        })
+      );
+    });
+
+    it('should return domain entities with all properties', async () => {
+      mockDb.query.types.findMany.mockResolvedValue([mockTypeRecord]);
+
+      const result = await repository.findAllSorted();
+
+      expect(result[0].id).toBe(mockTypeRecord.id);
+      expect(result[0].name).toBe(mockTypeRecord.name);
+      expect(result[0].createdAt).toEqual(mockTypeRecord.createdAt);
+      expect(result[0].updatedAt).toEqual(mockTypeRecord.updatedAt);
+    });
+  });
+
   describe('count', () => {
     it('should return total count of types', async () => {
       const mockSelect = vi.fn().mockReturnValue({
