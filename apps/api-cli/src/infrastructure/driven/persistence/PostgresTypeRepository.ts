@@ -10,7 +10,7 @@
  * Part of TASK-008 for HU-002 (Initial Data Load)
  */
 
-import { eq, count } from 'drizzle-orm';
+import { eq, count, asc } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { TypeRepository } from '../../../application/ports/TypeRepository.js';
 import { BookType } from '../../../domain/entities/BookType.js';
@@ -80,6 +80,18 @@ export class PostgresTypeRepository implements TypeRepository {
    */
   async findAll(): Promise<BookType[]> {
     const results = await this.db.query.types.findMany();
+    return TypeMapper.toDomainList(results);
+  }
+
+  /**
+   * Retrieves all book types sorted alphabetically by name
+   *
+   * @returns Promise resolving to an array of BookTypes sorted by name (A-Z)
+   */
+  async findAllSorted(): Promise<BookType[]> {
+    const results = await this.db.query.types.findMany({
+      orderBy: (types) => asc(types.name),
+    });
     return TypeMapper.toDomainList(results);
   }
 
