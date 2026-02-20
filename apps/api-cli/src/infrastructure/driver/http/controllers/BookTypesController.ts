@@ -66,10 +66,17 @@ export class BookTypesController {
     } catch (error) {
       const errorResponse = mapErrorToHttpResponse(error);
 
-      this.logger.error('Unexpected error listing book types', {
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-      });
+      if (errorResponse.statusCode >= 500) {
+        this.logger.error('Unexpected error listing book types', {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+      } else {
+        this.logger.debug('Book types request rejected', {
+          statusCode: errorResponse.statusCode,
+          error: errorResponse.body.error?.message,
+        });
+      }
 
       return reply.status(errorResponse.statusCode).send(errorResponse.body);
     }

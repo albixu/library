@@ -10,6 +10,8 @@
  * - Self-validating
  */
 
+import { DomainError } from '../errors/DomainErrors.js';
+
 export class ISBN {
   private constructor(public readonly value: string) {
     Object.freeze(this);
@@ -138,11 +140,10 @@ export class ISBN {
 /**
  * Error thrown when an invalid ISBN is provided
  */
-export class InvalidISBNError extends Error {
+export class InvalidISBNError extends DomainError {
   constructor(value: string) {
     super(
       `Invalid ISBN: "${value}". Must be a valid ISBN-10 or ISBN-13 with correct checksum.`
     );
-    this.name = 'InvalidISBNError';
   }
 }

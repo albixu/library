@@ -28,11 +28,9 @@ import type { EmbeddingService } from '../ports/EmbeddingService.js';
 import type { Logger } from '../ports/Logger.js';
 import { noopLogger } from '../ports/Logger.js';
 import {
-  EmbeddingTextTooLongError,
-} from '../errors/ApplicationErrors.js';
-import {
   DuplicateISBNError,
   InvalidBookTypeError,
+  EmbeddingTextTooLongError,
 } from '../../domain/errors/DomainErrors.js';
 
 /**

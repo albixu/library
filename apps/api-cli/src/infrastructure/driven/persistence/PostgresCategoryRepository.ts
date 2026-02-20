@@ -5,21 +5,22 @@
  * This is a driven/output adapter in the hexagonal architecture.
  */
 
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, count } from 'drizzle-orm';
 import { Category } from '../../../domain/entities/Category.js';
 import { CategoryAlreadyExistsError } from '../../../domain/errors/DomainErrors.js';
 import type { CategoryRepository } from '../../../application/ports/CategoryRepository.js';
 import { categories, type CategorySelect } from './drizzle/schema.js';
 import { CategoryMapper } from './mappers/CategoryMapper.js';
 import { generateUUID } from '../../../shared/utils/uuid.js';
+import { isDuplicateKeyError } from './utils.js';
 
 /**
  * Database type that supports our operations
  * This is a generic interface that works with any Drizzle PostgreSQL connection
  */
 interface DrizzleDb {
-  select: () => {
-    from: (table: typeof categories) => {
+  select: (fields?: Record<string, unknown>) => {
+    from: (table: typeof categories) => Promise<unknown[]> & {
       where: (condition: unknown) => Promise<CategorySelect[]>;
     };
   };
@@ -199,7 +200,7 @@ export class PostgresCategoryRepository implements CategoryRepository {
 
       return CategoryMapper.toDomain(inserted);
     } catch (error) {
-      if (this.isDuplicateKeyError(error)) {
+      if (isDuplicateKeyError(error)) {
         throw new CategoryAlreadyExistsError(category.name);
       }
       throw error;
@@ -222,7 +223,7 @@ export class PostgresCategoryRepository implements CategoryRepository {
         .values(records)
         .returning();
     } catch (error) {
-      if (this.isDuplicateKeyError(error)) {
+      if (isDuplicateKeyError(error)) {
         // We can't easily determine which category caused the conflict
         throw new CategoryAlreadyExistsError('one or more categories');
       }
@@ -239,13 +240,12 @@ export class PostgresCategoryRepository implements CategoryRepository {
   }
 
   /**
-   * Checks if an error is a duplicate key violation
+   * Counts the total number of categories
    */
-  private isDuplicateKeyError(error: unknown): boolean {
-    if (error instanceof Error) {
-      return error.message.includes('duplicate key') ||
-             error.message.includes('unique constraint');
-    }
-    return false;
+  async count(): Promise<number> {
+    const result = await this.db
+      .select({ count: count() })
+      .from(categories) as { count: number }[];
+    return result[0]?.count ?? 0;
   }
 }

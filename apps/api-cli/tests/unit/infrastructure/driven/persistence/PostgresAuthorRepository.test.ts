@@ -375,8 +375,7 @@ describe('PostgresAuthorRepository', () => {
   describe('count', () => {
     it('should return the count of authors', async () => {
       const selectChain = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([mockAuthorRecord, mockAuthorRecord2]),
+        from: vi.fn().mockResolvedValue([{ count: 2 }]),
       };
       mockDb.select.mockReturnValue(selectChain);
 
@@ -387,8 +386,7 @@ describe('PostgresAuthorRepository', () => {
 
     it('should return 0 when no authors', async () => {
       const selectChain = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([]),
+        from: vi.fn().mockResolvedValue([{ count: 0 }]),
       };
       mockDb.select.mockReturnValue(selectChain);
 

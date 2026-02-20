@@ -5,21 +5,22 @@
  * This is a driven/output adapter in the hexagonal architecture.
  */
 
-import { eq, inArray, sql } from 'drizzle-orm';
+import { eq, inArray, count } from 'drizzle-orm';
 import { Author } from '../../../domain/entities/Author.js';
 import { AuthorAlreadyExistsError } from '../../../domain/errors/DomainErrors.js';
 import type { AuthorRepository } from '../../../application/ports/AuthorRepository.js';
 import { authors, type AuthorSelect } from './drizzle/schema.js';
 import { AuthorMapper } from './mappers/AuthorMapper.js';
 import { generateUUID } from '../../../shared/utils/uuid.js';
+import { isDuplicateKeyError } from './utils.js';
 
 /**
  * Database type that supports our operations
  * This is a generic interface that works with any Drizzle PostgreSQL connection
  */
 interface DrizzleDb {
-  select: () => {
-    from: (table: typeof authors) => {
+  select: (fields?: Record<string, unknown>) => {
+    from: (table: typeof authors) => Promise<unknown[]> & {
       where: (condition: unknown) => Promise<AuthorSelect[]>;
     };
   };
@@ -199,7 +200,7 @@ export class PostgresAuthorRepository implements AuthorRepository {
 
       return AuthorMapper.toDomain(inserted);
     } catch (error) {
-      if (this.isDuplicateKeyError(error)) {
+      if (isDuplicateKeyError(error)) {
         throw new AuthorAlreadyExistsError(author.name);
       }
       throw error;
@@ -219,20 +220,8 @@ export class PostgresAuthorRepository implements AuthorRepository {
    */
   async count(): Promise<number> {
     const result = await this.db
-      .select()
-      .from(authors)
-      .where(sql`1=1`);
-    return result.length;
-  }
-
-  /**
-   * Checks if an error is a duplicate key violation
-   */
-  private isDuplicateKeyError(error: unknown): boolean {
-    if (error instanceof Error) {
-      return error.message.includes('duplicate key') ||
-             error.message.includes('unique constraint');
-    }
-    return false;
+      .select({ count: count() })
+      .from(authors) as { count: number }[];
+    return result[0]?.count ?? 0;
   }
 }

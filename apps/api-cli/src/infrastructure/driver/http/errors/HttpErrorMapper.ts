@@ -8,8 +8,8 @@
  */
 
 import { ZodError } from 'zod';
-import { DomainError } from '../../../../domain/errors/DomainErrors.js';
 import {
+  DomainError,
   RequiredFieldError,
   FieldTooLongError,
   TooManyItemsError,
@@ -17,13 +17,13 @@ import {
   DuplicateISBNError,
   DuplicateBookError,
   InvalidBookTypeError,
+  EmbeddingTextTooLongError,
 } from '../../../../domain/errors/DomainErrors.js';
 import { InvalidISBNError } from '../../../../domain/value-objects/ISBN.js';
 import { InvalidBookFormatError } from '../../../../domain/value-objects/BookFormat.js';
 import { InvalidBookLevelError } from '../../../../domain/value-objects/BookLevel.js';
 import {
   EmbeddingServiceUnavailableError,
-  EmbeddingTextTooLongError,
 } from '../../../../application/errors/ApplicationErrors.js';
 import {
   errorResponse,

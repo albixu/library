@@ -89,4 +89,11 @@ export interface CategoryRepository {
    * @returns Promise resolving to an array of all Categories
    */
   findAll(): Promise<Category[]>;
+
+  /**
+   * Counts the total number of categories
+   *
+   * @returns Promise resolving to the total count
+   */
+  count(): Promise<number>;
 }

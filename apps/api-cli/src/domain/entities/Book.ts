@@ -23,10 +23,10 @@ import { Category } from './Category.js';
 import {
   RequiredFieldError,
   FieldTooLongError,
-  InvalidUUIDError,
   TooManyItemsError,
   DuplicateItemError,
 } from '../errors/DomainErrors.js';
+import { validateId } from '../validators/index.js';
 
 /**
  * Field length constraints
@@ -38,11 +38,6 @@ const FIELD_CONSTRAINTS = {
   MAX_AUTHORS: 20,
   PATH_MAX_LENGTH: 1000,
 } as const;
-
-/**
- * UUID v4 regex pattern
- */
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
  * Props required to create a new Book
@@ -128,7 +123,7 @@ export class Book {
    */
   static create(props: CreateBookProps): Book {
     // Validate required fields
-    const id = Book.validateId(props.id);
+    const id = validateId(props.id);
     const title = Book.validateTitle(props.title);
     const authors = Book.validateAuthors(props.authors);
     const categories = Book.validateCategories(props.categories);
@@ -277,20 +272,6 @@ export class Book {
   }
 
   // ==================== Private Validators ====================
-
-  private static validateId(id: string): string {
-    if (!id || id.trim().length === 0) {
-      throw new RequiredFieldError('id');
-    }
-
-    const trimmedId = id.trim();
-
-    if (!UUID_REGEX.test(trimmedId)) {
-      throw new InvalidUUIDError(id);
-    }
-
-    return trimmedId;
-  }
 
   private static validateTitle(title: string): string {
     if (!title || title.trim().length === 0) {

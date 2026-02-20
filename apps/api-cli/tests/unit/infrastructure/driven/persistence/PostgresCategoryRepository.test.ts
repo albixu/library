@@ -358,4 +358,28 @@ describe('PostgresCategoryRepository', () => {
       expect(result).toEqual([]);
     });
   });
+
+  describe('count', () => {
+    it('should return the count of categories', async () => {
+      const selectChain = {
+        from: vi.fn().mockResolvedValue([{ count: 5 }]),
+      };
+      mockDb.select.mockReturnValue(selectChain);
+
+      const result = await repository.count();
+
+      expect(result).toBe(5);
+    });
+
+    it('should return 0 when no categories', async () => {
+      const selectChain = {
+        from: vi.fn().mockResolvedValue([{ count: 0 }]),
+      };
+      mockDb.select.mockReturnValue(selectChain);
+
+      const result = await repository.count();
+
+      expect(result).toBe(0);
+    });
+  });
 });

@@ -20,8 +20,8 @@
 import {
   RequiredFieldError,
   FieldTooLongError,
-  InvalidUUIDError,
 } from '../errors/DomainErrors.js';
+import { validateId } from '../validators/index.js';
 
 /**
  * Field length constraints
@@ -29,11 +29,6 @@ import {
 const FIELD_CONSTRAINTS = {
   NAME_MAX_LENGTH: 50,
 } as const;
-
-/**
- * UUID v4 regex pattern
- */
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
  * Default book types that should be seeded in the database
@@ -87,7 +82,7 @@ export class BookType {
    * Use this when creating a book type from user input
    */
   static create(props: CreateBookTypeProps): BookType {
-    const id = BookType.validateId(props.id);
+    const id = validateId(props.id);
     const name = BookType.validateName(props.name);
 
     const now = new Date();
@@ -148,20 +143,6 @@ export class BookType {
   }
 
   // ==================== Private Validators ====================
-
-  private static validateId(id: string): string {
-    if (!id || id.trim().length === 0) {
-      throw new RequiredFieldError('id');
-    }
-
-    const trimmedId = id.trim();
-
-    if (!UUID_REGEX.test(trimmedId)) {
-      throw new InvalidUUIDError(id);
-    }
-
-    return trimmedId;
-  }
 
   private static validateName(name: string): string {
     if (!name || name.trim().length === 0) {

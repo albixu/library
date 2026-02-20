@@ -5,12 +5,13 @@
  * These errors represent technical failures (service unavailability, network errors, etc.)
  * rather than business rule violations.
  *
- * Unlike domain errors, these extend the base Error class directly since they
- * are not part of the business domain model.
+ * Note: EmbeddingTextTooLongError is defined in domain/errors/DomainErrors.ts as it represents
+ * a business rule violation (data constraint), not a technical failure.
+ * Re-exported here for backwards compatibility.
  */
 
 /**
- * Base class for embedding service errors
+ * Base class for embedding service errors (infrastructure/technical failures)
  */
 export abstract class EmbeddingServiceError extends Error {
   constructor(message: string) {
@@ -37,14 +38,5 @@ export class EmbeddingServiceUnavailableError extends EmbeddingServiceError {
   }
 }
 
-/**
- * Thrown when the embedding text exceeds the maximum allowed length
- * This is a client/input validation error at the application layer
- */
-export class EmbeddingTextTooLongError extends EmbeddingServiceError {
-  constructor(actualLength: number, maxLength: number) {
-    super(
-      `Embedding text exceeds maximum length: ${actualLength} characters (max: ${maxLength})`
-    );
-  }
-}
+// Re-export from domain for backwards compatibility
+export { EmbeddingTextTooLongError } from '../../domain/errors/DomainErrors.js';

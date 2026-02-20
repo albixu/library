@@ -12,6 +12,8 @@
  * (e.g., "Beginner", not "beginner" or "BEGINNER").
  */
 
+import { DomainError } from '../errors/DomainErrors.js';
+
 export const BOOK_LEVELS = [
   'Beginner',
   'Intermediate',
@@ -76,11 +78,10 @@ export class BookLevel {
 /**
  * Error thrown when an invalid book level is provided
  */
-export class InvalidBookLevelError extends Error {
+export class InvalidBookLevelError extends DomainError {
   constructor(value: string) {
     super(
       `Invalid book level: "${value}". Valid levels are: ${BOOK_LEVELS.join(', ')}`
     );
-    this.name = 'InvalidBookLevelError';
   }
 }

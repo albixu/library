@@ -15,8 +15,8 @@
 import {
   RequiredFieldError,
   FieldTooLongError,
-  InvalidUUIDError,
 } from '../errors/DomainErrors.js';
+import { validateId } from '../validators/index.js';
 
 /**
  * Field length constraints
@@ -25,11 +25,6 @@ const FIELD_CONSTRAINTS = {
   NAME_MAX_LENGTH: 100,
   DESCRIPTION_MAX_LENGTH: 500,
 } as const;
-
-/**
- * UUID v4 regex pattern
- */
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
  * Props required to create a new Category
@@ -80,7 +75,7 @@ export class Category {
    * Use this when creating a category from user input
    */
   static create(props: CreateCategoryProps): Category {
-    const id = Category.validateId(props.id);
+    const id = validateId(props.id);
     const name = Category.validateName(props.name);
     const description = props.description
       ? Category.validateDescription(props.description)
@@ -136,20 +131,6 @@ export class Category {
   }
 
   // ==================== Private Validators ====================
-
-  private static validateId(id: string): string {
-    if (!id || id.trim().length === 0) {
-      throw new RequiredFieldError('id');
-    }
-
-    const trimmedId = id.trim();
-
-    if (!UUID_REGEX.test(trimmedId)) {
-      throw new InvalidUUIDError(id);
-    }
-
-    return trimmedId;
-  }
 
   private static validateName(name: string): string {
     if (!name || name.trim().length === 0) {

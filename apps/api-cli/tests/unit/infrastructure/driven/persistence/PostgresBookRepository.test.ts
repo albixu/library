@@ -567,8 +567,7 @@ describe('PostgresBookRepository', () => {
   describe('count', () => {
     it('should return total book count', async () => {
       const selectChain = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([{ count: 42 }]),
+        from: vi.fn().mockResolvedValue([{ count: 42 }]),
       };
       mockDb.select.mockReturnValue(selectChain);
 
@@ -579,8 +578,7 @@ describe('PostgresBookRepository', () => {
 
     it('should return 0 when no books', async () => {
       const selectChain = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([{ count: 0 }]),
+        from: vi.fn().mockResolvedValue([{ count: 0 }]),
       };
       mockDb.select.mockReturnValue(selectChain);
 

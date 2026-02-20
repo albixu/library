@@ -11,6 +11,7 @@ export type {
 export type {
   BookRepository,
   SaveBookParams,
+  UpdateBookParams,
   DuplicateCheckResult,
 } from './BookRepository.js';
 

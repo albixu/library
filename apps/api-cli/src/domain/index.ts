@@ -41,6 +41,9 @@ export {
   BookFormat,
   BOOK_FORMATS,
   type BookFormatValue,
+  BookLevel,
+  BOOK_LEVELS,
+  type BookLevelValue,
   ISBN,
 } from './value-objects/index.js';
 
@@ -54,5 +57,7 @@ export {
   InvalidUUIDError,
   InvalidBookTypeError,
   InvalidBookFormatError,
+  InvalidBookLevelError,
   InvalidISBNError,
+  EmbeddingTextTooLongError,
 } from './errors/index.js';

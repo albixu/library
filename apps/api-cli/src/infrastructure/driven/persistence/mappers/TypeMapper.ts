@@ -52,4 +52,14 @@ export const TypeMapper = {
   toDomainList(records: TypeSelect[]): BookType[] {
     return records.map((record) => TypeMapper.toDomain(record));
   },
+
+  /**
+   * Converts multiple domain entities to database insert records
+   *
+   * @param types - Array of BookType entities
+   * @returns Array of database insert records
+   */
+  toPersistenceList(types: BookType[]): TypeInsert[] {
+    return types.map((type) => TypeMapper.toPersistence(type));
+  },
 };

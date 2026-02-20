@@ -46,6 +46,7 @@ import { BookMapper } from './mappers/BookMapper.js';
 import { AuthorMapper } from './mappers/AuthorMapper.js';
 import { TypeMapper } from './mappers/TypeMapper.js';
 import { CategoryMapper } from './mappers/CategoryMapper.js';
+import { isDuplicateKeyError } from './utils.js';
 
 /**
  * Normalizes text for duplicate detection
@@ -74,7 +75,7 @@ export function normalizeForDuplicateCheck(text: string): string {
  */
 interface DrizzleDb {
   select: (fields?: Record<string, unknown>) => {
-    from: (table: typeof books | typeof bookAuthors | typeof bookCategories | typeof authors | typeof categories | typeof types) => {
+    from: (table: typeof books | typeof bookAuthors | typeof bookCategories | typeof authors | typeof categories | typeof types) => Promise<unknown[]> & {
       where: (condition: unknown) => Promise<unknown[]>;
       innerJoin: (table: typeof authors | typeof categories | typeof types, condition: unknown) => {
         where: (condition: unknown) => Promise<unknown[]>;
@@ -360,8 +361,7 @@ export class PostgresBookRepository implements BookRepository {
   async count(): Promise<number> {
     const result = await this.db
       .select({ count: count() })
-      .from(books)
-      .where(eq(books.id, books.id)) as { count: number }[]; // Always true condition to count all
+      .from(books) as { count: number }[];
 
     return result[0]?.count ?? 0;
   }
@@ -413,7 +413,7 @@ export class PostgresBookRepository implements BookRepository {
    * Handles save errors, converting database errors to domain errors
    */
   private handleSaveError(error: unknown, book: Book): never {
-    if (this.isDuplicateKeyError(error)) {
+    if (isDuplicateKeyError(error)) {
       const errorMessage = error instanceof Error ? error.message : '';
 
       // Check if it's an ISBN duplicate
@@ -426,19 +426,5 @@ export class PostgresBookRepository implements BookRepository {
     }
 
     throw error;
-  }
-
-  /**
-   * Checks if an error is a duplicate key violation
-   */
-  private isDuplicateKeyError(error: unknown): boolean {
-    if (error instanceof Error) {
-      return (
-        error.message.includes('duplicate key') ||
-        error.message.includes('unique constraint') ||
-        error.message.includes('UNIQUE constraint')
-      );
-    }
-    return false;
   }
 }

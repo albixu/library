@@ -9,6 +9,8 @@
  * - Self-validating
  */
 
+import { DomainError } from '../errors/DomainErrors.js';
+
 export const BOOK_FORMATS = [
   'epub',
   'pdf',
@@ -79,11 +81,10 @@ export class BookFormat {
 /**
  * Error thrown when an invalid book format is provided
  */
-export class InvalidBookFormatError extends Error {
+export class InvalidBookFormatError extends DomainError {
   constructor(value: string) {
     super(
       `Invalid book format: "${value}". Valid formats are: ${BOOK_FORMATS.join(', ')}`
     );
-    this.name = 'InvalidBookFormatError';
   }
 }

@@ -12,10 +12,8 @@ import type {
   EmbeddingServiceConfig,
   EmbeddingResult,
 } from '../../../application/ports/EmbeddingService.js';
-import {
-  EmbeddingServiceUnavailableError,
-  EmbeddingTextTooLongError,
-} from '../../../application/errors/ApplicationErrors.js';
+import { EmbeddingServiceUnavailableError } from '../../../application/errors/ApplicationErrors.js';
+import { EmbeddingTextTooLongError } from '../../../domain/errors/DomainErrors.js';
 
 /**
  * Maximum text length for embedding generation (characters)
