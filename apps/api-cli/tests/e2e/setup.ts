@@ -17,6 +17,7 @@ import type { FastifyInstance } from 'fastify';
 import * as schema from '../../src/infrastructure/driven/persistence/drizzle/schema.js';
 import { createServer } from '../../src/infrastructure/driver/http/server.js';
 import { CreateBookUseCase } from '../../src/application/use-cases/CreateBookUseCase.js';
+import { ListBookTypesUseCase } from '../../src/application/use-cases/ListBookTypesUseCase.js';
 import { OllamaEmbeddingService } from '../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
 import { PostgresBookRepository } from '../../src/infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from '../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
@@ -109,7 +110,7 @@ export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const authorRepository = new PostgresAuthorRepository(db as any);
 
-  // Create use case
+  // Create use cases
   const createBookUseCase = new CreateBookUseCase({
     bookRepository,
     categoryRepository,
@@ -119,9 +120,12 @@ export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
     logger: noopLogger,
   });
 
+  const listBookTypesUseCase = new ListBookTypesUseCase(typeRepository);
+
   // Create server
   const server = await createServer({
     createBookUseCase,
+    listBookTypesUseCase,
     logger: noopLogger,
   });
 
