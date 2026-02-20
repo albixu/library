@@ -10,14 +10,18 @@ import Fastify, { FastifyInstance } from 'fastify';
 import type { Logger } from '../../../application/ports/Logger.js';
 import { noopLogger } from '../../../application/ports/Logger.js';
 import { BooksController } from './controllers/BooksController.js';
+import { BookTypesController } from './controllers/BookTypesController.js';
 import { booksRoutes } from './routes/books.routes.js';
+import { bookTypesRoutes } from './routes/book-types.routes.js';
 import type { CreateBookUseCase } from '../../../application/use-cases/CreateBookUseCase.js';
+import type { ListBookTypesUseCase } from '../../../application/use-cases/ListBookTypesUseCase.js';
 
 /**
  * Dependencies required by the server
  */
 export interface ServerDeps {
   createBookUseCase: CreateBookUseCase;
+  listBookTypesUseCase: ListBookTypesUseCase;
   logger?: Logger;
 }
 
@@ -40,7 +44,7 @@ export async function createServer(
   deps: ServerDeps,
   options: ServerOptions = {}
 ): Promise<FastifyInstance> {
-  const { createBookUseCase, logger = noopLogger } = deps;
+  const { createBookUseCase, listBookTypesUseCase, logger = noopLogger } = deps;
   const { prefix = '/api' } = options;
 
   const serverLogger = logger.child({ name: 'FastifyServer' });
@@ -50,9 +54,14 @@ export async function createServer(
     logger: false, // We use our own logger
   });
 
-  // Create controller with dependencies
+  // Create controllers with dependencies
   const booksController = new BooksController({
     createBookUseCase,
+    logger,
+  });
+
+  const bookTypesController = new BookTypesController({
+    listBookTypesUseCase,
     logger,
   });
 
@@ -62,12 +71,18 @@ export async function createServer(
     controller: booksController,
   });
 
+  await fastify.register(bookTypesRoutes, {
+    prefix,
+    controller: bookTypesController,
+  });
+
   // Log server ready
   fastify.addHook('onReady', async () => {
     serverLogger.info('Server routes registered', {
       prefix,
       routes: [
         { method: 'POST', path: `${prefix}/books` },
+        { method: 'GET', path: `${prefix}/book-types` },
       ],
     });
   });
