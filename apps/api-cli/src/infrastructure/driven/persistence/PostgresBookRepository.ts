@@ -265,7 +265,7 @@ export class PostgresBookRepository implements BookRepository {
           insertedBook,
           [...book.authors],
           book.type,
-          [...book.categories]
+          [...book.categories],
         );
       });
     } catch (error) {
@@ -349,7 +349,7 @@ export class PostgresBookRepository implements BookRepository {
         }
 
         return BookMapper.toDomain(record, bookAuthors, bookType, bookCategories);
-      })
+      }),
     );
 
     return booksWithRelations;

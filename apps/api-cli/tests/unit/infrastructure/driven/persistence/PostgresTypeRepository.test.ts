@@ -3,7 +3,7 @@ import { PostgresTypeRepository } from '../../../../../src/infrastructure/driven
 import type { TypeSelect } from '../../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 
 // Mock Drizzle database
-type MockDb = {
+interface MockDb {
   select: ReturnType<typeof vi.fn>;
   query: {
     types: {
@@ -11,7 +11,7 @@ type MockDb = {
       findMany: ReturnType<typeof vi.fn>;
     };
   };
-};
+}
 
 describe('PostgresTypeRepository', () => {
   let mockDb: MockDb;

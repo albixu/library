@@ -80,7 +80,7 @@ export class OllamaEmbeddingService implements EmbeddingService {
 
     if (!response.ok) {
       throw new EmbeddingServiceUnavailableError(
-        `HTTP ${response.status}: ${response.statusText}`
+        `HTTP ${response.status}: ${response.statusText}`,
       );
     }
 
@@ -94,14 +94,14 @@ export class OllamaEmbeddingService implements EmbeddingService {
       // Preserve original error as cause for debugging
       throw new EmbeddingServiceUnavailableError(
         `Failed to parse response: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        { cause: error }
+        { cause: error },
       );
     }
 
     // Validate response format
     if (!data.embedding || !Array.isArray(data.embedding)) {
       throw new EmbeddingServiceUnavailableError(
-        'Invalid response format: missing embedding array'
+        'Invalid response format: missing embedding array',
       );
     }
 

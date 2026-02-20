@@ -62,7 +62,7 @@ export const BookMapper = {
     record: BookSelect,
     authors: Author[],
     type: BookType,
-    categories: Category[]
+    categories: Category[],
   ): Book {
     const props: BookPersistenceProps = {
       id: record.id,
@@ -119,7 +119,7 @@ export const BookMapper = {
    */
   toDomainList(records: BookWithRelations[]): Book[] {
     return records.map((record) =>
-      BookMapper.toDomain(record, record.authors, record.type, record.categories)
+      BookMapper.toDomain(record, record.authors, record.type, record.categories),
     );
   },
 };

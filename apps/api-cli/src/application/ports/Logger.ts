@@ -78,11 +78,11 @@ export interface Logger {
  * No-op logger implementation for testing or when logging is disabled
  */
 export const noopLogger: Logger = {
-  trace: () => {},
-  debug: () => {},
-  info: () => {},
-  warn: () => {},
-  error: () => {},
-  fatal: () => {},
+  trace: () => { /* noop */ },
+  debug: () => { /* noop */ },
+  info: () => { /* noop */ },
+  warn: () => { /* noop */ },
+  error: () => { /* noop */ },
+  fatal: () => { /* noop */ },
   child: () => noopLogger,
 };

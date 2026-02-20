@@ -5,7 +5,7 @@ import { AuthorAlreadyExistsError } from '../../../../../src/domain/errors/Domai
 import type { AuthorSelect } from '../../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 
 // Mock Drizzle database
-type MockDb = {
+interface MockDb {
   select: ReturnType<typeof vi.fn>;
   insert: ReturnType<typeof vi.fn>;
   query: {
@@ -14,7 +14,7 @@ type MockDb = {
       findMany: ReturnType<typeof vi.fn>;
     };
   };
-};
+}
 
 describe('PostgresAuthorRepository', () => {
   let mockDb: MockDb;

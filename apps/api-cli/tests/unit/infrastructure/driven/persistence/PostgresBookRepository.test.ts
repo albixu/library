@@ -14,7 +14,7 @@ import {
 import type { BookSelect, CategorySelect, AuthorSelect, TypeSelect } from '../../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 
 // Mock Drizzle database
-type MockDb = {
+interface MockDb {
   select: ReturnType<typeof vi.fn>;
   insert: ReturnType<typeof vi.fn>;
   update: ReturnType<typeof vi.fn>;
@@ -29,7 +29,7 @@ type MockDb = {
     };
   };
   transaction: ReturnType<typeof vi.fn>;
-};
+}
 
 describe('PostgresBookRepository', () => {
   let mockDb: MockDb;

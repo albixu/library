@@ -60,9 +60,9 @@ describe('PostgresBookRepository Integration', () => {
     client.release();
 
     db = drizzle(pool, { schema });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     bookRepository = new PostgresBookRepository(db as any);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     categoryRepository = new PostgresCategoryRepository(db as any);
   });
 

@@ -46,7 +46,7 @@ describe('PostgresTypeRepository Integration', () => {
     client.release();
 
     db = drizzle(pool, { schema });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     repository = new PostgresTypeRepository(db as any);
   });
 

@@ -32,7 +32,7 @@ export const createBookSchema = z.object({
         .string()
         .min(1, 'author name cannot be empty')
         .max(300, 'author name exceeds maximum length of 300 characters')
-        .transform((val) => val.trim())
+        .transform((val) => val.trim()),
     )
     .min(1, 'at least one author is required')
     .max(10, 'maximum of 10 authors allowed'),
@@ -62,7 +62,7 @@ export const createBookSchema = z.object({
         .string()
         .min(1, 'category name cannot be empty')
         .max(100, 'category name exceeds maximum length of 100 characters')
-        .transform((val) => val.trim())
+        .transform((val) => val.trim()),
     )
     .min(1, 'at least one category is required')
     .max(10, 'maximum of 10 categories allowed'),
@@ -103,7 +103,7 @@ export const bookResponseSchema = z.object({
     z.object({
       id: z.string().uuid(),
       name: z.string(),
-    })
+    }),
   ),
   description: z.string(),
   type: z.string(),
@@ -113,7 +113,7 @@ export const bookResponseSchema = z.object({
     z.object({
       id: z.string().uuid(),
       name: z.string(),
-    })
+    }),
   ),
   isbn: z.string().nullable(),
   available: z.boolean(),

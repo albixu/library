@@ -37,7 +37,7 @@ describe('PostgresCategoryRepository Integration', () => {
     client.release();
 
     db = drizzle(pool, { schema });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     repository = new PostgresCategoryRepository(db as any);
   });
 

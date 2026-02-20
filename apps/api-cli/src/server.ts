@@ -66,7 +66,7 @@ async function bootstrap(): Promise<void> {
     // Create and start server
     const server = await createServer(
       { createBookUseCase, listBookTypesUseCase, logger },
-      { prefix: '/api' }
+      { prefix: '/api' },
     );
 
     // Add health endpoint for Docker healthcheck

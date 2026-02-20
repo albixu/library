@@ -99,7 +99,7 @@ export function successResponse<T>(data: T): ApiSuccessResponse<T> {
  */
 export function errorResponse(
   message: string,
-  details?: string[]
+  details?: string[],
 ): ApiErrorResponse {
   const error: ApiError = { message };
 

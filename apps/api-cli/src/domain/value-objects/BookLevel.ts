@@ -81,7 +81,7 @@ export class BookLevel {
 export class InvalidBookLevelError extends DomainError {
   constructor(value: string) {
     super(
-      `Invalid book level: "${value}". Valid levels are: ${BOOK_LEVELS.join(', ')}`
+      `Invalid book level: "${value}". Valid levels are: ${BOOK_LEVELS.join(', ')}`,
     );
   }
 }

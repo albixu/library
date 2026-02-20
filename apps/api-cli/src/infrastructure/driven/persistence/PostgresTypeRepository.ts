@@ -10,13 +10,13 @@
  * Part of TASK-008 for HU-002 (Initial Data Load)
  */
 
-import { eq, count, asc } from 'drizzle-orm';
+import { count, asc } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { TypeRepository } from '../../../application/ports/TypeRepository.js';
-import { BookType } from '../../../domain/entities/BookType.js';
+import type { BookType } from '../../../domain/entities/BookType.js';
 import { types } from './drizzle/schema.js';
 import { TypeMapper } from './mappers/TypeMapper.js';
-import * as schema from './drizzle/schema.js';
+import type * as schema from './drizzle/schema.js';
 
 /**
  * PostgreSQL implementation of TypeRepository

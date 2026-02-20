@@ -18,18 +18,19 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # Mount source code for hot reload
-      - ./apps/api-cli/src:/app/src:ro
-      - ./apps/api-cli/tests:/app/tests:ro
-      - ./apps/api-cli/scripts:/app/scripts:ro
-      - ./apps/api-cli/data:/app/data:ro
-      - ./apps/api-cli/package.json:/app/package.json:ro
-      - ./apps/api-cli/tsconfig.json:/app/tsconfig.json:ro
-      - ./apps/api-cli/vitest.config.ts:/app/vitest.config.ts:ro
-      - ./apps/api-cli/vitest.integration.config.ts:/app/vitest.integration.config.ts:ro
-      - ./apps/api-cli/vitest.e2e.config.ts:/app/vitest.e2e.config.ts:ro
-      - ./apps/api-cli/drizzle.config.ts:/app/drizzle.config.ts:ro
-      - ./apps/api-cli/drizzle:/app/drizzle:ro
+      # Mount source code for hot reload (writable for linting/formatting)
+      - ./apps/api-cli/src:/app/src
+      - ./apps/api-cli/tests:/app/tests
+      - ./apps/api-cli/scripts:/app/scripts
+      - ./apps/api-cli/data:/app/data
+      - ./apps/api-cli/package.json:/app/package.json
+      - ./apps/api-cli/tsconfig.json:/app/tsconfig.json
+      - ./apps/api-cli/vitest.config.ts:/app/vitest.config.ts
+      - ./apps/api-cli/vitest.integration.config.ts:/app/vitest.integration.config.ts
+      - ./apps/api-cli/vitest.e2e.config.ts:/app/vitest.e2e.config.ts
+      - ./apps/api-cli/drizzle.config.ts:/app/drizzle.config.ts
+      - ./apps/api-cli/eslint.config.js:/app/eslint.config.js
+      - ./apps/api-cli/drizzle:/app/drizzle
       # Docs directory for consolidated output
       - ./docs:/app/docs
       # Named volume for node_modules (prevents overwrite by host)

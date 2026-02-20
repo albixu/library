@@ -67,7 +67,7 @@ function mapZodError(error: ZodError): HttpErrorResponse {
  */
 function createErrorResponse(
   statusCode: number,
-  message: string
+  message: string,
 ): HttpErrorResponse {
   return {
     statusCode,
@@ -109,7 +109,7 @@ export function mapErrorToHttpResponse(error: unknown): HttpErrorResponse {
   if (error instanceof EmbeddingServiceUnavailableError) {
     return createErrorResponse(
       503,
-      'Embedding service unavailable, please try again later'
+      'Embedding service unavailable, please try again later',
     );
   }
 

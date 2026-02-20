@@ -84,7 +84,7 @@ export class BookFormat {
 export class InvalidBookFormatError extends DomainError {
   constructor(value: string) {
     super(
-      `Invalid book format: "${value}". Valid formats are: ${BOOK_FORMATS.join(', ')}`
+      `Invalid book format: "${value}". Valid formats are: ${BOOK_FORMATS.join(', ')}`,
     );
   }
 }

@@ -143,7 +143,7 @@ export class ISBN {
 export class InvalidISBNError extends DomainError {
   constructor(value: string) {
     super(
-      `Invalid ISBN: "${value}". Must be a valid ISBN-10 or ISBN-13 with correct checksum.`
+      `Invalid ISBN: "${value}". Must be a valid ISBN-10 or ISBN-13 with correct checksum.`,
     );
   }
 }

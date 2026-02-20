@@ -53,7 +53,7 @@ export class BookTypesController {
    */
   async list(
     _request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<FastifyReply> {
     this.logger.debug('Received list book types request');
 

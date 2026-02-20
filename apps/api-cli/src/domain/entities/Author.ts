@@ -60,7 +60,7 @@ export class Author {
     public readonly id: string,
     public readonly name: string,
     public readonly createdAt: Date,
-    public readonly updatedAt: Date
+    public readonly updatedAt: Date,
   ) {
     Object.freeze(this);
   }
@@ -89,7 +89,7 @@ export class Author {
       props.id,
       props.name,
       props.createdAt,
-      props.updatedAt
+      props.updatedAt,
     );
   }
 
@@ -105,7 +105,7 @@ export class Author {
       this.id,
       name,
       this.createdAt,
-      new Date() // Update timestamp
+      new Date(), // Update timestamp
     );
   }
 

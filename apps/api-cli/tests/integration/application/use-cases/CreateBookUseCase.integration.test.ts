@@ -50,13 +50,13 @@ describe('CreateBookUseCase Integration', () => {
     client.release();
 
     db = drizzle(pool, { schema });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     bookRepository = new PostgresBookRepository(db as any);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     categoryRepository = new PostgresCategoryRepository(db as any);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     typeRepository = new PostgresTypeRepository(db as any);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     authorRepository = new PostgresAuthorRepository(db as any);
     embeddingService = new OllamaEmbeddingService({
       baseUrl: OLLAMA_BASE_URL,

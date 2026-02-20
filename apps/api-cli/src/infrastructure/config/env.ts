@@ -71,7 +71,7 @@ function safeParseInt(value: string | undefined, defaultValue: number, fieldName
   const parsed = Number(trimmed);
   if (!Number.isInteger(parsed)) {
     throw new Error(
-      `Invalid integer value for ${fieldName}: "${value}". Expected a valid number.`
+      `Invalid integer value for ${fieldName}: "${value}". Expected a valid number.`,
     );
   }
   return parsed;
@@ -88,7 +88,7 @@ export function loadEnvConfig(): EnvConfig {
   if (!databaseUrl || databaseUrl.trim() === '') {
     throw new Error(
       'DATABASE_URL environment variable is required but not set. ' +
-        'Please set it in your environment or .env file (e.g., postgresql://user:password@host:5432/database)'
+        'Please set it in your environment or .env file (e.g., postgresql://user:password@host:5432/database)',
     );
   }
 
@@ -107,7 +107,7 @@ export function loadEnvConfig(): EnvConfig {
       timeoutMs: safeParseInt(
         process.env['OLLAMA_TIMEOUT_MS'],
         DEFAULTS.OLLAMA_TIMEOUT_MS,
-        'OLLAMA_TIMEOUT_MS'
+        'OLLAMA_TIMEOUT_MS',
       ),
     },
   };

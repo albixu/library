@@ -146,7 +146,7 @@ export class PostgresAuthorRepository implements AuthorRepository {
         Author.create({
           id: generateUUID(),
           name,
-        })
+        }),
       );
 
       const insertRecords = AuthorMapper.toPersistenceList(authorsToInsert);
@@ -172,7 +172,7 @@ export class PostgresAuthorRepository implements AuthorRepository {
       if (!author) {
         const missingNames = trimmedNames.filter((n) => !authorMap.has(n));
         throw new Error(
-          `Failed to find or create the requested authors: ${missingNames.join(', ')}`
+          `Failed to find or create the requested authors: ${missingNames.join(', ')}`,
         );
       }
       result.push(author);

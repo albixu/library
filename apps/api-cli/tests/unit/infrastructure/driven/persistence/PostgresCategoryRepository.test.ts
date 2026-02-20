@@ -5,7 +5,7 @@ import { CategoryAlreadyExistsError } from '../../../../../src/domain/errors/Dom
 import type { CategorySelect } from '../../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 
 // Mock Drizzle database
-type MockDb = {
+interface MockDb {
   select: ReturnType<typeof vi.fn>;
   insert: ReturnType<typeof vi.fn>;
   query: {
@@ -14,7 +14,7 @@ type MockDb = {
       findMany: ReturnType<typeof vi.fn>;
     };
   };
-};
+}
 
 describe('PostgresCategoryRepository', () => {
   let mockDb: MockDb;

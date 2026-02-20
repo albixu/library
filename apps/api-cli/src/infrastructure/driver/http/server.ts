@@ -6,7 +6,7 @@
  * for production, development, and testing.
  */
 
-import Fastify, { FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance } from 'fastify';
 import type { Logger } from '../../../application/ports/Logger.js';
 import { noopLogger } from '../../../application/ports/Logger.js';
 import { BooksController } from './controllers/BooksController.js';
@@ -42,7 +42,7 @@ export interface ServerOptions {
  */
 export async function createServer(
   deps: ServerDeps,
-  options: ServerOptions = {}
+  options: ServerOptions = {},
 ): Promise<FastifyInstance> {
   const { createBookUseCase, listBookTypesUseCase, logger = noopLogger } = deps;
   const { prefix = '/api' } = options;
@@ -100,7 +100,7 @@ export async function createServer(
 export async function startServer(
   server: FastifyInstance,
   port: number,
-  host: string = '0.0.0.0'
+  host = '0.0.0.0',
 ): Promise<void> {
   await server.listen({ port, host });
 }

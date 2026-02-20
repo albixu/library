@@ -101,13 +101,13 @@ export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
     timeoutMs: 30000,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const bookRepository = new PostgresBookRepository(db as any);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const categoryRepository = new PostgresCategoryRepository(db as any);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const typeRepository = new PostgresTypeRepository(db as any);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const authorRepository = new PostgresAuthorRepository(db as any);
 
   // Create use cases

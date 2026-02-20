@@ -65,7 +65,7 @@ export class Category {
     public readonly name: string,
     public readonly description: string | null,
     public readonly createdAt: Date,
-    public readonly updatedAt: Date
+    public readonly updatedAt: Date,
   ) {
     Object.freeze(this);
   }
@@ -98,7 +98,7 @@ export class Category {
       props.name,
       props.description,
       props.createdAt,
-      props.updatedAt
+      props.updatedAt,
     );
   }
 
@@ -119,7 +119,7 @@ export class Category {
       name,
       description,
       this.createdAt,
-      new Date() // Update timestamp
+      new Date(), // Update timestamp
     );
   }
 

@@ -17,9 +17,9 @@
 import { BookFormat, type BookFormatValue } from '../value-objects/BookFormat.js';
 import { BookLevel, type BookLevelValue } from '../value-objects/BookLevel.js';
 import { ISBN } from '../value-objects/ISBN.js';
-import { Author } from './Author.js';
-import { BookType } from './BookType.js';
-import { Category } from './Category.js';
+import type { Author } from './Author.js';
+import type { BookType } from './BookType.js';
+import type { Category } from './Category.js';
 import {
   RequiredFieldError,
   FieldTooLongError,
@@ -112,7 +112,7 @@ export class Book {
     public readonly available: boolean,
     public readonly path: string | null,
     public readonly createdAt: Date,
-    public readonly updatedAt: Date
+    public readonly updatedAt: Date,
   ) {
     Object.freeze(this);
   }
@@ -160,7 +160,7 @@ export class Book {
       available,
       path,
       createdAt,
-      updatedAt
+      updatedAt,
     );
   }
 
@@ -182,7 +182,7 @@ export class Book {
       props.available,
       props.path,
       props.createdAt,
-      props.updatedAt
+      props.updatedAt,
     );
   }
 
@@ -240,7 +240,7 @@ export class Book {
       available,
       path,
       this.createdAt,
-      new Date() // Update timestamp
+      new Date(), // Update timestamp
     );
   }
 

@@ -81,7 +81,7 @@ export class DuplicateISBNError extends DomainError {
 export class DuplicateBookError extends DomainError {
   constructor(author: string, title: string, format: string) {
     super(
-      `A book with the same author, title, and format already exists: "${author}" - "${title}" (${format})`
+      `A book with the same author, title, and format already exists: "${author}" - "${title}" (${format})`,
     );
   }
 }
@@ -150,7 +150,7 @@ export class InvalidBookTypeError extends DomainError {
 export class EmbeddingTextTooLongError extends DomainError {
   constructor(actualLength: number, maxLength: number) {
     super(
-      `Embedding text exceeds maximum length: ${actualLength} characters (max: ${maxLength})`
+      `Embedding text exceeds maximum length: ${actualLength} characters (max: ${maxLength})`,
     );
   }
 }

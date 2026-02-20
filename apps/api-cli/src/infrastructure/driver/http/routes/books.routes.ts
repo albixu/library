@@ -26,7 +26,7 @@ export interface BooksRoutesOptions extends FastifyPluginOptions {
  */
 export async function booksRoutes(
   fastify: FastifyInstance,
-  options: BooksRoutesOptions
+  options: BooksRoutesOptions,
 ): Promise<void> {
   const { controller } = options;
 

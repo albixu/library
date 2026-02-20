@@ -56,7 +56,7 @@ export class BooksController {
    */
   async create(
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<FastifyReply> {
     this.logger.debug('Received create book request', {
       contentType: request.headers['content-type'],

@@ -146,7 +146,7 @@ export class PostgresCategoryRepository implements CategoryRepository {
         Category.create({
           id: generateUUID(),
           name,
-        })
+        }),
       );
 
       const insertRecords = CategoryMapper.toPersistenceList(categoriesToInsert);
@@ -172,7 +172,7 @@ export class PostgresCategoryRepository implements CategoryRepository {
       if (!category) {
         const missingNames = normalizedNames.filter((n) => !categoryMap.has(n));
         throw new Error(
-          `Failed to find or create the requested categories: ${missingNames.join(', ')}`
+          `Failed to find or create the requested categories: ${missingNames.join(', ')}`,
         );
       }
       result.push(category);

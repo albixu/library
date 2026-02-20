@@ -30,7 +30,7 @@ export class EmbeddingServiceUnavailableError extends EmbeddingServiceError {
     super(
       reason
         ? `Embedding service unavailable: ${reason}`
-        : 'Embedding service unavailable, please try again later'
+        : 'Embedding service unavailable, please try again later',
     );
     if (options?.cause !== undefined) {
       this.cause = options.cause;

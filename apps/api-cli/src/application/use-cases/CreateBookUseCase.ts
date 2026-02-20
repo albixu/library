@@ -73,10 +73,10 @@ export interface CreateBookInput {
 export interface CreateBookOutput {
   id: string;
   title: string;
-  authors: Array<{ id: string; name: string }>;
+  authors: { id: string; name: string }[];
   description: string;
   type: string;
-  categories: Array<{ id: string; name: string }>;
+  categories: { id: string; name: string }[];
   format: string;
   isbn: string | null;
   level: string | null;
@@ -148,7 +148,7 @@ export class CreateBookUseCase {
 
     // 1. Validate and normalize fields needed for duplicate detection
     //    This provides early validation and normalization without persisting anything
-    const bookFormat = BookFormat.create(input.format);
+    BookFormat.create(input.format); // Validate format early (throws if invalid)
     const bookIsbn = input.isbn ? ISBN.create(input.isbn) : null;
 
     // 2. Validate type exists in database
@@ -179,7 +179,7 @@ export class CreateBookUseCase {
 
     // 4. Resolve or create categories (only after duplicate check passes)
     const categories = await this.categoryRepository.findOrCreateMany(
-      input.categoryNames
+      input.categoryNames,
     );
 
     this.logger.debug('Categories resolved', {
@@ -218,7 +218,7 @@ export class CreateBookUseCase {
       });
       throw new EmbeddingTextTooLongError(
         embeddingText.length,
-        MAX_EMBEDDING_TEXT_LENGTH
+        MAX_EMBEDDING_TEXT_LENGTH,
       );
     }
 
@@ -230,7 +230,7 @@ export class CreateBookUseCase {
     let embeddingResult;
     try {
       embeddingResult = await this.embeddingService.generateEmbedding(
-        embeddingText
+        embeddingText,
       );
     } catch (error) {
       this.logger.error('Embedding generation failed', {

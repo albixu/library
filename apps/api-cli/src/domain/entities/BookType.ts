@@ -72,7 +72,7 @@ export class BookType {
     public readonly id: string,
     public readonly name: string,
     public readonly createdAt: Date,
-    public readonly updatedAt: Date
+    public readonly updatedAt: Date,
   ) {
     Object.freeze(this);
   }
@@ -101,7 +101,7 @@ export class BookType {
       props.id,
       props.name,
       props.createdAt,
-      props.updatedAt
+      props.updatedAt,
     );
   }
 
@@ -117,7 +117,7 @@ export class BookType {
       this.id,
       name,
       this.createdAt,
-      new Date() // Update timestamp
+      new Date(), // Update timestamp
     );
   }
 

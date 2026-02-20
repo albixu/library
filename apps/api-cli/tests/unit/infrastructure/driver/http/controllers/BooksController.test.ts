@@ -216,7 +216,7 @@ describe('BooksController', () => {
 
       it('should default available to true if not provided', async () => {
         const bodyWithoutAvailable = { ...validRequestBody };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         delete (bodyWithoutAvailable as any).available;
 
         vi.mocked(mockUseCase.execute).mockResolvedValue(mockBookOutput);
@@ -236,7 +236,7 @@ describe('BooksController', () => {
     describe('validation errors (400)', () => {
       it('should return 400 with standardized error response when title is missing', async () => {
         const body = { ...validRequestBody };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         delete (body as any).title;
         const request = createMockRequest(body);
         const reply = createMockReply();
@@ -283,7 +283,7 @@ describe('BooksController', () => {
 
       it('should return 400 when authors is missing', async () => {
         const body = { ...validRequestBody };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         delete (body as any).authors;
         const request = createMockRequest(body);
         const reply = createMockReply();
@@ -324,7 +324,7 @@ describe('BooksController', () => {
 
       it('should return 400 when description is missing', async () => {
         const body = { ...validRequestBody };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         delete (body as any).description;
         const request = createMockRequest(body);
         const reply = createMockReply();
@@ -390,7 +390,7 @@ describe('BooksController', () => {
 
       it('should accept undefined level (omitted)', async () => {
         const body = { ...validRequestBody };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         delete (body as any).level;
         const outputWithNullLevel: CreateBookOutput = {
           ...mockBookOutput,
