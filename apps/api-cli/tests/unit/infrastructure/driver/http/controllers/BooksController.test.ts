@@ -3,6 +3,8 @@
  *
  * Tests the HTTP controller layer in isolation using mock use cases.
  * Validates request validation, response formatting, and error handling.
+ *
+ * Updated for HU-004: Standardized API response structure
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -104,7 +106,7 @@ describe('BooksController', () => {
 
   describe('create', () => {
     describe('successful creation', () => {
-      it('should return 201 with created book data', async () => {
+      it('should return 201 with standardized success response', async () => {
         vi.mocked(mockUseCase.execute).mockResolvedValue(mockBookOutput);
         const request = createMockRequest(validRequestBody);
         const reply = createMockReply();
@@ -113,20 +115,36 @@ describe('BooksController', () => {
 
         expect(reply.status).toHaveBeenCalledWith(201);
         expect(reply.send).toHaveBeenCalledWith({
-          id: mockBookOutput.id,
-          title: mockBookOutput.title,
-          authors: mockBookOutput.authors,
-          description: mockBookOutput.description,
-          type: mockBookOutput.type,
-          format: mockBookOutput.format,
-          categories: mockBookOutput.categories,
-          isbn: mockBookOutput.isbn,
-          available: mockBookOutput.available,
-          path: mockBookOutput.path,
-          level: mockBookOutput.level,
-          createdAt: '2026-02-08T12:00:00.000Z',
-          updatedAt: '2026-02-08T12:00:00.000Z',
+          success: true,
+          data: {
+            id: mockBookOutput.id,
+            title: mockBookOutput.title,
+            authors: mockBookOutput.authors,
+            description: mockBookOutput.description,
+            type: mockBookOutput.type,
+            format: mockBookOutput.format,
+            categories: mockBookOutput.categories,
+            isbn: mockBookOutput.isbn,
+            available: mockBookOutput.available,
+            path: mockBookOutput.path,
+            level: mockBookOutput.level,
+            createdAt: '2026-02-08T12:00:00.000Z',
+            updatedAt: '2026-02-08T12:00:00.000Z',
+          },
+          error: null,
         });
+      });
+
+      it('should have success true in response', async () => {
+        vi.mocked(mockUseCase.execute).mockResolvedValue(mockBookOutput);
+        const request = createMockRequest(validRequestBody);
+        const reply = createMockReply();
+
+        await controller.create(request, reply);
+
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(true);
+        expect(sentResponse.error).toBeNull();
       });
 
       it('should call use case with correct input', async () => {
@@ -169,6 +187,10 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(201);
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(true);
+        expect(sentResponse.data.isbn).toBeNull();
+        expect(sentResponse.data.path).toBeNull();
       });
 
       it('should trim whitespace from string fields', async () => {
@@ -212,7 +234,7 @@ describe('BooksController', () => {
     });
 
     describe('validation errors (400)', () => {
-      it('should return 400 when title is missing', async () => {
+      it('should return 400 with standardized error response when title is missing', async () => {
         const body = { ...validRequestBody };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         delete (body as any).title;
@@ -222,11 +244,12 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
-        expect(reply.send).toHaveBeenCalledWith(
-          expect.objectContaining({
-            error: 'Validation failed',
-            details: expect.arrayContaining([expect.stringContaining('title')]),
-          })
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
+        expect(sentResponse.data).toBeNull();
+        expect(sentResponse.error.message).toBe('Validation failed');
+        expect(sentResponse.error.details).toEqual(
+          expect.arrayContaining([expect.stringContaining('title')])
         );
       });
 
@@ -238,6 +261,8 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
       });
 
       it('should return 400 when title exceeds max length', async () => {
@@ -248,13 +273,11 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
-        expect(reply.send).toHaveBeenCalledWith(
-          expect.objectContaining({
-            error: 'Validation failed',
-            details: expect.arrayContaining([
-              expect.stringContaining('500'),
-            ]),
-          })
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
+        expect(sentResponse.error.message).toBe('Validation failed');
+        expect(sentResponse.error.details).toEqual(
+          expect.arrayContaining([expect.stringContaining('500')])
         );
       });
 
@@ -268,6 +291,8 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
       });
 
       it('should return 400 when authors array is empty', async () => {
@@ -278,6 +303,8 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
       });
 
       it('should return 400 when authors exceeds 10', async () => {
@@ -291,6 +318,8 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
       });
 
       it('should return 400 when description is missing', async () => {
@@ -303,6 +332,8 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
       });
 
       // Note: Type validation removed in TASK-005.
@@ -316,6 +347,8 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
       });
 
       it('should return 400 when level is invalid', async () => {
@@ -326,11 +359,11 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
-        expect(reply.send).toHaveBeenCalledWith(
-          expect.objectContaining({
-            error: 'Validation failed',
-            details: expect.arrayContaining([expect.stringContaining('level')]),
-          })
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
+        expect(sentResponse.error.message).toBe('Validation failed');
+        expect(sentResponse.error.details).toEqual(
+          expect.arrayContaining([expect.stringContaining('level')])
         );
       });
 
@@ -383,11 +416,9 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
-        expect(reply.send).toHaveBeenCalledWith(
-          expect.objectContaining({
-            error: expect.stringContaining('Invalid book level'),
-          })
-        );
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
+        expect(sentResponse.error.message).toContain('Invalid book level');
       });
 
       it('should return 400 when categories is empty', async () => {
@@ -398,6 +429,8 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
       });
 
       it('should return 400 when categories exceeds 10', async () => {
@@ -411,6 +444,8 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
       });
 
       it('should return 400 for invalid ISBN from domain', async () => {
@@ -423,11 +458,9 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
-        expect(reply.send).toHaveBeenCalledWith(
-          expect.objectContaining({
-            error: expect.stringContaining('Invalid ISBN'),
-          })
-        );
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
+        expect(sentResponse.error.message).toContain('Invalid ISBN');
       });
 
       it('should return 400 for invalid book type from domain', async () => {
@@ -440,6 +473,8 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
       });
 
       it('should return 400 for invalid book format from domain', async () => {
@@ -452,6 +487,8 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
       });
 
       it('should return 400 for required field error from domain', async () => {
@@ -464,6 +501,8 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
       });
 
       it('should return 400 for embedding text too long', async () => {
@@ -476,11 +515,13 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(400);
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
       });
     });
 
     describe('duplicate errors (409)', () => {
-      it('should return 409 for duplicate ISBN', async () => {
+      it('should return 409 with standardized error response for duplicate ISBN', async () => {
         vi.mocked(mockUseCase.execute).mockRejectedValue(
           new DuplicateISBNError('9780132350884')
         );
@@ -490,11 +531,10 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(409);
-        expect(reply.send).toHaveBeenCalledWith(
-          expect.objectContaining({
-            error: expect.stringContaining('ISBN'),
-          })
-        );
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
+        expect(sentResponse.data).toBeNull();
+        expect(sentResponse.error.message).toContain('ISBN');
       });
 
       it('should return 409 for duplicate book (triad)', async () => {
@@ -507,16 +547,14 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(409);
-        expect(reply.send).toHaveBeenCalledWith(
-          expect.objectContaining({
-            error: expect.stringContaining('already exists'),
-          })
-        );
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
+        expect(sentResponse.error.message).toContain('already exists');
       });
     });
 
     describe('service unavailable errors (503)', () => {
-      it('should return 503 when embedding service is unavailable', async () => {
+      it('should return 503 with standardized error response when embedding service is unavailable', async () => {
         vi.mocked(mockUseCase.execute).mockRejectedValue(
           new EmbeddingServiceUnavailableError('Connection refused')
         );
@@ -526,16 +564,15 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(503);
-        expect(reply.send).toHaveBeenCalledWith(
-          expect.objectContaining({
-            error: expect.stringContaining('unavailable'),
-          })
-        );
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
+        expect(sentResponse.data).toBeNull();
+        expect(sentResponse.error.message).toContain('unavailable');
       });
     });
 
     describe('unexpected errors (500)', () => {
-      it('should return 500 for unexpected errors', async () => {
+      it('should return 500 with standardized error response for unexpected errors', async () => {
         vi.mocked(mockUseCase.execute).mockRejectedValue(
           new Error('Database connection failed')
         );
@@ -545,11 +582,10 @@ describe('BooksController', () => {
         await controller.create(request, reply);
 
         expect(reply.status).toHaveBeenCalledWith(500);
-        expect(reply.send).toHaveBeenCalledWith(
-          expect.objectContaining({
-            error: 'Database connection failed',
-          })
-        );
+        const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
+        expect(sentResponse.success).toBe(false);
+        expect(sentResponse.data).toBeNull();
+        expect(sentResponse.error.message).toBe('Database connection failed');
       });
     });
   });
