@@ -1,11 +1,11 @@
 /**
  * Script: consolidate-books.ts
  *
- * Consolidates multiple JSON files containing book data from apps/api-cli/data/source/
+ * Consolidates multiple JSON files containing book data from original_data/
  * into a single deduplicated JSON file at docs/db/books.json.
  *
  * Features:
- * - Reads all *.json files from source directory
+ * - Reads all *.json files from original_data/ directory (monorepo root)
  * - Detects duplicates by ISBN (id field in source)
  * - Keeps first occurrence of each ISBN (alphabetical file order)
  * - Transforms structure to match domain model
@@ -33,14 +33,17 @@ type DrizzleDb = ReturnType<typeof drizzle<typeof schema>>;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// In Docker: scripts is at /app/scripts, so __dirname/../ = /app
-// In local: scripts is at apps/api-cli/scripts, so __dirname/../ = apps/api-cli
+// APP_ROOT points to apps/api-cli or /app in Docker
 const APP_ROOT = join(__dirname, '..');
-const SOURCE_DIR = join(APP_ROOT, 'data', 'source');
 
-// Output goes to docs/db relative to app root in Docker (/app/docs/db)
-// or relative to api-cli in local (which needs adjustment for monorepo)
-const OUTPUT_DIR = join(APP_ROOT, 'docs', 'db');
+// In Docker: /app maps to apps/api-cli, and original_data is mounted at /app/original_data
+// In local: original_data is at monorepo root, so we go up from apps/api-cli
+// We use environment variable MONOREPO_ROOT to handle this, defaulting to local structure
+const MONOREPO_ROOT = process.env['MONOREPO_ROOT'] ?? join(APP_ROOT, '..', '..');
+const SOURCE_DIR = join(MONOREPO_ROOT, 'original_data');
+
+// Output goes to docs/db at monorepo root
+const OUTPUT_DIR = join(MONOREPO_ROOT, 'docs', 'db');
 const OUTPUT_FILE = join(OUTPUT_DIR, 'books.json');
 
 /**
