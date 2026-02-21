@@ -191,7 +191,7 @@ export class BookType {
 
     // Validate each levelId as UUID
     const validatedIds = uniqueLevelIds.map((levelId, index) =>
-      validateId(levelId, `levelIds[${index}]`)
+      validateId(levelId, `levelIds[${index}]`),
     );
 
     return Object.freeze(validatedIds);

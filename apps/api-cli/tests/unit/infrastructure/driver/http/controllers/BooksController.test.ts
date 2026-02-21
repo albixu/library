@@ -16,10 +16,10 @@ import {
   DuplicateBookError,
   RequiredFieldError,
   InvalidBookTypeError,
+  LevelTypeMismatchError,
 } from '../../../../../../src/domain/errors/DomainErrors.js';
 import { InvalidISBNError } from '../../../../../../src/domain/value-objects/ISBN.js';
 import { InvalidBookFormatError } from '../../../../../../src/domain/value-objects/BookFormat.js';
-import { InvalidBookLevelError } from '../../../../../../src/domain/value-objects/BookLevel.js';
 import {
   EmbeddingServiceUnavailableError,
   EmbeddingTextTooLongError,
@@ -351,8 +351,10 @@ describe('BooksController', () => {
         expect(sentResponse.success).toBe(false);
       });
 
-      it('should return 400 when level is invalid', async () => {
-        const body = { ...validRequestBody, level: 'expert' };
+      it('should return 400 when level exceeds max length', async () => {
+        // HU-008: Level is now a dynamic string, validated at domain layer for type match.
+        // Schema only validates max length (100 chars).
+        const body = { ...validRequestBody, level: 'a'.repeat(101) };
         const request = createMockRequest(body);
         const reply = createMockReply();
 
@@ -406,19 +408,21 @@ describe('BooksController', () => {
         expect(reply.status).toHaveBeenCalledWith(201);
       });
 
-      it('should return 400 for invalid book level from domain', async () => {
+      it('should return 422 for level type mismatch from domain', async () => {
+        // HU-008: LevelTypeMismatchError is mapped to 422 Unprocessable Entity
+        // (business rule violation: level doesn't belong to book type)
         vi.mocked(mockUseCase.execute).mockRejectedValue(
-          new InvalidBookLevelError('invalid-level')
+          new LevelTypeMismatchError('Intermediate', 'novel')
         );
         const request = createMockRequest(validRequestBody);
         const reply = createMockReply();
 
         await controller.create(request, reply);
 
-        expect(reply.status).toHaveBeenCalledWith(400);
+        expect(reply.status).toHaveBeenCalledWith(422);
         const sentResponse = vi.mocked(reply.send).mock.calls[0][0];
         expect(sentResponse.success).toBe(false);
-        expect(sentResponse.error.message).toContain('Invalid book level');
+        expect(sentResponse.error.message).toContain('Level');
       });
 
       it('should return 400 when categories is empty', async () => {

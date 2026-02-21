@@ -27,7 +27,7 @@ export function isValidUUID(value: string): boolean {
  * @throws InvalidUUIDError if ID is not a valid UUID v4
  * @returns The trimmed, validated ID
  */
-export function validateId(id: string, fieldName: string = 'id'): string {
+export function validateId(id: string, fieldName = 'id'): string {
   if (!id || id.trim().length === 0) {
     throw new RequiredFieldError(fieldName);
   }
