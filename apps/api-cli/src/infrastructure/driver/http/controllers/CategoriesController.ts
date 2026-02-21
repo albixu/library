@@ -14,7 +14,6 @@ import { noopLogger } from '../../../../application/ports/Logger.js';
 import { successResponse } from '../schemas/common.schemas.js';
 import { mapErrorToHttpResponse } from '../errors/HttpErrorMapper.js';
 import { listCategoriesQuerySchema } from '../schemas/category.schemas.js';
-import { ZodError } from 'zod';
 
 /**
  * Dependencies required by CategoriesController
@@ -81,23 +80,6 @@ export class CategoriesController {
 
       return reply.status(200).send(successResponse(categories));
     } catch (error) {
-      // Handle Zod validation errors
-      if (error instanceof ZodError) {
-        const details = error.errors.map(
-          (e) => `${e.path.join('.')}: ${e.message}`,
-        );
-        this.logger.debug('Validation error', { details });
-
-        return reply.status(400).send({
-          success: false,
-          data: null,
-          error: {
-            message: 'Validation failed',
-            details,
-          },
-        });
-      }
-
       const errorResponse = mapErrorToHttpResponse(error);
 
       if (errorResponse.statusCode >= 500) {

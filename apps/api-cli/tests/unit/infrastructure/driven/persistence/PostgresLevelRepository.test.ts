@@ -348,9 +348,7 @@ describe('PostgresLevelRepository', () => {
       const mockSelect = vi.fn().mockReturnValue({
         from: vi.fn().mockReturnValue({
           innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockResolvedValue([mockLevelRecord, mockLevelRecord2]),
-            }),
+            where: vi.fn().mockResolvedValue([mockLevelRecord, mockLevelRecord2]),
           }),
         }),
       });
@@ -367,9 +365,7 @@ describe('PostgresLevelRepository', () => {
       const mockSelect = vi.fn().mockReturnValue({
         from: vi.fn().mockReturnValue({
           innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockResolvedValue([]),
-            }),
+            where: vi.fn().mockResolvedValue([]),
           }),
         }),
       });
@@ -381,8 +377,7 @@ describe('PostgresLevelRepository', () => {
     });
 
     it('should call select with join on typeLevels', async () => {
-      const mockOrderBy = vi.fn().mockResolvedValue([]);
-      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+      const mockWhere = vi.fn().mockResolvedValue([]);
       const mockInnerJoin = vi.fn().mockReturnValue({ where: mockWhere });
       const mockFrom = vi.fn().mockReturnValue({ innerJoin: mockInnerJoin });
       const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
