@@ -17,10 +17,11 @@ import {
   DuplicateBookError,
   InvalidBookTypeError,
   DomainError,
+  CategoryTypeMismatchError,
+  LevelTypeMismatchError,
 } from '../../../../../../src/domain/errors/DomainErrors.js';
 import { InvalidISBNError } from '../../../../../../src/domain/value-objects/ISBN.js';
 import { InvalidBookFormatError } from '../../../../../../src/domain/value-objects/BookFormat.js';
-import { InvalidBookLevelError } from '../../../../../../src/domain/value-objects/BookLevel.js';
 import {
   EmbeddingServiceUnavailableError,
   EmbeddingTextTooLongError,
@@ -167,14 +168,35 @@ describe('HttpErrorMapper', () => {
         expect(response.body.error.message).toContain('invalid-format');
       });
 
-      it('should map InvalidBookLevelError to 400', () => {
-        const error = new InvalidBookLevelError('invalid-level');
+    });
+
+    describe('Type mismatch errors (422)', () => {
+      it('should map CategoryTypeMismatchError to 422', () => {
+        const error = new CategoryTypeMismatchError(
+          'Fiction',
+          'Non-Fiction Book',
+          'Technical Book'
+        );
 
         const response = mapErrorToHttpResponse(error);
 
-        expect(response.statusCode).toBe(400);
+        expect(response.statusCode).toBe(422);
         expect(response.body.success).toBe(false);
-        expect(response.body.error.message).toContain('invalid-level');
+        expect(response.body.data).toBeNull();
+        expect(response.body.error.message).toContain('Fiction');
+        expect(response.body.error.message).toContain('Technical Book');
+      });
+
+      it('should map LevelTypeMismatchError to 422', () => {
+        const error = new LevelTypeMismatchError('Beginner', 'Non-Fiction Book');
+
+        const response = mapErrorToHttpResponse(error);
+
+        expect(response.statusCode).toBe(422);
+        expect(response.body.success).toBe(false);
+        expect(response.body.data).toBeNull();
+        expect(response.body.error.message).toContain('Beginner');
+        expect(response.body.error.message).toContain('Non-Fiction Book');
       });
     });
 
