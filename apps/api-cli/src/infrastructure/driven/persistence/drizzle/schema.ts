@@ -9,31 +9,28 @@
  * - Added 'authors' table with N:M relationship to books
  * - Added 'book_authors' junction table
  * - Modified 'books' table: removed author column, added type_id reference
- */
-
-import { pgTable, pgEnum, uuid, varchar, text, timestamp, boolean, index, uniqueIndex, primaryKey } from 'drizzle-orm/pg-core';
-import { vector } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
-
-/**
- * Book level enum
  *
- * Represents the difficulty level of a technical book.
- * Values are case-sensitive and must match exactly.
+ * Changes in HU-008:
+ * - Removed 'book_level' enum (replaced by 'levels' table)
+ * - Added 'levels' table for dynamic level values
+ * - Added 'type_levels' junction table for N:N relationship between types and levels
+ * - Added 'type_id' to 'categories' table (1:N relationship with types)
+ * - Changed 'books.level' to 'books.level_id' as FK to levels table
  */
-export const bookLevelEnum = pgEnum('book_level', [
-  'Beginner',
-  'Intermediate',
-  'Advanced',
-  'Beginner to Intermediate',
-  'Intermediate to Advanced',
-]);
+
+import { pgTable, uuid, varchar, text, timestamp, boolean, index, uniqueIndex, primaryKey, unique } from 'drizzle-orm/pg-core';
+import { vector } from 'drizzle-orm/pg-core';
+
+// Note: book_level ENUM has been removed in HU-008
+// Levels are now stored in the 'levels' table with dynamic values
 
 /**
  * Types table
  *
  * Stores book type classifications (replaces the old book_type enum).
  * Examples: technical, novel, biography
+ *
+ * HU-008: Types now have N:N relationship with levels via type_levels table
  */
 export const types = pgTable('types', {
   id: uuid('id').primaryKey(),
@@ -42,6 +39,43 @@ export const types = pgTable('types', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   index('types_name_idx').on(table.name),
+]);
+
+/**
+ * Levels table (HU-008)
+ *
+ * Stores difficulty level classifications for books.
+ * Replaces the book_level enum with dynamic values.
+ * Examples: Beginner, Intermediate, Advanced
+ *
+ * Has N:N relationship with types via type_levels junction table.
+ */
+export const levels = pgTable('levels', {
+  id: uuid('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index('levels_name_idx').on(table.name),
+]);
+
+/**
+ * Type-Levels junction table (HU-008)
+ *
+ * Many-to-many relationship between types and levels.
+ * A type can have multiple valid levels, and a level can be valid for multiple types.
+ */
+export const typeLevels = pgTable('type_levels', {
+  typeId: uuid('type_id').notNull().references(() => types.id, { onDelete: 'cascade' }),
+  levelId: uuid('level_id').notNull().references(() => levels.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  // Composite primary key
+  primaryKey({ columns: [table.typeId, table.levelId] }),
+  // Index for querying levels by type
+  index('type_levels_type_idx').on(table.typeId),
+  // Index for querying types by level
+  index('type_levels_level_idx').on(table.levelId),
 ]);
 
 /**
@@ -62,18 +96,26 @@ export const authors = pgTable('authors', {
 /**
  * Categories table
  *
- * Stores book categories with case-insensitive unique names.
- * Names are stored lowercase for consistent duplicate detection.
+ * Stores book categories.
+ *
+ * HU-008 Changes:
+ * - Added type_id FK: each category belongs to exactly one type
+ * - Changed unique constraint: name is unique within a type (not globally)
  */
 export const categories = pgTable('categories', {
   id: uuid('id').primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),
+  typeId: uuid('type_id').notNull().references(() => types.id, { onDelete: 'restrict' }),
   description: varchar('description', { length: 500 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
-  // Functional unique index on lower(name) for true case-insensitive uniqueness
-  uniqueIndex('categories_name_unique_idx').on(sql`lower(${table.name})`),
+  // HU-008: Category name must be unique within a type (not globally)
+  unique('categories_name_type_unique').on(table.name, table.typeId),
+  // Index for filtering categories by type
+  index('categories_type_idx').on(table.typeId),
+  // Index for name lookups
+  index('categories_name_idx').on(table.name),
 ]);
 
 /**
@@ -87,8 +129,8 @@ export const categories = pgTable('categories', {
  * - Added 'type_id' foreign key to types table
  * - Removed 'type' column (was string, now referenced)
  *
- * Changes in HU-003:
- * - Added 'level' column using book_level enum (nullable)
+ * Changes in HU-008:
+ * - Changed 'level' from book_level enum to 'level_id' FK referencing levels table
  */
 export const books = pgTable('books', {
   id: uuid('id').primaryKey(),
@@ -97,7 +139,8 @@ export const books = pgTable('books', {
   description: text('description').notNull(),
   typeId: uuid('type_id').notNull().references(() => types.id),
   format: varchar('format', { length: 50 }).notNull(),
-  level: bookLevelEnum('level'),
+  // HU-008: Level changed from enum to FK referencing levels table
+  levelId: uuid('level_id').references(() => levels.id, { onDelete: 'set null' }),
   available: boolean('available').notNull().default(false),
   path: varchar('path', { length: 1000 }),
   embedding: vector('embedding', { dimensions: 768 }),
@@ -111,8 +154,8 @@ export const books = pgTable('books', {
   // Index for common queries
   index('books_title_idx').on(table.title),
   index('books_type_id_idx').on(table.typeId),
-  // Index for level filtering (nullable)
-  index('books_level_idx').on(table.level),
+  // HU-008: Index for level_id filtering (nullable FK)
+  index('books_level_id_idx').on(table.levelId),
 ]);
 
 /**
@@ -152,6 +195,10 @@ export const bookCategories = pgTable('book_categories', {
  */
 export type TypeInsert = typeof types.$inferInsert;
 export type TypeSelect = typeof types.$inferSelect;
+export type LevelInsert = typeof levels.$inferInsert;
+export type LevelSelect = typeof levels.$inferSelect;
+export type TypeLevelInsert = typeof typeLevels.$inferInsert;
+export type TypeLevelSelect = typeof typeLevels.$inferSelect;
 export type AuthorInsert = typeof authors.$inferInsert;
 export type AuthorSelect = typeof authors.$inferSelect;
 export type CategoryInsert = typeof categories.$inferInsert;
