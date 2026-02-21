@@ -15,13 +15,14 @@ import {
   DuplicateItemError,
 } from '../../../../src/domain/errors/DomainErrors.js';
 import { InvalidBookFormatError } from '../../../../src/domain/value-objects/BookFormat.js';
-import { InvalidBookLevelError } from '../../../../src/domain/value-objects/BookLevel.js';
 import { InvalidISBNError } from '../../../../src/domain/value-objects/ISBN.js';
 
 describe('Book', () => {
   // Valid test data
   const validUUID = '550e8400-e29b-41d4-a716-446655440000';
   const validISBN = '9780132350884';
+  const validLevelId = '660e8400-e29b-41d4-a716-446655440000';
+  const validTypeId = 'bb0e8400-e29b-41d4-a716-446655440001';
 
   // Helper to create Author entities for testing
   const createAuthor = (id: string, name: string): Author => {
@@ -34,8 +35,8 @@ describe('Book', () => {
   };
 
   // Helper to create Category entities for testing
-  const createCategory = (id: string, name: string): Category => {
-    return Category.create({ id, name });
+  const createCategory = (id: string, name: string, typeId: string): Category => {
+    return Category.create({ id, name, typeId });
   };
 
   const robertMartin = createAuthor(
@@ -52,7 +53,7 @@ describe('Book', () => {
   );
 
   const technicalType = createBookType(
-    'bb0e8400-e29b-41d4-a716-446655440001',
+    validTypeId,
     'technical'
   );
   const novelType = createBookType(
@@ -62,15 +63,18 @@ describe('Book', () => {
 
   const programmingCategory = createCategory(
     '110e8400-e29b-41d4-a716-446655440001',
-    'programming'
+    'programming',
+    validTypeId
   );
   const softwareCategory = createCategory(
     '220e8400-e29b-41d4-a716-446655440002',
-    'software engineering'
+    'software engineering',
+    validTypeId
   );
   const bestPracticesCategory = createCategory(
     '330e8400-e29b-41d4-a716-446655440003',
-    'best practices'
+    'best practices',
+    validTypeId
   );
 
   const createValidBookProps = (overrides?: Partial<CreateBookProps>): CreateBookProps => ({
@@ -94,7 +98,7 @@ describe('Book', () => {
     categories: [programmingCategory],
     format: 'pdf',
     isbn: null,
-    level: null,
+    levelId: null,
     description: 'A handbook of agile software craftsmanship',
     available: false,
     path: null,
@@ -117,6 +121,7 @@ describe('Book', () => {
       expect(book.categories[0].name).toBe('programming');
       expect(book.format.value).toBe('pdf');
       expect(book.isbn).toBeNull();
+      expect(book.levelId).toBeNull();
       expect(book.description).toBe('A handbook of agile software craftsmanship');
       expect(book.available).toBe(false);
       expect(book.path).toBeNull();
@@ -125,6 +130,7 @@ describe('Book', () => {
     it('should create a Book with all optional fields', () => {
       const props = createValidBookProps({
         isbn: validISBN,
+        levelId: validLevelId,
         description: 'A handbook of agile software craftsmanship',
         available: true,
         path: '/books/clean-code.pdf',
@@ -133,37 +139,28 @@ describe('Book', () => {
       const book = Book.create(props);
 
       expect(book.isbn?.value).toBe(validISBN);
+      expect(book.levelId).toBe(validLevelId);
       expect(book.description).toBe('A handbook of agile software craftsmanship');
       expect(book.available).toBe(true);
       expect(book.path).toBe('/books/clean-code.pdf');
     });
 
-    it('should create a Book with level', () => {
+    it('should create a Book with levelId', () => {
       const props = createValidBookProps({
-        level: 'Beginner',
+        levelId: validLevelId,
       });
 
       const book = Book.create(props);
 
-      expect(book.level?.value).toBe('Beginner');
+      expect(book.levelId).toBe(validLevelId);
     });
 
-    it('should create a Book with compound level', () => {
-      const props = createValidBookProps({
-        level: 'Beginner to Intermediate',
-      });
-
-      const book = Book.create(props);
-
-      expect(book.level?.value).toBe('Beginner to Intermediate');
-    });
-
-    it('should create a Book with null level when not provided', () => {
+    it('should create a Book with null levelId when not provided', () => {
       const props = createValidBookProps();
 
       const book = Book.create(props);
 
-      expect(book.level).toBeNull();
+      expect(book.levelId).toBeNull();
     });
 
     it('should create a Book with multiple authors', () => {
@@ -339,7 +336,8 @@ describe('Book', () => {
           const tooManyCategories = Array.from({ length: 11 }, (_, i) =>
             createCategory(
               `550e8400-e29b-41d4-a716-4466554400${i.toString().padStart(2, '0')}`,
-              `category${i}`
+              `category${i}`,
+              validTypeId
             )
           );
           expect(() =>
@@ -350,7 +348,8 @@ describe('Book', () => {
         it('should throw DuplicateItemError for duplicate category IDs', () => {
           const duplicateCategory = createCategory(
             '110e8400-e29b-41d4-a716-446655440001', // Same ID as programmingCategory
-            'different name'
+            'different name',
+            validTypeId
           );
           expect(() =>
             Book.create(createValidBookProps({
@@ -363,7 +362,8 @@ describe('Book', () => {
           const tenCategories = Array.from({ length: 10 }, (_, i) =>
             createCategory(
               `550e8400-e29b-41d4-a716-4466554400${i.toString().padStart(2, '0')}`,
-              `category${i}`
+              `category${i}`,
+              validTypeId
             )
           );
           const book = Book.create(createValidBookProps({ categories: tenCategories }));
@@ -392,32 +392,37 @@ describe('Book', () => {
         });
       });
 
-      describe('level', () => {
-        it('should throw InvalidBookLevelError for invalid level', () => {
+      describe('levelId', () => {
+        it('should throw RequiredFieldError for invalid levelId (not UUID)', () => {
           expect(() =>
-            Book.create(createValidBookProps({ level: 'Expert' }))
-          ).toThrow(InvalidBookLevelError);
+            Book.create(createValidBookProps({ levelId: 'not-a-uuid' }))
+          ).toThrow(RequiredFieldError);
         });
 
-        it('should throw InvalidBookLevelError for lowercase level', () => {
+        it('should treat empty levelId as null', () => {
+          const book = Book.create(createValidBookProps({ levelId: '' }));
+          expect(book.levelId).toBeNull();
+        });
+
+        it('should throw RequiredFieldError for whitespace-only levelId', () => {
           expect(() =>
-            Book.create(createValidBookProps({ level: 'beginner' }))
-          ).toThrow(InvalidBookLevelError);
+            Book.create(createValidBookProps({ levelId: '   ' }))
+          ).toThrow(RequiredFieldError);
         });
 
-        it('should accept null level', () => {
-          const book = Book.create(createValidBookProps({ level: null }));
-          expect(book.level).toBeNull();
+        it('should accept null levelId', () => {
+          const book = Book.create(createValidBookProps({ levelId: null }));
+          expect(book.levelId).toBeNull();
         });
 
-        it('should accept valid level', () => {
-          const book = Book.create(createValidBookProps({ level: 'Advanced' }));
-          expect(book.level?.value).toBe('Advanced');
+        it('should accept valid UUID levelId', () => {
+          const book = Book.create(createValidBookProps({ levelId: validLevelId }));
+          expect(book.levelId).toBe(validLevelId);
         });
 
-        it('should accept compound levels', () => {
-          const book = Book.create(createValidBookProps({ level: 'Intermediate to Advanced' }));
-          expect(book.level?.value).toBe('Intermediate to Advanced');
+        it('should trim whitespace from levelId', () => {
+          const book = Book.create(createValidBookProps({ levelId: `  ${validLevelId}  ` }));
+          expect(book.levelId).toBe(validLevelId);
         });
       });
 
@@ -501,35 +506,26 @@ describe('Book', () => {
       expect(book.authors[0].name).toBe('Robert C. Martin');
       expect(book.type.name).toBe('technical');
       expect(book.categories).toHaveLength(1);
-      expect(book.level).toBeNull();
+      expect(book.levelId).toBeNull();
       expect(book.available).toBe(false);
       expect(book.path).toBeNull();
     });
 
-    it('should reconstruct a Book with level', () => {
+    it('should reconstruct a Book with levelId', () => {
       const props = createValidPersistenceProps({
-        level: 'Intermediate',
+        levelId: validLevelId,
       });
 
       const book = Book.fromPersistence(props);
 
-      expect(book.level?.value).toBe('Intermediate');
-    });
-
-    it('should reconstruct a Book with compound level', () => {
-      const props = createValidPersistenceProps({
-        level: 'Beginner to Intermediate',
-      });
-
-      const book = Book.fromPersistence(props);
-
-      expect(book.level?.value).toBe('Beginner to Intermediate');
+      expect(book.levelId).toBe(validLevelId);
     });
 
     it('should reconstruct a Book with all fields', () => {
+      const anotherLevelId = '770e8400-e29b-41d4-a716-446655440000';
       const props = createValidPersistenceProps({
         isbn: validISBN,
-        level: 'Advanced',
+        levelId: anotherLevelId,
         description: 'A great book',
         available: true,
         path: '/books/clean-code.pdf',
@@ -540,7 +536,7 @@ describe('Book', () => {
       const book = Book.fromPersistence(props);
 
       expect(book.isbn?.value).toBe(validISBN);
-      expect(book.level?.value).toBe('Advanced');
+      expect(book.levelId).toBe(anotherLevelId);
       expect(book.description).toBe('A great book');
       expect(book.available).toBe(true);
       expect(book.path).toBe('/books/clean-code.pdf');
@@ -659,16 +655,16 @@ describe('Book', () => {
       expect(updated.type.name).toBe(book.type.name);
       expect(updated.categories).toHaveLength(book.categories.length);
       expect(updated.format.value).toBe(book.format.value);
-      expect(updated.level).toBe(book.level);
+      expect(updated.levelId).toBe(book.levelId);
       expect(updated.available).toBe(book.available);
       expect(updated.path).toBe(book.path);
     });
 
-    it('should preserve level on update (level is not editable)', () => {
-      const bookWithLevel = Book.create(createValidBookProps({ level: 'Beginner' }));
+    it('should preserve levelId on update (levelId is not editable)', () => {
+      const bookWithLevel = Book.create(createValidBookProps({ levelId: validLevelId }));
       const updated = bookWithLevel.update({ title: 'New Title' });
 
-      expect(updated.level?.value).toBe('Beginner');
+      expect(updated.levelId).toBe(validLevelId);
     });
 
     it('should preserve id and createdAt', () => {
@@ -769,6 +765,15 @@ describe('Book', () => {
 
       expect(book1.equals(book2)).toBe(false);
     });
+
+    it('should return true for Books with same id but different levelIds', () => {
+      const anotherLevelId = '770e8400-e29b-41d4-a716-446655440000';
+      const book1 = Book.create(createValidBookProps({ levelId: validLevelId }));
+      const book2 = Book.create(createValidBookProps({ levelId: anotherLevelId }));
+
+      // Entities are compared by ID, not by attributes
+      expect(book1.equals(book2)).toBe(true);
+    });
   });
 
   describe('immutability', () => {
@@ -782,6 +787,14 @@ describe('Book', () => {
       expect(() => {
         // @ts-expect-error - Testing runtime immutability
         book.title = 'New Title';
+      }).toThrow();
+    });
+
+    it('should not allow levelId modification', () => {
+      const book = Book.create(createValidBookProps({ levelId: validLevelId }));
+      expect(() => {
+        // @ts-expect-error - Testing runtime immutability
+        book.levelId = '770e8400-e29b-41d4-a716-446655440000';
       }).toThrow();
     });
   });
