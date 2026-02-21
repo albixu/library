@@ -18,3 +18,8 @@ export {
   ListCategoriesUseCase,
   type CategoryListItem,
 } from './ListCategoriesUseCase.js';
+
+export {
+  ListBookLevelsUseCase,
+  type BookLevelListItem,
+} from './ListBookLevelsUseCase.js';

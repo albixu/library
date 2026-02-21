@@ -164,4 +164,45 @@ export class PostgresLevelRepository implements LevelRepository {
     const result = await this.db.select({ count: count() }).from(levels);
     return Number(result[0]?.count ?? 0);
   }
+
+  /**
+   * Retrieves all levels sorted alphabetically by name (A-Z)
+   *
+   * Used by list endpoints to return levels in a consistent order.
+   *
+   * @returns Promise resolving to an array of all Levels sorted by name
+   */
+  async findAllSorted(): Promise<Level[]> {
+    const results = await this.db
+      .select()
+      .from(levels)
+      .orderBy(asc(levels.name));
+
+    return LevelMapper.toDomainList(results);
+  }
+
+  /**
+   * Retrieves levels associated with a type, sorted alphabetically by name (A-Z)
+   *
+   * Uses the type_levels junction table to find associated levels.
+   * Used by list endpoints to return filtered levels in a consistent order.
+   *
+   * @param typeId - The type UUID to filter by
+   * @returns Promise resolving to an array of Levels for the given type, sorted by name
+   */
+  async findByTypeIdSorted(typeId: string): Promise<Level[]> {
+    const results = await this.db
+      .select({
+        id: levels.id,
+        name: levels.name,
+        createdAt: levels.createdAt,
+        updatedAt: levels.updatedAt,
+      })
+      .from(levels)
+      .innerJoin(typeLevels, eq(levels.id, typeLevels.levelId))
+      .where(eq(typeLevels.typeId, typeId))
+      .orderBy(asc(levels.name));
+
+    return LevelMapper.toDomainList(results);
+  }
 }

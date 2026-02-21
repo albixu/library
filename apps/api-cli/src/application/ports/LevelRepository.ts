@@ -8,6 +8,8 @@
  * HU-008: Levels are now dynamic entities (replacing the BookLevel enum).
  * They can be created on-demand when processing books and are associated
  * with types through the type_levels join table.
+ *
+ * HU-010: Added sorted retrieval methods for list endpoints.
  */
 
 import type { Level } from '../../domain/entities/Level.js';
@@ -93,4 +95,24 @@ export interface LevelRepository {
    * @returns Promise resolving to the total count
    */
   count(): Promise<number>;
+
+  /**
+   * Retrieves all levels sorted alphabetically by name (A-Z)
+   *
+   * Used by list endpoints to return levels in a consistent order.
+   *
+   * @returns Promise resolving to an array of all Levels sorted by name
+   */
+  findAllSorted(): Promise<Level[]>;
+
+  /**
+   * Retrieves levels associated with a type, sorted alphabetically by name (A-Z)
+   *
+   * Uses the type_levels junction table to find associated levels.
+   * Used by list endpoints to return filtered levels in a consistent order.
+   *
+   * @param typeId - The type UUID to filter by
+   * @returns Promise resolving to an array of Levels for the given type, sorted by name
+   */
+  findByTypeIdSorted(typeId: string): Promise<Level[]>;
 }

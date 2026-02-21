@@ -5,6 +5,7 @@
  * Routes are registered as a Fastify plugin for modularity.
  *
  * Part of HU-009: List Categories Endpoint
+ * Updated in HU-010: Renamed from /categories to /book-categories for consistency
  */
 
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
@@ -33,11 +34,11 @@ export async function categoriesRoutes(
   const { controller } = options;
 
   /**
-   * GET /api/categories
+   * GET /api/book-categories
    * Retrieves all categories sorted alphabetically
    * Optional query param: ?type=<typeName> for filtering by type
    */
-  fastify.get('/categories', async (request, reply) => {
+  fastify.get('/book-categories', async (request, reply) => {
     return controller.list(request, reply);
   });
 }

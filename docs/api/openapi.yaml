@@ -18,11 +18,13 @@ servers:
 
 tags:
   - name: Books
-    description: Operaciones de gestión de libros
+    description: "Operaciones de gestión de libros"
   - name: Book Types
-    description: Operaciones de consulta de tipos de libro
+    description: "Operaciones de consulta de tipos de libro"
+  - name: Book Levels
+    description: "Operaciones de consulta de niveles de dificultad de libros"
   - name: Categories
-    description: Operaciones de consulta de categorías
+    description: "Operaciones de consulta de categorías (endpoint: /book-categories)"
 
 paths:
   /books:
@@ -257,7 +259,7 @@ paths:
                 error:
                   message: "Database connection failed"
 
-  /categories:
+  /book-categories:
     get:
       tags:
         - Categories
@@ -334,6 +336,95 @@ paths:
                     error: null
                 empty_result:
                   summary: Sin categorías (tipo inexistente)
+                  value:
+                    success: true
+                    data: []
+                    error: null
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Database connection failed"
+
+  /book-levels:
+    get:
+      tags:
+        - Book Levels
+      summary: Listar niveles de dificultad de libros
+      description: |
+        Devuelve todos los niveles de dificultad disponibles, ordenados alfabéticamente por nombre.
+        Opcionalmente se puede filtrar por tipo de libro.
+        
+        ## Uso
+        
+        Este endpoint está diseñado para poblar dropdowns y selects en el frontend.
+        Cada nivel incluye solo su `id` y `name` (sin timestamps).
+        
+        ## Filtrado por Tipo
+        
+        Si se proporciona el parámetro `type`, solo se devuelven los niveles que están
+        asociados a ese tipo de libro. El filtro es case-insensitive.
+        
+        Si el tipo no existe, se devuelve un array vacío (no error).
+        
+        ## Ordenamiento
+        
+        Los niveles se devuelven ordenados alfabéticamente (A-Z) por el campo `name`.
+      operationId: listBookLevels
+      parameters:
+        - name: type
+          in: query
+          required: false
+          description: |
+            Nombre del tipo de libro para filtrar niveles (case-insensitive).
+            Si se omite, devuelve todos los niveles.
+          schema:
+            type: string
+            example: "technical"
+      responses:
+        '200':
+          description: Lista de niveles obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookLevelListResponse'
+              examples:
+                all_levels:
+                  summary: Todos los niveles
+                  value:
+                    success: true
+                    data:
+                      - id: "550e8400-e29b-41d4-a716-446655440001"
+                        name: "Advanced"
+                      - id: "550e8400-e29b-41d4-a716-446655440002"
+                        name: "Beginner"
+                      - id: "550e8400-e29b-41d4-a716-446655440003"
+                        name: "Beginner to Intermediate"
+                      - id: "550e8400-e29b-41d4-a716-446655440004"
+                        name: "Intermediate"
+                      - id: "550e8400-e29b-41d4-a716-446655440005"
+                        name: "Intermediate to Advanced"
+                    error: null
+                filtered_by_type:
+                  summary: Niveles filtrados por tipo
+                  value:
+                    success: true
+                    data:
+                      - id: "550e8400-e29b-41d4-a716-446655440001"
+                        name: "Advanced"
+                      - id: "550e8400-e29b-41d4-a716-446655440002"
+                        name: "Beginner"
+                      - id: "550e8400-e29b-41d4-a716-446655440004"
+                        name: "Intermediate"
+                    error: null
+                empty_result:
+                  summary: Sin niveles (tipo inexistente)
                   value:
                     success: true
                     data: []
@@ -676,3 +767,30 @@ components:
               items:
                 $ref: '#/components/schemas/CategoryListItem'
               description: Lista de categorías ordenadas alfabéticamente
+
+    BookLevelListItem:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único del nivel de dificultad (UUID v4)
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        name:
+          type: string
+          description: Nombre del nivel de dificultad
+          example: "Intermediate"
+
+    BookLevelListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiSuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/BookLevelListItem'
+              description: Lista de niveles de dificultad ordenados alfabéticamente
