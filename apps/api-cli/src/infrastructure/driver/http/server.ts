@@ -12,12 +12,15 @@ import { noopLogger } from '../../../application/ports/Logger.js';
 import { BooksController } from './controllers/BooksController.js';
 import { BookTypesController } from './controllers/BookTypesController.js';
 import { CategoriesController } from './controllers/CategoriesController.js';
+import { BookLevelsController } from './controllers/BookLevelsController.js';
 import { booksRoutes } from './routes/books.routes.js';
 import { bookTypesRoutes } from './routes/book-types.routes.js';
 import { categoriesRoutes } from './routes/categories.routes.js';
+import { bookLevelsRoutes } from './routes/book-levels.routes.js';
 import type { CreateBookUseCase } from '../../../application/use-cases/CreateBookUseCase.js';
 import type { ListBookTypesUseCase } from '../../../application/use-cases/ListBookTypesUseCase.js';
 import type { ListCategoriesUseCase } from '../../../application/use-cases/ListCategoriesUseCase.js';
+import type { ListBookLevelsUseCase } from '../../../application/use-cases/ListBookLevelsUseCase.js';
 
 /**
  * Dependencies required by the server
@@ -26,6 +29,7 @@ export interface ServerDeps {
   createBookUseCase: CreateBookUseCase;
   listBookTypesUseCase: ListBookTypesUseCase;
   listCategoriesUseCase: ListCategoriesUseCase;
+  listBookLevelsUseCase: ListBookLevelsUseCase;
   logger?: Logger;
 }
 
@@ -48,7 +52,7 @@ export async function createServer(
   deps: ServerDeps,
   options: ServerOptions = {},
 ): Promise<FastifyInstance> {
-  const { createBookUseCase, listBookTypesUseCase, listCategoriesUseCase, logger = noopLogger } = deps;
+  const { createBookUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, logger = noopLogger } = deps;
   const { prefix = '/api' } = options;
 
   const serverLogger = logger.child({ name: 'FastifyServer' });
@@ -74,6 +78,11 @@ export async function createServer(
     logger,
   });
 
+  const bookLevelsController = new BookLevelsController({
+    listBookLevelsUseCase,
+    logger,
+  });
+
   // Register routes with prefix
   await fastify.register(booksRoutes, {
     prefix,
@@ -90,6 +99,11 @@ export async function createServer(
     controller: categoriesController,
   });
 
+  await fastify.register(bookLevelsRoutes, {
+    prefix,
+    controller: bookLevelsController,
+  });
+
   // Log server ready
   fastify.addHook('onReady', async () => {
     serverLogger.info('Server routes registered', {
@@ -98,6 +112,7 @@ export async function createServer(
         { method: 'POST', path: `${prefix}/books` },
         { method: 'GET', path: `${prefix}/book-types` },
         { method: 'GET', path: `${prefix}/book-categories` },
+        { method: 'GET', path: `${prefix}/book-levels` },
       ],
     });
   });
