@@ -14,15 +14,15 @@
  * - Database schema uses type_id instead of type string
  * - author/normalized_author columns removed from books table
  *
- * HU-003 CHANGES:
- * - Added `level` field mapping (book_level enum, nullable)
+ * HU-008 CHANGES:
+ * - Changed `level` (BookLevel enum) to `levelId` (UUID FK to levels table, nullable)
+ * - Level is now a reference to the Level entity, not an inline enum
  */
 
 import { Book, type BookPersistenceProps } from '../../../../domain/entities/Book.js';
 import type { Author } from '../../../../domain/entities/Author.js';
 import type { BookType } from '../../../../domain/entities/BookType.js';
 import type { BookFormat } from '../../../../domain/value-objects/BookFormat.js';
-import type { BookLevel } from '../../../../domain/value-objects/BookLevel.js';
 import type { Category } from '../../../../domain/entities/Category.js';
 import type { BookSelect, BookInsert } from '../drizzle/schema.js';
 
@@ -72,7 +72,7 @@ export const BookMapper = {
       description: record.description,
       type: type,
       format: record.format as BookFormat['value'],
-      level: record.level as BookLevel['value'] | null,
+      levelId: record.levelId, // HU-008: UUID FK to levels table (nullable)
       categories: categories,
       available: record.available,
       path: record.path,
@@ -101,7 +101,7 @@ export const BookMapper = {
       description: book.description,
       typeId: book.type.id, // FK to types table
       format: book.format.value,
-      level: book.level?.value ?? null,
+      levelId: book.levelId, // HU-008: UUID FK to levels table (nullable)
       available: book.available,
       path: book.path,
       embedding: embedding,
