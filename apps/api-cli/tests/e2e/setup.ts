@@ -23,6 +23,7 @@ import { PostgresBookRepository } from '../../src/infrastructure/driven/persiste
 import { PostgresCategoryRepository } from '../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { PostgresTypeRepository } from '../../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
 import { PostgresAuthorRepository } from '../../src/infrastructure/driven/persistence/PostgresAuthorRepository.js';
+import { PostgresLevelRepository } from '../../src/infrastructure/driven/persistence/PostgresLevelRepository.js';
 import { noopLogger } from '../../src/application/ports/Logger.js';
 
 const { Pool } = pg;
@@ -110,12 +111,16 @@ export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
    
   const authorRepository = new PostgresAuthorRepository(db as any);
 
+  const levelRepository = new PostgresLevelRepository(db as any);
+
   // Create use cases
+  // HU-008: CreateBookUseCase now requires levelRepository
   const createBookUseCase = new CreateBookUseCase({
     bookRepository,
     categoryRepository,
     typeRepository,
     authorRepository,
+    levelRepository,
     embeddingService,
     logger: noopLogger,
   });

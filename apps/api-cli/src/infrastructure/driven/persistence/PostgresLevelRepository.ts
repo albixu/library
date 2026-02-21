@@ -7,7 +7,7 @@
  * relationship with Types through the type_levels junction table.
  */
 
-import { count, eq, and, asc } from 'drizzle-orm';
+import { count, eq, asc } from 'drizzle-orm';
 import type { LevelRepository } from '../../../application/ports/LevelRepository.js';
 import type { Level } from '../../../domain/entities/Level.js';
 import { levels, typeLevels } from './drizzle/schema.js';

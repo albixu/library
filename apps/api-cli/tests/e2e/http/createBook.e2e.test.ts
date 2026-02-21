@@ -190,6 +190,67 @@ describe('POST /api/books (E2E)', () => {
       expect(categoryNames).toContain('software engineering');
       expect(categoryNames).toContain('best practices');
     });
+
+    it('should create book with level and return level name in response', async () => {
+      const bookData = {
+        title: 'Book With Level',
+        authors: ['Level Author'],
+        description: 'A book with a specified level.',
+        type: 'technical',
+        format: 'pdf',
+        categories: ['Programming'],
+        isbn: generateUniqueISBN(),
+        level: 'Intermediate',
+      };
+
+      const response = await fetch(`${E2E_BASE_URL}/api/books`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookData),
+      });
+
+      expect(response.status).toBe(201);
+
+      const body = await response.json();
+
+      // Verify standardized response structure
+      expect(body).toHaveProperty('success', true);
+      expect(body).toHaveProperty('data');
+      expect(body).toHaveProperty('error', null);
+
+      // HU-008: Level name should be returned in response
+      expect(body.data.level).toBe('Intermediate');
+    });
+
+    it('should create book without level (null)', async () => {
+      const bookData = {
+        title: 'Book Without Level',
+        authors: ['Test Author'],
+        description: 'A book without a level specified.',
+        type: 'novel', // novels don't typically have levels
+        format: 'epub',
+        categories: ['Fiction'],
+        isbn: generateUniqueISBN(),
+      };
+
+      const response = await fetch(`${E2E_BASE_URL}/api/books`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookData),
+      });
+
+      expect(response.status).toBe(201);
+
+      const body = await response.json();
+
+      // Verify standardized response structure
+      expect(body).toHaveProperty('success', true);
+      expect(body).toHaveProperty('data');
+      expect(body).toHaveProperty('error', null);
+
+      // Level should be null when not provided
+      expect(body.data.level).toBeNull();
+    });
   });
 
   describe('Validation Errors (400)', () => {
