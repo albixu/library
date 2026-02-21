@@ -1,5 +1,5 @@
 /**
- * E2E Tests: GET /api/categories
+ * E2E Tests: GET /api/book-categories
  *
  * End-to-end tests for the categories listing API endpoint.
  * These tests validate the complete flow from HTTP request to database query.
@@ -13,6 +13,7 @@
  * - Response format verification (id, name, typeId, description)
  *
  * Part of HU-009: List Categories Endpoint
+ * Updated in HU-010: Renamed from /categories to /book-categories
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
@@ -20,7 +21,7 @@ import { createE2EContext, E2E_BASE_URL } from '../setup.js';
 import { randomUUID } from 'crypto';
 import * as schema from '../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 
-describe('GET /api/categories (E2E)', () => {
+describe('GET /api/book-categories (E2E)', () => {
   const context = createE2EContext();
 
   // Test data - we'll store the type ID to use in tests
@@ -63,7 +64,7 @@ describe('GET /api/categories (E2E)', () => {
 
   describe('Successful Listing without Filter', () => {
     it('should return 200 with standardized success response', async () => {
-      const response = await fetch(`${E2E_BASE_URL}/api/categories`, {
+      const response = await fetch(`${E2E_BASE_URL}/api/book-categories`, {
         method: 'GET',
         headers: { Accept: 'application/json' },
       });
@@ -82,7 +83,7 @@ describe('GET /api/categories (E2E)', () => {
     });
 
     it('should return empty array when no categories exist', async () => {
-      const response = await fetch(`${E2E_BASE_URL}/api/categories`);
+      const response = await fetch(`${E2E_BASE_URL}/api/book-categories`);
 
       expect(response.status).toBe(200);
 
@@ -110,7 +111,7 @@ describe('GET /api/categories (E2E)', () => {
         },
       ]);
 
-      const response = await fetch(`${E2E_BASE_URL}/api/categories`);
+      const response = await fetch(`${E2E_BASE_URL}/api/book-categories`);
 
       expect(response.status).toBe(200);
 
@@ -139,7 +140,7 @@ describe('GET /api/categories (E2E)', () => {
         { id: randomUUID(), name: 'Middle Topics', typeId: technicalTypeId },
       ]);
 
-      const response = await fetch(`${E2E_BASE_URL}/api/categories`);
+      const response = await fetch(`${E2E_BASE_URL}/api/book-categories`);
 
       expect(response.status).toBe(200);
 
@@ -162,7 +163,7 @@ describe('GET /api/categories (E2E)', () => {
         description: 'Test description',
       });
 
-      const response = await fetch(`${E2E_BASE_URL}/api/categories`);
+      const response = await fetch(`${E2E_BASE_URL}/api/book-categories`);
 
       expect(response.status).toBe(200);
 
@@ -189,7 +190,7 @@ describe('GET /api/categories (E2E)', () => {
         typeId: technicalTypeId,
       });
 
-      const response = await fetch(`${E2E_BASE_URL}/api/categories`);
+      const response = await fetch(`${E2E_BASE_URL}/api/book-categories`);
 
       expect(response.status).toBe(200);
 
@@ -232,7 +233,7 @@ describe('GET /api/categories (E2E)', () => {
 
     it('should filter categories by type name', async () => {
       const response = await fetch(
-        `${E2E_BASE_URL}/api/categories?type=technical`,
+        `${E2E_BASE_URL}/api/book-categories?type=technical`,
       );
 
       expect(response.status).toBe(200);
@@ -254,7 +255,7 @@ describe('GET /api/categories (E2E)', () => {
     });
 
     it('should filter categories by novel type', async () => {
-      const response = await fetch(`${E2E_BASE_URL}/api/categories?type=novel`);
+      const response = await fetch(`${E2E_BASE_URL}/api/book-categories?type=novel`);
 
       expect(response.status).toBe(200);
 
@@ -269,7 +270,7 @@ describe('GET /api/categories (E2E)', () => {
     it('should be case-insensitive for type filter', async () => {
       // Test uppercase
       const responseUpper = await fetch(
-        `${E2E_BASE_URL}/api/categories?type=TECHNICAL`,
+        `${E2E_BASE_URL}/api/book-categories?type=TECHNICAL`,
       );
       expect(responseUpper.status).toBe(200);
       const bodyUpper = await responseUpper.json();
@@ -277,7 +278,7 @@ describe('GET /api/categories (E2E)', () => {
 
       // Test mixed case
       const responseMixed = await fetch(
-        `${E2E_BASE_URL}/api/categories?type=Technical`,
+        `${E2E_BASE_URL}/api/book-categories?type=Technical`,
       );
       expect(responseMixed.status).toBe(200);
       const bodyMixed = await responseMixed.json();
@@ -286,7 +287,7 @@ describe('GET /api/categories (E2E)', () => {
 
     it('should return empty array for non-existent type', async () => {
       const response = await fetch(
-        `${E2E_BASE_URL}/api/categories?type=nonexistent`,
+        `${E2E_BASE_URL}/api/book-categories?type=nonexistent`,
       );
 
       expect(response.status).toBe(200);
@@ -300,7 +301,7 @@ describe('GET /api/categories (E2E)', () => {
 
     it('should still sort results alphabetically when filtered', async () => {
       const response = await fetch(
-        `${E2E_BASE_URL}/api/categories?type=technical`,
+        `${E2E_BASE_URL}/api/book-categories?type=technical`,
       );
 
       expect(response.status).toBe(200);
@@ -315,7 +316,7 @@ describe('GET /api/categories (E2E)', () => {
 
   describe('Response Headers', () => {
     it('should return JSON content type', async () => {
-      const response = await fetch(`${E2E_BASE_URL}/api/categories`);
+      const response = await fetch(`${E2E_BASE_URL}/api/book-categories`);
 
       expect(response.status).toBe(200);
       expect(response.headers.get('content-type')).toContain('application/json');
@@ -333,7 +334,7 @@ describe('GET /api/categories (E2E)', () => {
       });
 
       // Empty type parameter should return all categories
-      const response = await fetch(`${E2E_BASE_URL}/api/categories?type=`);
+      const response = await fetch(`${E2E_BASE_URL}/api/book-categories?type=`);
 
       expect(response.status).toBe(200);
 
@@ -345,7 +346,7 @@ describe('GET /api/categories (E2E)', () => {
 
     it('should handle special characters in type parameter', async () => {
       const response = await fetch(
-        `${E2E_BASE_URL}/api/categories?type=test%20type`,
+        `${E2E_BASE_URL}/api/book-categories?type=test%20type`,
       );
 
       expect(response.status).toBe(200);
@@ -366,7 +367,7 @@ describe('GET /api/categories (E2E)', () => {
         description: null,
       });
 
-      const response = await fetch(`${E2E_BASE_URL}/api/categories`);
+      const response = await fetch(`${E2E_BASE_URL}/api/book-categories`);
 
       expect(response.status).toBe(200);
 

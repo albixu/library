@@ -22,7 +22,7 @@ tags:
   - name: Book Types
     description: Operaciones de consulta de tipos de libro
   - name: Categories
-    description: Operaciones de consulta de categorías
+    description: Operaciones de consulta de categorías (endpoint: /book-categories)
 
 paths:
   /books:
@@ -257,7 +257,7 @@ paths:
                 error:
                   message: "Database connection failed"
 
-  /categories:
+  /book-categories:
     get:
       tags:
         - Categories
