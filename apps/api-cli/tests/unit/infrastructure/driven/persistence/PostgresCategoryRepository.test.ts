@@ -642,4 +642,99 @@ describe('PostgresCategoryRepository', () => {
       expect(result).toBe(0);
     });
   });
+
+  describe('findAllSorted', () => {
+    it('should return all categories sorted by name', async () => {
+      // Return in sorted order (A-Z) to match expected behavior
+      mockDb.query.categories.findMany.mockResolvedValue([
+        mockCategoryRecord,       // programming
+        mockCategoryRecord2,      // software engineering
+      ]);
+
+      const result = await repository.findAllSorted();
+
+      expect(result).toHaveLength(2);
+      expect(result[0].name).toBe('programming');
+      expect(result[1].name).toBe('software engineering');
+    });
+
+    it('should return empty array when no categories', async () => {
+      mockDb.query.categories.findMany.mockResolvedValue([]);
+
+      const result = await repository.findAllSorted();
+
+      expect(result).toEqual([]);
+    });
+
+    it('should include typeId in all returned categories', async () => {
+      mockDb.query.categories.findMany.mockResolvedValue([
+        mockCategoryRecord,
+        mockCategoryRecordDifferentType,
+      ]);
+
+      const result = await repository.findAllSorted();
+
+      expect(result).toHaveLength(2);
+      expect(result[0].typeId).toBe(TYPE_ID_BOOK);
+      expect(result[1].typeId).toBe(TYPE_ID_COURSE);
+    });
+
+    it('should call findMany with orderBy parameter', async () => {
+      mockDb.query.categories.findMany.mockResolvedValue([]);
+
+      await repository.findAllSorted();
+
+      expect(mockDb.query.categories.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: expect.anything(),
+        }),
+      );
+    });
+  });
+
+  describe('findByTypeIdSorted', () => {
+    it('should return categories for a specific type sorted by name', async () => {
+      mockDb.query.categories.findMany.mockResolvedValue([
+        mockCategoryRecord,       // programming
+        mockCategoryRecord2,      // software engineering
+      ]);
+
+      const result = await repository.findByTypeIdSorted(TYPE_ID_BOOK);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].name).toBe('programming');
+      expect(result[1].name).toBe('software engineering');
+      expect(result.every(c => c.typeId === TYPE_ID_BOOK)).toBe(true);
+    });
+
+    it('should return empty array when type has no categories', async () => {
+      mockDb.query.categories.findMany.mockResolvedValue([]);
+
+      const result = await repository.findByTypeIdSorted('type-with-no-categories');
+
+      expect(result).toEqual([]);
+    });
+
+    it('should only return categories for the specified type', async () => {
+      mockDb.query.categories.findMany.mockResolvedValue([mockCategoryRecordDifferentType]);
+
+      const result = await repository.findByTypeIdSorted(TYPE_ID_COURSE);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].typeId).toBe(TYPE_ID_COURSE);
+    });
+
+    it('should call findMany with where and orderBy parameters', async () => {
+      mockDb.query.categories.findMany.mockResolvedValue([]);
+
+      await repository.findByTypeIdSorted(TYPE_ID_BOOK);
+
+      expect(mockDb.query.categories.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.anything(),
+          orderBy: expect.anything(),
+        }),
+      );
+    });
+  });
 });
