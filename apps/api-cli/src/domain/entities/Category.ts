@@ -4,6 +4,9 @@
  * Represents a category that can be assigned to books.
  * Categories are reusable and managed independently.
  *
+ * HU-008: Each category now belongs to exactly one type (1:N relationship).
+ * Category names are unique within a type, not globally.
+ *
  * Entities are:
  * - Identified by a unique ID (not by their attributes)
  * - Mutable through controlled methods
@@ -32,6 +35,7 @@ const FIELD_CONSTRAINTS = {
 export interface CreateCategoryProps {
   id: string;
   name: string;
+  typeId: string; // HU-008: Required reference to the Type this category belongs to
   description?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
@@ -43,6 +47,7 @@ export interface CreateCategoryProps {
 export interface CategoryPersistenceProps {
   id: string;
   name: string;
+  typeId: string; // HU-008: Required reference to the Type this category belongs to
   description: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -50,6 +55,7 @@ export interface CategoryPersistenceProps {
 
 /**
  * Props that can be updated on a Category
+ * Note: typeId cannot be changed after creation
  */
 export interface UpdateCategoryProps {
   name?: string;
@@ -63,6 +69,7 @@ export class Category {
   private constructor(
     public readonly id: string,
     public readonly name: string,
+    public readonly typeId: string, // HU-008: Reference to the Type this category belongs to
     public readonly description: string | null,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
@@ -76,6 +83,7 @@ export class Category {
    */
   static create(props: CreateCategoryProps): Category {
     const id = validateId(props.id);
+    const typeId = validateId(props.typeId, 'typeId'); // HU-008: Validate typeId as UUID
     const name = Category.validateName(props.name);
     const description = props.description
       ? Category.validateDescription(props.description)
@@ -85,7 +93,7 @@ export class Category {
     const createdAt = props.createdAt ?? now;
     const updatedAt = props.updatedAt ?? now;
 
-    return new Category(id, name, description, createdAt, updatedAt);
+    return new Category(id, name, typeId, description, createdAt, updatedAt);
   }
 
   /**
@@ -96,6 +104,7 @@ export class Category {
     return new Category(
       props.id,
       props.name,
+      props.typeId,
       props.description,
       props.createdAt,
       props.updatedAt,
@@ -104,6 +113,7 @@ export class Category {
 
   /**
    * Updates the category with new values, returning a new instance
+   * Note: typeId cannot be changed after creation
    */
   update(props: UpdateCategoryProps): Category {
     const name = props.name !== undefined
@@ -117,6 +127,7 @@ export class Category {
     return new Category(
       this.id,
       name,
+      this.typeId, // typeId is immutable after creation
       description,
       this.createdAt,
       new Date(), // Update timestamp
