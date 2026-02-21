@@ -6,11 +6,16 @@
  *
  * Features:
  * - Reads all *.json files from original_data/ directory (monorepo root)
+ * - Connects to database to exclude books that already exist (by ISBN)
  * - Detects duplicates by ISBN (id field in source)
  * - Keeps first occurrence of each ISBN (alphabetical file order)
  * - Preserves ALL original properties from source books
  * - Adds type: 'technical' and format: 'epub' to each book
- * - Excludes books that already exist in the database (by ISBN)
+ * - Deletes existing books.json before generating new one
+ * - Idempotent: can be run multiple times safely
+ *
+ * Requirements:
+ * - Database must be running (uses DATABASE_URL env var)
  *
  * Usage:
  *   npx tsx scripts/consolidate-books.ts
