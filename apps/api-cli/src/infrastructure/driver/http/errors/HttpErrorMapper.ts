@@ -18,10 +18,11 @@ import {
   DuplicateBookError,
   InvalidBookTypeError,
   EmbeddingTextTooLongError,
+  CategoryTypeMismatchError,
+  LevelTypeMismatchError,
 } from '../../../../domain/errors/DomainErrors.js';
 import { InvalidISBNError } from '../../../../domain/value-objects/ISBN.js';
 import { InvalidBookFormatError } from '../../../../domain/value-objects/BookFormat.js';
-import { InvalidBookLevelError } from '../../../../domain/value-objects/BookLevel.js';
 import {
   EmbeddingServiceUnavailableError,
 } from '../../../../application/errors/ApplicationErrors.js';
@@ -84,6 +85,7 @@ function createErrorResponse(
  * Status code mapping:
  * - 400 Bad Request: Validation errors (field constraints, ISBN format, type/format invalid)
  * - 409 Conflict: Duplicate errors (ISBN already exists, book already exists)
+ * - 422 Unprocessable Entity: Business rule violations (type-category-level mismatches)
  * - 503 Service Unavailable: Embedding service down
  * - 500 Internal Server Error: Unknown/unexpected errors
  *
@@ -103,6 +105,16 @@ export function mapErrorToHttpResponse(error: unknown): HttpErrorResponse {
 
   if (error instanceof DuplicateBookError) {
     return createErrorResponse(409, error.message);
+  }
+
+  // HU-008: Type-category-level mismatch errors → 422 Unprocessable Entity
+  // These are business rule violations where the data is valid but semantically incorrect
+  if (error instanceof CategoryTypeMismatchError) {
+    return createErrorResponse(422, error.message);
+  }
+
+  if (error instanceof LevelTypeMismatchError) {
+    return createErrorResponse(422, error.message);
   }
 
   // Embedding service errors
@@ -127,10 +139,6 @@ export function mapErrorToHttpResponse(error: unknown): HttpErrorResponse {
   }
 
   if (error instanceof InvalidBookFormatError) {
-    return createErrorResponse(400, error.message);
-  }
-
-  if (error instanceof InvalidBookLevelError) {
     return createErrorResponse(400, error.message);
   }
 
