@@ -3,6 +3,8 @@
  *
  * Maps between domain Category entities and database representations.
  * Follows the Data Mapper pattern for clean separation of concerns.
+ *
+ * HU-008: Updated to include typeId field for type-category relationship.
  */
 
 import { Category, type CategoryPersistenceProps } from '../../../../domain/entities/Category.js';
@@ -22,6 +24,7 @@ export const CategoryMapper = {
     const props: CategoryPersistenceProps = {
       id: record.id,
       name: record.name,
+      typeId: record.typeId, // HU-008: Include typeId
       description: record.description,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
@@ -39,6 +42,7 @@ export const CategoryMapper = {
     return {
       id: category.id,
       name: category.name,
+      typeId: category.typeId, // HU-008: Include typeId
       description: category.description,
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
