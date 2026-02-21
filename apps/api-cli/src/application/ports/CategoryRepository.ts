@@ -121,6 +121,25 @@ export interface CategoryRepository {
   findAll(): Promise<Category[]>;
 
   /**
+   * Retrieves all categories sorted alphabetically by name (A-Z)
+   *
+   * HU-009: Used for listing categories in the API response.
+   *
+   * @returns Promise resolving to an array of all Categories sorted by name
+   */
+  findAllSorted(): Promise<Category[]>;
+
+  /**
+   * Retrieves categories for a specific type, sorted alphabetically by name (A-Z)
+   *
+   * HU-009: Used for listing categories filtered by type in the API response.
+   *
+   * @param typeId - The type UUID to filter by
+   * @returns Promise resolving to an array of Categories for the given type, sorted by name
+   */
+  findByTypeIdSorted(typeId: string): Promise<Category[]>;
+
+  /**
    * Counts the total number of categories
    *
    * @returns Promise resolving to the total count
