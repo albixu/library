@@ -9,6 +9,9 @@
  * - N:1 relationship with Books
  * - Future extensibility (adding new types without code changes)
  *
+ * HU-008: Each BookType is now associated with multiple Levels (N:M relationship).
+ * Different types can have different applicable difficulty levels.
+ *
  * Entities are:
  * - Identified by a unique ID (not by their attributes)
  * - Mutable through controlled methods
@@ -43,6 +46,7 @@ export type DefaultBookTypeName = (typeof DEFAULT_BOOK_TYPES)[number];
 export interface CreateBookTypeProps {
   id: string;
   name: string;
+  levelIds?: string[]; // HU-008: Optional array of Level UUIDs associated with this type
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -53,6 +57,7 @@ export interface CreateBookTypeProps {
 export interface BookTypePersistenceProps {
   id: string;
   name: string;
+  levelIds: readonly string[]; // HU-008: Array of Level UUIDs associated with this type
   createdAt: Date;
   updatedAt: Date;
 }
@@ -62,6 +67,7 @@ export interface BookTypePersistenceProps {
  */
 export interface UpdateBookTypeProps {
   name?: string;
+  levelIds?: string[]; // HU-008: Can update the associated levels
 }
 
 /**
@@ -71,6 +77,7 @@ export class BookType {
   private constructor(
     public readonly id: string,
     public readonly name: string,
+    public readonly levelIds: readonly string[], // HU-008: Associated Level UUIDs
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {
@@ -84,12 +91,13 @@ export class BookType {
   static create(props: CreateBookTypeProps): BookType {
     const id = validateId(props.id);
     const name = BookType.validateName(props.name);
+    const levelIds = BookType.validateLevelIds(props.levelIds ?? []);
 
     const now = new Date();
     const createdAt = props.createdAt ?? now;
     const updatedAt = props.updatedAt ?? now;
 
-    return new BookType(id, name, createdAt, updatedAt);
+    return new BookType(id, name, levelIds, createdAt, updatedAt);
   }
 
   /**
@@ -100,6 +108,7 @@ export class BookType {
     return new BookType(
       props.id,
       props.name,
+      props.levelIds,
       props.createdAt,
       props.updatedAt,
     );
@@ -113,9 +122,14 @@ export class BookType {
       ? BookType.validateName(props.name)
       : this.name;
 
+    const levelIds = props.levelIds !== undefined
+      ? BookType.validateLevelIds(props.levelIds)
+      : this.levelIds;
+
     return new BookType(
       this.id,
       name,
+      levelIds,
       this.createdAt,
       new Date(), // Update timestamp
     );
@@ -133,6 +147,13 @@ export class BookType {
    */
   hasName(name: string): boolean {
     return this.name.toLowerCase() === name.toLowerCase();
+  }
+
+  /**
+   * HU-008: Checks if the given level is valid for this type
+   */
+  hasLevel(levelId: string): boolean {
+    return this.levelIds.includes(levelId);
   }
 
   /**
@@ -156,5 +177,23 @@ export class BookType {
     }
 
     return trimmedName;
+  }
+
+  /**
+   * HU-008: Validates levelIds array
+   * - Each levelId must be a valid UUID
+   * - Duplicates are removed
+   * - Returns a frozen array for immutability
+   */
+  private static validateLevelIds(levelIds: string[]): readonly string[] {
+    // Remove duplicates while preserving order
+    const uniqueLevelIds = Array.from(new Set(levelIds));
+
+    // Validate each levelId as UUID
+    const validatedIds = uniqueLevelIds.map((levelId, index) =>
+      validateId(levelId, `levelIds[${index}]`),
+    );
+
+    return Object.freeze(validatedIds);
   }
 }

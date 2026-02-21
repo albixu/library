@@ -12,12 +12,14 @@ import {
 
 describe('Category', () => {
   const validUUID = '550e8400-e29b-41d4-a716-446655440000';
+  const validTypeId = '660e8400-e29b-41d4-a716-446655440000';
 
   const createValidCategoryProps = (
     overrides?: Partial<CreateCategoryProps>
   ): CreateCategoryProps => ({
     id: validUUID,
     name: 'programming',
+    typeId: validTypeId,
     ...overrides,
   });
 
@@ -26,6 +28,7 @@ describe('Category', () => {
   ): CategoryPersistenceProps => ({
     id: validUUID,
     name: 'programming',
+    typeId: validTypeId,
     description: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -39,6 +42,7 @@ describe('Category', () => {
 
       expect(category.id).toBe(validUUID);
       expect(category.name).toBe('programming');
+      expect(category.typeId).toBe(validTypeId);
       expect(category.description).toBeNull();
     });
 
@@ -125,6 +129,34 @@ describe('Category', () => {
         });
       });
 
+      describe('typeId', () => {
+        it('should throw RequiredFieldError for empty typeId', () => {
+          expect(() => Category.create(createValidCategoryProps({ typeId: '' }))).toThrow(
+            RequiredFieldError
+          );
+        });
+
+        it('should throw InvalidUUIDError for invalid typeId format', () => {
+          expect(() =>
+            Category.create(createValidCategoryProps({ typeId: 'not-a-uuid' }))
+          ).toThrow(InvalidUUIDError);
+        });
+
+        it('should throw InvalidUUIDError for typeId with UUID v1 (not v4)', () => {
+          expect(() =>
+            Category.create(
+              createValidCategoryProps({ typeId: '550e8400-e29b-11d4-a716-446655440000' })
+            )
+          ).toThrow(InvalidUUIDError);
+        });
+
+        it('should throw RequiredFieldError for whitespace-only typeId', () => {
+          expect(() =>
+            Category.create(createValidCategoryProps({ typeId: '   ' }))
+          ).toThrow(RequiredFieldError);
+        });
+      });
+
       describe('name', () => {
         it('should throw RequiredFieldError for empty name', () => {
           expect(() => Category.create(createValidCategoryProps({ name: '' }))).toThrow(
@@ -183,6 +215,7 @@ describe('Category', () => {
 
       expect(category.id).toBe(validUUID);
       expect(category.name).toBe('programming');
+      expect(category.typeId).toBe(validTypeId);
       expect(category.description).toBeNull();
     });
 
@@ -194,6 +227,15 @@ describe('Category', () => {
       const category = Category.fromPersistence(props);
 
       expect(category.description).toBe('A great category');
+    });
+
+    it('should preserve typeId from persistence', () => {
+      const customTypeId = '770e8400-e29b-41d4-a716-446655440000';
+      const props = createValidPersistenceProps({ typeId: customTypeId });
+
+      const category = Category.fromPersistence(props);
+
+      expect(category.typeId).toBe(customTypeId);
     });
   });
 
@@ -254,6 +296,13 @@ describe('Category', () => {
       expect(updated.createdAt).toEqual(category.createdAt);
     });
 
+    it('should preserve typeId (immutable after creation)', () => {
+      const updated = category.update({ name: 'New Name' });
+
+      expect(updated.typeId).toBe(category.typeId);
+      expect(updated.typeId).toBe(validTypeId);
+    });
+
     it('should update updatedAt timestamp', () => {
       const before = new Date();
       const updated = category.update({ name: 'New Name' });
@@ -279,10 +328,20 @@ describe('Category', () => {
     it('should return false for Categories with different ids', () => {
       const category1 = Category.create(createValidCategoryProps());
       const category2 = Category.create(
-        createValidCategoryProps({ id: '660e8400-e29b-41d4-a716-446655440000' })
+        createValidCategoryProps({ id: '770e8400-e29b-41d4-a716-446655440000' })
       );
 
       expect(category1.equals(category2)).toBe(false);
+    });
+
+    it('should return true for Categories with same id but different typeIds', () => {
+      const category1 = Category.create(createValidCategoryProps());
+      const category2 = Category.create(
+        createValidCategoryProps({ typeId: '880e8400-e29b-41d4-a716-446655440000' })
+      );
+
+      // Entities are compared by ID, not by attributes
+      expect(category1.equals(category2)).toBe(true);
     });
   });
 
@@ -297,6 +356,14 @@ describe('Category', () => {
       expect(() => {
         // @ts-expect-error - Testing runtime immutability
         category.name = 'New Name';
+      }).toThrow();
+    });
+
+    it('should not allow typeId modification', () => {
+      const category = Category.create(createValidCategoryProps());
+      expect(() => {
+        // @ts-expect-error - Testing runtime immutability
+        category.typeId = '880e8400-e29b-41d4-a716-446655440000';
       }).toThrow();
     });
   });

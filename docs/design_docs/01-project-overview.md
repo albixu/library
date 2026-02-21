@@ -53,7 +53,7 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | `type` | BookType | Sí | Referencia a entidad Type - Relación N:1 |
 | `categories` | Category[] | Sí | Lista de categorías (1-10) - Relación N:M |
 | `format` | BookFormat | Sí | Formato del archivo (enum) |
-| `level` | BookLevel | No | Nivel de dificultad del libro (enum) |
+| `level` | Level | No | Referencia a entidad Level - Relación N:1 |
 | `available` | boolean | Sí | Indica si el libro está disponible (default: false) |
 | `path` | string | No | Ruta del archivo (max 1000) |
 | `embedding` | vector | No | Vector 768 dimensiones |
@@ -82,36 +82,48 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 
 ### 3.4 Entidad: Category
 
-Entidad independiente para gestionar categorías reutilizables.
+Entidad para gestionar categorías de libros. Cada categoría pertenece a un tipo específico.
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `id` | UUID | Sí | Identificador único generado por el sistema |
-| `name` | string | Sí | Nombre de la categoría (único, max 100 chars) |
-| `description` | string | No | Descripción de la categoría (max 500 chars) |
+| `name` | string | Sí | Nombre de la categoría (único por tipo, max 100 chars) |
+| `typeId` | UUID | Sí | Referencia al tipo al que pertenece la categoría |
 | `createdAt` | timestamp | Sí | Fecha de creación del registro |
 | `updatedAt` | timestamp | Sí | Fecha de última modificación |
 
-### 3.5 Value Objects
+### 3.5 Entidad: Level
+
+Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicamente y se asocian a tipos de libro.
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `id` | UUID | Sí | Identificador único generado por el sistema |
+| `name` | string | Sí | Nombre del nivel (único, max 100 chars) |
+| `createdAt` | timestamp | Sí | Fecha de creación del registro |
+| `updatedAt` | timestamp | Sí | Fecha de última modificación |
+
+**Relación con Type**: N:M - Un nivel puede estar disponible para múltiples tipos, y un tipo puede tener múltiples niveles válidos. Se gestiona mediante tabla de unión `type_levels`.
+
+### 3.6 Value Objects
 
 - **BookFormat**: `epub` | `pdf` | `mobi` | `azw3` | `djvu` | `cbz` | `cbr` | `txt` | `other`
-- **BookLevel**: `Beginner` | `Intermediate` | `Advanced` | `Beginner to intermediate` | `Intermediate to advanced`
 - **ISBN**: Validado (ISBN-10 o ISBN-13), normalizado sin guiones
 
-### 3.6 Relaciones
+### 3.7 Relaciones
 
 ```
-┌─────────────┐       N:M       ┌─────────────┐
-│   Author    │◄───────────────►│    Book     │
-└─────────────┘                 └─────────────┘
-                                      │
-                                      │ N:1
-                                      ▼
-                                ┌─────────────┐
-                                │  BookType   │
+┌─────────────┐       N:M       ┌─────────────┐       N:1       ┌─────────────┐
+│   Author    │◄───────────────►│    Book     │───────────────►│    Level    │
+└─────────────┘                 └─────────────┘                 └─────────────┘
+                                      │                               ▲
+                                      │ N:1                           │ N:M
+                                      ▼                               │
+                                ┌─────────────┐                       │
+                                │  BookType   │───────────────────────┘
                                 └─────────────┘
                                       │
-                                      │ N:M
+                                      │ 1:N
                                       ▼
                                 ┌─────────────┐
                                 │  Category   │
@@ -131,6 +143,20 @@ Entidad independiente para gestionar categorías reutilizables.
   - Un libro puede tener múltiples categorías (máximo 10)
   - Una categoría puede estar asociada a múltiples libros
   - Se gestiona mediante tabla de unión `book_categories`
+
+- **Book → Level**: Relación muchos-a-uno (N:1)
+  - Un libro puede tener un nivel de dificultad (opcional)
+  - Un nivel puede estar asociado a múltiples libros
+
+- **BookType → Category**: Relación uno-a-muchos (1:N)
+  - Una categoría pertenece a exactamente un tipo
+  - Un tipo puede tener múltiples categorías asociadas
+
+- **BookType ↔ Level**: Relación muchos-a-muchos (N:M)
+  - Un tipo puede tener múltiples niveles válidos
+  - Un nivel puede estar disponible para múltiples tipos
+  - Se gestiona mediante tabla de unión `type_levels`
+  - **Validación**: Al crear un libro, se valida que el level esté asociado al type
 
 ---
 

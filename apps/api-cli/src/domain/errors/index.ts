@@ -18,9 +18,10 @@ export {
   DuplicateItemError,
   InvalidBookTypeError,
   EmbeddingTextTooLongError,
+  CategoryTypeMismatchError,
+  LevelTypeMismatchError,
 } from './DomainErrors.js';
 
 // Re-export Value Object errors for convenience
 export { InvalidBookFormatError } from '../value-objects/BookFormat.js';
-export { InvalidBookLevelError } from '../value-objects/BookLevel.js';
 export { InvalidISBNError } from '../value-objects/ISBN.js';

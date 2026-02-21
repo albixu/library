@@ -8,7 +8,6 @@
 
 import { z } from 'zod';
 import { BOOK_FORMATS } from '../../../../domain/value-objects/BookFormat.js';
-import { BOOK_LEVELS } from '../../../../domain/value-objects/BookLevel.js';
 
 /**
  * Schema for creating a book via POST /api/books
@@ -72,12 +71,12 @@ export const createBookSchema = z.object({
     .nullish()
     .transform((val) => (val === '' ? null : val?.trim() ?? null)),
 
+  // HU-008: Level is now a dynamic string (validated against database, not enum)
   level: z
-    .enum(BOOK_LEVELS, {
-      invalid_type_error: `level must be one of: ${BOOK_LEVELS.join(', ')}`,
-    })
+    .string()
+    .max(100, 'level name exceeds maximum length of 100 characters')
     .nullish()
-    .transform((val) => val ?? null),
+    .transform((val) => (val === '' ? null : val?.trim() ?? null)),
 
   available: z.boolean().optional().default(true),
 
@@ -108,7 +107,7 @@ export const bookResponseSchema = z.object({
   description: z.string(),
   type: z.string(),
   format: z.enum(BOOK_FORMATS),
-  level: z.enum(BOOK_LEVELS).nullable(),
+  level: z.string().nullable(), // HU-008: Dynamic level (not enum)
   categories: z.array(
     z.object({
       id: z.string().uuid(),

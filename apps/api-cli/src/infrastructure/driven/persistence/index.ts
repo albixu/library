@@ -8,6 +8,7 @@ export { PostgresCategoryRepository } from './PostgresCategoryRepository.js';
 export { PostgresBookRepository, normalizeForDuplicateCheck } from './PostgresBookRepository.js';
 export { PostgresAuthorRepository } from './PostgresAuthorRepository.js';
 export { PostgresTypeRepository } from './PostgresTypeRepository.js';
+export { PostgresLevelRepository } from './PostgresLevelRepository.js';
 export type { DatabaseClient } from './types.js';
 export * from './drizzle/schema.js';
 export * from './mappers/index.js';

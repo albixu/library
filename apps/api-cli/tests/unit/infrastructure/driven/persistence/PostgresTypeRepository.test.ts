@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PostgresTypeRepository } from '../../../../../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
-import type { TypeSelect } from '../../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
+import type { TypeSelect, TypeLevelSelect } from '../../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 
 // Mock Drizzle database
 interface MockDb {
@@ -10,6 +10,9 @@ interface MockDb {
       findFirst: ReturnType<typeof vi.fn>;
       findMany: ReturnType<typeof vi.fn>;
     };
+    typeLevels: {
+      findMany: ReturnType<typeof vi.fn>;
+    };
   };
 }
 
@@ -17,27 +20,42 @@ describe('PostgresTypeRepository', () => {
   let mockDb: MockDb;
   let repository: PostgresTypeRepository;
 
+  // Test UUIDs
+  const TYPE_ID_1 = '550e8400-e29b-41d4-a716-446655440001';
+  const TYPE_ID_2 = '550e8400-e29b-41d4-a716-446655440002';
+  const TYPE_ID_3 = '550e8400-e29b-41d4-a716-446655440003';
+  const LEVEL_ID_1 = '550e8400-e29b-41d4-a716-446655440101';
+  const LEVEL_ID_2 = '550e8400-e29b-41d4-a716-446655440102';
+  const LEVEL_ID_3 = '550e8400-e29b-41d4-a716-446655440103';
+
   // Sample database records
   const mockTypeRecord: TypeSelect = {
-    id: '550e8400-e29b-41d4-a716-446655440001',
+    id: TYPE_ID_1,
     name: 'technical',
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   };
 
   const mockTypeRecord2: TypeSelect = {
-    id: '550e8400-e29b-41d4-a716-446655440002',
+    id: TYPE_ID_2,
     name: 'novel',
     createdAt: new Date('2026-01-02T00:00:00Z'),
     updatedAt: new Date('2026-01-02T00:00:00Z'),
   };
 
   const mockTypeRecord3: TypeSelect = {
-    id: '550e8400-e29b-41d4-a716-446655440003',
+    id: TYPE_ID_3,
     name: 'biography',
     createdAt: new Date('2026-01-03T00:00:00Z'),
     updatedAt: new Date('2026-01-03T00:00:00Z'),
   };
+
+  // HU-008: Type-Level junction records
+  const mockTypeLevelRecords: TypeLevelSelect[] = [
+    { typeId: TYPE_ID_1, levelId: LEVEL_ID_1, createdAt: new Date() },
+    { typeId: TYPE_ID_1, levelId: LEVEL_ID_2, createdAt: new Date() },
+    { typeId: TYPE_ID_2, levelId: LEVEL_ID_3, createdAt: new Date() },
+  ];
 
   beforeEach(() => {
     // Create mock database with chained query builder pattern
@@ -57,6 +75,9 @@ describe('PostgresTypeRepository', () => {
           findFirst: vi.fn(),
           findMany: vi.fn(),
         },
+        typeLevels: {
+          findMany: vi.fn(),
+        },
       },
     };
 
@@ -66,6 +87,10 @@ describe('PostgresTypeRepository', () => {
   describe('findById', () => {
     it('should return type when found', async () => {
       mockDb.query.types.findFirst.mockResolvedValue(mockTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([
+        mockTypeLevelRecords[0],
+        mockTypeLevelRecords[1],
+      ]);
 
       const result = await repository.findById(mockTypeRecord.id);
 
@@ -93,11 +118,44 @@ describe('PostgresTypeRepository', () => {
         })
       );
     });
+
+    it('should include levelIds from type_levels junction table', async () => {
+      mockDb.query.types.findFirst.mockResolvedValue(mockTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([
+        { typeId: TYPE_ID_1, levelId: LEVEL_ID_1, createdAt: new Date() },
+        { typeId: TYPE_ID_1, levelId: LEVEL_ID_2, createdAt: new Date() },
+      ]);
+
+      const result = await repository.findById(mockTypeRecord.id);
+
+      expect(result).not.toBeNull();
+      expect(result?.levelIds).toEqual([LEVEL_ID_1, LEVEL_ID_2]);
+    });
+
+    it('should return empty levelIds when type has no levels', async () => {
+      mockDb.query.types.findFirst.mockResolvedValue(mockTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([]);
+
+      const result = await repository.findById(mockTypeRecord.id);
+
+      expect(result).not.toBeNull();
+      expect(result?.levelIds).toEqual([]);
+    });
+
+    it('should load levelIds after finding the type', async () => {
+      mockDb.query.types.findFirst.mockResolvedValue(mockTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([]);
+
+      await repository.findById(mockTypeRecord.id);
+
+      expect(mockDb.query.typeLevels.findMany).toHaveBeenCalled();
+    });
   });
 
   describe('findByName', () => {
     it('should find type by exact name (lowercase)', async () => {
       mockDb.query.types.findFirst.mockResolvedValue(mockTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([]);
 
       const result = await repository.findByName('technical');
 
@@ -107,6 +165,7 @@ describe('PostgresTypeRepository', () => {
 
     it('should find type by name case-insensitively', async () => {
       mockDb.query.types.findFirst.mockResolvedValue(mockTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([]);
 
       const result = await repository.findByName('TECHNICAL');
 
@@ -116,6 +175,7 @@ describe('PostgresTypeRepository', () => {
 
     it('should find type by name with mixed case', async () => {
       mockDb.query.types.findFirst.mockResolvedValue(mockTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([]);
 
       const result = await repository.findByName('Technical');
 
@@ -125,6 +185,7 @@ describe('PostgresTypeRepository', () => {
 
     it('should trim whitespace from name', async () => {
       mockDb.query.types.findFirst.mockResolvedValue(mockTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([]);
 
       await repository.findByName('  technical  ');
 
@@ -152,6 +213,18 @@ describe('PostgresTypeRepository', () => {
       expect(result).toBeNull();
       expect(mockDb.query.types.findFirst).not.toHaveBeenCalled();
     });
+
+    it('should include levelIds from type_levels junction table', async () => {
+      mockDb.query.types.findFirst.mockResolvedValue(mockTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([
+        { typeId: TYPE_ID_1, levelId: LEVEL_ID_1, createdAt: new Date() },
+      ]);
+
+      const result = await repository.findByName('technical');
+
+      expect(result).not.toBeNull();
+      expect(result?.levelIds).toEqual([LEVEL_ID_1]);
+    });
   });
 
   describe('findAll', () => {
@@ -161,6 +234,7 @@ describe('PostgresTypeRepository', () => {
         mockTypeRecord2,
         mockTypeRecord3,
       ]);
+      mockDb.query.typeLevels.findMany.mockResolvedValue(mockTypeLevelRecords);
 
       const result = await repository.findAll();
 
@@ -180,6 +254,9 @@ describe('PostgresTypeRepository', () => {
 
     it('should return domain entities with all properties', async () => {
       mockDb.query.types.findMany.mockResolvedValue([mockTypeRecord]);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([
+        { typeId: TYPE_ID_1, levelId: LEVEL_ID_1, createdAt: new Date() },
+      ]);
 
       const result = await repository.findAll();
 
@@ -187,6 +264,37 @@ describe('PostgresTypeRepository', () => {
       expect(result[0].name).toBe(mockTypeRecord.name);
       expect(result[0].createdAt).toEqual(mockTypeRecord.createdAt);
       expect(result[0].updatedAt).toEqual(mockTypeRecord.updatedAt);
+    });
+
+    it('should include levelIds for each type', async () => {
+      mockDb.query.types.findMany.mockResolvedValue([mockTypeRecord, mockTypeRecord2]);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([
+        { typeId: TYPE_ID_1, levelId: LEVEL_ID_1, createdAt: new Date() },
+        { typeId: TYPE_ID_1, levelId: LEVEL_ID_2, createdAt: new Date() },
+        { typeId: TYPE_ID_2, levelId: LEVEL_ID_3, createdAt: new Date() },
+      ]);
+
+      const result = await repository.findAll();
+
+      expect(result[0].levelIds).toEqual([LEVEL_ID_1, LEVEL_ID_2]);
+      expect(result[1].levelIds).toEqual([LEVEL_ID_3]);
+    });
+
+    it('should return empty levelIds for types with no levels', async () => {
+      mockDb.query.types.findMany.mockResolvedValue([mockTypeRecord3]);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([]);
+
+      const result = await repository.findAll();
+
+      expect(result[0].levelIds).toEqual([]);
+    });
+
+    it('should not call typeLevels.findMany when no types found', async () => {
+      mockDb.query.types.findMany.mockResolvedValue([]);
+
+      await repository.findAll();
+
+      expect(mockDb.query.typeLevels.findMany).not.toHaveBeenCalled();
     });
   });
 
@@ -197,6 +305,7 @@ describe('PostgresTypeRepository', () => {
         mockTypeRecord2, // novel
         mockTypeRecord,  // technical
       ]);
+      mockDb.query.typeLevels.findMany.mockResolvedValue(mockTypeLevelRecords);
 
       const result = await repository.findAllSorted();
 
@@ -226,8 +335,11 @@ describe('PostgresTypeRepository', () => {
       );
     });
 
-    it('should return domain entities with all properties', async () => {
+    it('should return domain entities with all properties including levelIds', async () => {
       mockDb.query.types.findMany.mockResolvedValue([mockTypeRecord]);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([
+        { typeId: TYPE_ID_1, levelId: LEVEL_ID_1, createdAt: new Date() },
+      ]);
 
       const result = await repository.findAllSorted();
 
@@ -235,6 +347,30 @@ describe('PostgresTypeRepository', () => {
       expect(result[0].name).toBe(mockTypeRecord.name);
       expect(result[0].createdAt).toEqual(mockTypeRecord.createdAt);
       expect(result[0].updatedAt).toEqual(mockTypeRecord.updatedAt);
+      expect(result[0].levelIds).toEqual([LEVEL_ID_1]);
+    });
+
+    it('should include levelIds for each sorted type', async () => {
+      mockDb.query.types.findMany.mockResolvedValue([mockTypeRecord3, mockTypeRecord]);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([
+        { typeId: TYPE_ID_1, levelId: LEVEL_ID_1, createdAt: new Date() },
+        { typeId: TYPE_ID_1, levelId: LEVEL_ID_2, createdAt: new Date() },
+      ]);
+
+      const result = await repository.findAllSorted();
+
+      expect(result[0].name).toBe('biography');
+      expect(result[0].levelIds).toEqual([]);
+      expect(result[1].name).toBe('technical');
+      expect(result[1].levelIds).toEqual([LEVEL_ID_1, LEVEL_ID_2]);
+    });
+
+    it('should not call typeLevels.findMany when no types found', async () => {
+      mockDb.query.types.findMany.mockResolvedValue([]);
+
+      await repository.findAllSorted();
+
+      expect(mockDb.query.typeLevels.findMany).not.toHaveBeenCalled();
     });
   });
 
@@ -274,8 +410,12 @@ describe('PostgresTypeRepository', () => {
   });
 
   describe('TypeMapper integration', () => {
-    it('should correctly map database record to domain entity', async () => {
+    it('should correctly map database record to domain entity with levelIds', async () => {
       mockDb.query.types.findFirst.mockResolvedValue(mockTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([
+        { typeId: TYPE_ID_1, levelId: LEVEL_ID_1, createdAt: new Date() },
+        { typeId: TYPE_ID_1, levelId: LEVEL_ID_2, createdAt: new Date() },
+      ]);
 
       const result = await repository.findById(mockTypeRecord.id);
 
@@ -284,22 +424,41 @@ describe('PostgresTypeRepository', () => {
       expect(result!.name).toBe(mockTypeRecord.name);
       expect(result!.createdAt).toEqual(mockTypeRecord.createdAt);
       expect(result!.updatedAt).toEqual(mockTypeRecord.updatedAt);
+      expect(result!.levelIds).toEqual([LEVEL_ID_1, LEVEL_ID_2]);
     });
 
-    it('should map multiple records correctly', async () => {
+    it('should map multiple records correctly with their respective levelIds', async () => {
       mockDb.query.types.findMany.mockResolvedValue([
         mockTypeRecord,
         mockTypeRecord2,
+      ]);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([
+        { typeId: TYPE_ID_1, levelId: LEVEL_ID_1, createdAt: new Date() },
+        { typeId: TYPE_ID_2, levelId: LEVEL_ID_3, createdAt: new Date() },
       ]);
 
       const result = await repository.findAll();
 
       expect(result).toHaveLength(2);
-      result.forEach((type, index) => {
-        const expectedRecord = index === 0 ? mockTypeRecord : mockTypeRecord2;
-        expect(type.id).toBe(expectedRecord.id);
-        expect(type.name).toBe(expectedRecord.name);
-      });
+      expect(result[0].id).toBe(mockTypeRecord.id);
+      expect(result[0].name).toBe(mockTypeRecord.name);
+      expect(result[0].levelIds).toEqual([LEVEL_ID_1]);
+      expect(result[1].id).toBe(mockTypeRecord2.id);
+      expect(result[1].name).toBe(mockTypeRecord2.name);
+      expect(result[1].levelIds).toEqual([LEVEL_ID_3]);
+    });
+
+    it('should enable hasLevel method on returned BookType', async () => {
+      mockDb.query.types.findFirst.mockResolvedValue(mockTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([
+        { typeId: TYPE_ID_1, levelId: LEVEL_ID_1, createdAt: new Date() },
+      ]);
+
+      const result = await repository.findById(mockTypeRecord.id);
+
+      expect(result).not.toBeNull();
+      expect(result!.hasLevel(LEVEL_ID_1)).toBe(true);
+      expect(result!.hasLevel(LEVEL_ID_2)).toBe(false);
     });
   });
 });

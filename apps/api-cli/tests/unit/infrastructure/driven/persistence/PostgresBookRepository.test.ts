@@ -1,3 +1,10 @@
+/**
+ * PostgresBookRepository Unit Tests
+ *
+ * HU-008: Updated to use levelId (UUID FK to levels table) instead of level (BookLevel enum).
+ * Also updated Category and BookType fixtures to include required HU-008 fields.
+ */
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   PostgresBookRepository,
@@ -27,6 +34,9 @@ interface MockDb {
     types: {
       findFirst: ReturnType<typeof vi.fn>;
     };
+    typeLevels: {
+      findMany: ReturnType<typeof vi.fn>;
+    };
   };
   transaction: ReturnType<typeof vi.fn>;
 }
@@ -35,18 +45,28 @@ describe('PostgresBookRepository', () => {
   let mockDb: MockDb;
   let repository: PostgresBookRepository;
 
-  // Sample category for testing
+  // Test UUIDs
+  const categoryId = '550e8400-e29b-41d4-a716-446655440010';
+  const authorId = '550e8400-e29b-41d4-a716-446655440020';
+  const typeId = '550e8400-e29b-41d4-a716-446655440030';
+  const bookId = '550e8400-e29b-41d4-a716-446655440001';
+  const levelId = '550e8400-e29b-41d4-a716-446655440040';
+  const levelId2 = '550e8400-e29b-41d4-a716-446655440041';
+
+  // Sample category for testing (HU-008: includes typeId)
   const mockCategory = Category.fromPersistence({
-    id: '550e8400-e29b-41d4-a716-446655440010',
+    id: categoryId,
     name: 'programming',
+    typeId: typeId,
     description: 'Books about programming',
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   });
 
   const mockCategoryRecord: CategorySelect = {
-    id: '550e8400-e29b-41d4-a716-446655440010',
+    id: categoryId,
     name: 'programming',
+    typeId: typeId,
     description: 'Books about programming',
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
@@ -54,43 +74,50 @@ describe('PostgresBookRepository', () => {
 
   // Sample author for testing
   const mockAuthor = Author.fromPersistence({
-    id: '550e8400-e29b-41d4-a716-446655440020',
+    id: authorId,
     name: 'Robert C. Martin',
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   });
 
   const mockAuthorRecord: AuthorSelect = {
-    id: '550e8400-e29b-41d4-a716-446655440020',
+    id: authorId,
     name: 'Robert C. Martin',
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   };
 
-  // Sample book type for testing
+  // Sample book type for testing (HU-008: includes levelIds)
   const mockBookType = BookType.fromPersistence({
-    id: '550e8400-e29b-41d4-a716-446655440030',
+    id: typeId,
     name: 'technical',
+    levelIds: [levelId, levelId2],
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   });
 
   const mockBookTypeRecord: TypeSelect = {
-    id: '550e8400-e29b-41d4-a716-446655440030',
+    id: typeId,
     name: 'technical',
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   };
 
-  // Sample book database record (new schema without author/normalizedAuthor, with typeId)
+  // HU-008: type_levels junction records for mockBookType
+  const mockTypeLevelRecords = [
+    { typeId: typeId, levelId: levelId, createdAt: new Date('2026-01-01T00:00:00Z') },
+    { typeId: typeId, levelId: levelId2, createdAt: new Date('2026-01-01T00:00:00Z') },
+  ];
+
+  // Sample book database record (HU-008: levelId instead of level)
   const mockBookRecord: BookSelect = {
-    id: '550e8400-e29b-41d4-a716-446655440001',
+    id: bookId,
     isbn: '9780132350884',
     title: 'Clean Code',
     description: 'A Handbook of Agile Software Craftsmanship',
-    typeId: '550e8400-e29b-41d4-a716-446655440030',
+    typeId: typeId,
     format: 'pdf',
-    level: 'Intermediate',
+    levelId: levelId, // HU-008: UUID FK to levels table
     available: true,
     path: '/books/clean-code.pdf',
     embedding: Array(768).fill(0.1),
@@ -99,17 +126,17 @@ describe('PostgresBookRepository', () => {
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   };
 
-  // Sample book domain entity
-  const createMockBook = () =>
+  // Sample book domain entity (HU-008: levelId instead of level)
+  const createMockBook = (overrides: { levelId?: string | null } = {}) =>
     Book.fromPersistence({
-      id: '550e8400-e29b-41d4-a716-446655440001',
+      id: bookId,
       isbn: '9780132350884',
       title: 'Clean Code',
       authors: [mockAuthor],
       description: 'A Handbook of Agile Software Craftsmanship',
       type: mockBookType,
       format: 'pdf',
-      level: 'Intermediate',
+      levelId: overrides.levelId !== undefined ? overrides.levelId : levelId, // HU-008: UUID FK
       categories: [mockCategory],
       available: true,
       path: '/books/clean-code.pdf',
@@ -146,6 +173,9 @@ describe('PostgresBookRepository', () => {
         },
         types: {
           findFirst: vi.fn().mockResolvedValue(mockBookTypeRecord),
+        },
+        typeLevels: {
+          findMany: vi.fn().mockResolvedValue(mockTypeLevelRecords),
         },
       },
       transaction: vi.fn((fn) => fn(mockDb)),
@@ -188,6 +218,7 @@ describe('PostgresBookRepository', () => {
     it('should return book when found', async () => {
       mockDb.query.books.findFirst.mockResolvedValue(mockBookRecord);
       mockDb.query.types.findFirst.mockResolvedValue(mockBookTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue(mockTypeLevelRecords);
 
       // Mock select for authors, types, and categories fetches
       // The repository calls select().from().innerJoin().where() for each relation
@@ -211,17 +242,19 @@ describe('PostgresBookRepository', () => {
       expect(result).not.toBeNull();
       expect(result?.id).toBe(mockBookRecord.id);
       expect(result?.title).toBe('Clean Code');
-      expect(result?.level?.value).toBe('Intermediate');
+      expect(result?.levelId).toBe(levelId); // HU-008: Now levelId (UUID)
       expect(result?.authors).toHaveLength(1);
       expect(result?.authors[0].name).toBe('Robert C. Martin');
       expect(result?.type.name).toBe('technical');
+      expect(result?.type.levelIds).toContain(levelId); // HU-008: Type has levelIds
       expect(result?.categories).toHaveLength(1);
     });
 
-    it('should return book with null level when level is null in database', async () => {
-      const recordWithNullLevel = { ...mockBookRecord, level: null };
-      mockDb.query.books.findFirst.mockResolvedValue(recordWithNullLevel);
+    it('should return book with null levelId when levelId is null in database (HU-008)', async () => {
+      const recordWithNullLevelId = { ...mockBookRecord, levelId: null };
+      mockDb.query.books.findFirst.mockResolvedValue(recordWithNullLevelId);
       mockDb.query.types.findFirst.mockResolvedValue(mockBookTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue(mockTypeLevelRecords);
 
       let callCount = 0;
       const selectChain = {
@@ -240,7 +273,7 @@ describe('PostgresBookRepository', () => {
       const result = await repository.findById(mockBookRecord.id);
 
       expect(result).not.toBeNull();
-      expect(result?.level).toBeNull();
+      expect(result?.levelId).toBeNull(); // HU-008: Now levelId (UUID or null)
     });
 
     it('should return null when not found', async () => {
@@ -250,12 +283,39 @@ describe('PostgresBookRepository', () => {
 
       expect(result).toBeNull();
     });
+
+    it('should return book with type that has empty levelIds (HU-008)', async () => {
+      const typeRecordNoLevels: TypeSelect = { ...mockBookTypeRecord };
+      mockDb.query.books.findFirst.mockResolvedValue(mockBookRecord);
+      mockDb.query.types.findFirst.mockResolvedValue(typeRecordNoLevels);
+      mockDb.query.typeLevels.findMany.mockResolvedValue([]); // No levels for this type
+
+      let callCount = 0;
+      const selectChain = {
+        from: vi.fn().mockReturnThis(),
+        innerJoin: vi.fn().mockReturnThis(),
+        where: vi.fn().mockImplementation(() => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve([{ authors: mockAuthorRecord }]);
+          }
+          return Promise.resolve([{ categories: mockCategoryRecord }]);
+        }),
+      };
+      mockDb.select.mockReturnValue(selectChain);
+
+      const result = await repository.findById(mockBookRecord.id);
+
+      expect(result).not.toBeNull();
+      expect(result?.type.levelIds).toHaveLength(0); // HU-008: No levels for this type
+    });
   });
 
   describe('findByIsbn', () => {
     it('should return book when found by ISBN', async () => {
       mockDb.query.books.findFirst.mockResolvedValue(mockBookRecord);
       mockDb.query.types.findFirst.mockResolvedValue(mockBookTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue(mockTypeLevelRecords);
 
       let callCount = 0;
       const selectChain = {
@@ -275,6 +335,7 @@ describe('PostgresBookRepository', () => {
 
       expect(result).not.toBeNull();
       expect(result?.isbn?.value).toBe('9780132350884');
+      expect(result?.levelId).toBe(levelId); // HU-008: Verify levelId is mapped
     });
 
     it('should return null when ISBN not found', async () => {
@@ -392,6 +453,39 @@ describe('PostgresBookRepository', () => {
 
       expect(result.id).toBe(book.id);
       expect(result.title).toBe('Clean Code');
+      expect(result.levelId).toBe(levelId); // HU-008: Verify levelId is preserved
+    });
+
+    it('should save book with null levelId (HU-008)', async () => {
+      const book = createMockBook({ levelId: null });
+      const embedding = Array(768).fill(0.1);
+
+      const recordWithNullLevelId = { ...mockBookRecord, levelId: null };
+
+      const bookInsertChain = {
+        values: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockResolvedValue([recordWithNullLevelId]),
+      };
+
+      const authorInsertChain = {
+        values: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockResolvedValue([]),
+      };
+
+      const categoryInsertChain = {
+        values: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockResolvedValue([]),
+      };
+
+      mockDb.insert
+        .mockReturnValueOnce(bookInsertChain)
+        .mockReturnValueOnce(authorInsertChain)
+        .mockReturnValueOnce(categoryInsertChain);
+
+      const result = await repository.save({ book, embedding });
+
+      expect(result.id).toBe(book.id);
+      expect(result.levelId).toBeNull();
     });
 
     it('should throw DuplicateISBNError on ISBN conflict', async () => {
@@ -435,6 +529,7 @@ describe('PostgresBookRepository', () => {
       };
       mockDb.update.mockReturnValue(updateChain);
       mockDb.query.types.findFirst.mockResolvedValue(mockBookTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue(mockTypeLevelRecords);
 
       // Mock select for authors and categories fetch
       let callCount = 0;
@@ -457,6 +552,7 @@ describe('PostgresBookRepository', () => {
       });
 
       expect(result.available).toBe(false);
+      expect(result.levelId).toBe(levelId); // HU-008: levelId unchanged
     });
 
     it('should update path field', async () => {
@@ -468,6 +564,7 @@ describe('PostgresBookRepository', () => {
       };
       mockDb.update.mockReturnValue(updateChain);
       mockDb.query.types.findFirst.mockResolvedValue(mockBookTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue(mockTypeLevelRecords);
 
       let callCount = 0;
       const selectChain = {
@@ -531,6 +628,7 @@ describe('PostgresBookRepository', () => {
     it('should return all books with authors, type, and categories', async () => {
       mockDb.query.books.findMany.mockResolvedValue([mockBookRecord]);
       mockDb.query.types.findFirst.mockResolvedValue(mockBookTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue(mockTypeLevelRecords);
 
       let callCount = 0;
       const selectChain = {
@@ -550,8 +648,10 @@ describe('PostgresBookRepository', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].title).toBe('Clean Code');
+      expect(result[0].levelId).toBe(levelId); // HU-008: Verify levelId is mapped
       expect(result[0].authors).toHaveLength(1);
       expect(result[0].type.name).toBe('technical');
+      expect(result[0].type.levelIds).toContain(levelId); // HU-008: Type has levelIds
       expect(result[0].categories).toHaveLength(1);
     });
 
@@ -561,6 +661,50 @@ describe('PostgresBookRepository', () => {
       const result = await repository.findAll();
 
       expect(result).toEqual([]);
+    });
+
+    it('should return books with different levelIds (HU-008)', async () => {
+      const record1 = { ...mockBookRecord, id: 'book-1', levelId: levelId };
+      const record2 = { ...mockBookRecord, id: 'book-2', levelId: levelId2 };
+      const record3 = { ...mockBookRecord, id: 'book-3', levelId: null };
+
+      mockDb.query.books.findMany.mockResolvedValue([record1, record2, record3]);
+      mockDb.query.types.findFirst.mockResolvedValue(mockBookTypeRecord);
+      mockDb.query.typeLevels.findMany.mockResolvedValue(mockTypeLevelRecords);
+
+      const selectChain = {
+        from: vi.fn().mockReturnThis(),
+        innerJoin: vi.fn().mockReturnThis(),
+        where: vi.fn().mockImplementation(() => {
+          return Promise.resolve([{ authors: mockAuthorRecord }]);
+        }),
+      };
+
+      // Mock for categories (every other call)
+      let categoryCallCount = 0;
+      const categorySelectChain = {
+        from: vi.fn().mockReturnThis(),
+        innerJoin: vi.fn().mockReturnThis(),
+        where: vi.fn().mockImplementation(() => {
+          return Promise.resolve([{ categories: mockCategoryRecord }]);
+        }),
+      };
+
+      // Alternate between authors and categories for each book
+      mockDb.select.mockImplementation(() => {
+        categoryCallCount++;
+        if (categoryCallCount % 2 === 1) {
+          return selectChain;
+        }
+        return categorySelectChain;
+      });
+
+      const result = await repository.findAll();
+
+      expect(result).toHaveLength(3);
+      expect(result[0].levelId).toBe(levelId);
+      expect(result[1].levelId).toBe(levelId2);
+      expect(result[2].levelId).toBeNull();
     });
   });
 

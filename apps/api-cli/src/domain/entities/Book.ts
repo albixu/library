@@ -12,10 +12,12 @@
  *
  * Note: Embeddings are NOT part of the domain model. They are an infrastructure
  * concern for semantic search, managed exclusively at the persistence layer.
+ *
+ * HU-008: The level field is now a UUID reference to the Level entity (or null).
+ * Level validation against the type's allowed levels is done at the use case layer.
  */
 
 import { BookFormat, type BookFormatValue } from '../value-objects/BookFormat.js';
-import { BookLevel, type BookLevelValue } from '../value-objects/BookLevel.js';
 import { ISBN } from '../value-objects/ISBN.js';
 import type { Author } from './Author.js';
 import type { BookType } from './BookType.js';
@@ -26,7 +28,7 @@ import {
   TooManyItemsError,
   DuplicateItemError,
 } from '../errors/DomainErrors.js';
-import { validateId } from '../validators/index.js';
+import { validateId, isValidUUID } from '../validators/index.js';
 
 /**
  * Field length constraints
@@ -51,7 +53,7 @@ export interface CreateBookProps {
   format: string;
   description: string;
   isbn?: string | null;
-  level?: string | null;
+  levelId?: string | null; // HU-008: UUID reference to Level entity
   available?: boolean;
   path?: string | null;
   createdAt?: Date;
@@ -72,7 +74,7 @@ export interface BookPersistenceProps {
   categories: Category[];
   format: BookFormatValue;
   isbn: string | null;
-  level: BookLevelValue | null;
+  levelId: string | null; // HU-008: UUID reference to Level entity
   description: string;
   available: boolean;
   path: string | null;
@@ -107,7 +109,7 @@ export class Book {
     public readonly categories: readonly Category[],
     public readonly format: BookFormat,
     public readonly isbn: ISBN | null,
-    public readonly level: BookLevel | null,
+    public readonly levelId: string | null, // HU-008: UUID reference to Level entity
     public readonly description: string,
     public readonly available: boolean,
     public readonly path: string | null,
@@ -137,7 +139,9 @@ export class Book {
 
     // Validate optional fields
     const isbn = props.isbn ? ISBN.create(props.isbn) : null;
-    const level = props.level ? BookLevel.create(props.level) : null;
+    
+    // HU-008: Validate levelId as UUID if provided
+    const levelId = props.levelId ? Book.validateLevelId(props.levelId) : null;
 
     // Available defaults to false, path is optional
     const available = props.available ?? false;
@@ -155,7 +159,7 @@ export class Book {
       categories,
       format,
       isbn,
-      level,
+      levelId,
       description,
       available,
       path,
@@ -177,7 +181,7 @@ export class Book {
       Object.freeze([...props.categories]),
       BookFormat.fromPersistence(props.format),
       props.isbn ? ISBN.fromPersistence(props.isbn) : null,
-      props.level ? BookLevel.fromPersistence(props.level) : null,
+      props.levelId, // HU-008: UUID is stored directly
       props.description,
       props.available,
       props.path,
@@ -188,7 +192,7 @@ export class Book {
 
   /**
    * Updates the book with new values, returning a new instance
-   * Note: level is NOT editable after creation (semantic content)
+   * Note: levelId is NOT editable after creation (semantic content)
    */
   update(props: UpdateBookProps): Book {
     const title = props.title !== undefined
@@ -235,7 +239,7 @@ export class Book {
       categories,
       format,
       isbn,
-      this.level, // level is NOT editable after creation
+      this.levelId, // levelId is NOT editable after creation
       description,
       available,
       path,
@@ -359,5 +363,22 @@ export class Book {
     }
 
     return trimmedPath;
+  }
+
+  /**
+   * HU-008: Validates levelId as a valid UUID v4
+   */
+  private static validateLevelId(levelId: string): string {
+    const trimmed = levelId.trim();
+    
+    if (trimmed.length === 0) {
+      throw new RequiredFieldError('levelId');
+    }
+
+    if (!isValidUUID(trimmed)) {
+      throw new RequiredFieldError('levelId'); // Invalid UUID treated as invalid input
+    }
+
+    return trimmed;
   }
 }

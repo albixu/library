@@ -21,13 +21,15 @@ export function isValidUUID(value: string): boolean {
 
 /**
  * Validates an ID field, ensuring it's a valid UUID v4
+ * @param id - The ID value to validate
+ * @param fieldName - Optional field name for error messages (defaults to 'id')
  * @throws RequiredFieldError if ID is empty
  * @throws InvalidUUIDError if ID is not a valid UUID v4
  * @returns The trimmed, validated ID
  */
-export function validateId(id: string): string {
+export function validateId(id: string, fieldName = 'id'): string {
   if (!id || id.trim().length === 0) {
-    throw new RequiredFieldError('id');
+    throw new RequiredFieldError(fieldName);
   }
 
   const trimmedId = id.trim();

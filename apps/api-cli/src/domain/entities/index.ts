@@ -31,3 +31,10 @@ export {
   type CategoryPersistenceProps,
   type UpdateCategoryProps,
 } from './Category.js';
+
+export {
+  Level,
+  type CreateLevelProps,
+  type LevelPersistenceProps,
+  type UpdateLevelProps,
+} from './Level.js';

@@ -18,6 +18,7 @@ import { PostgresBookRepository } from '../../../../src/infrastructure/driven/pe
 import { PostgresCategoryRepository } from '../../../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { PostgresTypeRepository } from '../../../../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
 import { PostgresAuthorRepository } from '../../../../src/infrastructure/driven/persistence/PostgresAuthorRepository.js';
+import { PostgresLevelRepository } from '../../../../src/infrastructure/driven/persistence/PostgresLevelRepository.js';
 import { OllamaEmbeddingService } from '../../../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
 import { DuplicateISBNError, InvalidBookTypeError } from '../../../../src/domain/errors/DomainErrors.js';
 import { InvalidISBNError, InvalidBookFormatError } from '../../../../src/domain/errors/DomainErrors.js';
@@ -34,6 +35,7 @@ describe('CreateBookUseCase Integration', () => {
   let categoryRepository: PostgresCategoryRepository;
   let typeRepository: PostgresTypeRepository;
   let authorRepository: PostgresAuthorRepository;
+  let levelRepository: PostgresLevelRepository;
   let embeddingService: OllamaEmbeddingService;
 
   // Configuration
@@ -58,6 +60,9 @@ describe('CreateBookUseCase Integration', () => {
     typeRepository = new PostgresTypeRepository(db as any);
      
     authorRepository = new PostgresAuthorRepository(db as any);
+
+    levelRepository = new PostgresLevelRepository(db as any);
+
     embeddingService = new OllamaEmbeddingService({
       baseUrl: OLLAMA_BASE_URL,
       model: 'nomic-embed-text',
@@ -69,6 +74,7 @@ describe('CreateBookUseCase Integration', () => {
       categoryRepository,
       typeRepository,
       authorRepository,
+      levelRepository,
       embeddingService,
     });
 
