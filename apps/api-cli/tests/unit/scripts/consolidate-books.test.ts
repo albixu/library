@@ -13,7 +13,7 @@ import {
 
 describe('consolidate-books', () => {
   describe('transformBook', () => {
-    it('should transform a source book to consolidated format', () => {
+    it('should preserve all original properties and add type/format', () => {
       const source: SourceBook = {
         id: '9781234567890',
         language: 'en',
@@ -28,17 +28,22 @@ describe('consolidate-books', () => {
 
       const result = transformBook(source);
 
-      expect(result.isbn).toBe('9781234567890');
+      // Original properties preserved
+      expect(result.id).toBe('9781234567890');
       expect(result.title).toBe('Test Book');
       expect(result.authors).toEqual(['Author One', 'Author Two']);
       expect(result.description).toBe('A test description');
+      expect(result.language).toBe('en');
+      expect(result.level).toBe('Intermediate');
+      expect(result.pages).toBe('300');
+      expect(result.publication_date).toBe('January 2024');
+      expect(result.tags).toEqual(['JavaScript', 'TypeScript']);
+      // Added properties
       expect(result.type).toBe('technical');
-      expect(result.categories).toEqual(['JavaScript', 'TypeScript']);
       expect(result.format).toBe('epub');
-      expect(result.available).toBe(false);
     });
 
-    it('should map id to isbn', () => {
+    it('should preserve id field (not rename to isbn)', () => {
       const source: SourceBook = {
         id: '0987654321098',
         title: 'Another Book',
@@ -48,10 +53,10 @@ describe('consolidate-books', () => {
 
       const result = transformBook(source);
 
-      expect(result.isbn).toBe('0987654321098');
+      expect(result.id).toBe('0987654321098');
     });
 
-    it('should map tags to categories', () => {
+    it('should preserve tags as-is (not map to categories)', () => {
       const source: SourceBook = {
         id: '1111111111111',
         title: 'Tagged Book',
@@ -62,10 +67,10 @@ describe('consolidate-books', () => {
 
       const result = transformBook(source);
 
-      expect(result.categories).toEqual(['Category1', 'Category2', 'Category3']);
+      expect(result.tags).toEqual(['Category1', 'Category2', 'Category3']);
     });
 
-    it('should set empty categories when tags is undefined', () => {
+    it('should handle undefined tags (preserve as undefined)', () => {
       const source: SourceBook = {
         id: '2222222222222',
         title: 'No Tags Book',
@@ -75,10 +80,10 @@ describe('consolidate-books', () => {
 
       const result = transformBook(source);
 
-      expect(result.categories).toEqual([]);
+      expect(result.tags).toBeUndefined();
     });
 
-    it('should set empty categories when tags is empty array', () => {
+    it('should preserve empty tags array', () => {
       const source: SourceBook = {
         id: '3333333333333',
         title: 'Empty Tags Book',
@@ -89,7 +94,7 @@ describe('consolidate-books', () => {
 
       const result = transformBook(source);
 
-      expect(result.categories).toEqual([]);
+      expect(result.tags).toEqual([]);
     });
 
     it('should always set type to technical', () => {
@@ -118,20 +123,7 @@ describe('consolidate-books', () => {
       expect(result.format).toBe('epub');
     });
 
-    it('should always set available to false', () => {
-      const source: SourceBook = {
-        id: '6666666666666',
-        title: 'Any Book',
-        authors: ['Author'],
-        description: 'Any description',
-      };
-
-      const result = transformBook(source);
-
-      expect(result.available).toBe(false);
-    });
-
-    it('should ignore language field', () => {
+    it('should preserve language field', () => {
       const source: SourceBook = {
         id: '7777777777777',
         language: 'es',
@@ -142,10 +134,10 @@ describe('consolidate-books', () => {
 
       const result = transformBook(source);
 
-      expect(result).not.toHaveProperty('language');
+      expect(result.language).toBe('es');
     });
 
-    it('should ignore level field', () => {
+    it('should preserve level field', () => {
       const source: SourceBook = {
         id: '8888888888888',
         level: 'Advanced',
@@ -156,10 +148,10 @@ describe('consolidate-books', () => {
 
       const result = transformBook(source);
 
-      expect(result).not.toHaveProperty('level');
+      expect(result.level).toBe('Advanced');
     });
 
-    it('should ignore pages field', () => {
+    it('should preserve pages field', () => {
       const source: SourceBook = {
         id: '9999999999999',
         pages: '500',
@@ -170,10 +162,10 @@ describe('consolidate-books', () => {
 
       const result = transformBook(source);
 
-      expect(result).not.toHaveProperty('pages');
+      expect(result.pages).toBe('500');
     });
 
-    it('should ignore publication_date field', () => {
+    it('should preserve publication_date field', () => {
       const source: SourceBook = {
         id: '1010101010101',
         publication_date: 'March 2025',
@@ -184,7 +176,7 @@ describe('consolidate-books', () => {
 
       const result = transformBook(source);
 
-      expect(result).not.toHaveProperty('publication_date');
+      expect(result.publication_date).toBe('March 2025');
     });
 
     it('should return frozen object', () => {
@@ -437,27 +429,54 @@ describe('consolidate-books', () => {
   });
 
   describe('ConsolidatedBook type structure', () => {
-    it('should have correct readonly properties', () => {
+    it('should have correct readonly properties preserving source and adding type/format', () => {
       const book: ConsolidatedBook = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en',
+        level: 'Intermediate',
+        pages: '250',
+        publication_date: 'January 2024',
+        tags: ['Category'],
         type: 'technical',
-        categories: ['Category'],
         format: 'epub',
-        available: false,
       };
 
       // Type check - these should compile
-      expect(book.isbn).toBe('9781234567890');
+      // Original SourceBook properties preserved
+      expect(book.id).toBe('9781234567890');
       expect(book.title).toBe('Test Book');
       expect(book.authors).toEqual(['Author']);
       expect(book.description).toBe('Description');
+      expect(book.language).toBe('en');
+      expect(book.level).toBe('Intermediate');
+      expect(book.pages).toBe('250');
+      expect(book.publication_date).toBe('January 2024');
+      expect(book.tags).toEqual(['Category']);
+      // Added properties
       expect(book.type).toBe('technical');
-      expect(book.categories).toEqual(['Category']);
       expect(book.format).toBe('epub');
-      expect(book.available).toBe(false);
+    });
+
+    it('should work with minimal source book properties', () => {
+      const book: ConsolidatedBook = {
+        id: '9780987654321',
+        title: 'Minimal Book',
+        authors: ['Author'],
+        description: 'A description',
+        type: 'technical',
+        format: 'epub',
+      };
+
+      expect(book.id).toBe('9780987654321');
+      expect(book.title).toBe('Minimal Book');
+      expect(book.type).toBe('technical');
+      expect(book.format).toBe('epub');
+      // Optional properties are undefined
+      expect(book.language).toBeUndefined();
+      expect(book.tags).toBeUndefined();
     });
   });
 

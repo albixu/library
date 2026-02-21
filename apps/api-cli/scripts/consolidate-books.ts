@@ -8,7 +8,8 @@
  * - Reads all *.json files from original_data/ directory (monorepo root)
  * - Detects duplicates by ISBN (id field in source)
  * - Keeps first occurrence of each ISBN (alphabetical file order)
- * - Transforms structure to match domain model
+ * - Preserves ALL original properties from source books
+ * - Adds type: 'technical' and format: 'epub' to each book
  * - Excludes books that already exist in the database (by ISBN)
  *
  * Usage:
@@ -48,31 +49,28 @@ const OUTPUT_FILE = join(OUTPUT_DIR, 'books.json');
 
 /**
  * Source book structure (from JSON files)
+ * Uses index signature to allow any additional properties
  */
 interface SourceBook {
   readonly id: string;
-  readonly language?: string;
-  readonly level?: string;
   readonly title: string;
   readonly authors: readonly string[];
+  readonly description: string;
+  readonly language?: string;
+  readonly level?: string;
   readonly pages?: string;
   readonly publication_date?: string;
-  readonly description: string;
   readonly tags?: readonly string[];
+  readonly [key: string]: unknown;
 }
 
 /**
- * Target book structure (for database seeding)
+ * Consolidated book structure (preserves all original properties + type/format)
+ * The output maintains ALL original properties and adds type/format
  */
-interface ConsolidatedBook {
-  readonly isbn: string;
-  readonly title: string;
-  readonly authors: readonly string[];
-  readonly description: string;
+interface ConsolidatedBook extends SourceBook {
   readonly type: string;
-  readonly categories: readonly string[];
   readonly format: string;
-  readonly available: boolean;
 }
 
 /**
@@ -88,19 +86,15 @@ interface ConsolidationResult {
 }
 
 /**
- * Transforms a source book to the consolidated format
+ * Enhances a source book with type and format properties.
+ * Preserves ALL original properties and adds type: 'technical' and format: 'epub'.
  */
 function transformBook(source: SourceBook): ConsolidatedBook {
   return Object.freeze({
-    isbn: source.id,
-    title: source.title,
-    authors: Object.freeze([...source.authors]),
-    description: source.description,
+    ...source,
     type: 'technical',
-    categories: Object.freeze(source.tags ? [...source.tags] : []),
     format: 'epub',
-    available: false,
-  });
+  }) as ConsolidatedBook;
 }
 
 /**
