@@ -149,8 +149,7 @@ export class PostgresLevelRepository implements LevelRepository {
       })
       .from(levels)
       .innerJoin(typeLevels, eq(levels.id, typeLevels.levelId))
-      .where(eq(typeLevels.typeId, typeId))
-      .orderBy(asc(levels.name));
+      .where(eq(typeLevels.typeId, typeId));
 
     return LevelMapper.toDomainList(results);
   }
