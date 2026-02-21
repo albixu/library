@@ -18,6 +18,8 @@ export {
   DuplicateItemError,
   InvalidBookTypeError,
   EmbeddingTextTooLongError,
+  CategoryTypeMismatchError,
+  LevelTypeMismatchError,
 } from './DomainErrors.js';
 
 // Re-export Value Object errors for convenience
