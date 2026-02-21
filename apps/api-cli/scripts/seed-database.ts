@@ -36,6 +36,7 @@ import { PostgresBookRepository } from '../src/infrastructure/driven/persistence
 import { PostgresCategoryRepository } from '../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { PostgresTypeRepository } from '../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
 import { PostgresAuthorRepository } from '../src/infrastructure/driven/persistence/PostgresAuthorRepository.js';
+import { PostgresLevelRepository } from '../src/infrastructure/driven/persistence/PostgresLevelRepository.js';
 import { CreateBookUseCase, type CreateBookInput } from '../src/application/use-cases/CreateBookUseCase.js';
 import type { Logger } from '../src/application/ports/Logger.js';
 
@@ -141,13 +142,12 @@ async function readBooksFile(filePath: string): Promise<ConsolidatedBook[]> {
 
 /**
  * Converts a ConsolidatedBook to CreateBookInput
- * Note: CreateBookUseCase expects 'author' (singular) but we have 'authors' (plural)
- * For now, we'll use the first author. The use case will create the author entity.
+ * HU-008: CreateBookUseCase now expects 'authors' (plural) as string array.
  */
 function toCreateBookInput(book: ConsolidatedBook): CreateBookInput {
   return {
     title: book.title,
-    author: book.authors[0] ?? 'Unknown Author', // Use first author for now
+    authors: [...book.authors],
     description: book.description,
     type: book.type,
     categoryNames: [...book.categories],
@@ -311,13 +311,16 @@ async function seedDatabase(): Promise<SeedingSummary> {
     const categoryRepository = new PostgresCategoryRepository(db as any);
     const typeRepository = new PostgresTypeRepository(db as any);
     const authorRepository = new PostgresAuthorRepository(db as any);
+    const levelRepository = new PostgresLevelRepository(db as any);
 
     // Initialize use case
+    // HU-008: Now includes levelRepository for level validation and creation
     const createBookUseCase = new CreateBookUseCase({
       bookRepository,
       categoryRepository,
       typeRepository,
       authorRepository,
+      levelRepository,
       embeddingService,
       logger,
     });
