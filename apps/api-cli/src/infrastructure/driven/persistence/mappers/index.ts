@@ -6,6 +6,7 @@
 
 export { AuthorMapper } from './AuthorMapper.js';
 export { TypeMapper } from './TypeMapper.js';
+export { LevelMapper } from './LevelMapper.js';
 export { CategoryMapper } from './CategoryMapper.js';
 export { BookMapper } from './BookMapper.js';
 export type { BookWithRelations, BookToPersistenceParams } from './BookMapper.js';
