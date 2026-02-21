@@ -7,14 +7,18 @@
  * Types are seeded at database initialization and should not be created/updated
  * through the application layer.
  *
+ * HU-008: Updated to load levelIds from type_levels junction table.
+ * Each BookType now includes its associated Level UUIDs.
+ *
  * Part of TASK-008 for HU-002 (Initial Data Load)
  */
 
-import { count, asc } from 'drizzle-orm';
+import { count, asc, eq, inArray } from 'drizzle-orm';
 import type { TypeRepository } from '../../../application/ports/TypeRepository.js';
 import type { BookType } from '../../../domain/entities/BookType.js';
-import { types } from './drizzle/schema.js';
-import { TypeMapper } from './mappers/TypeMapper.js';
+import { types, typeLevels } from './drizzle/schema.js';
+import type { TypeSelect } from './drizzle/schema.js';
+import { TypeMapper, type TypeSelectWithLevels } from './mappers/TypeMapper.js';
 import type { DatabaseClient } from './types.js';
 
 /**
@@ -22,6 +26,59 @@ import type { DatabaseClient } from './types.js';
  */
 export class PostgresTypeRepository implements TypeRepository {
   constructor(public readonly db: DatabaseClient) {}
+
+  /**
+   * Loads levelIds for a single type from the type_levels junction table
+   */
+  private async loadLevelIdsForType(typeId: string): Promise<string[]> {
+    const results = await this.db.query.typeLevels.findMany({
+      where: eq(typeLevels.typeId, typeId),
+    });
+    return results.map((r) => r.levelId);
+  }
+
+  /**
+   * Loads levelIds for multiple types from the type_levels junction table
+   * Returns a map of typeId -> levelIds[]
+   */
+  private async loadLevelIdsForTypes(typeIds: string[]): Promise<Map<string, string[]>> {
+    if (typeIds.length === 0) {
+      return new Map();
+    }
+
+    const results = await this.db.query.typeLevels.findMany({
+      where: inArray(typeLevels.typeId, typeIds),
+    });
+
+    const levelIdsByType = new Map<string, string[]>();
+    
+    // Initialize all typeIds with empty arrays
+    for (const typeId of typeIds) {
+      levelIdsByType.set(typeId, []);
+    }
+
+    // Populate with actual level IDs
+    for (const record of results) {
+      const levels = levelIdsByType.get(record.typeId) ?? [];
+      levels.push(record.levelId);
+      levelIdsByType.set(record.typeId, levels);
+    }
+
+    return levelIdsByType;
+  }
+
+  /**
+   * Combines a type record with its levelIds to create a TypeSelectWithLevels
+   */
+  private combineWithLevelIds(
+    record: TypeSelect,
+    levelIds: readonly string[],
+  ): TypeSelectWithLevels {
+    return {
+      ...record,
+      levelIds,
+    };
+  }
 
   /**
    * Finds a book type by its unique identifier
@@ -38,7 +95,8 @@ export class PostgresTypeRepository implements TypeRepository {
       return null;
     }
 
-    return TypeMapper.toDomain(result);
+    const levelIds = await this.loadLevelIdsForType(result.id);
+    return TypeMapper.toDomain(this.combineWithLevelIds(result, levelIds));
   }
 
   /**
@@ -69,7 +127,8 @@ export class PostgresTypeRepository implements TypeRepository {
       return null;
     }
 
-    return TypeMapper.toDomain(result);
+    const levelIds = await this.loadLevelIdsForType(result.id);
+    return TypeMapper.toDomain(this.combineWithLevelIds(result, levelIds));
   }
 
   /**
@@ -79,7 +138,18 @@ export class PostgresTypeRepository implements TypeRepository {
    */
   async findAll(): Promise<BookType[]> {
     const results = await this.db.query.types.findMany();
-    return TypeMapper.toDomainList(results);
+    
+    if (results.length === 0) {
+      return [];
+    }
+
+    const levelIdsByType = await this.loadLevelIdsForTypes(results.map((t) => t.id));
+    
+    const recordsWithLevels: TypeSelectWithLevels[] = results.map((record) =>
+      this.combineWithLevelIds(record, levelIdsByType.get(record.id) ?? []),
+    );
+
+    return TypeMapper.toDomainList(recordsWithLevels);
   }
 
   /**
@@ -91,7 +161,18 @@ export class PostgresTypeRepository implements TypeRepository {
     const results = await this.db.query.types.findMany({
       orderBy: (types) => asc(types.name),
     });
-    return TypeMapper.toDomainList(results);
+
+    if (results.length === 0) {
+      return [];
+    }
+
+    const levelIdsByType = await this.loadLevelIdsForTypes(results.map((t) => t.id));
+    
+    const recordsWithLevels: TypeSelectWithLevels[] = results.map((record) =>
+      this.combineWithLevelIds(record, levelIdsByType.get(record.id) ?? []),
+    );
+
+    return TypeMapper.toDomainList(recordsWithLevels);
   }
 
   /**
