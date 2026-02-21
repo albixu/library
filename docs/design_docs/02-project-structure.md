@@ -83,9 +83,10 @@ library/
 │       ├── 02-project-structure.md
 │       ├── 03-hu-001-create-book.md
 │       ├── 04-hu-002-initial-data-load.md
-│       ├── 05-hu-003-book-level.md
+│       ├── 05-hu-003-book-level.md          # Superseded by HU-008
 │       ├── 06-hu-004-standardize-api-responses.md
-│       └── 07-hu-005-list-book-types.md
+│       ├── 07-hu-005-list-book-types.md
+│       └── 08-hu-008-type-category-level-relationships.md
 │
 ├── apps/
 │   ├── api-cli/                             # 🖥️ Backend: API REST
@@ -95,11 +96,11 @@ library/
 │   │   │   │   │   ├── Book.ts
 │   │   │   │   │   ├── Author.ts            # Entidad Author (N:M con Book)
 │   │   │   │   │   ├── BookType.ts          # Entidad BookType (N:1 con Book)
-│   │   │   │   │   ├── Category.ts
+│   │   │   │   │   ├── Category.ts          # Entidad Category (pertenece a Type)
+│   │   │   │   │   ├── Level.ts             # Entidad Level (N:M con Type)
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── value-objects/
 │   │   │   │   │   ├── BookFormat.ts
-│   │   │   │   │   ├── BookLevel.ts
 │   │   │   │   │   ├── ISBN.ts
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── validators/
@@ -120,6 +121,7 @@ library/
 │   │   │   │   │   ├── AuthorRepository.ts
 │   │   │   │   │   ├── TypeRepository.ts
 │   │   │   │   │   ├── CategoryRepository.ts
+│   │   │   │   │   ├── LevelRepository.ts   # Puerto Level (N:M con Type)
 │   │   │   │   │   ├── EmbeddingService.ts
 │   │   │   │   │   ├── Logger.ts
 │   │   │   │   │   └── index.ts
@@ -135,6 +137,7 @@ library/
 │   │   │   │   │   │   ├── PostgresAuthorRepository.ts
 │   │   │   │   │   │   ├── PostgresTypeRepository.ts
 │   │   │   │   │   │   ├── PostgresCategoryRepository.ts
+│   │   │   │   │   │   ├── PostgresLevelRepository.ts  # Implementa LevelRepository
 │   │   │   │   │   │   ├── types.ts              # DatabaseClient type
 │   │   │   │   │   │   ├── utils.ts              # Utilidades (isDuplicateKeyError)
 │   │   │   │   │   │   ├── drizzle/
@@ -144,6 +147,7 @@ library/
 │   │   │   │   │   │   │   ├── AuthorMapper.ts
 │   │   │   │   │   │   │   ├── CategoryMapper.ts
 │   │   │   │   │   │   │   ├── TypeMapper.ts
+│   │   │   │   │   │   │   ├── LevelMapper.ts    # Mapper Level <-> DB
 │   │   │   │   │   │   │   └── index.ts
 │   │   │   │   │   │   └── index.ts
 │   │   │   │   │   ├── embedding/

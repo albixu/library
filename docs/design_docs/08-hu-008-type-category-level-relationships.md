@@ -5,7 +5,7 @@
 | Campo | Valor |
 |-------|-------|
 | **ID** | HU-008 |
-| **Estado** | Borrador |
+| **Estado** | Implementado |
 | **Fecha** | 2026-02-21 |
 | **Prioridad** | Alta |
 | **Estimacion** | A definir |

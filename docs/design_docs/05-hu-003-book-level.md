@@ -1,11 +1,21 @@
 # Design Doc: HU-003 - Nivel de Dificultad en Libros
 
+> ⚠️ **NOTA**: Esta historia de usuario ha sido **parcialmente supersedida** por [HU-008](./08-hu-008-type-category-level-relationships.md).
+> 
+> **Cambios importantes de HU-008**:
+> - `BookLevel` ya NO es un Value Object enum, sino una **Entidad `Level`** con tabla propia
+> - Los niveles se crean **dinámicamente** según los datos de entrada
+> - Existe relación **N:M entre Type y Level** (tabla `type_levels`)
+> - Se valida que el nivel pertenezca al tipo del libro al crear
+> 
+> Este documento se mantiene como referencia histórica del diseño original.
+
 ## Metadata
 
 | Campo | Valor |
 |-------|-------|
 | **ID** | HU-003 |
-| **Estado** | Borrador |
+| **Estado** | Supersedida por HU-008 |
 | **Fecha** | 2026-02-17 |
 | **Prioridad** | Media |
 | **Estimación** | A definir |
