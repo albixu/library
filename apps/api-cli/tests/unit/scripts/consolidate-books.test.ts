@@ -2,10 +2,11 @@
  * Unit tests for consolidate-books.ts script
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   transformBook,
   isValidSourceBook,
+  getExistingIsbns,
   type SourceBook,
   type ConsolidatedBook,
 } from '../../../scripts/consolidate-books.js';
@@ -457,6 +458,68 @@ describe('consolidate-books', () => {
       expect(book.categories).toEqual(['Category']);
       expect(book.format).toBe('epub');
       expect(book.available).toBe(false);
+    });
+  });
+
+  describe('getExistingIsbns', () => {
+    it('should return set of existing ISBNs from database', async () => {
+      // Mock database that returns books with ISBNs
+      const mockDb = {
+        select: vi.fn().mockReturnThis(),
+        from: vi.fn().mockResolvedValue([
+          { isbn: '9781234567890' },
+          { isbn: '9780987654321' },
+          { isbn: null },  // Book without ISBN
+        ]),
+      };
+
+      const result = await getExistingIsbns(mockDb as any);
+
+      expect(result).toBeInstanceOf(Set);
+      expect(result.size).toBe(2);
+      expect(result.has('9781234567890')).toBe(true);
+      expect(result.has('9780987654321')).toBe(true);
+      expect(result.has(null as any)).toBe(false);
+    });
+
+    it('should return empty set when no books exist', async () => {
+      const mockDb = {
+        select: vi.fn().mockReturnThis(),
+        from: vi.fn().mockResolvedValue([]),
+      };
+
+      const result = await getExistingIsbns(mockDb as any);
+
+      expect(result).toBeInstanceOf(Set);
+      expect(result.size).toBe(0);
+    });
+
+    it('should filter out null ISBNs', async () => {
+      const mockDb = {
+        select: vi.fn().mockReturnThis(),
+        from: vi.fn().mockResolvedValue([
+          { isbn: null },
+          { isbn: null },
+        ]),
+      };
+
+      const result = await getExistingIsbns(mockDb as any);
+
+      expect(result.size).toBe(0);
+    });
+
+    it('should handle database with only null ISBNs', async () => {
+      const mockDb = {
+        select: vi.fn().mockReturnThis(),
+        from: vi.fn().mockResolvedValue([
+          { isbn: null },
+        ]),
+      };
+
+      const result = await getExistingIsbns(mockDb as any);
+
+      expect(result).toBeInstanceOf(Set);
+      expect(result.size).toBe(0);
     });
   });
 });

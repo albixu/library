@@ -9,6 +9,7 @@
  * - Detects duplicates by ISBN (id field in source)
  * - Keeps first occurrence of each ISBN (alphabetical file order)
  * - Transforms structure to match domain model
+ * - Excludes books that already exist in the database (by ISBN)
  *
  * Usage:
  *   npx tsx scripts/consolidate-books.ts
@@ -18,6 +19,15 @@
 import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from '../src/infrastructure/driven/persistence/drizzle/schema.js';
+import { loadEnvConfig } from '../src/infrastructure/config/env.js';
+
+/**
+ * Drizzle database type for type safety
+ */
+type DrizzleDb = ReturnType<typeof drizzle<typeof schema>>;
 
 // Get directory paths
 const __filename = fileURLToPath(import.meta.url);
@@ -70,6 +80,7 @@ interface ConsolidationResult {
   readonly totalBooksRead: number;
   readonly uniqueBooks: number;
   readonly duplicatesSkipped: number;
+  readonly existingInDbSkipped: number;
   readonly outputPath: string;
 }
 
@@ -112,6 +123,26 @@ function isValidSourceBook(obj: unknown): obj is SourceBook {
 }
 
 /**
+ * Retrieves all existing ISBNs from the database
+ * Used to exclude books that are already in the database from consolidation
+ *
+ * @param db - Drizzle database instance
+ * @returns Set of existing ISBN strings (null values filtered out)
+ */
+async function getExistingIsbns(db: DrizzleDb): Promise<Set<string>> {
+  const results = await db.select({ isbn: schema.books.isbn }).from(schema.books);
+  const isbns = new Set<string>();
+
+  for (const row of results) {
+    if (row.isbn !== null) {
+      isbns.add(row.isbn);
+    }
+  }
+
+  return isbns;
+}
+
+/**
  * Reads and parses a single JSON file
  */
 async function readJsonFile(filePath: string): Promise<SourceBook[]> {
@@ -143,63 +174,88 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
   console.log(`Source directory: ${SOURCE_DIR}`);
   console.log(`Output file: ${OUTPUT_FILE}`);
 
-  // Get all JSON files sorted alphabetically
-  const files = await readdir(SOURCE_DIR);
-  const jsonFiles = files.filter((f) => f.endsWith('.json')).sort();
+  // Load environment configuration and connect to database
+  const env = loadEnvConfig();
+  const pool = new Pool({ connectionString: env.database.url });
+  const db = drizzle(pool, { schema });
 
-  if (jsonFiles.length === 0) {
-    throw new Error(`No JSON files found in ${SOURCE_DIR}`);
-  }
+  try {
+    // Get existing ISBNs from database
+    console.log('Connecting to database to check existing books...');
+    const existingIsbns = await getExistingIsbns(db);
+    console.log(`Found ${existingIsbns.size} existing books in database`);
 
-  console.log(`Found ${jsonFiles.length} JSON files`);
+    // Get all JSON files sorted alphabetically
+    const files = await readdir(SOURCE_DIR);
+    const jsonFiles = files.filter((f) => f.endsWith('.json')).sort();
 
-  // Track seen ISBNs to detect duplicates
-  const seenIsbns = new Set<string>();
-  const consolidatedBooks: ConsolidatedBook[] = [];
-  let totalBooksRead = 0;
-  let duplicatesSkipped = 0;
-
-  // Process each file in alphabetical order
-  for (const file of jsonFiles) {
-    const filePath = join(SOURCE_DIR, file);
-    console.log(`Processing: ${file}`);
-
-    const books = await readJsonFile(filePath);
-    totalBooksRead += books.length;
-
-    for (const book of books) {
-      if (seenIsbns.has(book.id)) {
-        duplicatesSkipped++;
-        continue;
-      }
-
-      seenIsbns.add(book.id);
-      consolidatedBooks.push(transformBook(book));
+    if (jsonFiles.length === 0) {
+      throw new Error(`No JSON files found in ${SOURCE_DIR}`);
     }
+
+    console.log(`Found ${jsonFiles.length} JSON files`);
+
+    // Track seen ISBNs to detect duplicates
+    const seenIsbns = new Set<string>();
+    const consolidatedBooks: ConsolidatedBook[] = [];
+    let totalBooksRead = 0;
+    let duplicatesSkipped = 0;
+    let existingInDbSkipped = 0;
+
+    // Process each file in alphabetical order
+    for (const file of jsonFiles) {
+      const filePath = join(SOURCE_DIR, file);
+      console.log(`Processing: ${file}`);
+
+      const books = await readJsonFile(filePath);
+      totalBooksRead += books.length;
+
+      for (const book of books) {
+        // Skip if already exists in database
+        if (existingIsbns.has(book.id)) {
+          existingInDbSkipped++;
+          continue;
+        }
+
+        // Skip if duplicate within source files
+        if (seenIsbns.has(book.id)) {
+          duplicatesSkipped++;
+          continue;
+        }
+
+        seenIsbns.add(book.id);
+        consolidatedBooks.push(transformBook(book));
+      }
+    }
+
+    // Ensure output directory exists
+    await mkdir(OUTPUT_DIR, { recursive: true });
+
+    // Write consolidated output
+    await writeFile(OUTPUT_FILE, JSON.stringify(consolidatedBooks, null, 2), 'utf-8');
+
+    const result: ConsolidationResult = Object.freeze({
+      totalFiles: jsonFiles.length,
+      totalBooksRead,
+      uniqueBooks: consolidatedBooks.length,
+      duplicatesSkipped,
+      existingInDbSkipped,
+      outputPath: OUTPUT_FILE,
+    });
+
+    console.log('\n--- Consolidation Complete ---');
+    console.log(`Files processed: ${result.totalFiles}`);
+    console.log(`Total books read: ${result.totalBooksRead}`);
+    console.log(`Unique books: ${result.uniqueBooks}`);
+    console.log(`Duplicates skipped: ${result.duplicatesSkipped}`);
+    console.log(`Already in database: ${result.existingInDbSkipped}`);
+    console.log(`Output written to: ${result.outputPath}`);
+
+    return result;
+  } finally {
+    // Always close the database connection
+    await pool.end();
   }
-
-  // Ensure output directory exists
-  await mkdir(OUTPUT_DIR, { recursive: true });
-
-  // Write consolidated output
-  await writeFile(OUTPUT_FILE, JSON.stringify(consolidatedBooks, null, 2), 'utf-8');
-
-  const result: ConsolidationResult = Object.freeze({
-    totalFiles: jsonFiles.length,
-    totalBooksRead,
-    uniqueBooks: consolidatedBooks.length,
-    duplicatesSkipped,
-    outputPath: OUTPUT_FILE,
-  });
-
-  console.log('\n--- Consolidation Complete ---');
-  console.log(`Files processed: ${result.totalFiles}`);
-  console.log(`Total books read: ${result.totalBooksRead}`);
-  console.log(`Unique books: ${result.uniqueBooks}`);
-  console.log(`Duplicates skipped: ${result.duplicatesSkipped}`);
-  console.log(`Output written to: ${result.outputPath}`);
-
-  return result;
 }
 
 /**
@@ -221,5 +277,5 @@ if (isMainModule()) {
   });
 }
 
-export { consolidateBooks, transformBook, isValidSourceBook };
-export type { SourceBook, ConsolidatedBook, ConsolidationResult };
+export { consolidateBooks, transformBook, isValidSourceBook, getExistingIsbns };
+export type { SourceBook, ConsolidatedBook, ConsolidationResult, DrizzleDb };
