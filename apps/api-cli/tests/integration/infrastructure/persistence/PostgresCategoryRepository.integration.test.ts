@@ -286,4 +286,96 @@ describe('PostgresCategoryRepository Integration', () => {
       expect(all).toEqual([]);
     });
   });
+
+  describe('findAllSorted', () => {
+    it('should return all categories sorted alphabetically by name (A-Z)', async () => {
+      // Insert categories in non-alphabetical order
+      await repository.save(Category.create({ id: generateUUID(), name: 'Zebra', typeId: testTypeId }));
+      await repository.save(Category.create({ id: generateUUID(), name: 'Apple', typeId: testTypeId }));
+      await repository.save(Category.create({ id: generateUUID(), name: 'Mango', typeId: testTypeId }));
+
+      const all = await repository.findAllSorted();
+
+      expect(all).toHaveLength(3);
+      expect(all[0]!.name).toBe('apple');
+      expect(all[1]!.name).toBe('mango');
+      expect(all[2]!.name).toBe('zebra');
+    });
+
+    it('should return empty array when no categories exist', async () => {
+      const all = await repository.findAllSorted();
+      expect(all).toEqual([]);
+    });
+
+    it('should include categories from all types', async () => {
+      // Get another type ID
+      const novelType = await typeRepository.findByName('novel');
+      if (!novelType) {
+        throw new Error('Type "novel" not found in database. Ensure seed data is loaded.');
+      }
+
+      await repository.save(Category.create({ id: generateUUID(), name: 'Tech Category', typeId: testTypeId }));
+      await repository.save(Category.create({ id: generateUUID(), name: 'Novel Category', typeId: novelType.id }));
+
+      const all = await repository.findAllSorted();
+
+      expect(all).toHaveLength(2);
+      // Verify both types are included
+      const typeIds = all.map((c) => c.typeId);
+      expect(typeIds).toContain(testTypeId);
+      expect(typeIds).toContain(novelType.id);
+    });
+  });
+
+  describe('findByTypeIdSorted', () => {
+    it('should return categories for a specific type sorted alphabetically', async () => {
+      // Insert categories in non-alphabetical order
+      await repository.save(Category.create({ id: generateUUID(), name: 'Zebra', typeId: testTypeId }));
+      await repository.save(Category.create({ id: generateUUID(), name: 'Apple', typeId: testTypeId }));
+      await repository.save(Category.create({ id: generateUUID(), name: 'Mango', typeId: testTypeId }));
+
+      const result = await repository.findByTypeIdSorted(testTypeId);
+
+      expect(result).toHaveLength(3);
+      expect(result[0]!.name).toBe('apple');
+      expect(result[1]!.name).toBe('mango');
+      expect(result[2]!.name).toBe('zebra');
+    });
+
+    it('should return empty array when type has no categories', async () => {
+      const result = await repository.findByTypeIdSorted(generateUUID());
+      expect(result).toEqual([]);
+    });
+
+    it('should only return categories for the specified type', async () => {
+      // Get another type ID
+      const novelType = await typeRepository.findByName('novel');
+      if (!novelType) {
+        throw new Error('Type "novel" not found in database. Ensure seed data is loaded.');
+      }
+
+      await repository.save(Category.create({ id: generateUUID(), name: 'Tech Category', typeId: testTypeId }));
+      await repository.save(Category.create({ id: generateUUID(), name: 'Novel Category', typeId: novelType.id }));
+
+      const techCategories = await repository.findByTypeIdSorted(testTypeId);
+
+      expect(techCategories).toHaveLength(1);
+      expect(techCategories[0]!.name).toBe('tech category');
+      expect(techCategories[0]!.typeId).toBe(testTypeId);
+    });
+
+    it('should return all categories for a type with multiple categories', async () => {
+      await repository.save(Category.create({ id: generateUUID(), name: 'Best Practices', typeId: testTypeId }));
+      await repository.save(Category.create({ id: generateUUID(), name: 'Architecture', typeId: testTypeId }));
+      await repository.save(Category.create({ id: generateUUID(), name: 'Programming', typeId: testTypeId }));
+
+      const result = await repository.findByTypeIdSorted(testTypeId);
+
+      expect(result).toHaveLength(3);
+      // Verify alphabetical order
+      expect(result[0]!.name).toBe('architecture');
+      expect(result[1]!.name).toBe('best practices');
+      expect(result[2]!.name).toBe('programming');
+    });
+  });
 });
