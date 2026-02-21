@@ -472,4 +472,167 @@ describe('PostgresLevelRepository', () => {
       });
     });
   });
+
+  describe('findAllSorted', () => {
+    it('should return all levels sorted alphabetically', async () => {
+      // Sorted: Advanced, Beginner, Intermediate
+      const mockSelect = vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue([
+            mockLevelRecord3, // Advanced
+            mockLevelRecord,  // Beginner
+            mockLevelRecord2, // Intermediate
+          ]),
+        }),
+      });
+      mockDb.select = mockSelect;
+
+      const result = await repository.findAllSorted();
+
+      expect(result).toHaveLength(3);
+      expect(result[0].name).toBe('Advanced');
+      expect(result[1].name).toBe('Beginner');
+      expect(result[2].name).toBe('Intermediate');
+    });
+
+    it('should return empty array when no levels exist', async () => {
+      const mockSelect = vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue([]),
+        }),
+      });
+      mockDb.select = mockSelect;
+
+      const result = await repository.findAllSorted();
+
+      expect(result).toEqual([]);
+    });
+
+    it('should call select with orderBy', async () => {
+      const mockOrderBy = vi.fn().mockResolvedValue([]);
+      const mockFrom = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+      mockDb.select = mockSelect;
+
+      await repository.findAllSorted();
+
+      expect(mockSelect).toHaveBeenCalled();
+      expect(mockFrom).toHaveBeenCalled();
+      expect(mockOrderBy).toHaveBeenCalled();
+    });
+
+    it('should return domain entities with all properties', async () => {
+      const mockSelect = vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue([mockLevelRecord]),
+        }),
+      });
+      mockDb.select = mockSelect;
+
+      const result = await repository.findAllSorted();
+
+      expect(result[0].id).toBe(mockLevelRecord.id);
+      expect(result[0].name).toBe(mockLevelRecord.name);
+      expect(result[0].createdAt).toEqual(mockLevelRecord.createdAt);
+      expect(result[0].updatedAt).toEqual(mockLevelRecord.updatedAt);
+    });
+  });
+
+  describe('findByTypeIdSorted', () => {
+    it('should return levels for type sorted alphabetically', async () => {
+      const mockSelect = vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue([
+                mockLevelRecord3, // Advanced
+                mockLevelRecord,  // Beginner
+              ]),
+            }),
+          }),
+        }),
+      });
+      mockDb.select = mockSelect;
+
+      const result = await repository.findByTypeIdSorted(mockTypeId);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].name).toBe('Advanced');
+      expect(result[1].name).toBe('Beginner');
+    });
+
+    it('should return empty array when type has no levels', async () => {
+      const mockSelect = vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue([]),
+            }),
+          }),
+        }),
+      });
+      mockDb.select = mockSelect;
+
+      const result = await repository.findByTypeIdSorted(mockTypeId);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should call select with join, where and orderBy', async () => {
+      const mockOrderBy = vi.fn().mockResolvedValue([]);
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+      const mockInnerJoin = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockFrom = vi.fn().mockReturnValue({ innerJoin: mockInnerJoin });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+      mockDb.select = mockSelect;
+
+      await repository.findByTypeIdSorted(mockTypeId);
+
+      expect(mockSelect).toHaveBeenCalled();
+      expect(mockFrom).toHaveBeenCalled();
+      expect(mockInnerJoin).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalled();
+      expect(mockOrderBy).toHaveBeenCalled();
+    });
+
+    it('should only include levels associated with the type', async () => {
+      // Only return levels that are in type_levels junction table
+      const mockSelect = vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue([mockLevelRecord]),
+            }),
+          }),
+        }),
+      });
+      mockDb.select = mockSelect;
+
+      const result = await repository.findByTypeIdSorted(mockTypeId);
+
+      // Should return only the one level associated with this type
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(mockLevelRecord.id);
+    });
+
+    it('should return domain entities with all properties', async () => {
+      const mockSelect = vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue([mockLevelRecord]),
+            }),
+          }),
+        }),
+      });
+      mockDb.select = mockSelect;
+
+      const result = await repository.findByTypeIdSorted(mockTypeId);
+
+      expect(result[0].id).toBe(mockLevelRecord.id);
+      expect(result[0].name).toBe(mockLevelRecord.name);
+      expect(result[0].createdAt).toEqual(mockLevelRecord.createdAt);
+      expect(result[0].updatedAt).toEqual(mockLevelRecord.updatedAt);
+    });
+  });
 });
