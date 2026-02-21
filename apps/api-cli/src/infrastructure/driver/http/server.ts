@@ -97,7 +97,7 @@ export async function createServer(
       routes: [
         { method: 'POST', path: `${prefix}/books` },
         { method: 'GET', path: `${prefix}/book-types` },
-        { method: 'GET', path: `${prefix}/categories` },
+        { method: 'GET', path: `${prefix}/book-categories` },
       ],
     });
   });
