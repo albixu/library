@@ -21,6 +21,8 @@ tags:
     description: Operaciones de gestión de libros
   - name: Book Types
     description: Operaciones de consulta de tipos de libro
+  - name: Categories
+    description: Operaciones de consulta de categorías
 
 paths:
   /books:
@@ -243,6 +245,99 @@ paths:
                   - id: "550e8400-e29b-41d4-a716-446655440008"
                     name: "technical"
                 error: null
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Database connection failed"
+
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: Listar categorías de libros
+      description: |
+        Devuelve todas las categorías de libros, ordenadas alfabéticamente por nombre.
+        Opcionalmente se puede filtrar por tipo de libro.
+        
+        ## Uso
+        
+        Este endpoint está diseñado para poblar dropdowns y selects en el frontend.
+        Cada categoría incluye `id`, `name`, `typeId` y `description` (sin timestamps).
+        
+        ## Filtrado por Tipo
+        
+        Si se proporciona el parámetro `type`, solo se devuelven las categorías que pertenecen
+        a ese tipo de libro. El filtro es case-insensitive.
+        
+        Si el tipo no existe, se devuelve un array vacío (no error).
+        
+        ## Ordenamiento
+        
+        Las categorías se devuelven ordenadas alfabéticamente (A-Z) por el campo `name`.
+      operationId: listCategories
+      parameters:
+        - name: type
+          in: query
+          required: false
+          description: |
+            Nombre del tipo de libro para filtrar categorías (case-insensitive).
+            Si se omite, devuelve todas las categorías.
+          schema:
+            type: string
+            example: "technical"
+      responses:
+        '200':
+          description: Lista de categorías obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+              examples:
+                all_categories:
+                  summary: Todas las categorías
+                  value:
+                    success: true
+                    data:
+                      - id: "550e8400-e29b-41d4-a716-446655440001"
+                        name: "algorithms"
+                        typeId: "660e8400-e29b-41d4-a716-446655440001"
+                        description: "Books about algorithms and data structures"
+                      - id: "550e8400-e29b-41d4-a716-446655440002"
+                        name: "fantasy"
+                        typeId: "660e8400-e29b-41d4-a716-446655440002"
+                        description: "Fantasy fiction books"
+                      - id: "550e8400-e29b-41d4-a716-446655440003"
+                        name: "programming"
+                        typeId: "660e8400-e29b-41d4-a716-446655440001"
+                        description: "Programming and software development"
+                    error: null
+                filtered_by_type:
+                  summary: Categorías filtradas por tipo
+                  value:
+                    success: true
+                    data:
+                      - id: "550e8400-e29b-41d4-a716-446655440001"
+                        name: "algorithms"
+                        typeId: "660e8400-e29b-41d4-a716-446655440001"
+                        description: "Books about algorithms and data structures"
+                      - id: "550e8400-e29b-41d4-a716-446655440003"
+                        name: "programming"
+                        typeId: "660e8400-e29b-41d4-a716-446655440001"
+                        description: "Programming and software development"
+                    error: null
+                empty_result:
+                  summary: Sin categorías (tipo inexistente)
+                  value:
+                    success: true
+                    data: []
+                    error: null
         '500':
           description: Error interno del servidor
           content:
@@ -543,3 +638,41 @@ components:
               items:
                 $ref: '#/components/schemas/BookTypeListItem'
               description: Lista de tipos de libro ordenados alfabéticamente
+
+    CategoryListItem:
+      type: object
+      required:
+        - id
+        - name
+        - typeId
+        - description
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único de la categoría (UUID v4)
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        name:
+          type: string
+          description: Nombre de la categoría
+          example: "programming"
+        typeId:
+          type: string
+          format: uuid
+          description: Identificador del tipo de libro al que pertenece la categoría
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        description:
+          type: [string, 'null']
+          description: Descripción de la categoría (puede ser null)
+          example: "Programming and software development"
+
+    CategoryListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiSuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/CategoryListItem'
+              description: Lista de categorías ordenadas alfabéticamente
