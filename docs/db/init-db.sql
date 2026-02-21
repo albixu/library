@@ -23,14 +23,8 @@ CREATE TYPE book_format AS ENUM (
     'other'
 );
 
--- Book difficulty level (HU-003 - case-sensitive values)
-CREATE TYPE book_level AS ENUM (
-    'Beginner',
-    'Intermediate',
-    'Advanced',
-    'Beginner to Intermediate',
-    'Intermediate to Advanced'
-);
+-- Note: book_level ENUM has been removed (HU-008)
+-- Levels are now stored in the 'levels' table with dynamic values
 
 -- ================================
 -- Tables
@@ -49,6 +43,31 @@ CREATE TABLE IF NOT EXISTS types (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Levels table (HU-008 - replaces book_level enum - dynamic levels stored in DB)
+CREATE TABLE IF NOT EXISTS levels (
+    -- Primary key (UUID v4)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Required fields
+    name VARCHAR(100) NOT NULL UNIQUE,
+    
+    -- Timestamps
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Junction table for many-to-many relationship between types and levels (HU-008)
+CREATE TABLE IF NOT EXISTS type_levels (
+    type_id UUID NOT NULL REFERENCES types(id) ON DELETE CASCADE,
+    level_id UUID NOT NULL REFERENCES levels(id) ON DELETE CASCADE,
+    
+    -- Composite primary key
+    PRIMARY KEY (type_id, level_id),
+    
+    -- Timestamp for when the relationship was created
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Authors table (new - N:M relationship with books)
 CREATE TABLE IF NOT EXISTS authors (
     -- Primary key (UUID v4)
@@ -62,23 +81,29 @@ CREATE TABLE IF NOT EXISTS authors (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Categories table (reusable categories for books)
+-- Categories table (HU-008 - now belongs to a specific type)
 CREATE TABLE IF NOT EXISTS categories (
     -- Primary key (UUID v4)
     id UUID PRIMARY KEY,
     
     -- Required fields
-    name VARCHAR(100) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    
+    -- HU-008: Each category belongs to exactly one type
+    type_id UUID NOT NULL REFERENCES types(id) ON DELETE RESTRICT,
     
     -- Optional fields
     description VARCHAR(500),
     
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    
+    -- HU-008: Category name must be unique within a type (not globally)
+    CONSTRAINT categories_name_type_unique UNIQUE (name, type_id)
 );
 
--- Books table (updated - removed author column, added type_id reference, added level)
+-- Books table (HU-008 - level changed from enum to FK referencing levels table)
 CREATE TABLE IF NOT EXISTS books (
     -- Primary key (UUID v4)
     id UUID PRIMARY KEY,
@@ -93,7 +118,9 @@ CREATE TABLE IF NOT EXISTS books (
     isbn VARCHAR(13) UNIQUE,
     description VARCHAR(5000),
     path VARCHAR(1000),
-    level book_level,
+    
+    -- HU-008: Level is now a FK to levels table instead of enum
+    level_id UUID REFERENCES levels(id) ON DELETE SET NULL,
     
     -- Normalized field for duplicate detection (stored lowercase)
     normalized_title VARCHAR(500) NOT NULL,
@@ -138,6 +165,17 @@ CREATE TABLE IF NOT EXISTS book_categories (
 CREATE INDEX IF NOT EXISTS idx_types_name 
     ON types (name);
 
+-- Levels indexes (HU-008)
+CREATE INDEX IF NOT EXISTS idx_levels_name 
+    ON levels (name);
+
+-- Type-Levels junction table indexes (HU-008)
+CREATE INDEX IF NOT EXISTS idx_type_levels_type_id 
+    ON type_levels (type_id);
+
+CREATE INDEX IF NOT EXISTS idx_type_levels_level_id 
+    ON type_levels (level_id);
+
 -- Authors indexes
 CREATE INDEX IF NOT EXISTS idx_authors_name 
     ON authors (name);
@@ -145,6 +183,10 @@ CREATE INDEX IF NOT EXISTS idx_authors_name
 -- Categories indexes
 CREATE INDEX IF NOT EXISTS idx_categories_name 
     ON categories (name);
+
+-- HU-008: Index for filtering categories by type
+CREATE INDEX IF NOT EXISTS idx_categories_type_id 
+    ON categories (type_id);
 
 -- Books indexes
 -- Index for semantic search using HNSW (faster for high-dimensional vectors)
@@ -173,10 +215,10 @@ CREATE INDEX IF NOT EXISTS idx_books_available
     ON books (available) 
     WHERE available = TRUE;
 
--- Index for filtering by level
-CREATE INDEX IF NOT EXISTS idx_books_level 
-    ON books (level) 
-    WHERE level IS NOT NULL;
+-- HU-008: Index for filtering by level_id (changed from enum to FK)
+CREATE INDEX IF NOT EXISTS idx_books_level_id 
+    ON books (level_id) 
+    WHERE level_id IS NOT NULL;
 
 -- Book authors junction table indexes
 -- Index for finding all authors of a book
@@ -214,6 +256,11 @@ CREATE TRIGGER trigger_types_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER trigger_levels_updated_at
+    BEFORE UPDATE ON levels
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER trigger_authors_updated_at
     BEFORE UPDATE ON authors
     FOR EACH ROW
@@ -247,6 +294,12 @@ ON CONFLICT (name) DO NOTHING;
 -- Ensure a book has at least one author (enforced at application level)
 -- Note: These cannot be enforced at DB level without triggers
 -- The application layer will validate these constraints
+
+-- HU-008: Category-Type and Level-Type relationships
+-- - Each category belongs to exactly one type (enforced by FK + UNIQUE constraint)
+-- - Each level can be associated with multiple types via type_levels junction table
+-- - A book's level must be valid for its type (enforced at application level)
+-- - A book's categories must all belong to the book's type (enforced at application level)
 
 -- ================================
 -- Confirmation
