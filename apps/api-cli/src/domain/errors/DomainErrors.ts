@@ -154,3 +154,29 @@ export class EmbeddingTextTooLongError extends DomainError {
     );
   }
 }
+
+/**
+ * Thrown when a category does not belong to the expected book type
+ * This enforces the business rule that categories are scoped to specific types
+ */
+export class CategoryTypeMismatchError extends DomainError {
+  constructor(
+    categoryName: string,
+    expectedTypeName: string,
+    actualTypeName: string,
+  ) {
+    super(
+      `Category "${categoryName}" belongs to type "${actualTypeName}" but book type is "${expectedTypeName}"`,
+    );
+  }
+}
+
+/**
+ * Thrown when a level is not valid for the specified book type
+ * This enforces the business rule that levels are associated with specific types
+ */
+export class LevelTypeMismatchError extends DomainError {
+  constructor(levelName: string, typeName: string) {
+    super(`Level "${levelName}" is not valid for type "${typeName}"`);
+  }
+}
