@@ -126,6 +126,15 @@ AUTO_SEED=true
 
 ### API REST
 
+#### Endpoints disponibles
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `POST` | `/api/books` | Crear un nuevo libro |
+| `GET` | `/api/book-types` | Listar tipos de libro |
+| `GET` | `/api/book-categories` | Listar categorías (filtrable por tipo) |
+| `GET` | `/api/book-levels` | Listar niveles de dificultad (filtrable por tipo) |
+
 #### Crear un libro
 
 ```bash
@@ -137,42 +146,60 @@ curl -X POST http://localhost:3000/api/books \
     "description": "A handbook of agile software craftsmanship",
     "type": "technical",
     "categories": ["programming"],
-    "format": "pdf"
+    "format": "pdf",
+    "level": "Intermediate"
   }'
 ```
 
-#### Buscar libros (búsqueda semántica)
+#### Listar tipos de libro
 
 ```bash
-curl "http://localhost:3000/api/books/search?q=libros%20sobre%20buenas%20practicas%20de%20programacion"
+curl http://localhost:3000/api/book-types
 ```
 
-#### Obtener un libro por ID
+#### Listar categorías
 
 ```bash
-curl http://localhost:3000/api/books/{id}
+# Todas las categorías
+curl http://localhost:3000/api/book-categories
+
+# Filtrar por tipo de libro
+curl "http://localhost:3000/api/book-categories?type=technical"
 ```
 
-#### Listar todos los libros
+#### Listar niveles de dificultad
 
 ```bash
-curl http://localhost:3000/api/books
+# Todos los niveles
+curl http://localhost:3000/api/book-levels
+
+# Filtrar por tipo de libro
+curl "http://localhost:3000/api/book-levels?type=technical"
 ```
 
-#### Actualizar un libro
+#### Formato de respuesta
 
-```bash
-curl -X PUT http://localhost:3000/api/books/{id} \
-  -H "Content-Type: application/json" \
-  -d '{
-    "available": false
-  }'
+Todas las respuestas siguen el formato estandarizado:
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "error": null
+}
 ```
 
-#### Eliminar un libro
+En caso de error:
 
-```bash
-curl -X DELETE http://localhost:3000/api/books/{id}
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "message": "Error description",
+    "details": ["field: validation error"]
+  }
+}
 ```
 
 ## Desarrollo
