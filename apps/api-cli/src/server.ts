@@ -18,6 +18,7 @@ import { PostgresLevelRepository } from './infrastructure/driven/persistence/Pos
 import type { DatabaseClient } from './infrastructure/driven/persistence/types.js';
 import { CreateBookUseCase } from './application/use-cases/CreateBookUseCase.js';
 import { ListBookTypesUseCase } from './application/use-cases/ListBookTypesUseCase.js';
+import { ListCategoriesUseCase } from './application/use-cases/ListCategoriesUseCase.js';
 import { createServer, startServer } from './infrastructure/driver/http/server.js';
 import * as schema from './infrastructure/driven/persistence/drizzle/schema.js';
 
@@ -67,9 +68,14 @@ async function bootstrap(): Promise<void> {
 
     const listBookTypesUseCase = new ListBookTypesUseCase(typeRepository);
 
+    const listCategoriesUseCase = new ListCategoriesUseCase(
+      categoryRepository,
+      typeRepository,
+    );
+
     // Create and start server
     const server = await createServer(
-      { createBookUseCase, listBookTypesUseCase, logger },
+      { createBookUseCase, listBookTypesUseCase, listCategoriesUseCase, logger },
       { prefix: '/api' },
     );
 

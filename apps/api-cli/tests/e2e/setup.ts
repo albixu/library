@@ -18,6 +18,7 @@ import * as schema from '../../src/infrastructure/driven/persistence/drizzle/sch
 import { createServer } from '../../src/infrastructure/driver/http/server.js';
 import { CreateBookUseCase } from '../../src/application/use-cases/CreateBookUseCase.js';
 import { ListBookTypesUseCase } from '../../src/application/use-cases/ListBookTypesUseCase.js';
+import { ListCategoriesUseCase } from '../../src/application/use-cases/ListCategoriesUseCase.js';
 import { OllamaEmbeddingService } from '../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
 import { PostgresBookRepository } from '../../src/infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from '../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
@@ -127,10 +128,16 @@ export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
 
   const listBookTypesUseCase = new ListBookTypesUseCase(typeRepository);
 
+  const listCategoriesUseCase = new ListCategoriesUseCase(
+    categoryRepository,
+    typeRepository,
+  );
+
   // Create server
   const server = await createServer({
     createBookUseCase,
     listBookTypesUseCase,
+    listCategoriesUseCase,
     logger: noopLogger,
   });
 
