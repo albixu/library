@@ -12,16 +12,19 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import { PostgresBookRepository } from '../../../../src/infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from '../../../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
+import { PostgresTypeRepository } from '../../../../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
+import { PostgresLevelRepository } from '../../../../src/infrastructure/driven/persistence/PostgresLevelRepository.js';
 import { Book } from '../../../../src/domain/entities/Book.js';
 import { Author } from '../../../../src/domain/entities/Author.js';
 import { BookType } from '../../../../src/domain/entities/BookType.js';
 import { Category } from '../../../../src/domain/entities/Category.js';
+import { Level } from '../../../../src/domain/entities/Level.js';
 import { DuplicateISBNError, BookNotFoundError } from '../../../../src/domain/errors/DomainErrors.js';
 import * as schema from '../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 import { generateUUID } from '../../../../src/shared/utils/uuid.js';
 
 const { Pool } = pg;
-const { categories, books, bookCategories, bookAuthors, authors, types } = schema;
+const { categories, books, bookCategories, bookAuthors, authors, types, levels, typeLevels } = schema;
 
 /**
  * Creates a valid 768-dimension embedding vector for tests
@@ -35,6 +38,8 @@ describe('PostgresBookRepository Integration', () => {
   let db: ReturnType<typeof drizzle>;
   let bookRepository: PostgresBookRepository;
   let categoryRepository: PostgresCategoryRepository;
+  let typeRepository: PostgresTypeRepository;
+  let levelRepository: PostgresLevelRepository;
 
   // Reusable test categories
   let programmingCategory: Category;
@@ -47,6 +52,11 @@ describe('PostgresBookRepository Integration', () => {
   // Reusable test book types
   let technicalType: BookType;
   let novelType: BookType;
+
+  // Reusable test levels (HU-008)
+  let beginnerLevel: Level;
+  let advancedLevel: Level;
+  let intermediateToAdvancedLevel: Level;
 
   beforeAll(async () => {
     const databaseUrl = process.env['DATABASE_URL'] ?? 'postgresql://library:library@localhost:5432/library';
@@ -64,6 +74,10 @@ describe('PostgresBookRepository Integration', () => {
     bookRepository = new PostgresBookRepository(db as any);
      
     categoryRepository = new PostgresCategoryRepository(db as any);
+
+    typeRepository = new PostgresTypeRepository(db as any);
+
+    levelRepository = new PostgresLevelRepository(db as any);
   });
 
   afterAll(async () => {
@@ -77,24 +91,9 @@ describe('PostgresBookRepository Integration', () => {
     await db.delete(books);
     await db.delete(categories);
     await db.delete(authors);
+    await db.delete(typeLevels); // HU-008: Delete type-level associations
+    await db.delete(levels); // HU-008: Delete levels (after books since books reference levels)
     // Note: types table has seed data, don't delete it
-
-    // Create reusable test categories
-    programmingCategory = await categoryRepository.save(
-      Category.create({ id: generateUUID(), name: 'Programming' })
-    );
-    softwareCategory = await categoryRepository.save(
-      Category.create({ id: generateUUID(), name: 'Software Engineering' })
-    );
-
-    // Insert test authors into DB
-    robertMartin = Author.create({ id: generateUUID(), name: 'Robert C. Martin' });
-    martinFowler = Author.create({ id: generateUUID(), name: 'Martin Fowler' });
-    
-    await db.insert(authors).values([
-      { id: robertMartin.id, name: robertMartin.name },
-      { id: martinFowler.id, name: martinFowler.name },
-    ]);
 
     // Fetch existing types from DB (seed data from init-db.sql)
     const technicalTypeRecord = await db.query.types.findFirst({
@@ -120,6 +119,32 @@ describe('PostgresBookRepository Integration', () => {
       createdAt: novelTypeRecord.createdAt,
       updatedAt: novelTypeRecord.updatedAt,
     });
+
+    // Create reusable test levels (HU-008: levels are now entities)
+    beginnerLevel = Level.create({ id: generateUUID(), name: 'Beginner' });
+    advancedLevel = Level.create({ id: generateUUID(), name: 'Advanced' });
+    intermediateToAdvancedLevel = Level.create({ id: generateUUID(), name: 'Intermediate to Advanced' });
+
+    await levelRepository.save(beginnerLevel);
+    await levelRepository.save(advancedLevel);
+    await levelRepository.save(intermediateToAdvancedLevel);
+
+    // Create reusable test categories (HU-008: now require typeId)
+    programmingCategory = await categoryRepository.save(
+      Category.create({ id: generateUUID(), name: 'Programming', typeId: technicalType.id })
+    );
+    softwareCategory = await categoryRepository.save(
+      Category.create({ id: generateUUID(), name: 'Software Engineering', typeId: technicalType.id })
+    );
+
+    // Insert test authors into DB
+    robertMartin = Author.create({ id: generateUUID(), name: 'Robert C. Martin' });
+    martinFowler = Author.create({ id: generateUUID(), name: 'Martin Fowler' });
+    
+    await db.insert(authors).values([
+      { id: robertMartin.id, name: robertMartin.name },
+      { id: martinFowler.id, name: martinFowler.name },
+    ]);
   });
 
   describe('save', () => {
@@ -147,7 +172,7 @@ describe('PostgresBookRepository Integration', () => {
       expect(saved.type.name).toBe('technical');
       expect(saved.categories).toHaveLength(2);
       expect(saved.isbn?.value).toBe('9780132350884');
-      expect(saved.level).toBeNull(); // No level specified
+      expect(saved.levelId).toBeNull(); // No level specified
     });
 
     it('should save a book with level', async () => {
@@ -159,7 +184,7 @@ describe('PostgresBookRepository Integration', () => {
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
-        level: 'Advanced',
+        levelId: advancedLevel.id, // HU-008: Use levelId (UUID)
       });
 
       const embedding = generateTestEmbedding();
@@ -167,7 +192,7 @@ describe('PostgresBookRepository Integration', () => {
 
       expect(saved.id).toBe(book.id);
       expect(saved.title).toBe('Advanced TypeScript');
-      expect(saved.level?.value).toBe('Advanced');
+      expect(saved.levelId).toBe(advancedLevel.id); // HU-008: Check levelId
     });
 
     it('should save a book with compound level', async () => {
@@ -179,13 +204,13 @@ describe('PostgresBookRepository Integration', () => {
         type: technicalType,
         format: 'epub',
         categories: [softwareCategory],
-        level: 'Intermediate to Advanced',
+        levelId: intermediateToAdvancedLevel.id, // HU-008: Use levelId (UUID)
       });
 
       const embedding = generateTestEmbedding();
       const saved = await bookRepository.save({ book, embedding });
 
-      expect(saved.level?.value).toBe('Intermediate to Advanced');
+      expect(saved.levelId).toBe(intermediateToAdvancedLevel.id); // HU-008: Check levelId
     });
 
     it('should save a book without ISBN', async () => {
@@ -324,7 +349,7 @@ describe('PostgresBookRepository Integration', () => {
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
-        level: 'Beginner',
+        levelId: beginnerLevel.id, // HU-008: Use levelId (UUID)
       });
 
       await bookRepository.save({ book, embedding: generateTestEmbedding() });
@@ -332,7 +357,7 @@ describe('PostgresBookRepository Integration', () => {
       const found = await bookRepository.findById(book.id);
 
       expect(found).not.toBeNull();
-      expect(found!.level?.value).toBe('Beginner');
+      expect(found!.levelId).toBe(beginnerLevel.id); // HU-008: Check levelId
     });
 
     it('should find a book with null level', async () => {
@@ -347,7 +372,7 @@ describe('PostgresBookRepository Integration', () => {
         type: technicalType,
         format: 'epub',
         categories: [softwareCategory],
-        // No level specified
+        // No levelId specified
       });
 
       await bookRepository.save({ book, embedding: generateTestEmbedding() });
@@ -355,7 +380,7 @@ describe('PostgresBookRepository Integration', () => {
       const found = await bookRepository.findById(book.id);
 
       expect(found).not.toBeNull();
-      expect(found!.level).toBeNull();
+      expect(found!.levelId).toBeNull(); // HU-008: Check levelId
     });
 
     it('should return null for non-existent ID', async () => {
@@ -565,7 +590,7 @@ describe('PostgresBookRepository Integration', () => {
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
-        level: 'Beginner',
+        levelId: beginnerLevel.id, // HU-008: Use levelId (UUID)
       });
 
       const advancedBook = Book.create({
@@ -576,7 +601,7 @@ describe('PostgresBookRepository Integration', () => {
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
-        level: 'Advanced',
+        levelId: advancedLevel.id, // HU-008: Use levelId (UUID)
       });
 
       await bookRepository.save({ book: beginnerBook, embedding: generateTestEmbedding() });
@@ -585,8 +610,9 @@ describe('PostgresBookRepository Integration', () => {
       const allBooks = await bookRepository.findAll();
       expect(allBooks).toHaveLength(2);
 
-      const levels = allBooks.map(b => b.level?.value).sort();
-      expect(levels).toEqual(['Advanced', 'Beginner']);
+      // HU-008: Check levelIds instead of level?.value
+      const levelIds = allBooks.map(b => b.levelId).sort();
+      expect(levelIds).toEqual([advancedLevel.id, beginnerLevel.id].sort());
     });
 
     it('should return empty array and count 0 when no books exist', async () => {
