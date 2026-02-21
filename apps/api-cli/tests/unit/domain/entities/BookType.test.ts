@@ -13,6 +13,9 @@ import {
 
 describe('BookType', () => {
   const validUUID = '550e8400-e29b-41d4-a716-446655440000';
+  const validLevelId1 = '660e8400-e29b-41d4-a716-446655440000';
+  const validLevelId2 = '770e8400-e29b-41d4-a716-446655440000';
+  const validLevelId3 = '880e8400-e29b-41d4-a716-446655440000';
 
   const createValidBookTypeProps = (
     overrides?: Partial<CreateBookTypeProps>
@@ -27,6 +30,7 @@ describe('BookType', () => {
   ): BookTypePersistenceProps => ({
     id: validUUID,
     name: 'technical',
+    levelIds: [],
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     ...overrides,
@@ -51,6 +55,27 @@ describe('BookType', () => {
 
       expect(bookType.id).toBe(validUUID);
       expect(bookType.name).toBe('technical');
+      expect(bookType.levelIds).toEqual([]);
+    });
+
+    it('should create a BookType with levelIds', () => {
+      const props = createValidBookTypeProps({
+        levelIds: [validLevelId1, validLevelId2],
+      });
+
+      const bookType = BookType.create(props);
+
+      expect(bookType.levelIds).toEqual([validLevelId1, validLevelId2]);
+    });
+
+    it('should remove duplicate levelIds', () => {
+      const props = createValidBookTypeProps({
+        levelIds: [validLevelId1, validLevelId2, validLevelId1],
+      });
+
+      const bookType = BookType.create(props);
+
+      expect(bookType.levelIds).toEqual([validLevelId1, validLevelId2]);
     });
 
     it('should trim whitespace from name', () => {
@@ -148,6 +173,46 @@ describe('BookType', () => {
           expect(bookType.name).toBe(maxName);
         });
       });
+
+      describe('levelIds', () => {
+        it('should throw InvalidUUIDError for invalid levelId format', () => {
+          expect(() =>
+            BookType.create(createValidBookTypeProps({ levelIds: ['not-a-uuid'] }))
+          ).toThrow(InvalidUUIDError);
+        });
+
+        it('should throw InvalidUUIDError for UUID v1 levelId (not v4)', () => {
+          expect(() =>
+            BookType.create(
+              createValidBookTypeProps({ levelIds: ['550e8400-e29b-11d4-a716-446655440000'] })
+            )
+          ).toThrow(InvalidUUIDError);
+        });
+
+        it('should throw RequiredFieldError for empty string in levelIds', () => {
+          expect(() =>
+            BookType.create(createValidBookTypeProps({ levelIds: [''] }))
+          ).toThrow(RequiredFieldError);
+        });
+
+        it('should throw RequiredFieldError for whitespace-only levelId', () => {
+          expect(() =>
+            BookType.create(createValidBookTypeProps({ levelIds: ['   '] }))
+          ).toThrow(RequiredFieldError);
+        });
+
+        it('should accept empty levelIds array', () => {
+          const bookType = BookType.create(createValidBookTypeProps({ levelIds: [] }));
+          expect(bookType.levelIds).toEqual([]);
+        });
+
+        it('should accept multiple valid levelIds', () => {
+          const bookType = BookType.create(
+            createValidBookTypeProps({ levelIds: [validLevelId1, validLevelId2, validLevelId3] })
+          );
+          expect(bookType.levelIds).toEqual([validLevelId1, validLevelId2, validLevelId3]);
+        });
+      });
     });
   });
 
@@ -158,6 +223,17 @@ describe('BookType', () => {
 
       expect(bookType.id).toBe(validUUID);
       expect(bookType.name).toBe('technical');
+      expect(bookType.levelIds).toEqual([]);
+    });
+
+    it('should reconstruct a BookType with levelIds', () => {
+      const props = createValidPersistenceProps({
+        levelIds: [validLevelId1, validLevelId2],
+      });
+
+      const bookType = BookType.fromPersistence(props);
+
+      expect(bookType.levelIds).toEqual([validLevelId1, validLevelId2]);
     });
 
     it('should reconstruct a BookType with all fields', () => {
@@ -191,7 +267,9 @@ describe('BookType', () => {
     let bookType: BookType;
 
     beforeEach(() => {
-      bookType = BookType.create(createValidBookTypeProps());
+      bookType = BookType.create(createValidBookTypeProps({
+        levelIds: [validLevelId1],
+      }));
     });
 
     it('should return a new BookType instance', () => {
@@ -205,6 +283,22 @@ describe('BookType', () => {
       expect(bookType.name).toBe('technical'); // Original unchanged
     });
 
+    it('should update levelIds', () => {
+      const updated = bookType.update({ levelIds: [validLevelId2, validLevelId3] });
+      expect(updated.levelIds).toEqual([validLevelId2, validLevelId3]);
+      expect(bookType.levelIds).toEqual([validLevelId1]); // Original unchanged
+    });
+
+    it('should clear levelIds when passing empty array', () => {
+      const updated = bookType.update({ levelIds: [] });
+      expect(updated.levelIds).toEqual([]);
+    });
+
+    it('should remove duplicates when updating levelIds', () => {
+      const updated = bookType.update({ levelIds: [validLevelId2, validLevelId3, validLevelId2] });
+      expect(updated.levelIds).toEqual([validLevelId2, validLevelId3]);
+    });
+
     it('should trim whitespace from updated name', () => {
       const updated = bookType.update({ name: '  novel  ' });
       expect(updated.name).toBe('novel');
@@ -215,11 +309,20 @@ describe('BookType', () => {
       expect(updated.name).toBe('novel');
     });
 
-    it('should preserve id and createdAt', () => {
+    it('should preserve id, createdAt, and levelIds when only updating name', () => {
       const updated = bookType.update({ name: 'novel' });
 
       expect(updated.id).toBe(bookType.id);
       expect(updated.createdAt).toEqual(bookType.createdAt);
+      expect(updated.levelIds).toEqual(bookType.levelIds);
+    });
+
+    it('should preserve id, createdAt, and name when only updating levelIds', () => {
+      const updated = bookType.update({ levelIds: [validLevelId2] });
+
+      expect(updated.id).toBe(bookType.id);
+      expect(updated.createdAt).toEqual(bookType.createdAt);
+      expect(updated.name).toBe(bookType.name);
     });
 
     it('should update updatedAt timestamp', () => {
@@ -231,13 +334,17 @@ describe('BookType', () => {
       expect(updated.updatedAt.getTime()).toBeLessThanOrEqual(after.getTime());
     });
 
-    it('should validate updated fields', () => {
+    it('should validate updated name', () => {
       expect(() => bookType.update({ name: '' })).toThrow(RequiredFieldError);
     });
 
     it('should throw FieldTooLongError for name exceeding 50 chars', () => {
       const longName = 'A'.repeat(51);
       expect(() => bookType.update({ name: longName })).toThrow(FieldTooLongError);
+    });
+
+    it('should validate updated levelIds', () => {
+      expect(() => bookType.update({ levelIds: ['not-a-uuid'] })).toThrow(InvalidUUIDError);
     });
   });
 
@@ -257,6 +364,14 @@ describe('BookType', () => {
 
       expect(bookType1.equals(bookType2)).toBe(false);
     });
+
+    it('should return true for BookTypes with same id but different levelIds', () => {
+      const bookType1 = BookType.create(createValidBookTypeProps({ levelIds: [validLevelId1] }));
+      const bookType2 = BookType.create(createValidBookTypeProps({ levelIds: [validLevelId2] }));
+
+      // Entities are compared by ID, not by attributes
+      expect(bookType1.equals(bookType2)).toBe(true);
+    });
   });
 
   describe('hasName', () => {
@@ -274,6 +389,28 @@ describe('BookType', () => {
     it('should return false for non-matching name', () => {
       const bookType = BookType.create(createValidBookTypeProps({ name: 'technical' }));
       expect(bookType.hasName('novel')).toBe(false);
+    });
+  });
+
+  describe('hasLevel', () => {
+    it('should return true when levelId is in levelIds', () => {
+      const bookType = BookType.create(createValidBookTypeProps({
+        levelIds: [validLevelId1, validLevelId2],
+      }));
+      expect(bookType.hasLevel(validLevelId1)).toBe(true);
+      expect(bookType.hasLevel(validLevelId2)).toBe(true);
+    });
+
+    it('should return false when levelId is not in levelIds', () => {
+      const bookType = BookType.create(createValidBookTypeProps({
+        levelIds: [validLevelId1],
+      }));
+      expect(bookType.hasLevel(validLevelId2)).toBe(false);
+    });
+
+    it('should return false when levelIds is empty', () => {
+      const bookType = BookType.create(createValidBookTypeProps({ levelIds: [] }));
+      expect(bookType.hasLevel(validLevelId1)).toBe(false);
     });
   });
 
@@ -296,6 +433,23 @@ describe('BookType', () => {
         // @ts-expect-error - Testing runtime immutability
         bookType.name = 'novel';
       }).toThrow();
+    });
+
+    it('should not allow levelIds modification', () => {
+      const bookType = BookType.create(createValidBookTypeProps({
+        levelIds: [validLevelId1],
+      }));
+      expect(() => {
+        // @ts-expect-error - Testing runtime immutability
+        bookType.levelIds = [validLevelId2];
+      }).toThrow();
+    });
+
+    it('should have frozen levelIds array', () => {
+      const bookType = BookType.create(createValidBookTypeProps({
+        levelIds: [validLevelId1],
+      }));
+      expect(Object.isFrozen(bookType.levelIds)).toBe(true);
     });
   });
 });
