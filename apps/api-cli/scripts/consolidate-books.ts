@@ -16,7 +16,7 @@
  *   npm run consolidate:books
  */
 
-import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readdir, readFile, writeFile, mkdir, unlink, access } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
@@ -233,6 +233,15 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
 
     // Ensure output directory exists
     await mkdir(OUTPUT_DIR, { recursive: true });
+
+    // Delete existing output file if it exists (ensures idempotent generation)
+    try {
+      await access(OUTPUT_FILE);
+      await unlink(OUTPUT_FILE);
+      console.log(`Deleted existing output file: ${OUTPUT_FILE}`);
+    } catch {
+      // File doesn't exist, nothing to delete
+    }
 
     // Write consolidated output
     await writeFile(OUTPUT_FILE, JSON.stringify(consolidatedBooks, null, 2), 'utf-8');
