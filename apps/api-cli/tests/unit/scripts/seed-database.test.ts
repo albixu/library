@@ -427,7 +427,7 @@ describe('seed-database', () => {
       const result = toCreateBookInput(book);
 
       expect(result.title).toBe('Test Book');
-      expect(result.author).toBe('Author One'); // First author
+      expect(result.authors).toEqual(['Author One', 'Author Two']); // HU-008: Now passes all authors
       expect(result.description).toBe('A test description');
       expect(result.type).toBe('technical');
       expect(result.categoryNames).toEqual(['JavaScript', 'TypeScript']);
@@ -473,7 +473,7 @@ describe('seed-database', () => {
       expect(result.level).toBeNull();
     });
 
-    it('should use first author from authors array', () => {
+    it('should pass all authors from authors array', () => {
       const book: ConsolidatedBook = {
         isbn: '9781234567890',
         title: 'Multi Author Book',
@@ -487,7 +487,8 @@ describe('seed-database', () => {
 
       const result = toCreateBookInput(book);
 
-      expect(result.author).toBe('First Author');
+      // HU-008: Now passes all authors as an array
+      expect(result.authors).toEqual(['First Author', 'Second Author', 'Third Author']);
     });
 
     it('should set path to null', () => {
