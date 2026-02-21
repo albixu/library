@@ -16,6 +16,10 @@
  * - Added support for type_id FK to types table
  * - Removed triad duplicate detection (author+title+format)
  * - Duplicate detection now only uses ISBN
+ *
+ * HU-008 CHANGES:
+ * - Updated fetchTypeForBook to load levelIds from type_levels junction table
+ * - Book now uses levelId (UUID FK to levels table) instead of level enum
  */
 
 import { eq, count } from 'drizzle-orm';
@@ -37,12 +41,14 @@ import {
   authors,
   categories,
   types,
+  typeLevels,
   type AuthorSelect,
   type CategorySelect,
+  type TypeSelect,
 } from './drizzle/schema.js';
 import { BookMapper } from './mappers/BookMapper.js';
 import { AuthorMapper } from './mappers/AuthorMapper.js';
-import { TypeMapper } from './mappers/TypeMapper.js';
+import { TypeMapper, type TypeSelectWithLevels } from './mappers/TypeMapper.js';
 import { CategoryMapper } from './mappers/CategoryMapper.js';
 import { isDuplicateKeyError } from './utils.js';
 import type { DatabaseClient } from './types.js';
@@ -340,7 +346,9 @@ export class PostgresBookRepository implements BookRepository {
   }
 
   /**
-   * Fetches the type for a specific book
+   * Fetches the type for a specific book, including its levelIds
+   *
+   * HU-008: Now loads levelIds from type_levels junction table
    */
   private async fetchTypeForBook(typeId: string): Promise<BookType | null> {
     const typeRecord = await this.db.query.types.findFirst({
@@ -351,7 +359,38 @@ export class PostgresBookRepository implements BookRepository {
       return null;
     }
 
-    return TypeMapper.toDomain(typeRecord);
+    // HU-008: Load levelIds from type_levels junction table
+    const levelIds = await this.loadLevelIdsForType(typeId);
+    const recordWithLevels = this.combineTypeWithLevelIds(typeRecord, levelIds);
+
+    return TypeMapper.toDomain(recordWithLevels);
+  }
+
+  /**
+   * Loads levelIds for a single type from the type_levels junction table
+   *
+   * HU-008: Helper to support type-level relationship
+   */
+  private async loadLevelIdsForType(typeId: string): Promise<string[]> {
+    const results = await this.db.query.typeLevels.findMany({
+      where: eq(typeLevels.typeId, typeId),
+    });
+    return results.map((r) => r.levelId);
+  }
+
+  /**
+   * Combines a type record with its levelIds to create a TypeSelectWithLevels
+   *
+   * HU-008: Helper to support type-level relationship
+   */
+  private combineTypeWithLevelIds(
+    record: TypeSelect,
+    levelIds: readonly string[],
+  ): TypeSelectWithLevels {
+    return {
+      ...record,
+      levelIds,
+    };
   }
 
   /**
