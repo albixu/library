@@ -94,7 +94,8 @@ Si tienes múltiples archivos JSON con datos de libros, puedes consolidarlos en 
 # Desde el contenedor
 docker exec -it library-api-dev npm run consolidate:books
 
-# Los archivos fuente deben estar en apps/api-cli/data/source/
+# Los archivos fuente deben estar en original_data/ (raíz del proyecto)
+# El script excluye libros que ya existen en la base de datos (por ISBN)
 # El resultado se guarda en docs/db/books.json
 ```
 
