@@ -14,6 +14,7 @@ import { PostgresBookRepository } from './infrastructure/driven/persistence/Post
 import { PostgresCategoryRepository } from './infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { PostgresTypeRepository } from './infrastructure/driven/persistence/PostgresTypeRepository.js';
 import { PostgresAuthorRepository } from './infrastructure/driven/persistence/PostgresAuthorRepository.js';
+import { PostgresLevelRepository } from './infrastructure/driven/persistence/PostgresLevelRepository.js';
 import type { DatabaseClient } from './infrastructure/driven/persistence/types.js';
 import { CreateBookUseCase } from './application/use-cases/CreateBookUseCase.js';
 import { ListBookTypesUseCase } from './application/use-cases/ListBookTypesUseCase.js';
@@ -51,6 +52,7 @@ async function bootstrap(): Promise<void> {
     const categoryRepository = new PostgresCategoryRepository(db);
     const typeRepository = new PostgresTypeRepository(db);
     const authorRepository = new PostgresAuthorRepository(db);
+    const levelRepository = new PostgresLevelRepository(db);
 
     // Initialize use cases
     const createBookUseCase = new CreateBookUseCase({
@@ -58,6 +60,7 @@ async function bootstrap(): Promise<void> {
       categoryRepository,
       typeRepository,
       authorRepository,
+      levelRepository,
       embeddingService,
       logger,
     });
