@@ -11,10 +11,13 @@ import type { Logger } from '../../../application/ports/Logger.js';
 import { noopLogger } from '../../../application/ports/Logger.js';
 import { BooksController } from './controllers/BooksController.js';
 import { BookTypesController } from './controllers/BookTypesController.js';
+import { CategoriesController } from './controllers/CategoriesController.js';
 import { booksRoutes } from './routes/books.routes.js';
 import { bookTypesRoutes } from './routes/book-types.routes.js';
+import { categoriesRoutes } from './routes/categories.routes.js';
 import type { CreateBookUseCase } from '../../../application/use-cases/CreateBookUseCase.js';
 import type { ListBookTypesUseCase } from '../../../application/use-cases/ListBookTypesUseCase.js';
+import type { ListCategoriesUseCase } from '../../../application/use-cases/ListCategoriesUseCase.js';
 
 /**
  * Dependencies required by the server
@@ -22,6 +25,7 @@ import type { ListBookTypesUseCase } from '../../../application/use-cases/ListBo
 export interface ServerDeps {
   createBookUseCase: CreateBookUseCase;
   listBookTypesUseCase: ListBookTypesUseCase;
+  listCategoriesUseCase: ListCategoriesUseCase;
   logger?: Logger;
 }
 
@@ -44,7 +48,7 @@ export async function createServer(
   deps: ServerDeps,
   options: ServerOptions = {},
 ): Promise<FastifyInstance> {
-  const { createBookUseCase, listBookTypesUseCase, logger = noopLogger } = deps;
+  const { createBookUseCase, listBookTypesUseCase, listCategoriesUseCase, logger = noopLogger } = deps;
   const { prefix = '/api' } = options;
 
   const serverLogger = logger.child({ name: 'FastifyServer' });
@@ -65,6 +69,11 @@ export async function createServer(
     logger,
   });
 
+  const categoriesController = new CategoriesController({
+    listCategoriesUseCase,
+    logger,
+  });
+
   // Register routes with prefix
   await fastify.register(booksRoutes, {
     prefix,
@@ -76,6 +85,11 @@ export async function createServer(
     controller: bookTypesController,
   });
 
+  await fastify.register(categoriesRoutes, {
+    prefix,
+    controller: categoriesController,
+  });
+
   // Log server ready
   fastify.addHook('onReady', async () => {
     serverLogger.info('Server routes registered', {
@@ -83,6 +97,7 @@ export async function createServer(
       routes: [
         { method: 'POST', path: `${prefix}/books` },
         { method: 'GET', path: `${prefix}/book-types` },
+        { method: 'GET', path: `${prefix}/categories` },
       ],
     });
   });
