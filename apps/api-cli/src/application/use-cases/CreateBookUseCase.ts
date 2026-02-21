@@ -8,14 +8,20 @@
  * 1. Validate input fields (title, authors, type, format, isbn, description)
  * 2. Validate type exists in database via TypeRepository
  * 3. Check for ISBN duplicates (triad check removed with multi-author model)
- * 4. Resolve/create categories (only after duplicate check passes)
- * 5. Resolve/create authors via AuthorRepository
- * 6. Create Book entity with validated fields, type, authors, and categories
- * 7. Generate embedding from book text
- * 8. Persist book with embedding atomically
+ * 4. Resolve/create categories with type validation (only after duplicate check passes)
+ * 5. Resolve/create level with type validation (if provided)
+ * 6. Resolve/create authors via AuthorRepository
+ * 7. Create Book entity with validated fields, type, authors, categories, and levelId
+ * 8. Generate embedding from book text
+ * 9. Persist book with embedding atomically
+ *
+ * HU-008: Categories and levels are now validated against the book's type.
+ * - Categories must belong to the same type as the book
+ * - Levels must be associated with the book's type
  */
 
 import { Book } from '../../domain/entities/Book.js';
+import { Level } from '../../domain/entities/Level.js';
 import { BookFormat } from '../../domain/value-objects/BookFormat.js';
 import { ISBN } from '../../domain/value-objects/ISBN.js';
 import { DEFAULT_BOOK_TYPES } from '../../domain/entities/BookType.js';
@@ -24,6 +30,7 @@ import type { BookRepository } from '../ports/BookRepository.js';
 import type { CategoryRepository } from '../ports/CategoryRepository.js';
 import type { TypeRepository } from '../ports/TypeRepository.js';
 import type { AuthorRepository } from '../ports/AuthorRepository.js';
+import type { LevelRepository } from '../ports/LevelRepository.js';
 import type { EmbeddingService } from '../ports/EmbeddingService.js';
 import type { Logger } from '../ports/Logger.js';
 import { noopLogger } from '../ports/Logger.js';
@@ -31,6 +38,7 @@ import {
   DuplicateISBNError,
   InvalidBookTypeError,
   EmbeddingTextTooLongError,
+  LevelTypeMismatchError,
 } from '../../domain/errors/DomainErrors.js';
 
 /**
@@ -53,6 +61,9 @@ const MAX_EMBEDDING_TEXT_LENGTH = 7000;
 
 /**
  * Input DTO for creating a book
+ *
+ * HU-008: level is now a level name (string) that will be resolved to a Level entity.
+ * The levelId is stored in the Book, but the input accepts the level name for UX.
  */
 export interface CreateBookInput {
   title: string;
@@ -62,13 +73,15 @@ export interface CreateBookInput {
   categoryNames: string[];
   format: string;
   isbn?: string | null;
-  level?: string | null;
+  level?: string | null; // Level name (not ID), will be validated against type
   available?: boolean;
   path?: string | null;
 }
 
 /**
  * Output DTO for created book
+ *
+ * HU-008: level now returns the level name (not ID) for consistency with type output.
  */
 export interface CreateBookOutput {
   id: string;
@@ -79,7 +92,7 @@ export interface CreateBookOutput {
   categories: { id: string; name: string }[];
   format: string;
   isbn: string | null;
-  level: string | null;
+  level: string | null; // Level name for display, null if not set
   available: boolean;
   path: string | null;
   createdAt: Date;
@@ -88,12 +101,15 @@ export interface CreateBookOutput {
 
 /**
  * Dependencies required by CreateBookUseCase
+ *
+ * HU-008: Added levelRepository for level validation and creation.
  */
 export interface CreateBookUseCaseDeps {
   bookRepository: BookRepository;
   categoryRepository: CategoryRepository;
   typeRepository: TypeRepository;
   authorRepository: AuthorRepository;
+  levelRepository: LevelRepository;
   embeddingService: EmbeddingService;
   logger?: Logger;
 }
@@ -105,16 +121,20 @@ export interface CreateBookUseCaseDeps {
  * - Input validation (delegated to Book entity)
  * - Type validation against database
  * - ISBN duplicate detection (triad check removed with multi-author model)
- * - Category auto-creation
+ * - Category validation/auto-creation with type scoping
+ * - Level validation/auto-creation with type association
  * - Author auto-creation
  * - Embedding generation
  * - Atomic persistence
+ *
+ * HU-008: Now validates that categories and levels belong to the book's type.
  */
 export class CreateBookUseCase {
   private readonly bookRepository: BookRepository;
   private readonly categoryRepository: CategoryRepository;
   private readonly typeRepository: TypeRepository;
   private readonly authorRepository: AuthorRepository;
+  private readonly levelRepository: LevelRepository;
   private readonly embeddingService: EmbeddingService;
   private readonly logger: Logger;
 
@@ -123,6 +143,7 @@ export class CreateBookUseCase {
     this.categoryRepository = deps.categoryRepository;
     this.typeRepository = deps.typeRepository;
     this.authorRepository = deps.authorRepository;
+    this.levelRepository = deps.levelRepository;
     this.embeddingService = deps.embeddingService;
     this.logger = deps.logger?.child({ name: 'CreateBookUseCase' }) ?? noopLogger;
   }
@@ -134,6 +155,7 @@ export class CreateBookUseCase {
    * @returns Promise resolving to the created book output
    * @throws InvalidBookTypeError if the type does not exist in the database
    * @throws DuplicateISBNError if a book with the same ISBN already exists
+   * @throws LevelTypeMismatchError if the level is not valid for the book's type
    * @throws EmbeddingTextTooLongError if embedding text exceeds 7000 chars
    * @throws EmbeddingServiceUnavailableError if embedding service is down
    * @throws DomainError for validation failures
@@ -144,6 +166,7 @@ export class CreateBookUseCase {
       authors: input.authors,
       isbn: input.isbn ?? null,
       categoryCount: input.categoryNames.length,
+      level: input.level ?? null,
     });
 
     // 1. Validate and normalize fields needed for duplicate detection
@@ -177,23 +200,42 @@ export class CreateBookUseCase {
       throw new Error(`Unexpected duplicate type: ${duplicateCheck.duplicateType}`);
     }
 
-    // 4. Resolve or create categories (only after duplicate check passes)
+    // 4. Resolve or create categories with type validation (HU-008)
+    //    Categories are now scoped to the book's type
     const categories = await this.categoryRepository.findOrCreateMany(
       input.categoryNames,
+      bookType.id,
     );
 
     this.logger.debug('Categories resolved', {
       categories: categories.map((c) => c.name),
+      typeId: bookType.id,
     });
 
-    // 5. Resolve or create authors via AuthorRepository
+    // 5. Resolve or create level with type validation (HU-008)
+    let levelId: string | null = null;
+    let levelName: string | null = null;
+
+    if (input.level) {
+      const resolvedLevel = await this.resolveLevel(input.level, bookType.id, bookType.name);
+      levelId = resolvedLevel.id;
+      levelName = resolvedLevel.name;
+
+      this.logger.debug('Level resolved', {
+        levelId,
+        levelName,
+        typeId: bookType.id,
+      });
+    }
+
+    // 6. Resolve or create authors via AuthorRepository
     const authorEntities = await this.authorRepository.findOrCreateMany(input.authors);
 
     this.logger.debug('Authors resolved', {
       authors: authorEntities.map(a => ({ id: a.id, name: a.name })),
     });
 
-    // 6. Create Book entity with validated fields, type, authors, and categories
+    // 7. Create Book entity with validated fields, type, authors, categories, and levelId
     const book = Book.create({
       id: generateUUID(),
       title: input.title,
@@ -203,12 +245,12 @@ export class CreateBookUseCase {
       categories,
       format: input.format,
       isbn: input.isbn,
-      level: input.level,
+      levelId, // HU-008: Now using levelId (UUID) instead of level (enum)
       available: input.available,
       path: input.path,
     });
 
-    // 7. Generate embedding text and validate length
+    // 8. Generate embedding text and validate length
     const embeddingText = book.getTextForEmbedding();
 
     if (embeddingText.length > MAX_EMBEDDING_TEXT_LENGTH) {
@@ -222,7 +264,7 @@ export class CreateBookUseCase {
       );
     }
 
-    // 8. Generate embedding (may throw EmbeddingServiceUnavailableError)
+    // 9. Generate embedding (may throw EmbeddingServiceUnavailableError)
     this.logger.debug('Generating embedding', {
       textLength: embeddingText.length,
     });
@@ -239,7 +281,7 @@ export class CreateBookUseCase {
       throw error;
     }
 
-    // 9. Persist book with embedding atomically
+    // 10. Persist book with embedding atomically
     const savedBook = await this.bookRepository.save({
       book,
       embedding: embeddingResult.embedding,
@@ -249,16 +291,76 @@ export class CreateBookUseCase {
       bookId: savedBook.id,
       title: savedBook.title,
       authors: savedBook.authors.map(a => a.name),
+      levelId: savedBook.levelId,
     });
 
-    // 10. Return output DTO
-    return this.toOutput(savedBook);
+    // 11. Return output DTO
+    return this.toOutput(savedBook, levelName);
+  }
+
+  /**
+   * Resolves a level by name, creating it if necessary and associating with the type.
+   *
+   * HU-008: Levels are validated against the book's type:
+   * - If level exists and is associated with the type: use it
+   * - If level exists but NOT associated with the type: throw LevelTypeMismatchError
+   * - If level doesn't exist: create it and associate with the type
+   *
+   * @param levelName - The level name to resolve
+   * @param typeId - The book type's UUID
+   * @param typeName - The book type's name (for error messages)
+   * @returns The resolved Level entity
+   * @throws LevelTypeMismatchError if level exists but is not valid for this type
+   */
+  private async resolveLevel(
+    levelName: string,
+    typeId: string,
+    typeName: string,
+  ): Promise<Level> {
+    const existingLevel = await this.levelRepository.findByName(levelName);
+
+    if (existingLevel) {
+      // Level exists - validate it's associated with this type
+      const isValidForType = await this.levelRepository.existsForType(existingLevel.id, typeId);
+
+      if (!isValidForType) {
+        this.logger.warn('Level not valid for type', {
+          levelName,
+          levelId: existingLevel.id,
+          typeName,
+          typeId,
+        });
+        throw new LevelTypeMismatchError(levelName, typeName);
+      }
+
+      return existingLevel;
+    }
+
+    // Level doesn't exist - create it and associate with the type
+    const newLevel = Level.create({
+      id: generateUUID(),
+      name: levelName,
+    });
+
+    await this.levelRepository.save(newLevel);
+    await this.levelRepository.addToType(newLevel.id, typeId);
+
+    this.logger.debug('Created new level and associated with type', {
+      levelId: newLevel.id,
+      levelName: newLevel.name,
+      typeId,
+    });
+
+    return newLevel;
   }
 
   /**
    * Converts a Book entity to the output DTO
+   *
+   * HU-008: levelName is passed separately since the Book only stores levelId.
+   * This avoids an extra repository lookup to get the level name.
    */
-  private toOutput(book: Book): CreateBookOutput {
+  private toOutput(book: Book, levelName: string | null): CreateBookOutput {
     return {
       id: book.id,
       title: book.title,
@@ -268,7 +370,7 @@ export class CreateBookUseCase {
       categories: book.categories.map((c) => ({ id: c.id, name: c.name })),
       format: book.format.value,
       isbn: book.isbn?.value ?? null,
-      level: book.level?.value ?? null,
+      level: levelName, // HU-008: Return level name, not ID
       available: book.available,
       path: book.path,
       createdAt: book.createdAt,
