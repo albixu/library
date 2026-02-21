@@ -8,7 +8,7 @@
  * Categories are now unique within a type, not globally.
  */
 
-import { eq, inArray, count, and } from 'drizzle-orm';
+import { eq, inArray, count, and, asc } from 'drizzle-orm';
 import { Category } from '../../../domain/entities/Category.js';
 import { CategoryAlreadyExistsError } from '../../../domain/errors/DomainErrors.js';
 import type { CategoryRepository } from '../../../application/ports/CategoryRepository.js';
@@ -260,6 +260,29 @@ export class PostgresCategoryRepository implements CategoryRepository {
    */
   async findAll(): Promise<Category[]> {
     const results = await this.db.query.categories.findMany();
+    return CategoryMapper.toDomainList(results);
+  }
+
+  /**
+   * Retrieves all categories sorted alphabetically by name (A-Z)
+   * HU-009: Used for listing categories in the API response.
+   */
+  async findAllSorted(): Promise<Category[]> {
+    const results = await this.db.query.categories.findMany({
+      orderBy: asc(categories.name),
+    });
+    return CategoryMapper.toDomainList(results);
+  }
+
+  /**
+   * Retrieves categories for a specific type, sorted alphabetically by name (A-Z)
+   * HU-009: Used for listing categories filtered by type in the API response.
+   */
+  async findByTypeIdSorted(typeId: string): Promise<Category[]> {
+    const results = await this.db.query.categories.findMany({
+      where: eq(categories.typeId, typeId),
+      orderBy: asc(categories.name),
+    });
     return CategoryMapper.toDomainList(results);
   }
 
