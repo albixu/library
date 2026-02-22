@@ -5,7 +5,7 @@
 | Campo | Valor |
 |-------|-------|
 | **Estado** | Aprobado |
-| **Fecha** | 2026-01-31 |
+| **Fecha** | 2026-02-22 |
 | **Autor** | - |
 
 ---
@@ -14,7 +14,11 @@
 
 **Library** es un sistema de gestión de biblioteca digital personal que permite catalogar, organizar y buscar libros digitales mediante búsqueda semántica potenciada por IA.
 
-El sistema está diseñado para manejar una colección de aproximadamente **60.000 libros** con capacidad de crecimiento, ofreciendo una **API REST** para clientes web y scripts de carga de datos desde ficheros JSON.
+El sistema está diseñado para manejar una colección de aproximadamente **60.000 libros** con capacidad de crecimiento. Se compone de:
+
+- **API REST** (Node.js/Fastify): Backend con búsqueda semántica y gestión de libros
+- **Web Client** (Angular): Interfaz web responsive para búsqueda y envío a Kindle
+- **Scripts de carga**: Importación de datos desde ficheros JSON
 
 ---
 
@@ -33,7 +37,8 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 - Almacenar metadatos de libros digitales de forma estructurada
 - Permitir búsqueda semántica mediante embeddings (el usuario describe lo que busca en lenguaje natural)
 - Cargar datos iniciales desde ficheros JSON consolidados
-- Exponer API REST para integración con clientes web
+- Exponer API REST para integración con cliente web
+- Proporcionar interfaz web intuitiva para búsqueda y envío de libros a Kindle
 - **Costo operativo mínimo o nulo** (proyecto personal)
 - Arquitectura mantenible y extensible
 
@@ -164,9 +169,84 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 
 ---
 
-## 4. Análisis de Alternativas Tecnológicas
+## 4. Arquitectura General del Sistema
 
-### 4.1 Lenguaje de Programación
+### 4.1 Diagrama de Componentes
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              LIBRARY SYSTEM                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│   ┌─────────────────────┐         ┌─────────────────────────────────────┐   │
+│   │     Web Client      │         │              API                     │   │
+│   │     (Angular 19)    │ ◄─────► │         (Node.js/Fastify)            │   │
+│   │                     │  HTTP   │                                      │   │
+│   │  • Búsqueda libros  │  REST   │  • Búsqueda semántica               │   │
+│   │  • Filtros          │         │  • CRUD libros                       │   │
+│   │  • Detalle libro    │         │  • Gestión categorías/tipos/niveles │   │
+│   │  • Envío a Kindle   │         │  • Envío email Kindle               │   │
+│   │                     │         │                                      │   │
+│   │  Puerto: 4200       │         │  Puerto: 3000                        │   │
+│   └─────────────────────┘         └──────────────┬──────────────────────┘   │
+│                                                   │                          │
+│                                   ┌───────────────┼───────────────┐          │
+│                                   │               │               │          │
+│                                   ▼               ▼               ▼          │
+│                           ┌───────────┐   ┌───────────┐   ┌───────────┐     │
+│                           │PostgreSQL │   │  Ollama   │   │  Ollama   │     │
+│                           │+ pgvector │   │(embeddings)│  │(translate)│     │
+│                           │           │   │           │   │           │     │
+│                           │ Puerto:   │   │ nomic-    │   │ qwen2.5:  │     │
+│                           │ 5432      │   │ embed-text│   │ 3b        │     │
+│                           └───────────┘   └───────────┘   └───────────┘     │
+│                                                                               │
+│                           ┌───────────────────────────────────────────┐      │
+│                           │              Scripts                       │      │
+│                           │  • seed-database.ts (carga inicial)       │      │
+│                           │  • consolidate-books.ts (procesamiento)   │      │
+│                           └───────────────────────────────────────────┘      │
+│                                                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 4.2 Componentes del Sistema
+
+| Componente | Tecnología | Descripción | Design Doc |
+|------------|------------|-------------|------------|
+| **API** | Node.js 20, Fastify, TypeScript | Backend REST con arquitectura hexagonal y DDD | `02-project-structure.md` |
+| **Web Client** | Angular 19, Signals, SCSS | Interfaz web responsive con Design System propio | `03-web-client-design.md` |
+| **Base de Datos** | PostgreSQL 16 + pgvector | Almacenamiento de datos y búsqueda vectorial | - |
+| **Embeddings** | Ollama + nomic-embed-text | Generación de embeddings para búsqueda semántica | - |
+| **Traducciones** | Ollama + qwen2.5:3b | Traducción automática de descripciones al español | - |
+
+### 4.3 Flujo de Datos Principal
+
+```
+Usuario                Web Client               API                    PostgreSQL
+  │                        │                     │                          │
+  │─── Busca "clean code"──►│                     │                          │
+  │                        │──GET /api/books────►│                          │
+  │                        │   ?text=clean+code  │                          │
+  │                        │                     │───genera embedding──────►│
+  │                        │                     │◄──vector 768 dims────────│
+  │                        │                     │                          │
+  │                        │                     │───búsqueda cosine────────►│
+  │                        │                     │◄──libros similares───────│
+  │                        │◄──JSON response─────│                          │
+  │◄──Muestra resultados───│                     │                          │
+  │                        │                     │                          │
+  │─── Click en libro ────►│                     │                          │
+  │                        │──GET /api/books/:id─►│                          │
+  │                        │◄──JSON libro────────│                          │
+  │◄──Muestra detalle─────│                     │                          │
+```
+
+---
+
+## 5. Análisis de Alternativas Tecnológicas
+
+### 5.1 Lenguaje de Programación
 
 | Opción | Pros | Contras | Decisión |
 |--------|------|---------|----------|
@@ -178,7 +258,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 
 ---
 
-### 4.2 Base de Datos
+### 5.2 Base de Datos
 
 | Opción | Pros | Contras | Decisión |
 |--------|------|---------|----------|
@@ -192,7 +272,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 
 ---
 
-### 4.3 Servicio de Embeddings
+### 5.3 Servicio de Embeddings
 
 | Opción | Pros | Contras | Decisión |
 |--------|------|---------|----------|
@@ -206,7 +286,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 
 ---
 
-### 4.4 Framework HTTP
+### 5.4 Framework HTTP (API)
 
 | Opción | Pros | Contras | Decisión |
 |--------|------|---------|----------|
@@ -219,7 +299,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 
 ---
 
-### 4.5 ORM / Query Builder
+### 5.5 ORM / Query Builder
 
 | Opción | Pros | Contras | Decisión |
 |--------|------|---------|----------|
@@ -232,7 +312,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 
 ---
 
-### 4.6 Validación
+### 5.6 Validación
 
 | Opción | Pros | Contras | Decisión |
 |--------|------|---------|----------|
@@ -245,7 +325,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 
 ---
 
-### 4.7 Testing
+### 5.7 Testing
 
 | Opción | Pros | Contras | Decisión |
 |--------|------|---------|----------|
@@ -257,7 +337,9 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 
 ---
 
-## 5. Stack Tecnológico Final
+## 6. Stack Tecnológico Final
+
+### 6.1 API (Backend)
 
 | Componente | Tecnología |
 |------------|------------|
@@ -272,9 +354,24 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 | **Testing** | Vitest |
 | **Containerización** | Docker + Docker Compose |
 
+### 6.2 Web Client (Frontend)
+
+| Componente | Tecnología |
+|------------|------------|
+| **Framework** | Angular 19.x |
+| **Lenguaje** | TypeScript 5.x |
+| **State Management** | Angular Signals |
+| **Estilos** | SCSS + CSS Variables (Design Tokens) |
+| **UI Components** | Design System propio (Atomic Design) |
+| **Component Docs** | Storybook 8.x |
+| **Testing Unit** | Vitest + Angular Testing Library |
+| **Testing E2E** | Playwright |
+| **Build Tool** | Angular CLI (esbuild) |
+| **Servidor** | Nginx (en Docker) |
+
 ---
 
-## 6. Estimación de Costos
+## 7. Estimación de Costos
 
 | Componente | Costo (Desarrollo) | Costo (Producción VPS) |
 |------------|-------------------|------------------------|
@@ -287,16 +384,18 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 
 ---
 
-## 7. Requisitos No Funcionales
+## 8. Requisitos No Funcionales
 
 - **Portabilidad**: Todo el sistema debe correr en contenedores Docker
 - **Desarrollo local**: Debe poder ejecutarse completamente en máquina local
-- **Rendimiento**: Búsquedas semánticas < 500ms para 60k registros
+- **Rendimiento API**: Búsquedas semánticas < 500ms para 60k registros
+- **Rendimiento Web**: Time to Interactive < 3s en conexión 3G
+- **Responsive**: Web Client debe funcionar en desktop y mobile
 - **Extensibilidad**: Arquitectura que permita añadir nuevos adaptadores (ej: GraphQL, gRPC)
 
 ---
 
-## 8. Riesgos y Mitigaciones
+## 9. Riesgos y Mitigaciones
 
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |--------|--------------|---------|------------|
@@ -306,10 +405,19 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 
 ---
 
-## 9. Referencias
+## 10. Referencias
 
+### Backend
 - [pgvector Documentation](https://github.com/pgvector/pgvector)
 - [Ollama](https://ollama.ai/)
 - [nomic-embed-text](https://huggingface.co/nomic-ai/nomic-embed-text-v1)
 - [Fastify](https://www.fastify.io/)
 - [Drizzle ORM](https://orm.drizzle.team/)
+
+### Frontend
+- [Angular 19 Documentation](https://angular.dev)
+- [Angular Signals Guide](https://angular.dev/guide/signals)
+- [Storybook](https://storybook.js.org/)
+- [Playwright](https://playwright.dev)
+- [Vitest](https://vitest.dev)
+- [Atomic Design](https://bradfrost.com/blog/post/atomic-web-design/)
