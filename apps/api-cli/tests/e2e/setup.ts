@@ -17,6 +17,7 @@ import type { FastifyInstance } from 'fastify';
 import * as schema from '../../src/infrastructure/driven/persistence/drizzle/schema.js';
 import { createServer } from '../../src/infrastructure/driver/http/server.js';
 import { CreateBookUseCase } from '../../src/application/use-cases/CreateBookUseCase.js';
+import { SearchBooksUseCase } from '../../src/application/use-cases/SearchBooksUseCase.js';
 import { ListBookTypesUseCase } from '../../src/application/use-cases/ListBookTypesUseCase.js';
 import { ListCategoriesUseCase } from '../../src/application/use-cases/ListCategoriesUseCase.js';
 import { ListBookLevelsUseCase } from '../../src/application/use-cases/ListBookLevelsUseCase.js';
@@ -139,9 +140,16 @@ export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
     typeRepository,
   );
 
+  const searchBooksUseCase = new SearchBooksUseCase({
+    bookRepository,
+    embeddingService,
+    logger: noopLogger,
+  });
+
   // Create server
   const server = await createServer({
     createBookUseCase,
+    searchBooksUseCase,
     listBookTypesUseCase,
     listCategoriesUseCase,
     listBookLevelsUseCase,
