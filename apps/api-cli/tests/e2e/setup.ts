@@ -22,6 +22,7 @@ import { ListBookTypesUseCase } from '../../src/application/use-cases/ListBookTy
 import { ListCategoriesUseCase } from '../../src/application/use-cases/ListCategoriesUseCase.js';
 import { ListBookLevelsUseCase } from '../../src/application/use-cases/ListBookLevelsUseCase.js';
 import { OllamaEmbeddingService } from '../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
+import { OllamaTranslationService } from '../../src/infrastructure/driven/translation/OllamaTranslationService.js';
 import { PostgresBookRepository } from '../../src/infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from '../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { PostgresTypeRepository } from '../../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
@@ -44,6 +45,7 @@ export type TestDb = NodePgDatabase<typeof schema> & { $client: pg.Pool };
 const DEFAULT_DATABASE_URL = process.env['DATABASE_URL'] ?? 'postgresql://library:library@postgres:5432/library';
 const DEFAULT_OLLAMA_URL = process.env['OLLAMA_BASE_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama:11434';
 const DEFAULT_OLLAMA_MODEL = 'nomic-embed-text';
+const DEFAULT_TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'qwen2.5:3b';
 
 /**
  * Server configuration
@@ -97,12 +99,21 @@ export async function clearTestData(db: TestDb): Promise<void> {
 export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
   const ollamaUrl = process.env['OLLAMA_URL'] ?? DEFAULT_OLLAMA_URL;
   const ollamaModel = process.env['OLLAMA_MODEL'] ?? DEFAULT_OLLAMA_MODEL;
+  const translationModel = process.env['TRANSLATION_MODEL'] ?? DEFAULT_TRANSLATION_MODEL;
 
   // Create adapters
   const embeddingService = new OllamaEmbeddingService({
     baseUrl: ollamaUrl,
     model: ollamaModel,
     timeoutMs: 30000,
+  });
+
+  // HU-013: Translation service for description translation
+  const translationService = new OllamaTranslationService({
+    baseUrl: ollamaUrl,
+    model: translationModel,
+    timeoutMs: 60000,
+    retries: 3,
   });
 
    
@@ -118,6 +129,7 @@ export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
 
   // Create use cases
   // HU-008: CreateBookUseCase now requires levelRepository
+  // HU-013: CreateBookUseCase now requires translationService
   const createBookUseCase = new CreateBookUseCase({
     bookRepository,
     categoryRepository,
@@ -125,6 +137,7 @@ export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
     authorRepository,
     levelRepository,
     embeddingService,
+    translationService,
     logger: noopLogger,
   });
 
@@ -234,37 +247,40 @@ export function generateUniqueISBN(): string {
 
 /**
  * Test fixtures for E2E tests
+ *
+ * HU-013: Default language changed to 'es' to avoid translation service dependency
+ * in most tests. Tests that specifically need translation should override language.
  */
 export const e2eFixtures = {
   validBook: {
     title: 'E2E Test Book',
     authors: ['E2E Author'],
-    description: 'A book created during E2E testing to verify system functionality.',
+    description: 'Un libro creado durante las pruebas E2E para verificar la funcionalidad del sistema.',
     type: 'technical' as const,
     format: 'pdf' as const,
     categories: ['E2E Testing'],
     isbn: null as string | null,
     available: true,
     path: '/test/e2e-book.pdf',
-    language: 'en' as const,
+    language: 'es' as const, // HU-013: Spanish to avoid translation
   },
 
   bookWithoutTitle: {
     authors: ['E2E Author'],
-    description: 'A book without title.',
+    description: 'Un libro sin título.',
     type: 'technical' as const,
     format: 'pdf' as const,
     categories: ['E2E Testing'],
-    language: 'en' as const,
+    language: 'es' as const, // HU-013: Spanish to avoid translation
   },
 
   bookWithInvalidType: {
     title: 'Invalid Type Book',
     authors: ['E2E Author'],
-    description: 'A book with invalid type.',
+    description: 'Un libro con tipo inválido.',
     type: 'invalid_type',
     format: 'pdf',
     categories: ['E2E Testing'],
-    language: 'en',
+    language: 'es', // HU-013: Spanish to avoid translation
   },
 };

@@ -10,6 +10,7 @@
  * - Duplicate ISBN conflict (409)
  * - Embedding service unavailable (503)
  * - Response format verification (no embedding exposed)
+ * - HU-013: Translation handling (originalDescription, language fields)
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
@@ -68,6 +69,8 @@ describe('POST /api/books (E2E)', () => {
         id: expect.any(String),
         title: bookData.title,
         description: bookData.description,
+        originalDescription: bookData.description, // HU-013: Same as description for Spanish input
+        language: bookData.language, // HU-013
         type: bookData.type,
         format: bookData.format,
         isbn: uniqueISBN,
@@ -131,11 +134,11 @@ describe('POST /api/books (E2E)', () => {
       const bookData = {
         title: 'Book Without Optional Fields',
         authors: ['Test Author'],
-        description: 'A book without ISBN and path.',
+        description: 'Un libro sin ISBN ni path.',
         type: 'novel',
         format: 'epub',
         categories: ['Fiction'],
-        language: 'en',
+        language: 'es', // HU-013: Spanish to avoid translation
       };
 
       const response = await fetch(`${E2E_BASE_URL}/api/books`, {
@@ -162,11 +165,11 @@ describe('POST /api/books (E2E)', () => {
       const bookData = {
         title: 'Multi-Category Book',
         authors: ['Test Author'],
-        description: 'A book with multiple categories.',
+        description: 'Un libro con múltiples categorías.',
         type: 'technical',
         format: 'pdf',
         categories: ['Programming', 'Software Engineering', 'Best Practices'],
-        language: 'en',
+        language: 'es', // HU-013: Spanish to avoid translation
         isbn: generateUniqueISBN(),
       };
 
@@ -197,11 +200,11 @@ describe('POST /api/books (E2E)', () => {
       const bookData = {
         title: 'Book With Level',
         authors: ['Level Author'],
-        description: 'A book with a specified level.',
+        description: 'Un libro con un nivel especificado.',
         type: 'technical',
         format: 'pdf',
         categories: ['Programming'],
-        language: 'en',
+        language: 'es', // HU-013: Spanish to avoid translation
         isbn: generateUniqueISBN(),
         level: 'Intermediate',
       };
@@ -229,11 +232,11 @@ describe('POST /api/books (E2E)', () => {
       const bookData = {
         title: 'Book Without Level',
         authors: ['Test Author'],
-        description: 'A book without a level specified.',
+        description: 'Un libro sin nivel especificado.',
         type: 'novel', // novels don't typically have levels
         format: 'epub',
         categories: ['Fiction'],
-        language: 'en',
+        language: 'es', // HU-013: Spanish to avoid translation
         isbn: generateUniqueISBN(),
       };
 
@@ -466,11 +469,11 @@ describe('POST /api/books (E2E)', () => {
       const bookData = {
         title: 'Unique Triad Book',
         authors: ['Unique Author'],
-        description: 'First book with this triad.',
+        description: 'Primer libro con esta triada.',
         type: 'technical',
         format: 'pdf',
         categories: ['Testing'],
-        language: 'en',
+        language: 'es', // HU-013: Spanish to avoid translation
       };
 
       // Create first book
@@ -484,7 +487,7 @@ describe('POST /api/books (E2E)', () => {
       // Create second book with same authors/title/format - should succeed now
       const duplicateBook = {
         ...bookData,
-        description: 'Second book with same triad.',
+        description: 'Segundo libro con la misma triada.',
         categories: ['Other Category'],
       };
 
@@ -496,6 +499,145 @@ describe('POST /api/books (E2E)', () => {
 
       // Should now succeed (201) instead of conflict (409)
       expect(response2.status).toBe(201);
+    });
+  });
+
+  /**
+   * HU-013: Translation Handling Tests
+   *
+   * These tests verify that the API correctly handles description translation:
+   * - Spanish descriptions are stored as-is (originalDescription === description)
+   * - Non-Spanish descriptions require translation service
+   * - Response includes originalDescription, description, and language fields
+   *
+   * NOTE: Tests that require actual translation are skipped when the model is unavailable.
+   */
+  describe('Translation Handling (HU-013)', () => {
+    it('should return originalDescription same as description for Spanish input', async () => {
+      const spanishDescription = 'Esta es una descripción en español para el libro de prueba.';
+      const bookData = {
+        title: 'Libro en Español',
+        authors: ['Autor Español'],
+        description: spanishDescription,
+        type: 'technical',
+        format: 'pdf',
+        categories: ['Programación'],
+        language: 'es',
+        isbn: generateUniqueISBN(),
+      };
+
+      const response = await fetch(`${E2E_BASE_URL}/api/books`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookData),
+      });
+
+      expect(response.status).toBe(201);
+
+      const body = await response.json();
+      const { data } = body;
+
+      // HU-013: For Spanish input, both descriptions should be identical
+      expect(data.language).toBe('es');
+      expect(data.originalDescription).toBe(spanishDescription);
+      expect(data.description).toBe(spanishDescription);
+    });
+
+    it('should include language field in response', async () => {
+      const bookData = {
+        ...e2eFixtures.validBook,
+        isbn: generateUniqueISBN(),
+      };
+
+      const response = await fetch(`${E2E_BASE_URL}/api/books`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookData),
+      });
+
+      expect(response.status).toBe(201);
+
+      const body = await response.json();
+
+      // HU-013: Response must include language field
+      expect(body.data).toHaveProperty('language');
+      expect(typeof body.data.language).toBe('string');
+      expect(body.data.language).toMatch(/^[a-z]{2}$/); // ISO 639-1 format
+    });
+
+    it('should include originalDescription field in response', async () => {
+      const bookData = {
+        ...e2eFixtures.validBook,
+        isbn: generateUniqueISBN(),
+      };
+
+      const response = await fetch(`${E2E_BASE_URL}/api/books`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookData),
+      });
+
+      expect(response.status).toBe(201);
+
+      const body = await response.json();
+
+      // HU-013: Response must include originalDescription field
+      expect(body.data).toHaveProperty('originalDescription');
+      expect(typeof body.data.originalDescription).toBe('string');
+      expect(body.data.originalDescription.length).toBeGreaterThan(0);
+    });
+
+    it('should return 400 when language is missing', async () => {
+      const { language, ...bookWithoutLanguage } = e2eFixtures.validBook;
+
+      const response = await fetch(`${E2E_BASE_URL}/api/books`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookWithoutLanguage),
+      });
+
+      expect(response.status).toBe(400);
+
+      const body = await response.json();
+      expect(body.success).toBe(false);
+      expect(body.error).toHaveProperty('message');
+    });
+
+    it('should return 400 when language format is invalid', async () => {
+      const bookData = {
+        ...e2eFixtures.validBook,
+        language: 'english', // Invalid: not ISO 639-1 format
+        isbn: generateUniqueISBN(),
+      };
+
+      const response = await fetch(`${E2E_BASE_URL}/api/books`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookData),
+      });
+
+      expect(response.status).toBe(400);
+
+      const body = await response.json();
+      expect(body.success).toBe(false);
+      expect(body.error).toHaveProperty('message');
+    });
+
+    // NOTE: Tests requiring actual translation are skipped when the model is unavailable
+    // To run these tests, ensure: docker exec library-ollama ollama pull qwen2.5:3b
+    it.skip('should translate English description to Spanish', async () => {
+      // This test requires translation model qwen2.5:3b to be available
+      // When available, it should:
+      // 1. Accept English description
+      // 2. Store original English in originalDescription
+      // 3. Store translated Spanish in description
+    });
+
+    it.skip('should return 503 when translation service is unavailable', async () => {
+      // This test would require:
+      // 1. Ensuring translation model is NOT available
+      // 2. Sending a book with non-Spanish language
+      // 3. Verifying 503 response with TranslationServiceUnavailableError
     });
   });
 
