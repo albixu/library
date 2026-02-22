@@ -126,6 +126,13 @@ export class Filters {
     return this.items.map(callback);
   }
 
+  /**
+   * Filters the collection based on a predicate and returns a new Filters instance
+   */
+  filter(predicate: (filter: Filter, index: number) => boolean): Filters {
+    return new Filters(this.items.filter(predicate));
+  }
+
   equals(other: Filters): boolean {
     if (this.items.length !== other.items.length) {
       return false;

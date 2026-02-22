@@ -91,6 +91,26 @@ describe('Filter', () => {
         expect(filter.value.value).toBe(50);
       });
     });
+
+    describe('greaterThanOrEqual', () => {
+      it('should create a GTE filter', () => {
+        const filter = Filter.greaterThanOrEqual('year', 2020);
+
+        expect(filter.field.value).toBe('year');
+        expect(filter.operator.equals(FilterOperator.GTE)).toBe(true);
+        expect(filter.value.value).toBe(2020);
+      });
+    });
+
+    describe('lessThanOrEqual', () => {
+      it('should create a LTE filter', () => {
+        const filter = Filter.lessThanOrEqual('price', 100);
+
+        expect(filter.field.value).toBe('price');
+        expect(filter.operator.equals(FilterOperator.LTE)).toBe(true);
+        expect(filter.value.value).toBe(100);
+      });
+    });
   });
 
   describe('isSimilarityFilter', () => {

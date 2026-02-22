@@ -89,6 +89,20 @@ export class Filter {
   }
 
   /**
+   * Creates a greater than or equal filter
+   */
+  static greaterThanOrEqual(field: string, value: number): Filter {
+    return Filter.create(field, 'GTE', value);
+  }
+
+  /**
+   * Creates a less than or equal filter
+   */
+  static lessThanOrEqual(field: string, value: number): Filter {
+    return Filter.create(field, 'LTE', value);
+  }
+
+  /**
    * Checks if this filter uses the SIMILAR_TO operator
    */
   isSimilarityFilter(): boolean {

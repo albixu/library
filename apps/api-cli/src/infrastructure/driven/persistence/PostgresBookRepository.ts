@@ -29,6 +29,7 @@ import type { BookType } from '../../../domain/entities/BookType.js';
 import type { Category } from '../../../domain/entities/Category.js';
 import type { Criteria } from '../../../domain/criteria/Criteria.js';
 import type { Filter } from '../../../domain/criteria/Filter.js';
+import { SEMANTIC_SEARCH } from '../../../domain/criteria/constants.js';
 import { DuplicateISBNError, BookNotFoundError } from '../../../domain/errors/DomainErrors.js';
 import type {
   BookRepository,
@@ -381,10 +382,13 @@ export class PostgresBookRepository implements BookRepository {
    */
   async search(criteria: Criteria, embedding?: number[]): Promise<SearchBooksResult> {
     const hasEmbedding = embedding !== undefined && embedding.length > 0;
-    const SIMILARITY_THRESHOLD = 0.7;
 
     // Build where conditions from criteria filters
-    const whereConditions = this.buildWhereConditions(criteria, embedding, SIMILARITY_THRESHOLD);
+    const whereConditions = this.buildWhereConditions(
+      criteria,
+      embedding,
+      SEMANTIC_SEARCH.SIMILARITY_THRESHOLD,
+    );
 
     // Build the order by clause
     const orderByClause = this.buildOrderByClause(criteria, hasEmbedding);
@@ -628,9 +632,9 @@ export class PostgresBookRepository implements BookRepository {
     embedding: number[] | undefined,
     hasEmbedding: boolean,
   ): Promise<SearchResultRow[]> {
-    // Build cursor condition
+    // Build cursor condition (pass embedding for similarity pagination)
     const cursorCondition = cursor
-      ? this.buildCursorCondition(cursor, orderBy, hasEmbedding)
+      ? this.buildCursorCondition(cursor, orderBy, hasEmbedding, embedding)
       : undefined;
 
     // Combine where conditions with cursor
@@ -674,18 +678,24 @@ export class PostgresBookRepository implements BookRepository {
 
   /**
    * Builds cursor condition for pagination
+   *
+   * For similarity-based pagination, we compare the current book's similarity score
+   * (calculated using the original query embedding) against the last seen score.
    */
   private buildCursorCondition(
     cursor: CursorData,
     orderBy: 'similarity_desc' | 'title_asc' | 'title_desc' | 'custom_asc' | 'custom_desc',
     hasEmbedding: boolean,
+    embedding?: number[],
   ): ReturnType<typeof sql> {
-    if (hasEmbedding && cursor.lastScore !== undefined) {
-      // For similarity ordering: (score, id) < (lastScore, lastId)
+    if (hasEmbedding && cursor.lastScore !== undefined && embedding) {
+      // For similarity ordering (DESC): get books with lower similarity scores,
+      // or same score but higher ID (for tie-breaking)
+      const embeddingStr = `[${embedding.join(',')}]`;
       return sql`(
-        1 - (${books.embedding} <=> '[${sql.raw(cursor.lastScore.toString())}]'::vector) < ${cursor.lastScore}
+        1 - (${books.embedding} <=> ${embeddingStr}::vector) < ${cursor.lastScore}
         OR (
-          1 - (${books.embedding} <=> '[${sql.raw(cursor.lastScore.toString())}]'::vector) = ${cursor.lastScore}
+          1 - (${books.embedding} <=> ${embeddingStr}::vector) = ${cursor.lastScore}
           AND ${books.id} > ${cursor.lastId}
         )
       )`;
@@ -734,19 +744,37 @@ export class PostgresBookRepository implements BookRepository {
 
   /**
    * Maps search result rows to BookWithScore objects
+   *
+   * Uses batch loading to avoid N+1 query problem:
+   * - 1 query for all authors (instead of N)
+   * - 1 query for all types (instead of N)
+   * - 1 query for all categories (instead of N)
+   * - 1 query for type-level relationships
    */
   private async mapResultsToBooksWithScores(
     results: SearchResultRow[],
     hasEmbedding: boolean,
   ): Promise<BookWithScore[]> {
-    const booksWithScores: BookWithScore[] = [];
+    if (results.length === 0) {
+      return [];
+    }
 
-    for (const row of results) {
-      const [bookAuthors, bookType, bookCategories] = await Promise.all([
-        this.fetchAuthorsForBook(row.id),
-        this.fetchTypeForBook(row.typeId),
-        this.fetchCategoriesForBook(row.id),
-      ]);
+    // Extract unique IDs for batch loading
+    const bookIds = results.map((r) => r.id);
+    const typeIds = [...new Set(results.map((r) => r.typeId))];
+
+    // Batch load all relations in parallel (3 queries instead of N*3)
+    const [authorsMap, typesMap, categoriesMap] = await Promise.all([
+      this.fetchAuthorsForBooks(bookIds),
+      this.fetchTypesWithLevels(typeIds),
+      this.fetchCategoriesForBooks(bookIds),
+    ]);
+
+    // Map results to BookWithScore
+    return results.map((row) => {
+      const bookAuthors = authorsMap.get(row.id) ?? [];
+      const bookType = typesMap.get(row.typeId);
+      const bookCategories = categoriesMap.get(row.id) ?? [];
 
       if (!bookType) {
         throw new Error(`Book type not found for type_id: ${row.typeId}`);
@@ -771,14 +799,117 @@ export class PostgresBookRepository implements BookRepository {
 
       const book = BookMapper.toDomain(bookRecord, bookAuthors, bookType, bookCategories);
 
-      booksWithScores.push({
+      return {
         book,
         similarityScore: hasEmbedding ? row.similarity_score : null,
         levelName: row.levelName,
-      });
+      };
+    });
+  }
+
+  // ==================== Batch Loading Methods ====================
+
+  /**
+   * Batch loads authors for multiple books in a single query
+   * Returns a Map of bookId -> Author[]
+   */
+  private async fetchAuthorsForBooks(bookIds: string[]): Promise<Map<string, Author[]>> {
+    if (bookIds.length === 0) {
+      return new Map();
     }
 
-    return booksWithScores;
+    const results = await this.db
+      .select({
+        bookId: bookAuthors.bookId,
+        author: authors,
+      })
+      .from(bookAuthors)
+      .innerJoin(authors, eq(bookAuthors.authorId, authors.id))
+      .where(sql`${bookAuthors.bookId} IN (${sql.join(bookIds.map(id => sql`${id}`), sql`, `)})`);
+
+    // Group by bookId
+    const authorsMap = new Map<string, Author[]>();
+    for (const row of results) {
+      const author = AuthorMapper.toDomain(row.author);
+      const existing = authorsMap.get(row.bookId) ?? [];
+      existing.push(author);
+      authorsMap.set(row.bookId, existing);
+    }
+
+    return authorsMap;
+  }
+
+  /**
+   * Batch loads types with their levelIds for multiple type IDs
+   * Returns a Map of typeId -> BookType
+   */
+  private async fetchTypesWithLevels(typeIds: string[]): Promise<Map<string, BookType>> {
+    if (typeIds.length === 0) {
+      return new Map();
+    }
+
+    // Load types
+    const typeResults = await this.db
+      .select()
+      .from(types)
+      .where(sql`${types.id} IN (${sql.join(typeIds.map(id => sql`${id}`), sql`, `)})`);
+
+    // Load type-level relationships for all types
+    const typeLevelResults = await this.db
+      .select({
+        typeId: typeLevels.typeId,
+        levelId: typeLevels.levelId,
+      })
+      .from(typeLevels)
+      .where(sql`${typeLevels.typeId} IN (${sql.join(typeIds.map(id => sql`${id}`), sql`, `)})`);
+
+    // Group levelIds by typeId
+    const levelIdsByType = new Map<string, string[]>();
+    for (const row of typeLevelResults) {
+      const existing = levelIdsByType.get(row.typeId) ?? [];
+      existing.push(row.levelId);
+      levelIdsByType.set(row.typeId, existing);
+    }
+
+    // Build type map
+    const typesMap = new Map<string, BookType>();
+    for (const typeRecord of typeResults) {
+      const levelIds = levelIdsByType.get(typeRecord.id) ?? [];
+      const recordWithLevels = this.combineTypeWithLevelIds(typeRecord, levelIds);
+      typesMap.set(typeRecord.id, TypeMapper.toDomain(recordWithLevels));
+    }
+
+    return typesMap;
+  }
+
+  /**
+   * Batch loads categories for multiple books in a single query
+   * Returns a Map of bookId -> Category[]
+   */
+  private async fetchCategoriesForBooks(bookIds: string[]): Promise<Map<string, Category[]>> {
+    if (bookIds.length === 0) {
+      return new Map();
+    }
+
+    const results = await this.db
+      .select({
+        bookId: bookCategories.bookId,
+        category: categories,
+      })
+      .from(bookCategories)
+      .innerJoin(categories, eq(bookCategories.categoryId, categories.id))
+      .where(sql`${bookCategories.bookId} IN (${sql.join(bookIds.map(id => sql`${id}`), sql`, `)})`);
+
+    // Group by bookId
+    const categoriesMap = new Map<string, Category[]>();
+    for (const row of results) {
+      const category = CategoryMapper.toDomain(row.category);
+      const existing = categoriesMap.get(row.bookId) ?? [];
+      existing.push(category);
+      categoriesMap.set(row.bookId, existing);
+    }
+
+    return categoriesMap;
   }
 
   // ==================== Private Helpers ====================

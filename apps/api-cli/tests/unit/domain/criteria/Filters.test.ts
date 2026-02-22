@@ -190,6 +190,47 @@ describe('Filters', () => {
     });
   });
 
+  describe('filter', () => {
+    it('should filter based on predicate and return new Filters instance', () => {
+      const filters = Filters.fromValues([
+        Filter.equals('title', 'test'),
+        Filter.contains('author', 'martin'),
+        Filter.equals('year', '2020'),
+      ]);
+
+      const equalsFilters = filters.filter(
+        f => f.operator.value === 'EQUALS',
+      );
+
+      expect(equalsFilters.count()).toBe(2);
+      expect(equalsFilters.hasField('title')).toBe(true);
+      expect(equalsFilters.hasField('year')).toBe(true);
+      expect(equalsFilters.hasField('author')).toBe(false);
+    });
+
+    it('should return empty filters when no matches', () => {
+      const filters = Filters.fromValues([
+        Filter.equals('title', 'test'),
+        Filter.contains('author', 'martin'),
+      ]);
+
+      const noMatches = filters.filter(f => f.field.value === 'nonexistent');
+
+      expect(noMatches.isEmpty()).toBe(true);
+    });
+
+    it('should not modify original filters', () => {
+      const original = Filters.fromValues([
+        Filter.equals('title', 'test'),
+        Filter.contains('author', 'martin'),
+      ]);
+
+      original.filter(f => f.field.value === 'title');
+
+      expect(original.count()).toBe(2);
+    });
+  });
+
   describe('equals', () => {
     it('should return true for identical filters collections', () => {
       const filters1 = Filters.fromValues([
