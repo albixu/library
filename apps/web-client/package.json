@@ -8,6 +8,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:watch": "ng test --watch",
+    "test:coverage": "ng test --coverage",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix"
   },
@@ -33,6 +35,7 @@
     "@angular/cli": "^21.1.4",
     "@angular/compiler-cli": "^21.1.0",
     "@eslint/js": "^9.39.3",
+    "@vitest/coverage-v8": "^4.0.18",
     "angular-eslint": "^21.2.0",
     "eslint": "^9.39.3",
     "eslint-config-prettier": "^10.1.8",
