@@ -31,7 +31,7 @@ LABEL maintainer="Library Team" \
       org.opencontainers.image.title="Library API" \
       org.opencontainers.image.description="Personal digital library management API" \
       org.opencontainers.image.vendor="Library" \
-      org.opencontainers.image.source="https://github.com/library/api-cli"
+      org.opencontainers.image.source="https://github.com/library/api"
 
 # Security: Update packages and remove cache
 RUN apk update && \

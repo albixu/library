@@ -528,7 +528,7 @@ export const books = pgTable('books', {
 **Descripción:** Actualizar el script de seed para leer y persistir el campo `level`.
 
 **Entregables:**
-- Actualizar `apps/api-cli/scripts/seed-database.ts`
+- Actualizar `apps/api/scripts/seed-database.ts`
 - Tests del script actualizados
 
 ---

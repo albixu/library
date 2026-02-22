@@ -185,7 +185,7 @@ Cuando no hay categorias o el tipo no existe:
 ### 5.2 Estructura de Archivos
 
 ```
-apps/api-cli/src/
+apps/api/src/
 +-- application/
 |   +-- ports/
 |   |   +-- CategoryRepository.ts          # MODIFICAR: Agregar findAllSorted(), findByTypeIdSorted()
@@ -504,4 +504,4 @@ interface ListCategoriesQuery {
 - [06-hu-004-standardize-api-responses.md](./06-hu-004-standardize-api-responses.md) - Estructura de respuestas API
 - [07-hu-005-list-book-types.md](./07-hu-005-list-book-types.md) - Patron de endpoint de listado
 - [08-hu-008-type-category-level-relationships.md](./08-hu-008-type-category-level-relationships.md) - Relacion Type-Category
-- [CategoryRepository.ts](../../apps/api-cli/src/application/ports/CategoryRepository.ts) - Puerto actual
+- [CategoryRepository.ts](../../apps/api/src/application/ports/CategoryRepository.ts) - Puerto actual

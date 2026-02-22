@@ -137,9 +137,9 @@ Cuando no hay niveles o el tipo no existe:
 ### Task 0: Renombrar endpoint de categories
 **Descripción**: Renombrar `/api/categories` a `/api/book-categories`  
 **Archivos a modificar**:
-- `apps/api-cli/src/infrastructure/driver/http/routes/categories.routes.ts`
-- `apps/api-cli/src/infrastructure/driver/http/server.ts`
-- `apps/api-cli/tests/e2e/http/listCategories.e2e.test.ts`
+- `apps/api/src/infrastructure/driver/http/routes/categories.routes.ts`
+- `apps/api/src/infrastructure/driver/http/server.ts`
+- `apps/api/tests/e2e/http/listCategories.e2e.test.ts`
 - `docs/api/openapi.yaml`
 
 **Tests**: Actualizar tests E2E existentes
@@ -148,7 +148,7 @@ Cuando no hay niveles o el tipo no existe:
 
 ### Task 1: Extender LevelRepository Port
 **Descripción**: Añadir métodos `findAllSorted()` y `findByTypeIdSorted(typeId)` al puerto  
-**Archivo**: `apps/api-cli/src/application/ports/LevelRepository.ts`
+**Archivo**: `apps/api/src/application/ports/LevelRepository.ts`
 
 ```typescript
 export interface LevelRepository {
@@ -173,7 +173,7 @@ export interface LevelRepository {
 
 ### Task 2: Implementar métodos en PostgresLevelRepository
 **Descripción**: Implementar los nuevos métodos usando Drizzle ORM  
-**Archivo**: `apps/api-cli/src/infrastructure/driven/persistence/PostgresLevelRepository.ts`
+**Archivo**: `apps/api/src/infrastructure/driven/persistence/PostgresLevelRepository.ts`
 
 **Queries**:
 ```typescript
@@ -204,7 +204,7 @@ db.select({
 
 ### Task 3: Tests de integración para PostgresLevelRepository
 **Descripción**: Tests de integración para los nuevos métodos  
-**Archivo**: `apps/api-cli/tests/integration/infrastructure/persistence/PostgresLevelRepository.integration.test.ts`
+**Archivo**: `apps/api/tests/integration/infrastructure/persistence/PostgresLevelRepository.integration.test.ts`
 
 **Tests**: 6+ tests de integración
 
@@ -212,7 +212,7 @@ db.select({
 
 ### Task 4: Crear ListBookLevelsUseCase
 **Descripción**: Use case que orquesta la lógica de negocio  
-**Archivo**: `apps/api-cli/src/application/use-cases/ListBookLevelsUseCase.ts`
+**Archivo**: `apps/api/src/application/use-cases/ListBookLevelsUseCase.ts`
 
 ```typescript
 export interface BookLevelListItem {
@@ -255,7 +255,7 @@ export class ListBookLevelsUseCase {
 
 ### Task 5: Crear schemas Zod para validación
 **Descripción**: Schemas para query params y response  
-**Archivo**: `apps/api-cli/src/infrastructure/driver/http/schemas/book-level.schemas.ts`
+**Archivo**: `apps/api/src/infrastructure/driver/http/schemas/book-level.schemas.ts`
 
 ```typescript
 export const listBookLevelsQuerySchema = z.object({
@@ -280,7 +280,7 @@ export const listBookLevelsResponseSchema = z.object({
 
 ### Task 6: Crear BookLevelsController
 **Descripción**: Controller HTTP que maneja las requests  
-**Archivo**: `apps/api-cli/src/infrastructure/driver/http/controllers/BookLevelsController.ts`
+**Archivo**: `apps/api/src/infrastructure/driver/http/controllers/BookLevelsController.ts`
 
 ```typescript
 export class BookLevelsController {
@@ -301,15 +301,15 @@ export class BookLevelsController {
 ### Task 7: Crear rutas y registrar en servidor
 **Descripción**: Definir rutas y registrar en Fastify  
 **Archivos**:
-- `apps/api-cli/src/infrastructure/driver/http/routes/book-levels.routes.ts`
-- `apps/api-cli/src/infrastructure/driver/http/server.ts`
-- `apps/api-cli/src/server.ts`
+- `apps/api/src/infrastructure/driver/http/routes/book-levels.routes.ts`
+- `apps/api/src/infrastructure/driver/http/server.ts`
+- `apps/api/src/server.ts`
 
 ---
 
 ### Task 8: Tests E2E
 **Descripción**: Tests end-to-end del endpoint completo  
-**Archivo**: `apps/api-cli/tests/e2e/http/listBookLevels.e2e.test.ts`
+**Archivo**: `apps/api/tests/e2e/http/listBookLevels.e2e.test.ts`
 
 **Tests**:
 - GET /api/book-levels devuelve todos los niveles ordenados

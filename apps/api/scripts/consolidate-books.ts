@@ -39,11 +39,11 @@ type DrizzleDb = ReturnType<typeof drizzle<typeof schema>>;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// APP_ROOT points to apps/api-cli or /app in Docker
+// APP_ROOT points to apps/api or /app in Docker
 const APP_ROOT = join(__dirname, '..');
 
-// In Docker: /app maps to apps/api-cli, and original_data is mounted at /app/original_data
-// In local: original_data is at monorepo root, so we go up from apps/api-cli
+// In Docker: /app maps to apps/api, and original_data is mounted at /app/original_data
+// In local: original_data is at monorepo root, so we go up from apps/api
 // We use environment variable MONOREPO_ROOT to handle this, defaulting to local structure
 const MONOREPO_ROOT = process.env['MONOREPO_ROOT'] ?? join(APP_ROOT, '..', '..');
 const SOURCE_DIR = join(MONOREPO_ROOT, 'original_data');

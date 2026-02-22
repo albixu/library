@@ -38,7 +38,7 @@ La Arquitectura Hexagonal propone:
 ```
                     ┌─────────────────────────────────────┐
                     │           ADAPTERS                  │
-                    │  (CLI, HTTP API, PostgreSQL, etc.)  │
+                    │  (HTTP API, PostgreSQL, Ollama)     │
                     └─────────────────┬───────────────────┘
                                       │
                                       ▼
@@ -78,23 +78,24 @@ library/
 │   ├── db/
 │   │   ├── init-db.sql                  # Script de inicialización BD
 │   │   └── books.json                   # Datos consolidados para seeding
-│   └── design_docs/
-│       ├── 01-project-overview.md
-│       ├── 02-project-structure.md
-│       ├── 03-hu-001-create-book.md
-│       ├── 04-hu-002-initial-data-load.md
-│       ├── 05-hu-003-book-level.md          # Superseded by HU-008
-│       ├── 06-hu-004-standardize-api-responses.md
-│       ├── 07-hu-005-list-book-types.md
-│       ├── 08-hu-008-type-category-level-relationships.md
-│       ├── 09-hu-009-list-categories.md
-│       ├── 10-hu-010-list-book-levels.md
-│       ├── 11-hu-011-consolidate-books.md
-│       ├── 12-hu-012-search-books.md
-│       └── 13-hu-013-book-description-translation.md
+│   ├── design_docs/
+│   │   ├── 01-project-overview.md
+│   │   └── 02-project-structure.md
+│   └── user_stories/
+│       ├── 00-hu-001-create-book.md
+│       ├── 01-hu-002-initial-data-load.md
+│       ├── 02-hu-003-book-level.md          # Superseded by HU-008
+│       ├── 03-hu-004-standardize-api-responses.md
+│       ├── 04-hu-005-list-book-types.md
+│       ├── 05-hu-008-type-category-level-relationships.md
+│       ├── 06-hu-009-list-categories.md
+│       ├── 07-hu-010-list-book-levels.md
+│       ├── 08-hu-011-consolidate-books.md
+│       ├── 09-hu-012-search-books.md
+│       └── 10-hu-013-book-description-translation.md
 │
 ├── apps/
-│   ├── api-cli/                             # 🖥️ Backend: API REST
+│   ├── api/                                  # 🖥️ Backend: API REST
 │   │   ├── src/
 │   │   │   ├── domain/                      # 💎 NÚCLEO - Lógica de negocio pura
 │   │   │   │   ├── entities/
@@ -275,7 +276,7 @@ El proyecto se organiza como un **monorepo** con múltiples aplicaciones:
 
 | Directorio | Propósito |
 |------------|-----------|
-| `apps/api-cli/` | Backend con API REST - Contiene toda la lógica de negocio |
+| `apps/api/` | Backend con API REST - Contiene toda la lógica de negocio |
 | `apps/web-client/` | Cliente web futuro - Consumirá la API REST |
 
 **Beneficios:**
@@ -288,7 +289,7 @@ El proyecto se organiza como un **monorepo** con múltiples aplicaciones:
 Cada aplicación dentro de `apps/` tiene su propia configuración Docker:
 
 ```
-apps/api-cli/docker/
+apps/api/docker/
 ├── Dockerfile          # Imagen de producción (código copiado)
 └── Dockerfile.dev      # Imagen de desarrollo (código montado por volumen)
 ```
@@ -566,7 +567,7 @@ Estructura espejo del código fuente, separada por tipo de test.
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │    api-cli      │  │    postgres     │  │     ollama      │ │
+│  │      api        │  │    postgres     │  │     ollama      │ │
 │  │   (Node.js)     │  │   + pgvector    │  │  (embeddings)   │ │
 │  │                 │  │                 │  │                 │ │
 │  │  - API: 3000    │  │  - Port: 5432   │  │  - Port: 11434  │ │

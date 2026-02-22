@@ -8,10 +8,10 @@
 # ================================
 
 services:
-  # ----- API + CLI Application -----
+  # ----- API Application -----
   api:
     build:
-      context: ./apps/api-cli
+      context: ./apps/api
       dockerfile: docker/Dockerfile
     container_name: library-api
     ports:

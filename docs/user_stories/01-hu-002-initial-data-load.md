@@ -40,7 +40,7 @@ Esta historia de usuario implica varios cambios estructurales importantes:
 | **Tabla `book_authors`** | Nueva tabla de unión N:N |
 | **Tabla `types`** | Nueva tabla para tipos de libro |
 | **Eliminación enum `book_type`** | Se elimina el enum de PostgreSQL |
-| **Ubicación `init-db.sql`** | Se mueve de `apps/api-cli/docker/` a `docs/db/` |
+| **Ubicación `init-db.sql`** | Se mueve de `apps/api/docker/` a `docs/db/` |
 
 ### 2.3 Eliminación del CLI
 
@@ -118,7 +118,7 @@ Nuevo script para procesar JSON y cargar datos en BD usando el caso de uso exist
 
 ### 4.1 Ficheros de Origen
 
-Ubicación: `apps/api-cli/data/source/`
+Ubicación: `apps/api/data/source/`
 
 Múltiples ficheros JSON con estructura:
 
@@ -267,11 +267,11 @@ La detección por tríada se simplifica: solo se usa ISBN cuando está presente.
 
 ### 6.1 Ubicación
 
-`apps/api-cli/scripts/consolidate-books.ts`
+`apps/api/scripts/consolidate-books.ts`
 
 ### 6.2 Funcionalidad
 
-1. Lee todos los ficheros `*.json` de `apps/api-cli/data/source/`
+1. Lee todos los ficheros `*.json` de `apps/api/data/source/`
 2. Parsea cada fichero y extrae los libros
 3. Detecta duplicados por ISBN (campo `id` del origen)
 4. Conserva el primer libro encontrado para cada ISBN
@@ -298,7 +298,7 @@ npx tsx scripts/consolidate-books.ts
 
 ### 7.1 Ubicación
 
-`apps/api-cli/scripts/seed-database.ts`
+`apps/api/scripts/seed-database.ts`
 
 ### 7.2 Funcionalidad
 
@@ -444,7 +444,7 @@ docs/
 ├── api/
 │   └── openapi.yaml
 ├── db/                    # NUEVO
-│   ├── init-db.sql        # Movido desde apps/api-cli/docker/
+│   ├── init-db.sql        # Movido desde apps/api/docker/
 │   └── books.json         # Generado por script
 └── design_docs/
     ├── 01-project-overview.md
@@ -466,9 +466,9 @@ volumes:
 ## 11. Subtareas
 
 ### TASK-001: Crear estructura de datos de origen
-**Descripción:** Crear el directorio `apps/api-cli/data/source/` con ficheros JSON de ejemplo.
+**Descripción:** Crear el directorio `apps/api/data/source/` con ficheros JSON de ejemplo.
 **Entregables:**
-- Directorio `apps/api-cli/data/source/`
+- Directorio `apps/api/data/source/`
 - Al menos 2-3 ficheros JSON con datos de prueba siguiendo la estructura de origen
 - `.gitignore` actualizado si es necesario
 
@@ -478,7 +478,7 @@ volumes:
 **Descripción:** Reorganizar la documentación de BD.
 **Entregables:**
 - Crear directorio `docs/db/`
-- Mover `apps/api-cli/docker/init-db.sql` a `docs/db/init-db.sql`
+- Mover `apps/api/docker/init-db.sql` a `docs/db/init-db.sql`
 - Actualizar `docker-compose.yml` con nueva ruta
 - Actualizar `docker-compose.prod.yml` si existe referencia
 
@@ -595,7 +595,7 @@ volumes:
 ### TASK-013: Crear script de consolidación JSON
 **Descripción:** Script que procesa ficheros origen y genera JSON consolidado.
 **Entregables:**
-- `apps/api-cli/scripts/consolidate-books.ts`
+- `apps/api/scripts/consolidate-books.ts`
 - Script npm en `package.json`: `"consolidate:books"`
 - Tests para el script
 
@@ -604,7 +604,7 @@ volumes:
 ### TASK-014: Crear script de carga de datos (seed)
 **Descripción:** Script que carga datos desde JSON a BD usando el caso de uso.
 **Entregables:**
-- `apps/api-cli/scripts/seed-database.ts`
+- `apps/api/scripts/seed-database.ts`
 - Script npm en `package.json`: `"seed:database"`
 - Lógica de idempotencia (skip si ya existe)
 - Tests para el script
@@ -614,7 +614,7 @@ volumes:
 ### TASK-015: Integrar carga automática en Docker
 **Descripción:** Ejecutar seed automáticamente al iniciar si BD vacía.
 **Entregables:**
-- Actualizar `apps/api-cli/docker/entrypoint.dev.sh`
+- Actualizar `apps/api/docker/entrypoint.dev.sh`
 - Variable de entorno `AUTO_SEED`
 - Documentar en README
 

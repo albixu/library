@@ -1,5 +1,5 @@
 {
-  "name": "@library/api-cli",
+  "name": "@library/api",
   "version": "0.1.0",
   "description": "Library management system - API",
   "type": "module",

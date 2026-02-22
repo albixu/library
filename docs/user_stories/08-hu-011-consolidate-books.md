@@ -23,7 +23,7 @@
 
 - El campo `id` en los archivos JSON originales corresponde al campo `isbn` en la base de datos
 - El script actual (`consolidate-books.ts`) ya existe pero necesita modificaciones:
-  - Cambiar directorio fuente de `apps/api-cli/data/source/` a `original_data/`
+  - Cambiar directorio fuente de `apps/api/data/source/` a `original_data/`
   - Añadir conexión a BD para excluir libros existentes
   - Mantener todas las propiedades originales (no transformar estructura)
   - Eliminar el archivo existente antes de generar uno nuevo
@@ -137,7 +137,7 @@ Output written to: docs/db/books.json
 
 ### Task 1: Refactorizar consolidate-books.ts para conexión a BD
 **Descripción**: Modificar el script para conectarse a PostgreSQL y obtener ISBNs existentes  
-**Archivo**: `apps/api-cli/scripts/consolidate-books.ts`
+**Archivo**: `apps/api/scripts/consolidate-books.ts`
 
 **Cambios**:
 - Importar configuración de entorno y pool de conexión
@@ -163,13 +163,13 @@ async function getExistingIsbns(db: DrizzleDB): Promise<Set<string>> {
 ---
 
 ### Task 2: Cambiar directorio fuente a original_data/
-**Descripción**: Modificar las rutas para leer de `original_data/` en vez de `apps/api-cli/data/source/`  
-**Archivo**: `apps/api-cli/scripts/consolidate-books.ts`
+**Descripción**: Modificar las rutas para leer de `original_data/` en vez de `apps/api/data/source/`  
+**Archivo**: `apps/api/scripts/consolidate-books.ts`
 
 **Cambios**:
 - Actualizar `SOURCE_DIR` para apuntar a `original_data/` (relativo a la raíz del proyecto)
 - Considerar que en Docker la estructura de directorios puede ser diferente
-- El directorio `original_data/` está en la raíz del monorepo, no dentro de `apps/api-cli/`
+- El directorio `original_data/` está en la raíz del monorepo, no dentro de `apps/api/`
 
 ```typescript
 // En Docker: /app/original_data
@@ -184,7 +184,7 @@ const SOURCE_DIR = join(PROJECT_ROOT, 'original_data');
 
 ### Task 3: Eliminar archivo existente antes de generar
 **Descripción**: Añadir lógica para eliminar `docs/db/books.json` si existe  
-**Archivo**: `apps/api-cli/scripts/consolidate-books.ts`
+**Archivo**: `apps/api/scripts/consolidate-books.ts`
 
 **Cambios**:
 ```typescript
@@ -208,7 +208,7 @@ try {
 
 ### Task 4: Mantener propiedades originales sin transformar
 **Descripción**: Modificar la lógica para no transformar la estructura del libro  
-**Archivo**: `apps/api-cli/scripts/consolidate-books.ts`
+**Archivo**: `apps/api/scripts/consolidate-books.ts`
 
 **Cambios**:
 - Eliminar o modificar función `transformBook()` para que solo añada `type` y `format`
@@ -233,7 +233,7 @@ function enrichBook(source: SourceBook): ConsolidatedBook {
 
 ### Task 5: Actualizar validación de libros
 **Descripción**: Modificar `isValidSourceBook()` para ser menos restrictiva  
-**Archivo**: `apps/api-cli/scripts/consolidate-books.ts`
+**Archivo**: `apps/api/scripts/consolidate-books.ts`
 
 **Cambios**:
 - Solo validar campos mínimos requeridos (`id`, `title`, `authors`, `description`)
@@ -260,7 +260,7 @@ function isValidSourceBook(obj: unknown): obj is SourceBook {
 
 ### Task 6: Actualizar interfaces y tipos
 **Descripción**: Actualizar las interfaces TypeScript para reflejar los cambios  
-**Archivo**: `apps/api-cli/scripts/consolidate-books.ts`
+**Archivo**: `apps/api/scripts/consolidate-books.ts`
 
 **Cambios**:
 ```typescript
@@ -303,7 +303,7 @@ interface ConsolidationResult {
 
 ### Task 7: Tests de integración para consolidate-books.ts
 **Descripción**: Crear tests de integración que prueban el script con BD real  
-**Archivo**: `apps/api-cli/tests/integration/scripts/consolidate-books.integration.test.ts`
+**Archivo**: `apps/api/tests/integration/scripts/consolidate-books.integration.test.ts`
 
 **Tests**:
 - Script lee archivos de original_data correctamente
@@ -318,7 +318,7 @@ interface ConsolidationResult {
 
 ### Task 8: Actualizar tests unitarios de consolidate-books.ts
 **Descripción**: Actualizar tests unitarios existentes  
-**Archivo**: `apps/api-cli/tests/unit/scripts/consolidate-books.test.ts`
+**Archivo**: `apps/api/tests/unit/scripts/consolidate-books.test.ts`
 
 **Tests a actualizar/añadir**:
 - `enrichBook()` mantiene propiedades originales
@@ -332,7 +332,7 @@ interface ConsolidationResult {
 
 ### Task 9: Verificar seed-database.ts
 **Descripción**: Verificar que `seed-database.ts` ya maneja correctamente ISBNs duplicados  
-**Archivo**: `apps/api-cli/scripts/seed-database.ts`
+**Archivo**: `apps/api/scripts/seed-database.ts`
 
 **Verificación**:
 - Ya usa `bookRepository.existsByIsbn()` antes de crear ✅
@@ -346,7 +346,7 @@ interface ConsolidationResult {
 ### Task 10: Actualizar documentación
 **Descripción**: Actualizar README y comentarios del script  
 **Archivos**:
-- `apps/api-cli/scripts/consolidate-books.ts` (comentarios de cabecera)
+- `apps/api/scripts/consolidate-books.ts` (comentarios de cabecera)
 - `README.md` (si es necesario actualizar sección de carga de datos)
 
 **Cambios en comentarios**:
@@ -383,20 +383,20 @@ interface ConsolidationResult {
 
 | Archivo | Cambios |
 |---------|---------|
-| `apps/api-cli/scripts/consolidate-books.ts` | Refactorización completa |
-| `apps/api-cli/tests/unit/scripts/consolidate-books.test.ts` | Actualizar tests |
+| `apps/api/scripts/consolidate-books.ts` | Refactorización completa |
+| `apps/api/tests/unit/scripts/consolidate-books.test.ts` | Actualizar tests |
 
 ### Archivos a Crear
 
 | Archivo | Descripción |
 |---------|-------------|
-| `apps/api-cli/tests/integration/scripts/consolidate-books.integration.test.ts` | Tests de integración |
+| `apps/api/tests/integration/scripts/consolidate-books.integration.test.ts` | Tests de integración |
 
 ### Archivos Relacionados (sin cambios)
 
 | Archivo | Notas |
 |---------|-------|
-| `apps/api-cli/scripts/seed-database.ts` | Ya tiene validación de ISBN ✅ |
+| `apps/api/scripts/seed-database.ts` | Ya tiene validación de ISBN ✅ |
 | `original_data/db_libros_*.json` | Archivos fuente (74 archivos) |
 | `docs/db/books.json` | Archivo de salida (será regenerado) |
 
@@ -425,12 +425,12 @@ Estructura del proyecto:
 │   └── db/
 │       └── books.json       ← OUTPUT_FILE (generado)
 └── apps/
-    └── api-cli/
+    └── api/
         └── scripts/
             └── consolidate-books.ts
 ```
 
-**En Docker** (`/app` es la raíz de `apps/api-cli`):
+**En Docker** (`/app` es la raíz de `apps/api`):
 ```
 /app/scripts/consolidate-books.ts
 /app/../original_data/           → Fuente

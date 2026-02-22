@@ -143,7 +143,7 @@ Este endpoint es necesario para:
 ### 5.2 Estructura de Archivos
 
 ```
-apps/api-cli/src/
+apps/api/src/
 ├── application/
 │   ├── ports/
 │   │   └── TypeRepository.ts          # MODIFICAR: Agregar findAllSorted()
@@ -297,4 +297,4 @@ CREATE TABLE types (
 
 - [06-hu-004-standardize-api-responses.md](./06-hu-004-standardize-api-responses.md) - Estructura de respuestas API
 - [03-hu-001-create-book.md](./03-hu-001-create-book.md) - Uso de tipos en creacion de libros
-- [TypeRepository.ts](../../apps/api-cli/src/application/ports/TypeRepository.ts) - Puerto actual
+- [TypeRepository.ts](../../apps/api/src/application/ports/TypeRepository.ts) - Puerto actual

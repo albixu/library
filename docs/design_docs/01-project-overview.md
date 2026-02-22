@@ -26,7 +26,7 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 
 1. **Búsqueda limitada**: Las búsquedas tradicionales por título/autor no encuentran libros cuando el usuario describe lo que busca con sus propias palabras
 2. **Catalogación manual**: Mantener metadatos consistentes requiere un sistema centralizado
-3. **Acceso múltiple**: Necesidad de acceder tanto desde terminal (automatización, scripts) como desde aplicaciones web
+3. **Acceso centralizado**: Necesidad de una interfaz web intuitiva para gestionar la biblioteca
 
 ### 2.2 Objetivos del Proyecto
 

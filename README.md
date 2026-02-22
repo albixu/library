@@ -51,7 +51,7 @@ cd library
 
 ```bash
 # Copiar el archivo de ejemplo
-cp apps/api-cli/.env.example apps/api-cli/.env
+cp apps/api/.env.example apps/api/.env
 
 # Editar si es necesario (los valores por defecto funcionan para desarrollo)
 ```
@@ -241,7 +241,7 @@ En caso de error:
 ```
 library/
 ├── apps/
-│   ├── api-cli/          # Backend: API REST + Scripts
+│   ├── api/              # Backend: API REST + Scripts
 │   │   ├── src/
 │   │   │   ├── domain/           # Lógica de negocio pura
 │   │   │   ├── application/      # Casos de uso
@@ -257,7 +257,8 @@ library/
 ├── docker-compose.prod.yml   # Producción
 └── docs/
     ├── api/                  # OpenAPI spec
-    └── design_docs/          # Documentación de diseño
+    ├── design_docs/          # Documentación de diseño
+    └── user_stories/         # Historias de usuario
 ```
 
 ### Comandos de desarrollo
@@ -380,7 +381,7 @@ El proyecto utiliza [Vitest](https://vitest.dev/) como framework de testing con 
 #### Estructura de tests
 
 ```
-apps/api-cli/tests/
+apps/api/tests/
 ├── unit/                    # Tests unitarios (~345 tests)
 │   ├── domain/              # Entidades, Value Objects, Criteria
 │   ├── application/         # Casos de uso
@@ -401,7 +402,7 @@ Ver sección [Comandos de desarrollo](#comandos-de-desarrollo) para todos los co
 Si preferís desarrollar sin Docker:
 
 ```bash
-cd apps/api-cli
+cd apps/api
 
 # Instalar dependencias
 npm install

@@ -13,7 +13,6 @@ Este documento es la fuente de verdad para los agentes de IA que trabajan en est
 ## 2. Project Overview
 **Library** es un sistema de gestión de biblioteca digital personal compuesto por:
 - **API (Node.js 20+ / Fastify)**: Lógica central y persistencia.
-- **CLI (Commander.js)**: Herramientas de terminal.
 - **Client Web (Angular)**: Interfaz de usuario (Última versión estable).
 - **Core Técnico**: TypeScript (ESM), PostgreSQL 16 + pgvector, Drizzle ORM, Zod, Vitest.
 - **Arquitectura**: Hexagonal (Ports & Adapters) y estrictamente **Domain-Driven Design (DDD)**.
@@ -49,7 +48,7 @@ Acontinuación defino los paso a seguir:
 Ten en cuenta que SI tienes permisos para mergear las ramas de las subtareas en las ramas de las historias.
 NO tienes permisos para aprobar ni mergear PR de historias que van a la rama dev.
 
-## 4. Build/Lint/Test Commands (apps/api-cli/)
+## 4. Build/Lint/Test Commands (apps/api/)
 
 ```bash
 # Desarrollo y Build
@@ -77,7 +76,7 @@ npm run db:generate && npm run db:migrate
 ```
 /
 ├── apps/
-│   ├── api-cli/             # Backend & Terminal Tools
+│   ├── api/                 # Backend API REST
 │   │   ├── src/
 │   │   │   ├── domain/      # Business Logic (Pure TS, NO dependencies)
 │   │   │   └── shared/      # Utilities
@@ -85,8 +84,9 @@ npm run db:generate && npm run db:migrate
 │   └── web-client/          # Angular Application (DDD structure)
 ├── docs/                    
 |   |__ api                  # API Documentation (OpenAPI)
-|   |__ desing_docs          # Design docs & Architecture
-|   |__ bd                   # DB structure and initial data
+|   |__ design_docs          # Design docs & Architecture
+|   |__ user_stories         # User Stories documentation
+|   |__ db                   # DB structure and initial data
 |
 └── docker/
 
