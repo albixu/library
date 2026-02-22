@@ -123,6 +123,7 @@ library/
 │   │   │   │   │   ├── CategoryRepository.ts
 │   │   │   │   │   ├── LevelRepository.ts   # Puerto Level (N:M con Type)
 │   │   │   │   │   ├── EmbeddingService.ts
+│   │   │   │   │   ├── TranslationService.ts # Puerto para traducciones (HU-013)
 │   │   │   │   │   ├── Logger.ts
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── errors/
@@ -152,6 +153,9 @@ library/
 │   │   │   │   │   │   └── index.ts
 │   │   │   │   │   ├── embedding/
 │   │   │   │   │   │   ├── OllamaEmbeddingService.ts
+│   │   │   │   │   │   └── index.ts
+│   │   │   │   │   ├── translation/          # HU-013: Servicio de traducción
+│   │   │   │   │   │   ├── OllamaTranslationService.ts
 │   │   │   │   │   │   └── index.ts
 │   │   │   │   │   └── logging/
 │   │   │   │   │       ├── PinoLogger.ts

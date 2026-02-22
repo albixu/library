@@ -27,6 +27,7 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 | Lenguaje | TypeScript + Node.js 20 |
 | Base de datos | PostgreSQL 16 + pgvector |
 | Embeddings | Ollama + nomic-embed-text |
+| Traducciones | Ollama + qwen2.5:3b |
 | API | Fastify |
 | ORM | Drizzle ORM |
 | Testing | Vitest |
@@ -65,11 +66,15 @@ docker-compose up -d
 docker-compose ps
 ```
 
-### 4. Descargar el modelo de embeddings
+### 4. Descargar los modelos de Ollama
 
 ```bash
 # Esto solo es necesario la primera vez
+# Modelo para embeddings (búsqueda semántica)
 docker exec library-ollama ollama pull nomic-embed-text
+
+# Modelo para traducciones (descripción de libros)
+docker exec library-ollama ollama pull qwen2.5:3b
 ```
 
 ### 5. Ejecutar migraciones de base de datos
@@ -231,94 +236,136 @@ library/
 
 ### Comandos de desarrollo
 
+#### Docker
+
 ```bash
-# Iniciar en modo desarrollo (con hot reload)
+# Iniciar todos los contenedores
 docker-compose up -d
 
 # Ver logs en tiempo real
 docker-compose logs -f api
 
+# Ver logs de todos los servicios
+docker-compose logs -f
+
 # Reiniciar solo la API
 docker-compose restart api
-
-# Ejecutar tests
-docker exec -it library-api-dev npm test
-
-# Ejecutar linter
-docker exec -it library-api-dev npm run lint
-
-# Generar nueva migración
-docker exec -it library-api-dev npm run db:generate
 
 # Detener todo
 docker-compose down
 
-# Detener y eliminar volúmenes (⚠️ borra datos)
+# Detener y eliminar volúmenes (⚠️ borra datos de BD)
 docker-compose down -v
+
+# Reconstruir imagen de la API
+docker-compose build api
+```
+
+#### Tests
+
+```bash
+# Tests unitarios
+docker exec library-api-dev npm test
+
+# Tests en modo watch (re-ejecuta al detectar cambios)
+docker exec library-api-dev npm run test:watch
+
+# Tests de integración (requiere PostgreSQL + Ollama)
+docker exec library-api-dev npm run test:integration
+
+# Tests end-to-end (HTTP)
+docker exec library-api-dev npm run test:e2e
+
+# Tests con reporte de cobertura
+docker exec library-api-dev npm run test:coverage
+
+# Tests con interfaz gráfica
+docker exec library-api-dev npm run test:ui
+
+# Test específico
+docker exec library-api-dev npx vitest run tests/unit/domain/entities/Book.test.ts
+```
+
+#### Lint y TypeScript
+
+```bash
+# Ejecutar linter
+docker exec library-api-dev npm run lint
+
+# Ejecutar linter con auto-fix
+docker exec library-api-dev npm run lint:fix
+
+# Verificar tipos TypeScript
+docker exec library-api-dev npx tsc --noEmit
+```
+
+#### Base de Datos (Drizzle)
+
+```bash
+# Ejecutar migraciones pendientes
+docker exec library-api-dev npm run db:migrate
+
+# Generar nueva migración desde cambios en schema
+docker exec library-api-dev npm run db:generate
+
+# Ver estado de migraciones
+docker exec library-api-dev npx drizzle-kit check
+```
+
+#### Carga de Datos
+
+```bash
+# Consolidar archivos JSON de libros
+docker exec library-api-dev npm run consolidate:books
+
+# Sembrar la base de datos con libros consolidados
+docker exec library-api-dev npm run seed:database
+```
+
+#### Modelos de Ollama
+
+```bash
+# Descargar modelo de embeddings
+docker exec library-ollama ollama pull nomic-embed-text
+
+# Descargar modelo de traducción
+docker exec library-ollama ollama pull qwen2.5:3b
+
+# Listar modelos descargados
+docker exec library-ollama ollama list
+
+# Verificar estado de Ollama
+curl http://localhost:11434/api/tags
 ```
 
 ### Testing
 
-El proyecto utiliza [Vitest](https://vitest.dev/) como framework de testing.
+El proyecto utiliza [Vitest](https://vitest.dev/) como framework de testing con tres niveles:
 
-#### Ejecutar tests con Docker
-
-```bash
-# Ejecutar todos los tests
-docker exec -it library-api-dev npm test
-
-# Tests en modo watch (re-ejecuta al detectar cambios)
-docker exec -it library-api-dev npm run test:watch
-
-# Tests con reporte de cobertura
-docker exec -it library-api-dev npm run test:coverage
-
-# Tests con interfaz gráfica
-docker exec -it library-api-dev npm run test:ui
-```
-
-#### Ejecutar tests sin Docker
-
-```bash
-cd apps/api-cli
-
-# Ejecutar todos los tests
-npm test
-
-# Tests en modo watch
-npm run test:watch
-
-# Tests con cobertura
-npm run test:coverage
-
-# Tests con UI (abre en navegador)
-npm run test:ui
-```
+| Nivel | Descripción | Comando |
+|-------|-------------|---------|
+| **Unit** | Tests de dominio y aplicación en aislamiento | `npm test` |
+| **Integration** | Tests de adaptadores con PostgreSQL/Ollama reales | `npm run test:integration` |
+| **E2E** | Tests del sistema completo vía HTTP | `npm run test:e2e` |
 
 #### Estructura de tests
 
 ```
 apps/api-cli/tests/
-├── unit/                    # Tests unitarios
-│   ├── domain/              # Tests de la capa de dominio
-│   │   ├── entities/        # Tests de entidades
-│   │   └── value-objects/   # Tests de value objects
-│   └── application/         # Tests de casos de uso
-├── integration/             # Tests de integración
-│   └── infrastructure/      # Tests de adaptadores con deps reales
-└── e2e/                     # Tests end-to-end
-    ├── cli/                 # Tests del CLI
-    └── http/                # Tests de la API HTTP
+├── unit/                    # Tests unitarios (~345 tests)
+│   ├── domain/              # Entidades, Value Objects, Criteria
+│   ├── application/         # Casos de uso
+│   ├── infrastructure/      # Mappers, configuración
+│   └── scripts/             # Scripts de consolidación/seeding
+├── integration/             # Tests de integración (~63 tests)
+│   ├── application/         # Use cases con repos reales
+│   ├── infrastructure/      # Repositorios, servicios externos
+│   └── scripts/             # Scripts con BD real
+└── e2e/                     # Tests end-to-end (~30 tests)
+    └── http/                # API REST completa
 ```
 
-#### Comandos útiles
-
-| Comando | Descripción |
-|---------|-------------|
-| `npm test` | Ejecuta todos los tests una vez |
-| `npm run test:watch` | Ejecuta tests en modo watch |
-| `npm run test:coverage` | Genera reporte de cobertura en `coverage/` |
-| `npm run test:ui` | Abre interfaz web interactiva de Vitest |
+Ver sección [Comandos de desarrollo](#comandos-de-desarrollo) para todos los comandos de testing.
 
 ### Desarrollo sin Docker
 
@@ -349,8 +396,9 @@ echo "POSTGRES_PASSWORD=tu_password_seguro" > .env
 # Iniciar en modo producción
 docker-compose -f docker-compose.prod.yml up -d
 
-# Descargar modelo de embeddings
+# Descargar modelos de Ollama
 docker exec library-ollama ollama pull nomic-embed-text
+docker exec library-ollama ollama pull qwen2.5:3b
 
 # Ejecutar migraciones
 docker exec library-api npm run db:migrate
