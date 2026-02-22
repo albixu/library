@@ -40,7 +40,13 @@ Por cada tarea se creará una rama a partir de la rama de la historia, se implem
 
 Una vez realizado este proceso, se actualizará la rama de la historia en local, y se continuará con la siguiente tarea siguiendo exactamente los mismos pasos.
 
-Una vez finalizadas todas las tareas, y estando todas mergeadas en la rama de la historia, se realizará un PR de la rama de la historia de usuario en la de dev para que lo revise manualmente.
+Una vez finalizadas todas las tareas, y estando todas mergeadas en la rama de la historia, se actuara como un reviewer para indentificar problemas o posibles mejoras del código y se refactorizará. Todo esto manteniendo la covertura de los test, y cubriendo todos los casos de uso y casuísticas definidas.
+
+Tras esto, se ejecutará el EsLint y en caso de que aparezcan errores o warnings se corregiran.
+
+Para terminar nos aseguraremos que los test siguen pasando correctamente.
+
+Y por último se realizará un PR de la rama de la historia de usuario en la de dev para que lo revise manualmente.
 
 Acontinuación defino los paso a seguir:
 
