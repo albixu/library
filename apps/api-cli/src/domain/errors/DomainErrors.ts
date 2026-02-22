@@ -180,3 +180,15 @@ export class LevelTypeMismatchError extends DomainError {
     super(`Level "${levelName}" is not valid for type "${typeName}"`);
   }
 }
+
+/**
+ * Thrown when an invalid ISO 639-1 language code is provided
+ * Valid codes are 2 lowercase letters (e.g., 'en', 'es', 'fr')
+ */
+export class InvalidLanguageCodeError extends DomainError {
+  constructor(value: string) {
+    super(
+      `Invalid language code: "${value}". Expected ISO 639-1 format (2 lowercase letters, e.g., 'en', 'es')`,
+    );
+  }
+}

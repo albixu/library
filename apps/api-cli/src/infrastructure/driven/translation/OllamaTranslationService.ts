@@ -38,6 +38,24 @@ const DEFAULT_RETRIES = 3;
 const BASE_BACKOFF_MS = 1000;
 
 /**
+ * Mapping from ISO 639-1 codes to language names for translation prompts.
+ * Covers most common languages; unknown codes fall back to the code itself.
+ */
+const ISO_639_1_LANGUAGE_NAMES: Readonly<Record<string, string>> = Object.freeze({
+  ar: 'Arabic',
+  de: 'German',
+  en: 'English',
+  es: 'Spanish',
+  fr: 'French',
+  it: 'Italian',
+  ja: 'Japanese',
+  ko: 'Korean',
+  pt: 'Portuguese',
+  ru: 'Russian',
+  zh: 'Chinese',
+});
+
+/**
  * Ollama API response for text generation
  */
 interface OllamaGenerateResponse {
@@ -232,20 +250,7 @@ export class OllamaTranslationService implements TranslationService {
    * Converts ISO 639-1 code to language name
    */
   private getLanguageName(code: string): string {
-    const languages: Record<string, string> = {
-      es: 'Spanish',
-      en: 'English',
-      fr: 'French',
-      de: 'German',
-      it: 'Italian',
-      pt: 'Portuguese',
-      zh: 'Chinese',
-      ja: 'Japanese',
-      ko: 'Korean',
-      ru: 'Russian',
-      ar: 'Arabic',
-    };
-    return languages[code.toLowerCase()] ?? code;
+    return ISO_639_1_LANGUAGE_NAMES[code.toLowerCase()] ?? code;
   }
 
   /**

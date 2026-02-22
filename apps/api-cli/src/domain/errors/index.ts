@@ -20,6 +20,7 @@ export {
   EmbeddingTextTooLongError,
   CategoryTypeMismatchError,
   LevelTypeMismatchError,
+  InvalidLanguageCodeError,
 } from './DomainErrors.js';
 
 // Re-export Value Object errors for convenience

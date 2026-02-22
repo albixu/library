@@ -13,6 +13,7 @@ import {
   InvalidUUIDError,
   TooManyItemsError,
   DuplicateItemError,
+  InvalidLanguageCodeError,
 } from '../../../../src/domain/errors/DomainErrors.js';
 import { InvalidBookFormatError } from '../../../../src/domain/value-objects/BookFormat.js';
 import { InvalidISBNError } from '../../../../src/domain/value-objects/ISBN.js';
@@ -532,22 +533,22 @@ describe('Book', () => {
           ).toThrow(RequiredFieldError);
         });
 
-        it('should throw RequiredFieldError for invalid language format (too long)', () => {
+        it('should throw InvalidLanguageCodeError for invalid language format (too long)', () => {
           expect(() =>
             Book.create(createValidBookProps({ language: 'eng' }))
-          ).toThrow(RequiredFieldError);
+          ).toThrow(InvalidLanguageCodeError);
         });
 
-        it('should throw RequiredFieldError for invalid language format (too short)', () => {
+        it('should throw InvalidLanguageCodeError for invalid language format (too short)', () => {
           expect(() =>
             Book.create(createValidBookProps({ language: 'e' }))
-          ).toThrow(RequiredFieldError);
+          ).toThrow(InvalidLanguageCodeError);
         });
 
-        it('should throw RequiredFieldError for language with numbers', () => {
+        it('should throw InvalidLanguageCodeError for language with numbers', () => {
           expect(() =>
             Book.create(createValidBookProps({ language: 'e1' }))
-          ).toThrow(RequiredFieldError);
+          ).toThrow(InvalidLanguageCodeError);
         });
       });
 

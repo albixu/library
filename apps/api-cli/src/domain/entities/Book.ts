@@ -32,6 +32,7 @@ import {
   FieldTooLongError,
   TooManyItemsError,
   DuplicateItemError,
+  InvalidLanguageCodeError,
 } from '../errors/DomainErrors.js';
 import { validateId, isValidUUID } from '../validators/index.js';
 
@@ -407,7 +408,7 @@ export class Book {
     const trimmed = language.trim().toLowerCase();
 
     if (!ISO_639_1_REGEX.test(trimmed)) {
-      throw new RequiredFieldError('language'); // Invalid format treated as invalid input
+      throw new InvalidLanguageCodeError(language.trim());
     }
 
     return trimmed;
