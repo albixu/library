@@ -82,6 +82,7 @@ interface SearchResultRow {
   typeId: string;
   format: string;
   levelId: string | null;
+  levelName: string | null;
   available: boolean;
   path: string | null;
   normalizedTitle: string;
@@ -654,6 +655,7 @@ export class PostgresBookRepository implements BookRepository {
         typeId: books.typeId,
         format: books.format,
         levelId: books.levelId,
+        levelName: levels.name,
         available: books.available,
         path: books.path,
         normalizedTitle: books.normalizedTitle,
@@ -662,6 +664,7 @@ export class PostgresBookRepository implements BookRepository {
         similarity_score: similarityExpr,
       })
       .from(books)
+      .leftJoin(levels, eq(books.levelId, levels.id))
       .where(finalWhere)
       .orderBy(...orderExpr)
       .limit(limit);
@@ -771,6 +774,7 @@ export class PostgresBookRepository implements BookRepository {
       booksWithScores.push({
         book,
         similarityScore: hasEmbedding ? row.similarity_score : null,
+        levelName: row.levelName,
       });
     }
 

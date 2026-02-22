@@ -21,6 +21,8 @@ export interface BookWithScore {
   book: Book;
   /** Similarity score from semantic search (0-1), null if no semantic search was performed */
   similarityScore: number | null;
+  /** Level name resolved from levelId, null if no level assigned */
+  levelName: string | null;
 }
 
 /**

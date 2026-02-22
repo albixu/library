@@ -244,7 +244,7 @@ export class SearchBooksUseCase {
         authors: item.book.authors.map((a) => ({ id: a.id, name: a.name })),
         type: item.book.type.name,
         categories: item.book.categories.map((c) => ({ id: c.id, name: c.name })),
-        level: null, // TODO: Resolve level name from levelId
+        level: item.levelName,
         format: item.book.format.value,
         description: item.book.description,
         similarityScore: item.similarityScore,

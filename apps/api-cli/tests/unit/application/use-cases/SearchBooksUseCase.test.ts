@@ -76,10 +76,12 @@ describe('SearchBooksUseCase', () => {
     hasNextPage = false,
     nextCursor: string | null = null,
     totalCount = books.length,
+    levelNames: (string | null)[] = [],
   ): SearchBooksResult => ({
     items: books.map((book, index): BookWithScore => ({
       book,
       similarityScore: scores[index] ?? null,
+      levelName: levelNames[index] ?? null,
     })),
     totalCount,
     hasNextPage,
@@ -408,6 +410,18 @@ describe('SearchBooksUseCase', () => {
       expect(item?.format).toBe('pdf');
       expect(item?.isbn).toBe('9780132350884');
       expect(item?.similarityScore).toBeNull();
+      expect(item?.level).toBeNull();
+    });
+
+    it('should include level name from repository result', async () => {
+      const book = createTestBook();
+      mockBookRepository.search.mockResolvedValue(
+        createSearchResult([book], [], false, null, 1, ['Beginner']),
+      );
+
+      const result = await useCase.execute({});
+
+      expect(result.items[0]?.level).toBe('Beginner');
     });
 
     it('should include description in output', async () => {
