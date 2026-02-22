@@ -137,6 +137,7 @@ AUTO_SEED=true
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
 | `POST` | `/api/books` | Crear un nuevo libro |
+| `GET` | `/api/books` | Buscar libros (filtros, paginación, búsqueda semántica) |
 | `GET` | `/api/book-types` | Listar tipos de libro |
 | `GET` | `/api/book-categories` | Listar categorías (filtrable por tipo) |
 | `GET` | `/api/book-levels` | Listar niveles de dificultad (filtrable por tipo) |
@@ -182,6 +183,31 @@ curl http://localhost:3000/api/book-levels
 # Filtrar por tipo de libro
 curl "http://localhost:3000/api/book-levels?type=technical"
 ```
+
+#### Buscar libros
+
+```bash
+# Búsqueda por título (parcial, case-insensitive)
+curl "http://localhost:3000/api/books?title=Clean"
+
+# Búsqueda por autor
+curl "http://localhost:3000/api/books?author=Martin"
+
+# Filtrar por tipo y categoría
+curl "http://localhost:3000/api/books?types=technical&categories=programming"
+
+# Búsqueda semántica (lenguaje natural)
+curl "http://localhost:3000/api/books?text=libros+sobre+arquitectura+de+software"
+
+# Paginación
+curl "http://localhost:3000/api/books?limit=20"
+curl "http://localhost:3000/api/books?limit=20&cursor=<token_de_pagina_anterior>"
+
+# Combinando filtros
+curl "http://localhost:3000/api/books?types=technical&levels=Intermediate&limit=10"
+```
+
+> **Nota**: La búsqueda semántica (`text`) genera embeddings del texto y encuentra libros con similaridad ≥70%. Los resultados incluyen `similarityScore`.
 
 #### Formato de respuesta
 
@@ -276,6 +302,9 @@ docker exec library-api-dev npm run test:integration
 # Tests end-to-end (HTTP)
 docker exec library-api-dev npm run test:e2e
 
+# TODOS los tests (unit + integration + e2e)
+docker exec library-api-dev npm run test:all
+
 # Tests con reporte de cobertura
 docker exec library-api-dev npm run test:coverage
 
@@ -295,8 +324,8 @@ docker exec library-api-dev npm run lint
 # Ejecutar linter con auto-fix
 docker exec library-api-dev npm run lint:fix
 
-# Verificar tipos TypeScript
-docker exec library-api-dev npx tsc --noEmit
+# Verificar tipos TypeScript (sin emitir archivos)
+docker exec library-api-dev npm run typecheck
 ```
 
 #### Base de Datos (Drizzle)
