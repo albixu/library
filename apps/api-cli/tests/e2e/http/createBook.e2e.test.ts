@@ -135,6 +135,7 @@ describe('POST /api/books (E2E)', () => {
         type: 'novel',
         format: 'epub',
         categories: ['Fiction'],
+        language: 'en',
       };
 
       const response = await fetch(`${E2E_BASE_URL}/api/books`, {
@@ -165,6 +166,7 @@ describe('POST /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['Programming', 'Software Engineering', 'Best Practices'],
+        language: 'en',
         isbn: generateUniqueISBN(),
       };
 
@@ -199,6 +201,7 @@ describe('POST /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['Programming'],
+        language: 'en',
         isbn: generateUniqueISBN(),
         level: 'Intermediate',
       };
@@ -230,6 +233,7 @@ describe('POST /api/books (E2E)', () => {
         type: 'novel', // novels don't typically have levels
         format: 'epub',
         categories: ['Fiction'],
+        language: 'en',
         isbn: generateUniqueISBN(),
       };
 
@@ -466,6 +470,7 @@ describe('POST /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['Testing'],
+        language: 'en',
       };
 
       // Create first book

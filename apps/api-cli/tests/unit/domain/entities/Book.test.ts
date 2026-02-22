@@ -85,6 +85,7 @@ describe('Book', () => {
     categories: [programmingCategory],
     format: 'pdf',
     description: 'A handbook of agile software craftsmanship',
+    language: 'en', // HU-013: Default to English
     ...overrides,
   });
 
@@ -99,7 +100,9 @@ describe('Book', () => {
     format: 'pdf',
     isbn: null,
     levelId: null,
-    description: 'A handbook of agile software craftsmanship',
+    originalDescription: 'A handbook of agile software craftsmanship', // HU-013
+    description: 'Un manual de artesanía de software ágil', // HU-013: Spanish
+    language: 'en', // HU-013
     available: false,
     path: null,
     createdAt: new Date('2024-01-01'),
@@ -601,18 +604,8 @@ describe('Book', () => {
       expect(updated.isbn).toBeNull();
     });
 
-    it('should update description', () => {
-      const updated = book.update({ description: 'New description' });
-      expect(updated.description).toBe('New description');
-    });
-
-    it('should throw RequiredFieldError for empty description in update', () => {
-      expect(() => book.update({ description: '' })).toThrow(RequiredFieldError);
-    });
-
-    it('should throw RequiredFieldError for whitespace-only description in update', () => {
-      expect(() => book.update({ description: '   ' })).toThrow(RequiredFieldError);
-    });
+    // HU-013: description is no longer editable (affects embeddings)
+    // Tests for description update have been removed
 
     it('should update available', () => {
       const updated = book.update({ available: true });
@@ -637,15 +630,18 @@ describe('Book', () => {
     });
 
     it('should update multiple fields at once', () => {
+      // HU-013: description is no longer editable (removed from UpdateBookProps)
       const updated = book.update({
         title: 'New Title',
         authors: [martinFowler],
-        description: 'New Description',
+        format: 'mobi', // Changed to format since description is not editable
       });
 
       expect(updated.title).toBe('New Title');
       expect(updated.authors[0].name).toBe('Martin Fowler');
-      expect(updated.description).toBe('New Description');
+      expect(updated.format.value).toBe('mobi');
+      // description should remain unchanged
+      expect(updated.description).toBe(book.description);
     });
 
     it('should preserve unchanged fields', () => {
@@ -691,13 +687,8 @@ describe('Book', () => {
       expect(() => book.update({ authors: [] })).toThrow(RequiredFieldError);
     });
 
-    it('should throw RequiredFieldError for empty description on update', () => {
-      expect(() => book.update({ description: '' })).toThrow(RequiredFieldError);
-    });
-
-    it('should throw RequiredFieldError for whitespace-only description on update', () => {
-      expect(() => book.update({ description: '   ' })).toThrow(RequiredFieldError);
-    });
+    // HU-013: description is no longer editable after creation
+    // Removed tests for updating description
   });
 
   describe('getTextForEmbedding', () => {

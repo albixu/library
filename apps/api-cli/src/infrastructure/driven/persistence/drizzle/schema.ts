@@ -131,12 +131,19 @@ export const categories = pgTable('categories', {
  *
  * Changes in HU-008:
  * - Changed 'level' from book_level enum to 'level_id' FK referencing levels table
+ *
+ * Changes in HU-013:
+ * - Added 'original_description' to store description in original language
+ * - 'description' now always contains Spanish text (translated if needed)
+ * - Added 'language' column (ISO 639-1 code)
  */
 export const books = pgTable('books', {
   id: uuid('id').primaryKey(),
   isbn: varchar('isbn', { length: 13 }),
   title: varchar('title', { length: 500 }).notNull(),
+  originalDescription: text('original_description').notNull(),
   description: text('description').notNull(),
+  language: varchar('language', { length: 10 }).notNull(),
   typeId: uuid('type_id').notNull().references(() => types.id),
   format: varchar('format', { length: 50 }).notNull(),
   // HU-008: Level changed from enum to FK referencing levels table

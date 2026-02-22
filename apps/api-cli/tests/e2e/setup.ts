@@ -246,6 +246,7 @@ export const e2eFixtures = {
     isbn: null as string | null,
     available: true,
     path: '/test/e2e-book.pdf',
+    language: 'en' as const,
   },
 
   bookWithoutTitle: {
@@ -254,6 +255,7 @@ export const e2eFixtures = {
     type: 'technical' as const,
     format: 'pdf' as const,
     categories: ['E2E Testing'],
+    language: 'en' as const,
   },
 
   bookWithInvalidType: {
@@ -263,5 +265,6 @@ export const e2eFixtures = {
     type: 'invalid_type',
     format: 'pdf',
     categories: ['E2E Testing'],
+    language: 'en',
   },
 };

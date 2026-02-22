@@ -6,6 +6,8 @@
  *
  * HU-008: Tests updated to verify levelId (UUID FK) mapping
  * instead of the previous level (BookLevel enum) mapping.
+ *
+ * HU-013: Tests updated to verify originalDescription and language mapping.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -65,11 +67,14 @@ describe('BookMapper', () => {
   };
 
   // Mock database record
+  // HU-013: Added originalDescription and language fields
   const createMockDbRecord = (overrides: Partial<BookSelect> = {}): BookSelect => ({
     id: bookId,
     isbn: '9781234567890',
     title: 'Clean Architecture',
-    description: 'A great book about software architecture',
+    originalDescription: 'A great book about software architecture', // HU-013
+    description: 'Un gran libro sobre arquitectura de software', // HU-013: Spanish
+    language: 'en', // HU-013: ISO 639-1 code
     typeId: typeId,
     format: 'pdf',
     levelId: levelId, // HU-008: UUID FK to levels table
@@ -96,7 +101,9 @@ describe('BookMapper', () => {
       expect(result).toBeInstanceOf(Book);
       expect(result.id).toBe(bookId);
       expect(result.title).toBe('Clean Architecture');
-      expect(result.description).toBe('A great book about software architecture');
+      expect(result.originalDescription).toBe('A great book about software architecture'); // HU-013
+      expect(result.description).toBe('Un gran libro sobre arquitectura de software'); // HU-013: Spanish
+      expect(result.language).toBe('en'); // HU-013
       expect(result.isbn?.value).toBe('9781234567890');
       expect(result.format.value).toBe('pdf');
       expect(result.available).toBe(true);
@@ -227,12 +234,15 @@ describe('BookMapper', () => {
 
   describe('toPersistence', () => {
     // Helper to create a domain Book
+    // HU-013: Added originalDescription and language fields
     const createDomainBook = (overrides: { levelId?: string | null } = {}): Book => {
       return Book.fromPersistence({
         id: bookId,
         isbn: '9781234567890',
         title: 'Clean Architecture',
-        description: 'A great book about software architecture',
+        originalDescription: 'A great book about software architecture', // HU-013
+        description: 'Un gran libro sobre arquitectura de software', // HU-013: Spanish
+        language: 'en', // HU-013
         authors: mockAuthors,
         type: mockType,
         categories: mockCategories,
@@ -258,7 +268,9 @@ describe('BookMapper', () => {
       expect(result.id).toBe(bookId);
       expect(result.isbn).toBe('9781234567890');
       expect(result.title).toBe('Clean Architecture');
-      expect(result.description).toBe('A great book about software architecture');
+      expect(result.originalDescription).toBe('A great book about software architecture'); // HU-013
+      expect(result.description).toBe('Un gran libro sobre arquitectura de software'); // HU-013: Spanish
+      expect(result.language).toBe('en'); // HU-013
       expect(result.typeId).toBe(typeId);
       expect(result.format).toBe('pdf');
       expect(result.available).toBe(true);
@@ -355,7 +367,9 @@ describe('BookMapper', () => {
         id: bookId,
         isbn: null,
         title: 'Test Book',
-        description: 'Test description',
+        originalDescription: 'Test description', // HU-013
+        description: 'Test description', // HU-013
+        language: 'en', // HU-013
         authors: mockAuthors,
         type: mockType,
         categories: mockCategories,
@@ -382,7 +396,9 @@ describe('BookMapper', () => {
         id: bookId,
         isbn: '9781234567890',
         title: 'Test Book',
-        description: 'Test description',
+        originalDescription: 'Test description', // HU-013
+        description: 'Test description', // HU-013
+        language: 'en', // HU-013
         authors: mockAuthors,
         type: mockType,
         categories: mockCategories,
@@ -411,7 +427,9 @@ describe('BookMapper', () => {
         id: bookId,
         isbn: '9781234567890',
         title: 'Test Book',
-        description: 'Test description',
+        originalDescription: 'Test description', // HU-013
+        description: 'Test description', // HU-013
+        language: 'en', // HU-013
         authors: mockAuthors,
         type: mockType,
         categories: mockCategories,
@@ -439,7 +457,9 @@ describe('BookMapper', () => {
         id: bookId,
         isbn: '9781234567890',
         title: 'Test Book',
-        description: 'Test description',
+        originalDescription: 'Test description', // HU-013
+        description: 'Test description', // HU-013
+        language: 'en', // HU-013
         authors: mockAuthors,
         type: mockType,
         categories: mockCategories,
@@ -563,7 +583,9 @@ describe('BookMapper', () => {
       expect(result.id).toBe(originalRecord.id);
       expect(result.isbn).toBe(originalRecord.isbn);
       expect(result.title).toBe(originalRecord.title);
-      expect(result.description).toBe(originalRecord.description);
+      expect(result.originalDescription).toBe(originalRecord.originalDescription); // HU-013
+      expect(result.description).toBe(originalRecord.description); // HU-013
+      expect(result.language).toBe(originalRecord.language); // HU-013
       expect(result.typeId).toBe(originalRecord.typeId);
       expect(result.format).toBe(originalRecord.format);
       expect(result.levelId).toBe(originalRecord.levelId); // HU-008
@@ -632,7 +654,9 @@ describe('BookMapper', () => {
         id: bookId,
         isbn: '9781234567890',
         title: 'Test Book',
-        description: 'Test description',
+        originalDescription: 'Test description', // HU-013
+        description: 'Test description', // HU-013
+        language: 'en', // HU-013
         authors: mockAuthors,
         type: mockType,
         categories: mockCategories,
@@ -659,7 +683,9 @@ describe('BookMapper', () => {
         id: bookId,
         isbn: '9781234567890',
         title: 'Test Book',
-        description: 'Test description',
+        originalDescription: 'Test description', // HU-013
+        description: 'Test description', // HU-013
+        language: 'en', // HU-013
         authors: mockAuthors,
         type: mockType,
         categories: mockCategories,

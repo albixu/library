@@ -57,11 +57,13 @@ function createMockReply(): FastifyReply {
 
 /**
  * Valid book creation request body
+ * HU-013: Added language field (ISO 639-1 code)
  */
 const validRequestBody = {
   title: 'Clean Code',
   authors: ['Robert C. Martin'],
   description: 'A Handbook of Agile Software Craftsmanship',
+  language: 'en', // HU-013: ISO 639-1 code
   type: 'technical',
   format: 'pdf',
   categories: ['programming', 'software engineering'],
@@ -73,6 +75,7 @@ const validRequestBody = {
 
 /**
  * Mock output from CreateBookUseCase
+ * HU-013: Added originalDescription and language fields
  */
 const mockBookOutput: CreateBookOutput = {
   id: '550e8400-e29b-41d4-a716-446655440000',
@@ -80,7 +83,9 @@ const mockBookOutput: CreateBookOutput = {
   authors: [
     { id: '550e8400-e29b-41d4-a716-446655440020', name: 'Robert C. Martin' },
   ],
-  description: 'A Handbook of Agile Software Craftsmanship',
+  originalDescription: 'A Handbook of Agile Software Craftsmanship', // HU-013
+  description: 'A Handbook of Agile Software Craftsmanship', // HU-013: Spanish (same as original for tests)
+  language: 'en', // HU-013: ISO 639-1 code
   type: 'technical',
   format: 'pdf',
   categories: [
@@ -120,7 +125,9 @@ describe('BooksController', () => {
             id: mockBookOutput.id,
             title: mockBookOutput.title,
             authors: mockBookOutput.authors,
+            originalDescription: mockBookOutput.originalDescription, // HU-013
             description: mockBookOutput.description,
+            language: mockBookOutput.language, // HU-013
             type: mockBookOutput.type,
             format: mockBookOutput.format,
             categories: mockBookOutput.categories,
@@ -158,6 +165,7 @@ describe('BooksController', () => {
           title: 'Clean Code',
           authors: ['Robert C. Martin'],
           description: 'A Handbook of Agile Software Craftsmanship',
+          language: 'en', // HU-013
           type: 'technical',
           format: 'pdf',
           categoryNames: ['programming', 'software engineering'],

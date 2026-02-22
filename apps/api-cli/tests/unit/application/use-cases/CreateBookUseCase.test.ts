@@ -47,6 +47,7 @@ describe('CreateBookUseCase', () => {
     title: 'Clean Code',
     authors: ['Robert C. Martin'],
     description: 'A handbook of agile software craftsmanship',
+    language: 'en', // HU-013: ISO 639-1 code (required)
     type: 'technical',
     categoryNames: ['programming', 'software engineering'],
     format: 'pdf',
@@ -206,6 +207,7 @@ describe('CreateBookUseCase', () => {
           title: 'Minimal Book',
           authors: ['Unknown Author'],
           description: 'A minimal book description',
+          language: 'en', // HU-013: ISO 639-1 code (required)
           type: 'novel',
           categoryNames: ['fiction'],
           format: 'epub',
@@ -341,6 +343,7 @@ describe('CreateBookUseCase', () => {
           title: 'Test Book',
           authors: ['Test Author'],
           description: 'Test Description',
+          language: 'en', // HU-013
           type: 'technical',
           categoryNames: ['test'],
           format: 'pdf',

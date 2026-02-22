@@ -64,11 +64,17 @@ const MAX_EMBEDDING_TEXT_LENGTH = 7000;
  *
  * HU-008: level is now a level name (string) that will be resolved to a Level entity.
  * The levelId is stored in the Book, but the input accepts the level name for UX.
+ *
+ * HU-013: language field is required for translation support.
+ * - language: ISO 639-1 code (e.g., 'en', 'es', 'fr')
+ * - description will be stored in originalDescription
+ * - Spanish description will be generated if language !== 'es'
  */
 export interface CreateBookInput {
   title: string;
   authors: string[];
   description: string;
+  language: string; // HU-013: ISO 639-1 code (required)
   type: string;
   categoryNames: string[];
   format: string;
@@ -82,12 +88,19 @@ export interface CreateBookInput {
  * Output DTO for created book
  *
  * HU-008: level now returns the level name (not ID) for consistency with type output.
+ *
+ * HU-013: Added originalDescription and language fields.
+ * - originalDescription: description in the original language
+ * - description: always in Spanish (translated if needed)
+ * - language: ISO 639-1 code of the original language
  */
 export interface CreateBookOutput {
   id: string;
   title: string;
   authors: { id: string; name: string }[];
-  description: string;
+  originalDescription: string; // HU-013
+  description: string; // HU-013: Spanish description
+  language: string; // HU-013: ISO 639-1 code
   type: string;
   categories: { id: string; name: string }[];
   format: string;
@@ -236,11 +249,14 @@ export class CreateBookUseCase {
     });
 
     // 7. Create Book entity with validated fields, type, authors, categories, and levelId
+    // HU-013: For now, we pass description as-is. Translation will be added in T05.
+    // The Book entity stores description in originalDescription and uses it for description too.
     const book = Book.create({
       id: generateUUID(),
       title: input.title,
       authors: authorEntities,
       description: input.description,
+      language: input.language, // HU-013
       type: bookType,
       categories,
       format: input.format,
@@ -365,7 +381,9 @@ export class CreateBookUseCase {
       id: book.id,
       title: book.title,
       authors: book.authors.map((a) => ({ id: a.id, name: a.name })),
-      description: book.description,
+      originalDescription: book.originalDescription, // HU-013
+      description: book.description, // HU-013: Spanish description
+      language: book.language, // HU-013
       type: book.type.name, // BookType entity has .name property
       categories: book.categories.map((c) => ({ id: c.id, name: c.name })),
       format: book.format.value,

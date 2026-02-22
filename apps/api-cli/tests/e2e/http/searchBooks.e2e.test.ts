@@ -115,6 +115,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming'],
+        language: 'en',
         isbn: generateUniqueISBN(),
       });
 
@@ -125,6 +126,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'novel',
         format: 'epub',
         categories: ['fiction'],
+        language: 'en',
       });
 
       await createBook({
@@ -134,6 +136,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['architecture'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks();
@@ -152,6 +155,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
       });
 
       await createBook({
@@ -161,6 +165,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
       });
 
       await createBook({
@@ -170,6 +175,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks();
@@ -192,6 +198,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
         isbn,
       });
 
@@ -202,6 +209,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
         isbn: generateUniqueISBN(),
       });
 
@@ -232,6 +240,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming'],
+        language: 'en',
       });
 
       await createBook({
@@ -241,6 +250,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['architecture'],
+        language: 'en',
       });
 
       await createBook({
@@ -250,6 +260,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({ title: 'clean' });
@@ -271,6 +282,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming'],
+        language: 'en',
       });
 
       await createBook({
@@ -280,6 +292,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming'],
+        language: 'en',
       });
 
       await createBook({
@@ -289,6 +302,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['architecture'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({ author: 'martin' });
@@ -310,6 +324,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
       });
 
       await createBook({
@@ -319,6 +334,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'novel',
         format: 'epub',
         categories: ['fiction'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({ types: 'technical' });
@@ -337,6 +353,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
       });
 
       await createBook({
@@ -346,6 +363,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'novel',
         format: 'epub',
         categories: ['fiction'],
+        language: 'en',
       });
 
       await createBook({
@@ -355,6 +373,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'biography',
         format: 'pdf',
         categories: ['history'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({ types: ['technical', 'novel'] });
@@ -374,6 +393,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming'],
+        language: 'en',
       });
 
       await createBook({
@@ -383,6 +403,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['architecture'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({ categories: 'programming' });
@@ -401,6 +422,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming'],
+        language: 'en',
       });
 
       await createBook({
@@ -410,6 +432,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['architecture'],
+        language: 'en',
       });
 
       await createBook({
@@ -419,6 +442,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'novel',
         format: 'epub',
         categories: ['fiction'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({ categories: ['programming', 'architecture'] });
@@ -438,6 +462,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
         level: 'Beginner',
       });
 
@@ -448,6 +473,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
         level: 'Advanced',
       });
 
@@ -469,6 +495,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
       });
 
       await createBook({
@@ -478,6 +505,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'novel',
         format: 'epub',
         categories: ['fiction'],
+        language: 'en',
       });
 
       await createBook({
@@ -487,6 +515,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({
@@ -508,6 +537,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming'],
+        language: 'en',
       });
 
       await createBook({
@@ -517,6 +547,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['architecture'],
+        language: 'en',
       });
 
       await createBook({
@@ -526,6 +557,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({
@@ -549,6 +581,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming'],
+        language: 'en',
       });
 
       await createBook({
@@ -558,6 +591,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['architecture'],
+        language: 'en',
       });
 
       await createBook({
@@ -567,6 +601,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'novel',
         format: 'epub',
         categories: ['romance'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({ text: 'clean code software craftsmanship best practices' });
@@ -590,6 +625,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({ text: 'software engineering practices principles' });
@@ -614,6 +650,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming'],
+        language: 'en',
       });
 
       await createBook({
@@ -623,6 +660,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({ text: 'javascript web development' });
@@ -648,6 +686,7 @@ describe('GET /api/books (E2E)', () => {
           type: 'technical',
           format: 'pdf',
           categories: ['test'],
+        language: 'en',
         });
       }
 
@@ -672,6 +711,7 @@ describe('GET /api/books (E2E)', () => {
           type: 'technical',
           format: 'pdf',
           categories: ['test'],
+        language: 'en',
         });
       }
 
@@ -760,6 +800,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['testing'],
+        language: 'en',
         isbn,
         level: 'Intermediate',
       });
@@ -794,6 +835,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks();
@@ -813,6 +855,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['programming', 'architecture'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks();
@@ -841,6 +884,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({ title: 'NonExistent' });
@@ -858,6 +902,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({ types: 'nonexistent' });
@@ -875,6 +920,7 @@ describe('GET /api/books (E2E)', () => {
         type: 'technical',
         format: 'pdf',
         categories: ['test'],
+        language: 'en',
       });
 
       const { status, body } = await searchBooks({ categories: 'nonexistent' });

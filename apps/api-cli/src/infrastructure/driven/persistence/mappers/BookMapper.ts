@@ -17,6 +17,11 @@
  * HU-008 CHANGES:
  * - Changed `level` (BookLevel enum) to `levelId` (UUID FK to levels table, nullable)
  * - Level is now a reference to the Level entity, not an inline enum
+ *
+ * HU-013 CHANGES:
+ * - Added `originalDescription` field (description in original language)
+ * - `description` now always contains Spanish text
+ * - Added `language` field (ISO 639-1 code)
  */
 
 import { Book, type BookPersistenceProps } from '../../../../domain/entities/Book.js';
@@ -69,7 +74,9 @@ export const BookMapper = {
       isbn: record.isbn,
       title: record.title,
       authors: authors,
-      description: record.description,
+      originalDescription: record.originalDescription, // HU-013
+      description: record.description, // HU-013: Spanish description
+      language: record.language, // HU-013
       type: type,
       format: record.format as BookFormat['value'],
       levelId: record.levelId, // HU-008: UUID FK to levels table (nullable)
@@ -98,7 +105,9 @@ export const BookMapper = {
       id: book.id,
       isbn: book.isbn?.value ?? null,
       title: book.title,
-      description: book.description,
+      originalDescription: book.originalDescription, // HU-013
+      description: book.description, // HU-013: Spanish description
+      language: book.language, // HU-013
       typeId: book.type.id, // FK to types table
       format: book.format.value,
       levelId: book.levelId, // HU-008: UUID FK to levels table (nullable)

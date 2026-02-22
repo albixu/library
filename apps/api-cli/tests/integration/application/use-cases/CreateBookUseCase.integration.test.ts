@@ -104,12 +104,14 @@ describe('CreateBookUseCase Integration', () => {
 
   /**
    * Creates a valid book input for testing
+   * HU-013: Added language field (required)
    */
   function createValidInput(overrides: Partial<CreateBookInput> = {}): CreateBookInput {
     return {
       title: 'Clean Code',
       authors: ['Robert C. Martin'],
       description: 'A handbook of agile software craftsmanship',
+      language: 'en', // HU-013: ISO 639-1 code (required)
       type: 'technical',
       categoryNames: ['Programming', 'Software Engineering'],
       format: 'pdf',

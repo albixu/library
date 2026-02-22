@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS categories (
 );
 
 -- Books table (HU-008 - level changed from enum to FK referencing levels table)
+-- HU-013: Added original_description and language columns for translation support
 CREATE TABLE IF NOT EXISTS books (
     -- Primary key (UUID v4)
     id UUID PRIMARY KEY,
@@ -114,9 +115,16 @@ CREATE TABLE IF NOT EXISTS books (
     format book_format NOT NULL,
     available BOOLEAN NOT NULL DEFAULT FALSE,
     
+    -- HU-013: Description fields
+    -- original_description: stores the description in the original language
+    -- description: always contains Spanish text (translated if needed)
+    -- language: ISO 639-1 code of the original language (e.g., 'en', 'es', 'fr')
+    original_description VARCHAR(5000) NOT NULL,
+    description VARCHAR(5000) NOT NULL,
+    language VARCHAR(10) NOT NULL,
+    
     -- Optional fields
     isbn VARCHAR(13) UNIQUE,
-    description VARCHAR(5000),
     path VARCHAR(1000),
     
     -- HU-008: Level is now a FK to levels table instead of enum
