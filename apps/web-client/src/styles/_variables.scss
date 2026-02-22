@@ -1,0 +1,128 @@
+// =============================================================================
+// Variables - Design Tokens
+// =============================================================================
+// Spacing, border-radius, shadows, and other design tokens
+
+// -----------------------------------------------------------------------------
+// Spacing Scale
+// -----------------------------------------------------------------------------
+// Based on 4px grid system
+
+:root {
+  --spacing-0: 0;
+  --spacing-1: 0.25rem; // 4px
+  --spacing-2: 0.5rem; // 8px
+  --spacing-3: 0.75rem; // 12px
+  --spacing-4: 1rem; // 16px
+  --spacing-5: 1.25rem; // 20px
+  --spacing-6: 1.5rem; // 24px
+  --spacing-8: 2rem; // 32px
+  --spacing-10: 2.5rem; // 40px
+  --spacing-12: 3rem; // 48px
+  --spacing-16: 4rem; // 64px
+  --spacing-20: 5rem; // 80px
+  --spacing-24: 6rem; // 96px
+
+  // Legacy aliases (for backward compatibility with Tarea 2)
+  --spacing-xs: var(--spacing-1);
+  --spacing-sm: var(--spacing-2);
+  --spacing-md: var(--spacing-4);
+  --spacing-lg: var(--spacing-6);
+  --spacing-xl: var(--spacing-8);
+}
+
+// -----------------------------------------------------------------------------
+// Border Radius
+// -----------------------------------------------------------------------------
+
+:root {
+  --radius-none: 0;
+  --radius-sm: 0.25rem; // 4px
+  --radius-md: 0.5rem; // 8px - Standard for cards, buttons, inputs
+  --radius-lg: 0.75rem; // 12px
+  --radius-xl: 1rem; // 16px
+  --radius-2xl: 1.5rem; // 24px
+  --radius-full: 9999px; // Circular
+}
+
+// -----------------------------------------------------------------------------
+// Shadows
+// -----------------------------------------------------------------------------
+
+:root {
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+// Dark mode shadows (stronger to compensate for dark background)
+.dark-mode {
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+}
+
+// -----------------------------------------------------------------------------
+// Transitions
+// -----------------------------------------------------------------------------
+
+:root {
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+  --transition-slow: 400ms ease-in-out;
+
+  // Specific transitions
+  --transition-colors: background-color var(--transition-normal), color var(--transition-normal),
+    border-color var(--transition-normal);
+  --transition-transform: transform var(--transition-fast);
+  --transition-opacity: opacity var(--transition-normal);
+}
+
+// -----------------------------------------------------------------------------
+// Z-Index Scale
+// -----------------------------------------------------------------------------
+
+:root {
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+}
+
+// -----------------------------------------------------------------------------
+// Breakpoints (as CSS custom properties for reference)
+// -----------------------------------------------------------------------------
+// Note: Use SCSS $breakpoints map for media queries
+
+:root {
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+}
+
+// SCSS breakpoints map for @media queries
+$breakpoints: (
+  sm: 640px,
+  md: 768px,
+  lg: 1024px,
+  xl: 1280px,
+  2xl: 1536px,
+);
+
+// Mixin for responsive media queries
+@mixin respond-to($breakpoint) {
+  @if map-has-key($breakpoints, $breakpoint) {
+    @media (min-width: map-get($breakpoints, $breakpoint)) {
+      @content;
+    }
+  } @else {
+    @warn "Unknown breakpoint: #{$breakpoint}";
+  }
+}
