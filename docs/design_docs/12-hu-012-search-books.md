@@ -5,7 +5,7 @@
 | Campo | Valor |
 |-------|-------|
 | **ID** | HU-012 |
-| **Estado** | Borrador |
+| **Estado** | Implementado |
 | **Fecha** | 2026-02-22 |
 | **Prioridad** | Alta |
 | **Estimación** | A definir |

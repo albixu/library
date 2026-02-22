@@ -28,6 +28,293 @@ tags:
 
 paths:
   /books:
+    get:
+      tags:
+        - Books
+      summary: Buscar libros con filtros y paginación
+      description: |
+        Busca libros en el catálogo con múltiples opciones de filtrado y paginación cursor-based.
+        
+        ## Filtros
+        
+        Todos los filtros son opcionales y se combinan con lógica **AND**:
+        
+        - **isbn**: Búsqueda exacta por ISBN (normalizado, sin guiones)
+        - **title**: Búsqueda parcial (case-insensitive) - encuentra libros cuyo título contiene el texto
+        - **author**: Búsqueda parcial (case-insensitive) - encuentra libros con autores cuyo nombre contiene el texto
+        - **types**: Lista de tipos de libro (OR entre valores, case-insensitive)
+        - **categories**: Lista de categorías (OR entre valores, case-insensitive)
+        - **levels**: Lista de niveles de dificultad (OR entre valores, case-insensitive)
+        - **text**: Búsqueda semántica - genera un embedding y encuentra libros similares (≥70% similaridad)
+        
+        ## Paginación
+        
+        Utiliza paginación cursor-based para resultados eficientes:
+        
+        - **limit**: Número máximo de resultados (1-100, default: 50)
+        - **cursor**: Token opaco para obtener la siguiente página
+        
+        ## Ordenamiento
+        
+        - Sin filtro `text`: Ordenado por título (A-Z)
+        - Con filtro `text`: Ordenado por similaridad (descendente)
+        
+        ## Búsqueda Semántica
+        
+        Cuando se proporciona el parámetro `text`:
+        1. Se genera un embedding vectorial del texto
+        2. Se buscan libros con similaridad ≥70%
+        3. Los resultados incluyen `similarityScore` (0.7 - 1.0)
+        4. Los resultados se ordenan por similaridad descendente
+      operationId: searchBooks
+      parameters:
+        - name: isbn
+          in: query
+          required: false
+          description: ISBN exacto del libro (sin guiones)
+          schema:
+            type: string
+            minLength: 1
+            example: "9780132350884"
+        - name: title
+          in: query
+          required: false
+          description: Texto parcial a buscar en el título (case-insensitive)
+          schema:
+            type: string
+            minLength: 1
+            example: "Clean"
+        - name: author
+          in: query
+          required: false
+          description: Texto parcial a buscar en nombres de autores (case-insensitive)
+          schema:
+            type: string
+            minLength: 1
+            example: "Martin"
+        - name: types
+          in: query
+          required: false
+          description: |
+            Tipos de libro a filtrar. Múltiples valores se combinan con OR.
+            Repetir el parámetro para múltiples valores: `types=technical&types=novel`
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          example: ["technical", "novel"]
+        - name: categories
+          in: query
+          required: false
+          description: |
+            Categorías a filtrar. Múltiples valores se combinan con OR.
+            Repetir el parámetro para múltiples valores: `categories=programming&categories=architecture`
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          example: ["programming"]
+        - name: levels
+          in: query
+          required: false
+          description: |
+            Niveles de dificultad a filtrar. Múltiples valores se combinan con OR.
+            Repetir el parámetro para múltiples valores: `levels=beginner&levels=intermediate`
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          example: ["beginner", "intermediate"]
+        - name: text
+          in: query
+          required: false
+          description: |
+            Texto para búsqueda semántica. Se genera un embedding y se buscan libros
+            con similaridad ≥70%. Los resultados se ordenan por similaridad.
+          schema:
+            type: string
+            minLength: 1
+            example: "software architecture patterns"
+        - name: limit
+          in: query
+          required: false
+          description: Número máximo de resultados por página (1-100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+            example: 20
+        - name: cursor
+          in: query
+          required: false
+          description: |
+            Token opaco de paginación. Usar el valor de `pagination.nextCursor` 
+            de la respuesta anterior para obtener la siguiente página.
+          schema:
+            type: string
+            minLength: 1
+            example: "eyJsYXN0SWQiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJsYXN0VmFsdWUiOiJDbGVhbiBDb2RlIn0="
+      responses:
+        '200':
+          description: Búsqueda completada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookSearchResponse'
+              examples:
+                with_results:
+                  summary: Búsqueda con resultados
+                  value:
+                    success: true
+                    data:
+                      items:
+                        - id: "550e8400-e29b-41d4-a716-446655440000"
+                          isbn: "9780132350884"
+                          title: "Clean Code"
+                          authors:
+                            - id: "990e8400-e29b-41d4-a716-446655440004"
+                              name: "Robert C. Martin"
+                          type: "technical"
+                          categories:
+                            - id: "660e8400-e29b-41d4-a716-446655440001"
+                              name: "programming"
+                          level: "Intermediate"
+                          format: "pdf"
+                          description: "A handbook of agile software craftsmanship"
+                          similarityScore: null
+                        - id: "550e8400-e29b-41d4-a716-446655440001"
+                          isbn: null
+                          title: "Clean Architecture"
+                          authors:
+                            - id: "990e8400-e29b-41d4-a716-446655440004"
+                              name: "Robert C. Martin"
+                          type: "technical"
+                          categories:
+                            - id: "660e8400-e29b-41d4-a716-446655440002"
+                              name: "architecture"
+                          level: "Advanced"
+                          format: "epub"
+                          description: "A craftsman's guide to software structure and design"
+                          similarityScore: null
+                      pagination:
+                        limit: 50
+                        hasNextPage: false
+                        nextCursor: null
+                        totalCount: 2
+                    error: null
+                semantic_search:
+                  summary: Búsqueda semántica con scores
+                  value:
+                    success: true
+                    data:
+                      items:
+                        - id: "550e8400-e29b-41d4-a716-446655440000"
+                          isbn: "9780132350884"
+                          title: "Clean Code"
+                          authors:
+                            - id: "990e8400-e29b-41d4-a716-446655440004"
+                              name: "Robert C. Martin"
+                          type: "technical"
+                          categories:
+                            - id: "660e8400-e29b-41d4-a716-446655440001"
+                              name: "programming"
+                          level: "Intermediate"
+                          format: "pdf"
+                          description: "A handbook of agile software craftsmanship"
+                          similarityScore: 0.87
+                      pagination:
+                        limit: 50
+                        hasNextPage: false
+                        nextCursor: null
+                        totalCount: 1
+                    error: null
+                empty_results:
+                  summary: Sin resultados
+                  value:
+                    success: true
+                    data:
+                      items: []
+                      pagination:
+                        limit: 50
+                        hasNextPage: false
+                        nextCursor: null
+                        totalCount: 0
+                    error: null
+                with_pagination:
+                  summary: Resultados con paginación
+                  value:
+                    success: true
+                    data:
+                      items:
+                        - id: "550e8400-e29b-41d4-a716-446655440000"
+                          isbn: "9780132350884"
+                          title: "Book One"
+                          authors:
+                            - id: "990e8400-e29b-41d4-a716-446655440004"
+                              name: "Author"
+                          type: "technical"
+                          categories:
+                            - id: "660e8400-e29b-41d4-a716-446655440001"
+                              name: "programming"
+                          level: null
+                          format: "pdf"
+                          description: "Description"
+                          similarityScore: null
+                      pagination:
+                        limit: 10
+                        hasNextPage: true
+                        nextCursor: "eyJsYXN0SWQiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJsYXN0VmFsdWUiOiJCb29rIE9uZSJ9"
+                        totalCount: 100
+                    error: null
+        '400':
+          description: |
+            Error de validación. Posibles causas:
+            - `limit` fuera de rango (1-100)
+            - Parámetros de texto vacíos
+            - Cursor inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                invalid_limit:
+                  summary: Límite inválido
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "limit: Number must be less than or equal to 100"
+                empty_title:
+                  summary: Título vacío
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "title: String must contain at least 1 character(s)"
+        '503':
+          description: |
+            Servicio de embeddings no disponible.
+            Este error solo ocurre cuando se usa el parámetro `text` para búsqueda semántica.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Embedding service unavailable, please try again later"
     post:
       tags:
         - Books
@@ -794,3 +1081,130 @@ components:
               items:
                 $ref: '#/components/schemas/BookLevelListItem'
               description: Lista de niveles de dificultad ordenados alfabéticamente
+
+    # ============================================
+    # HU-012: Book Search Schemas
+    # ============================================
+
+    BookSearchResultItem:
+      type: object
+      required:
+        - id
+        - title
+        - authors
+        - type
+        - categories
+        - format
+        - description
+        - similarityScore
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único del libro (UUID v4)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        isbn:
+          type: [string, 'null']
+          description: ISBN del libro (null si no se proporcionó)
+          example: "9780132350884"
+        title:
+          type: string
+          description: Título del libro
+          example: "Clean Code"
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+          description: Autores del libro
+        type:
+          type: string
+          description: Tipo/género del libro
+          example: "technical"
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+          description: Categorías asignadas al libro
+        level:
+          type: [string, 'null']
+          description: Nivel de dificultad del libro (null si no se especificó)
+          example: "Intermediate"
+        format:
+          type: string
+          enum:
+            - epub
+            - pdf
+            - mobi
+            - azw3
+            - djvu
+            - cbz
+            - cbr
+            - txt
+            - other
+          description: Formato del archivo digital
+          example: "pdf"
+        description:
+          type: string
+          description: Descripción del libro
+          example: "A handbook of agile software craftsmanship"
+        similarityScore:
+          type: [number, 'null']
+          minimum: 0
+          maximum: 1
+          description: |
+            Score de similaridad semántica (0.7 - 1.0).
+            Solo presente cuando se usa el parámetro `text` para búsqueda semántica.
+            `null` para búsquedas sin filtro `text`.
+          example: 0.87
+
+    BookSearchPagination:
+      type: object
+      required:
+        - limit
+        - hasNextPage
+        - nextCursor
+        - totalCount
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Límite de resultados por página solicitado
+          example: 50
+        hasNextPage:
+          type: boolean
+          description: Indica si hay más resultados disponibles
+          example: true
+        nextCursor:
+          type: [string, 'null']
+          description: |
+            Token para obtener la siguiente página.
+            `null` si no hay más resultados.
+          example: "eyJsYXN0SWQiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJsYXN0VmFsdWUiOiJDbGVhbiBDb2RlIn0="
+        totalCount:
+          type: integer
+          minimum: 0
+          description: Total de libros que coinciden con los filtros
+          example: 42
+
+    BookSearchData:
+      type: object
+      required:
+        - items
+        - pagination
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookSearchResultItem'
+          description: Lista de libros que coinciden con los criterios de búsqueda
+        pagination:
+          $ref: '#/components/schemas/BookSearchPagination'
+
+    BookSearchResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiSuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/BookSearchData'
