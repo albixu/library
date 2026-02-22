@@ -15,6 +15,11 @@
  *
  * HU-008: The level field is now a UUID reference to the Level entity (or null).
  * Level validation against the type's allowed levels is done at the use case layer.
+ *
+ * HU-013: Added originalDescription and language fields for translation support.
+ * - originalDescription: stores the description in the original language
+ * - description: always contains Spanish text (translated if needed)
+ * - language: ISO 639-1 code of the original language
  */
 
 import { BookFormat, type BookFormatValue } from '../value-objects/BookFormat.js';
@@ -27,6 +32,7 @@ import {
   FieldTooLongError,
   TooManyItemsError,
   DuplicateItemError,
+  InvalidLanguageCodeError,
 } from '../errors/DomainErrors.js';
 import { validateId, isValidUUID } from '../validators/index.js';
 
@@ -39,10 +45,22 @@ const FIELD_CONSTRAINTS = {
   MAX_CATEGORIES: 10,
   MAX_AUTHORS: 20,
   PATH_MAX_LENGTH: 1000,
+  LANGUAGE_MAX_LENGTH: 10,
 } as const;
 
 /**
+ * ISO 639-1 language code pattern (2 lowercase letters)
+ */
+const ISO_639_1_REGEX = /^[a-z]{2}$/;
+
+/**
  * Props required to create a new Book
+ * 
+ * HU-013: description is the input text (in any language).
+ * It will be stored in originalDescription, and description
+ * will contain the Spanish translation (or same if already Spanish).
+ * language is required to determine if translation is needed.
+ * translatedDescription is provided by the use case layer after translation.
  */
 export interface CreateBookProps {
   id: string;
@@ -51,7 +69,9 @@ export interface CreateBookProps {
   type: BookType;
   categories: Category[];
   format: string;
-  description: string;
+  description: string; // Input description (any language) -> stored as originalDescription
+  language: string; // ISO 639-1 code (required)
+  translatedDescription?: string; // HU-013: Spanish description (provided by use case after translation)
   isbn?: string | null;
   levelId?: string | null; // HU-008: UUID reference to Level entity
   available?: boolean;
@@ -65,6 +85,8 @@ export interface CreateBookProps {
  *
  * Note: Embedding is intentionally excluded - it's managed at the persistence
  * layer and never exposed to the domain.
+ *
+ * HU-013: Added originalDescription and language fields.
  */
 export interface BookPersistenceProps {
   id: string;
@@ -75,7 +97,9 @@ export interface BookPersistenceProps {
   format: BookFormatValue;
   isbn: string | null;
   levelId: string | null; // HU-008: UUID reference to Level entity
-  description: string;
+  originalDescription: string; // HU-013: Original language description
+  description: string; // HU-013: Spanish description
+  language: string; // HU-013: ISO 639-1 code
   available: boolean;
   path: string | null;
   createdAt: Date;
@@ -84,6 +108,9 @@ export interface BookPersistenceProps {
 
 /**
  * Props that can be updated on a Book
+ * 
+ * HU-013: description is NOT editable after creation because it affects
+ * embeddings and is tied to the original translation.
  */
 export interface UpdateBookProps {
   title?: string;
@@ -92,7 +119,6 @@ export interface UpdateBookProps {
   categories?: Category[];
   format?: string;
   isbn?: string | null;
-  description?: string;
   available?: boolean;
   path?: string | null;
 }
@@ -110,7 +136,9 @@ export class Book {
     public readonly format: BookFormat,
     public readonly isbn: ISBN | null,
     public readonly levelId: string | null, // HU-008: UUID reference to Level entity
-    public readonly description: string,
+    public readonly originalDescription: string, // HU-013: Original language description
+    public readonly description: string, // HU-013: Spanish description
+    public readonly language: string, // HU-013: ISO 639-1 code
     public readonly available: boolean,
     public readonly path: string | null,
     public readonly createdAt: Date,
@@ -122,6 +150,10 @@ export class Book {
   /**
    * Creates a new Book instance with full validation
    * Use this when creating a book from user input
+   * 
+   * HU-013: The description input is stored as originalDescription.
+   * The description field will be set by the use case layer after translation.
+   * For now, create() sets description = originalDescription (caller handles translation).
    */
   static create(props: CreateBookProps): Book {
     // Validate required fields
@@ -129,7 +161,8 @@ export class Book {
     const title = Book.validateTitle(props.title);
     const authors = Book.validateAuthors(props.authors);
     const categories = Book.validateCategories(props.categories);
-    const description = Book.validateDescription(props.description);
+    const originalDescription = Book.validateDescription(props.description, 'description');
+    const language = Book.validateLanguage(props.language);
 
     // Validate type (must be a valid BookType entity)
     const type = Book.validateType(props.type);
@@ -151,6 +184,12 @@ export class Book {
     const createdAt = props.createdAt ?? now;
     const updatedAt = props.updatedAt ?? now;
 
+    // HU-013: Use translatedDescription if provided, otherwise use originalDescription
+    // The use case layer is responsible for providing the translation
+    const description = props.translatedDescription 
+      ? Book.validateDescription(props.translatedDescription, 'translatedDescription')
+      : originalDescription;
+
     return new Book(
       id,
       title,
@@ -160,7 +199,9 @@ export class Book {
       format,
       isbn,
       levelId,
+      originalDescription,
       description,
+      language,
       available,
       path,
       createdAt,
@@ -182,7 +223,9 @@ export class Book {
       BookFormat.fromPersistence(props.format),
       props.isbn ? ISBN.fromPersistence(props.isbn) : null,
       props.levelId, // HU-008: UUID is stored directly
-      props.description,
+      props.originalDescription, // HU-013
+      props.description, // HU-013: Spanish description
+      props.language, // HU-013
       props.available,
       props.path,
       props.createdAt,
@@ -192,7 +235,8 @@ export class Book {
 
   /**
    * Updates the book with new values, returning a new instance
-   * Note: levelId is NOT editable after creation (semantic content)
+   * Note: levelId, originalDescription, description, and language are NOT editable after creation
+   * (these are semantic content that affects embeddings)
    */
   update(props: UpdateBookProps): Book {
     const title = props.title !== undefined
@@ -219,10 +263,6 @@ export class Book {
       ? (props.isbn ? ISBN.create(props.isbn) : null)
       : this.isbn;
 
-    const description = props.description !== undefined
-      ? Book.validateDescription(props.description)
-      : this.description;
-
     const available = props.available !== undefined
       ? props.available
       : this.available;
@@ -240,7 +280,9 @@ export class Book {
       format,
       isbn,
       this.levelId, // levelId is NOT editable after creation
-      description,
+      this.originalDescription, // HU-013: NOT editable
+      this.description, // HU-013: NOT editable (affects embeddings)
+      this.language, // HU-013: NOT editable
       available,
       path,
       this.createdAt,
@@ -341,18 +383,35 @@ export class Book {
     return Object.freeze([...categories]);
   }
 
-  private static validateDescription(description: string): string {
+  private static validateDescription(description: string, fieldName = 'description'): string {
     if (!description || description.trim().length === 0) {
-      throw new RequiredFieldError('description');
+      throw new RequiredFieldError(fieldName);
     }
 
     const trimmedDescription = description.trim();
 
     if (trimmedDescription.length > FIELD_CONSTRAINTS.DESCRIPTION_MAX_LENGTH) {
-      throw new FieldTooLongError('description', FIELD_CONSTRAINTS.DESCRIPTION_MAX_LENGTH);
+      throw new FieldTooLongError(fieldName, FIELD_CONSTRAINTS.DESCRIPTION_MAX_LENGTH);
     }
 
     return trimmedDescription;
+  }
+
+  /**
+   * HU-013: Validates language as a valid ISO 639-1 code (2 lowercase letters)
+   */
+  private static validateLanguage(language: string): string {
+    if (!language || language.trim().length === 0) {
+      throw new RequiredFieldError('language');
+    }
+
+    const trimmed = language.trim().toLowerCase();
+
+    if (!ISO_639_1_REGEX.test(trimmed)) {
+      throw new InvalidLanguageCodeError(language.trim());
+    }
+
+    return trimmed;
   }
 
   private static validatePath(path: string): string {

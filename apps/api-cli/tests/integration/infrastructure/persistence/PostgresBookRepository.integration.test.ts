@@ -156,6 +156,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Clean Code',
         authors: [robertMartin],
         description: 'A handbook of agile software craftsmanship',
+        language: 'en',
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory, softwareCategory],
@@ -183,6 +184,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Advanced TypeScript',
         authors: [martinFowler],
         description: 'Deep dive into TypeScript advanced patterns',
+        language: 'en',
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
@@ -203,6 +205,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Intermediate to Advanced Patterns',
         authors: [robertMartin],
         description: 'Bridge course for intermediate developers',
+        language: 'en',
         type: technicalType,
         format: 'epub',
         categories: [softwareCategory],
@@ -224,6 +227,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'No ISBN Book',
         authors: [unknownAuthor],
         description: 'A book without ISBN',
+        language: 'en',
         type: novelType,
         format: 'epub',
         categories: [programmingCategory],
@@ -246,6 +250,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'First Book',
         authors: [authorOne],
         description: 'Description one',
+        language: 'en',
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
@@ -262,6 +267,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Different Book',
         authors: [differentAuthor],
         description: 'Description two',
+        language: 'en',
         type: novelType,
         format: 'epub',
         categories: [programmingCategory],
@@ -284,6 +290,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Same Title',
         authors: [sameAuthor],
         description: 'Description one',
+        language: 'en',
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
@@ -300,6 +307,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Same Title',
         authors: [differentAuthor],
         description: 'Different description',
+        language: 'en',
         type: novelType,
         format: 'pdf', // Same format
         categories: [softwareCategory],
@@ -321,6 +329,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Findable Book',
         authors: [testAuthor],
         description: 'Test description',
+        language: 'en',
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory, softwareCategory],
@@ -348,6 +357,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Book With Level',
         authors: [testAuthor],
         description: 'Test description with level',
+        language: 'en',
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
@@ -371,6 +381,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Book Without Level',
         authors: [testAuthor],
         description: 'Test description without level',
+        language: 'en',
         type: technicalType,
         format: 'epub',
         categories: [softwareCategory],
@@ -401,6 +412,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'ISBN Book',
         authors: [isbnAuthor],
         description: 'Test description',
+        language: 'en',
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
@@ -431,6 +443,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Existing Book',
         authors: [existingAuthor],
         description: 'Description',
+        language: 'en',
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
@@ -478,6 +491,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Updatable Book',
         authors: [updateAuthor],
         description: 'Description',
+        language: 'en',
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
@@ -517,6 +531,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Deletable Book',
         authors: [deleteAuthor],
         description: 'Description',
+        language: 'en',
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
@@ -551,6 +566,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Book One',
         authors: [authorOne],
         description: 'Desc one',
+        language: 'en',
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
@@ -561,6 +577,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Book Two',
         authors: [authorTwo],
         description: 'Desc two',
+        language: 'en',
         type: novelType,
         format: 'epub',
         categories: [softwareCategory],
@@ -589,6 +606,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Beginner Book',
         authors: [authorOne],
         description: 'For beginners',
+        language: 'en',
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
@@ -600,6 +618,7 @@ describe('PostgresBookRepository Integration', () => {
         title: 'Advanced Book',
         authors: [authorTwo],
         description: 'For experts',
+        language: 'en',
         type: technicalType,
         format: 'pdf',
         categories: [programmingCategory],
@@ -628,6 +647,7 @@ describe('PostgresBookRepository Integration', () => {
 
   describe('search', () => {
     // Helper to create and save a test book
+    // HU-013: Added language field (required)
     async function createTestBook(options: {
       title: string;
       authors: Author[];
@@ -636,6 +656,7 @@ describe('PostgresBookRepository Integration', () => {
       levelId?: string;
       isbn?: string;
       description?: string;
+      language?: string; // HU-013: defaults to 'en'
       embedding?: number[];
     }): Promise<Book> {
       const book = Book.create({
@@ -643,6 +664,7 @@ describe('PostgresBookRepository Integration', () => {
         title: options.title,
         authors: options.authors,
         description: options.description ?? `Description for ${options.title}`,
+        language: options.language ?? 'en', // HU-013: default to English
         type: options.type,
         format: 'pdf',
         categories: options.categories,

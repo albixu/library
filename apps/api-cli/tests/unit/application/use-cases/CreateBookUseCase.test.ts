@@ -10,6 +10,7 @@ import type { TypeRepository } from '../../../../src/application/ports/TypeRepos
 import type { AuthorRepository } from '../../../../src/application/ports/AuthorRepository.js';
 import type { LevelRepository } from '../../../../src/application/ports/LevelRepository.js';
 import type { EmbeddingService, EmbeddingResult } from '../../../../src/application/ports/EmbeddingService.js';
+import type { TranslationService, TranslationResult } from '../../../../src/application/ports/TranslationService.js';
 import { Category } from '../../../../src/domain/entities/Category.js';
 import { BookType } from '../../../../src/domain/entities/BookType.js';
 import { Author } from '../../../../src/domain/entities/Author.js';
@@ -23,6 +24,7 @@ import {
 import {
   EmbeddingTextTooLongError,
   EmbeddingServiceUnavailableError,
+  TranslationServiceUnavailableError,
 } from '../../../../src/application/errors/ApplicationErrors.js';
 
 describe('CreateBookUseCase', () => {
@@ -33,6 +35,7 @@ describe('CreateBookUseCase', () => {
   let mockAuthorRepository: AuthorRepository;
   let mockLevelRepository: LevelRepository;
   let mockEmbeddingService: EmbeddingService;
+  let mockTranslationService: TranslationService;
   let useCase: CreateBookUseCase;
 
   // Test data - IDs
@@ -47,6 +50,7 @@ describe('CreateBookUseCase', () => {
     title: 'Clean Code',
     authors: ['Robert C. Martin'],
     description: 'A handbook of agile software craftsmanship',
+    language: 'en', // HU-013: ISO 639-1 code (required)
     type: 'technical',
     categoryNames: ['programming', 'software engineering'],
     format: 'pdf',
@@ -165,6 +169,16 @@ describe('CreateBookUseCase', () => {
       isAvailable: vi.fn().mockResolvedValue(true),
     };
 
+    // HU-013: Translation service mock
+    mockTranslationService = {
+      translate: vi.fn().mockImplementation(async (text: string): Promise<TranslationResult> => ({
+        translatedText: `[Translated] ${text}`,
+        targetLanguage: 'es',
+        model: 'qwen2.5:3b',
+      })),
+      isAvailable: vi.fn().mockResolvedValue(true),
+    };
+
     const deps: CreateBookUseCaseDeps = {
       bookRepository: mockBookRepository,
       categoryRepository: mockCategoryRepository,
@@ -172,6 +186,7 @@ describe('CreateBookUseCase', () => {
       authorRepository: mockAuthorRepository,
       levelRepository: mockLevelRepository,
       embeddingService: mockEmbeddingService,
+      translationService: mockTranslationService,
     };
 
     useCase = new CreateBookUseCase(deps);
@@ -188,7 +203,10 @@ describe('CreateBookUseCase', () => {
           id: mockAuthor.id,
           name: 'Robert C. Martin',
         });
-        expect(result.description).toBe('A handbook of agile software craftsmanship');
+        // HU-013: originalDescription contains the input, description contains translated text
+        expect(result.originalDescription).toBe('A handbook of agile software craftsmanship');
+        expect(result.description).toBe('[Translated] A handbook of agile software craftsmanship');
+        expect(result.language).toBe('en');
         expect(result.type).toBe('technical');
         expect(result.format).toBe('pdf');
         expect(result.isbn).toBe('9780132350884');
@@ -206,6 +224,7 @@ describe('CreateBookUseCase', () => {
           title: 'Minimal Book',
           authors: ['Unknown Author'],
           description: 'A minimal book description',
+          language: 'en', // HU-013: ISO 639-1 code (required)
           type: 'novel',
           categoryNames: ['fiction'],
           format: 'epub',
@@ -341,6 +360,7 @@ describe('CreateBookUseCase', () => {
           title: 'Test Book',
           authors: ['Test Author'],
           description: 'Test Description',
+          language: 'en', // HU-013
           type: 'technical',
           categoryNames: ['test'],
           format: 'pdf',
@@ -534,6 +554,56 @@ describe('CreateBookUseCase', () => {
         await expect(useCase.execute(validInput)).rejects.toThrow(
           EmbeddingServiceUnavailableError
         );
+      });
+    });
+
+    describe('translation handling (HU-013)', () => {
+      it('should translate description when language is not Spanish', async () => {
+        await useCase.execute(validInput);
+
+        expect(mockTranslationService.translate).toHaveBeenCalledWith(
+          'A handbook of agile software craftsmanship',
+          'es',
+        );
+      });
+
+      it('should skip translation when language is Spanish', async () => {
+        const spanishInput: CreateBookInput = { ...validInput, language: 'es' };
+        
+        const result = await useCase.execute(spanishInput);
+
+        expect(mockTranslationService.translate).not.toHaveBeenCalled();
+        expect(result.description).toBe(result.originalDescription);
+        expect(result.description).toBe('A handbook of agile software craftsmanship');
+      });
+
+      it('should propagate TranslationServiceUnavailableError when translation fails', async () => {
+        (mockTranslationService.translate as ReturnType<typeof vi.fn>).mockRejectedValue(
+          new TranslationServiceUnavailableError('Connection refused'),
+        );
+
+        await expect(useCase.execute(validInput)).rejects.toThrow(
+          TranslationServiceUnavailableError,
+        );
+      });
+
+      it('should use translated description for embedding generation', async () => {
+        await useCase.execute(validInput);
+
+        const embeddingCallArg = (mockEmbeddingService.generateEmbedding as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        // The embedding should use the TRANSLATED description (in Spanish)
+        expect(embeddingCallArg).toContain('[Translated] A handbook of agile software craftsmanship');
+      });
+
+      it('should store original description separately from translated description', async () => {
+        const result = await useCase.execute(validInput);
+
+        // originalDescription = input description (English)
+        expect(result.originalDescription).toBe('A handbook of agile software craftsmanship');
+        // description = translated description (Spanish)
+        expect(result.description).toBe('[Translated] A handbook of agile software craftsmanship');
+        // They should be different for non-Spanish books
+        expect(result.description).not.toBe(result.originalDescription);
       });
     });
 

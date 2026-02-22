@@ -4,10 +4,17 @@
  * Zod schemas for HTTP request/response validation.
  * These schemas provide input validation at the API boundary before
  * data reaches the application layer.
+ *
+ * HU-013: Added language field for translation support.
  */
 
 import { z } from 'zod';
 import { BOOK_FORMATS } from '../../../../domain/value-objects/BookFormat.js';
+
+/**
+ * ISO 639-1 language code pattern (2 lowercase letters)
+ */
+const ISO_639_1_REGEX = /^[a-z]{2}$/;
 
 /**
  * Schema for creating a book via POST /api/books
@@ -17,6 +24,8 @@ import { BOOK_FORMATS } from '../../../../domain/value-objects/BookFormat.js';
  *
  * Note: Book type validation is deferred to database lookup (TASK-010).
  * Currently accepts any non-empty string.
+ *
+ * HU-013: Added language field (ISO 639-1 code, required).
  */
 export const createBookSchema = z.object({
   title: z
@@ -41,6 +50,16 @@ export const createBookSchema = z.object({
     .min(1, 'description cannot be empty')
     .max(5000, 'description exceeds maximum length of 5000 characters')
     .transform((val) => val.trim()),
+
+  // HU-013: Language code in ISO 639-1 format (2 lowercase letters)
+  language: z
+    .string({ required_error: 'language is required' })
+    .min(1, 'language cannot be empty')
+    .max(10, 'language exceeds maximum length of 10 characters')
+    .transform((val) => val.trim().toLowerCase())
+    .refine((val) => ISO_639_1_REGEX.test(val), {
+      message: 'language must be a valid ISO 639-1 code (2 lowercase letters, e.g., "en", "es")',
+    }),
 
   // Type validation deferred to TASK-010 (TypeRepository).
   // Accepts any non-empty string; validated against DB types later.
@@ -94,6 +113,9 @@ export type CreateBookRequest = z.infer<typeof createBookSchema>;
 
 /**
  * Response schema for created book (without embedding)
+ *
+ * HU-013: Added originalDescription, language fields.
+ * description now always contains Spanish text.
  */
 export const bookResponseSchema = z.object({
   id: z.string().uuid(),
@@ -104,7 +126,9 @@ export const bookResponseSchema = z.object({
       name: z.string(),
     }),
   ),
-  description: z.string(),
+  originalDescription: z.string(), // HU-013: Description in original language
+  description: z.string(), // HU-013: Spanish description
+  language: z.string(), // HU-013: ISO 639-1 code
   type: z.string(),
   format: z.enum(BOOK_FORMATS),
   level: z.string().nullable(), // HU-008: Dynamic level (not enum)

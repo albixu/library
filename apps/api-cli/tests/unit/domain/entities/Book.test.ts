@@ -13,6 +13,7 @@ import {
   InvalidUUIDError,
   TooManyItemsError,
   DuplicateItemError,
+  InvalidLanguageCodeError,
 } from '../../../../src/domain/errors/DomainErrors.js';
 import { InvalidBookFormatError } from '../../../../src/domain/value-objects/BookFormat.js';
 import { InvalidISBNError } from '../../../../src/domain/value-objects/ISBN.js';
@@ -85,6 +86,7 @@ describe('Book', () => {
     categories: [programmingCategory],
     format: 'pdf',
     description: 'A handbook of agile software craftsmanship',
+    language: 'en', // HU-013: Default to English
     ...overrides,
   });
 
@@ -99,7 +101,9 @@ describe('Book', () => {
     format: 'pdf',
     isbn: null,
     levelId: null,
-    description: 'A handbook of agile software craftsmanship',
+    originalDescription: 'A handbook of agile software craftsmanship', // HU-013
+    description: 'Un manual de artesanía de software ágil', // HU-013: Spanish
+    language: 'en', // HU-013
     available: false,
     path: null,
     createdAt: new Date('2024-01-01'),
@@ -447,6 +451,107 @@ describe('Book', () => {
         });
       });
 
+      // HU-013: Tests for originalDescription and language
+      describe('originalDescription (HU-013)', () => {
+        it('should store input description as originalDescription', () => {
+          const inputDescription = 'A handbook of agile software craftsmanship';
+          const book = Book.create(createValidBookProps({ description: inputDescription }));
+          
+          expect(book.originalDescription).toBe(inputDescription);
+        });
+
+        it('should use originalDescription as description when no translatedDescription provided', () => {
+          const inputDescription = 'A handbook of agile software craftsmanship';
+          const book = Book.create(createValidBookProps({ description: inputDescription }));
+          
+          // When no translatedDescription is provided, description equals originalDescription
+          expect(book.description).toBe(inputDescription);
+          expect(book.originalDescription).toBe(inputDescription);
+        });
+
+        it('should use translatedDescription as description when provided', () => {
+          const originalDesc = 'A handbook of agile software craftsmanship';
+          const translatedDesc = 'Un manual de artesanía de software ágil';
+          const book = Book.create(createValidBookProps({
+            description: originalDesc,
+            translatedDescription: translatedDesc,
+          }));
+          
+          expect(book.originalDescription).toBe(originalDesc);
+          expect(book.description).toBe(translatedDesc);
+        });
+
+        it('should validate translatedDescription max length', () => {
+          const longTranslation = 'A'.repeat(5001);
+          expect(() =>
+            Book.create(createValidBookProps({
+              description: 'Valid original',
+              translatedDescription: longTranslation,
+            }))
+          ).toThrow(FieldTooLongError);
+        });
+
+        it('should trim whitespace from originalDescription', () => {
+          const book = Book.create(createValidBookProps({
+            description: '  A handbook of agile software craftsmanship  ',
+          }));
+          
+          expect(book.originalDescription).toBe('A handbook of agile software craftsmanship');
+        });
+      });
+
+      describe('language (HU-013)', () => {
+        it('should accept valid ISO 639-1 language code', () => {
+          const book = Book.create(createValidBookProps({ language: 'en' }));
+          expect(book.language).toBe('en');
+        });
+
+        it('should accept Spanish language code', () => {
+          const book = Book.create(createValidBookProps({ language: 'es' }));
+          expect(book.language).toBe('es');
+        });
+
+        it('should normalize language code to lowercase', () => {
+          const book = Book.create(createValidBookProps({ language: 'EN' }));
+          expect(book.language).toBe('en');
+        });
+
+        it('should trim whitespace from language code', () => {
+          const book = Book.create(createValidBookProps({ language: '  fr  ' }));
+          expect(book.language).toBe('fr');
+        });
+
+        it('should throw RequiredFieldError for empty language', () => {
+          expect(() =>
+            Book.create(createValidBookProps({ language: '' }))
+          ).toThrow(RequiredFieldError);
+        });
+
+        it('should throw RequiredFieldError for whitespace-only language', () => {
+          expect(() =>
+            Book.create(createValidBookProps({ language: '   ' }))
+          ).toThrow(RequiredFieldError);
+        });
+
+        it('should throw InvalidLanguageCodeError for invalid language format (too long)', () => {
+          expect(() =>
+            Book.create(createValidBookProps({ language: 'eng' }))
+          ).toThrow(InvalidLanguageCodeError);
+        });
+
+        it('should throw InvalidLanguageCodeError for invalid language format (too short)', () => {
+          expect(() =>
+            Book.create(createValidBookProps({ language: 'e' }))
+          ).toThrow(InvalidLanguageCodeError);
+        });
+
+        it('should throw InvalidLanguageCodeError for language with numbers', () => {
+          expect(() =>
+            Book.create(createValidBookProps({ language: 'e1' }))
+          ).toThrow(InvalidLanguageCodeError);
+        });
+      });
+
       describe('available', () => {
         it('should default to false when not provided', () => {
           const book = Book.create(createValidBookProps());
@@ -543,6 +648,36 @@ describe('Book', () => {
       expect(book.authors).toHaveLength(2);
       expect(book.categories).toHaveLength(2);
     });
+
+    // HU-013: Tests for fromPersistence with originalDescription and language
+    it('should reconstruct a Book with originalDescription and language (HU-013)', () => {
+      const props = createValidPersistenceProps({
+        originalDescription: 'A handbook of agile software craftsmanship',
+        description: 'Un manual de artesanía de software ágil',
+        language: 'en',
+      });
+
+      const book = Book.fromPersistence(props);
+
+      expect(book.originalDescription).toBe('A handbook of agile software craftsmanship');
+      expect(book.description).toBe('Un manual de artesanía de software ágil');
+      expect(book.language).toBe('en');
+    });
+
+    it('should reconstruct a Book where originalDescription equals description for Spanish (HU-013)', () => {
+      const spanishDescription = 'Un libro sobre código limpio';
+      const props = createValidPersistenceProps({
+        originalDescription: spanishDescription,
+        description: spanishDescription,
+        language: 'es',
+      });
+
+      const book = Book.fromPersistence(props);
+
+      expect(book.originalDescription).toBe(spanishDescription);
+      expect(book.description).toBe(spanishDescription);
+      expect(book.language).toBe('es');
+    });
   });
 
   describe('update', () => {
@@ -601,18 +736,8 @@ describe('Book', () => {
       expect(updated.isbn).toBeNull();
     });
 
-    it('should update description', () => {
-      const updated = book.update({ description: 'New description' });
-      expect(updated.description).toBe('New description');
-    });
-
-    it('should throw RequiredFieldError for empty description in update', () => {
-      expect(() => book.update({ description: '' })).toThrow(RequiredFieldError);
-    });
-
-    it('should throw RequiredFieldError for whitespace-only description in update', () => {
-      expect(() => book.update({ description: '   ' })).toThrow(RequiredFieldError);
-    });
+    // HU-013: description is no longer editable (affects embeddings)
+    // Tests for description update have been removed
 
     it('should update available', () => {
       const updated = book.update({ available: true });
@@ -637,15 +762,18 @@ describe('Book', () => {
     });
 
     it('should update multiple fields at once', () => {
+      // HU-013: description is no longer editable (removed from UpdateBookProps)
       const updated = book.update({
         title: 'New Title',
         authors: [martinFowler],
-        description: 'New Description',
+        format: 'mobi', // Changed to format since description is not editable
       });
 
       expect(updated.title).toBe('New Title');
       expect(updated.authors[0].name).toBe('Martin Fowler');
-      expect(updated.description).toBe('New Description');
+      expect(updated.format.value).toBe('mobi');
+      // description should remain unchanged
+      expect(updated.description).toBe(book.description);
     });
 
     it('should preserve unchanged fields', () => {
@@ -691,12 +819,23 @@ describe('Book', () => {
       expect(() => book.update({ authors: [] })).toThrow(RequiredFieldError);
     });
 
-    it('should throw RequiredFieldError for empty description on update', () => {
-      expect(() => book.update({ description: '' })).toThrow(RequiredFieldError);
+    // HU-013: originalDescription, description, and language are not editable after creation
+    it('should preserve originalDescription on update (HU-013)', () => {
+      const book = Book.create(createValidBookProps({
+        description: 'Original description',
+        translatedDescription: 'Descripción traducida',
+      }));
+      const updated = book.update({ title: 'New Title' });
+
+      expect(updated.originalDescription).toBe('Original description');
+      expect(updated.description).toBe('Descripción traducida');
     });
 
-    it('should throw RequiredFieldError for whitespace-only description on update', () => {
-      expect(() => book.update({ description: '   ' })).toThrow(RequiredFieldError);
+    it('should preserve language on update (HU-013)', () => {
+      const book = Book.create(createValidBookProps({ language: 'fr' }));
+      const updated = book.update({ title: 'New Title' });
+
+      expect(updated.language).toBe('fr');
     });
   });
 
@@ -747,6 +886,33 @@ describe('Book', () => {
       expect(text).toContain('A great book about clean code');
       expect(text).not.toContain('  A great book about clean code  ');
     });
+
+    // HU-013: Tests for embedding with translation
+    it('should use description (not originalDescription) for embedding (HU-013)', () => {
+      const originalDesc = 'A handbook of agile software craftsmanship';
+      const translatedDesc = 'Un manual de artesanía de software ágil';
+      const book = Book.create(createValidBookProps({
+        description: originalDesc,
+        translatedDescription: translatedDesc,
+      }));
+      const text = book.getTextForEmbedding();
+
+      // Should contain the translated (Spanish) description, NOT the original
+      expect(text).toContain(translatedDesc);
+      expect(text).not.toContain(originalDesc);
+    });
+
+    it('should include Spanish description in embedding for semantic search (HU-013)', () => {
+      const book = Book.create(createValidBookProps({
+        description: 'Clean Code book',
+        translatedDescription: 'Libro sobre código limpio',
+        language: 'en',
+      }));
+      const text = book.getTextForEmbedding();
+
+      // The embedding should use Spanish for consistent semantic search
+      expect(text).toBe('Clean Code Robert C. Martin technical programming Libro sobre código limpio');
+    });
   });
 
   describe('equals', () => {
@@ -795,6 +961,23 @@ describe('Book', () => {
       expect(() => {
         // @ts-expect-error - Testing runtime immutability
         book.levelId = '770e8400-e29b-41d4-a716-446655440000';
+      }).toThrow();
+    });
+
+    // HU-013: Immutability tests for originalDescription and language
+    it('should not allow originalDescription modification (HU-013)', () => {
+      const book = Book.create(createValidBookProps());
+      expect(() => {
+        // @ts-expect-error - Testing runtime immutability
+        book.originalDescription = 'New description';
+      }).toThrow();
+    });
+
+    it('should not allow language modification (HU-013)', () => {
+      const book = Book.create(createValidBookProps());
+      expect(() => {
+        // @ts-expect-error - Testing runtime immutability
+        book.language = 'fr';
       }).toThrow();
     });
   });

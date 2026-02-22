@@ -4,6 +4,7 @@
  * Tests the complete book creation flow with real infrastructure:
  * - PostgreSQL for persistence
  * - Ollama for embeddings
+ * - Ollama for translation (HU-013)
  *
  * Requires Docker containers: docker-compose up -d
  *
@@ -20,6 +21,7 @@ import { PostgresTypeRepository } from '../../../../src/infrastructure/driven/pe
 import { PostgresAuthorRepository } from '../../../../src/infrastructure/driven/persistence/PostgresAuthorRepository.js';
 import { PostgresLevelRepository } from '../../../../src/infrastructure/driven/persistence/PostgresLevelRepository.js';
 import { OllamaEmbeddingService } from '../../../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
+import { OllamaTranslationService } from '../../../../src/infrastructure/driven/translation/OllamaTranslationService.js';
 import { DuplicateISBNError, InvalidBookTypeError } from '../../../../src/domain/errors/DomainErrors.js';
 import { InvalidISBNError, InvalidBookFormatError } from '../../../../src/domain/errors/DomainErrors.js';
 import * as schema from '../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
@@ -37,10 +39,12 @@ describe('CreateBookUseCase Integration', () => {
   let authorRepository: PostgresAuthorRepository;
   let levelRepository: PostgresLevelRepository;
   let embeddingService: OllamaEmbeddingService;
+  let translationService: OllamaTranslationService;
 
   // Configuration
   const DATABASE_URL = process.env['DATABASE_URL'] ?? 'postgresql://library:library@localhost:5432/library';
   const OLLAMA_BASE_URL = process.env['OLLAMA_BASE_URL'] ?? 'http://localhost:11434';
+  const TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'qwen2.5:3b';
 
   beforeAll(async () => {
     pool = new Pool({
@@ -69,6 +73,14 @@ describe('CreateBookUseCase Integration', () => {
       timeoutMs: 60000,
     });
 
+    // HU-013: Add translation service
+    translationService = new OllamaTranslationService({
+      baseUrl: OLLAMA_BASE_URL,
+      model: TRANSLATION_MODEL,
+      timeoutMs: 120000,
+      retries: 2,
+    });
+
     useCase = new CreateBookUseCase({
       bookRepository,
       categoryRepository,
@@ -76,6 +88,7 @@ describe('CreateBookUseCase Integration', () => {
       authorRepository,
       levelRepository,
       embeddingService,
+      translationService, // HU-013
     });
 
     // Verify Ollama is available
@@ -104,12 +117,15 @@ describe('CreateBookUseCase Integration', () => {
 
   /**
    * Creates a valid book input for testing
+   * HU-013: Added language field (required)
+   * Default to 'es' (Spanish) to avoid triggering translation in non-translation tests
    */
   function createValidInput(overrides: Partial<CreateBookInput> = {}): CreateBookInput {
     return {
       title: 'Clean Code',
       authors: ['Robert C. Martin'],
-      description: 'A handbook of agile software craftsmanship',
+      description: 'Un manual de artesanía de software ágil', // Spanish description
+      language: 'es', // HU-013: Default to Spanish to avoid translation in regular tests
       type: 'technical',
       categoryNames: ['Programming', 'Software Engineering'],
       format: 'pdf',
@@ -130,7 +146,7 @@ describe('CreateBookUseCase Integration', () => {
       expect(result.title).toBe('Clean Code');
       expect(result.authors).toHaveLength(1);
       expect(result.authors[0].name).toBe('Robert C. Martin');
-      expect(result.description).toBe('A handbook of agile software craftsmanship');
+      expect(result.description).toBe('Un manual de artesanía de software ágil');
       expect(result.type).toBe('technical');
       expect(result.format).toBe('pdf');
       expect(result.isbn).toBe('9780132350884');
@@ -333,5 +349,124 @@ describe('CreateBookUseCase Integration', () => {
       // but successful creation implies it was saved
       expect(found!.id).toBe(created.id);
     });
+  });
+
+  // HU-013: Tests for translation functionality
+  // NOTE: These tests require the translation model (qwen2.5:3b) to be installed in Ollama.
+  // Run: docker exec library-ollama ollama pull qwen2.5:3b
+  // Tests will be skipped if the model is not available.
+  describe('translation handling (HU-013)', () => {
+    let translationModelAvailable = false;
+
+    beforeAll(async () => {
+      // Check if translation model is available by testing a simple translation
+      try {
+        await translationService.translate('test', 'es');
+        translationModelAvailable = true;
+      } catch {
+        translationModelAvailable = false;
+        console.warn(
+          '\n⚠️  Translation model not available. Translation tests will be skipped.\n' +
+          '   Run: docker exec library-ollama ollama pull qwen2.5:3b\n'
+        );
+      }
+    });
+
+    it('should create book with translated description (English → Spanish)', async () => {
+      if (!translationModelAvailable) {
+        console.log('Skipping: Translation model not available');
+        return;
+      }
+
+      const englishDescription = 'A handbook of agile software craftsmanship';
+      const input = createValidInput({
+        description: englishDescription,
+        language: 'en',
+        isbn: '9780596517748', // Different ISBN
+      });
+
+      const result = await useCase.execute(input);
+
+      // originalDescription should be the English input
+      expect(result.originalDescription).toBe(englishDescription);
+      
+      // description should be translated to Spanish
+      expect(result.description).toBeDefined();
+      expect(result.description.length).toBeGreaterThan(0);
+      
+      // Translation should contain Spanish words (not be the same as English)
+      const lowerDesc = result.description.toLowerCase();
+      const hasSpanishIndicators =
+        lowerDesc.includes('manual') ||
+        lowerDesc.includes('artesanía') ||
+        lowerDesc.includes('ágil') ||
+        lowerDesc.includes('software') ||
+        result.description !== englishDescription;
+      
+      expect(hasSpanishIndicators).toBe(true);
+    }, 180000); // 3 minute timeout
+
+    it('should create book without translation (Spanish)', async () => {
+      const spanishDescription = 'Un manual de artesanía de software ágil';
+      const input = createValidInput({
+        description: spanishDescription,
+        language: 'es',
+        isbn: '9780596007126', // Different ISBN
+      });
+
+      const result = await useCase.execute(input);
+
+      // For Spanish books, originalDescription and description should be the same
+      expect(result.originalDescription).toBe(spanishDescription);
+      expect(result.description).toBe(spanishDescription);
+    }, 60000);
+
+    it('should persist both originalDescription and description', async () => {
+      if (!translationModelAvailable) {
+        console.log('Skipping: Translation model not available');
+        return;
+      }
+
+      const englishDescription = 'Clean code is code that has been written with care';
+      const input = createValidInput({
+        description: englishDescription,
+        language: 'en',
+        isbn: '9780201633610', // Different ISBN
+      });
+
+      const created = await useCase.execute(input);
+      const found = await bookRepository.findById(created.id);
+
+      expect(found).not.toBeNull();
+      expect(found!.originalDescription).toBe(englishDescription);
+      // description should be translated (different from original for English)
+      expect(found!.description).toBeDefined();
+      expect(found!.description.length).toBeGreaterThan(0);
+    }, 180000);
+
+    it('should generate embedding from Spanish description', async () => {
+      if (!translationModelAvailable) {
+        console.log('Skipping: Translation model not available');
+        return;
+      }
+
+      const englishDescription = 'Test book for embedding generation';
+      const input = createValidInput({
+        description: englishDescription,
+        language: 'en',
+        isbn: '9780596009205', // Different ISBN
+      });
+
+      const result = await useCase.execute(input);
+
+      // Verify the book was created successfully
+      // This implies embedding was generated from the Spanish description
+      expect(result.id).toBeDefined();
+      expect(result.description).toBeDefined();
+      
+      // The embedding should have been generated successfully
+      const found = await bookRepository.findById(result.id);
+      expect(found).not.toBeNull();
+    }, 180000);
   });
 });

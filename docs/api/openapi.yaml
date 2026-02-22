@@ -187,7 +187,9 @@ paths:
                               name: "programming"
                           level: "Intermediate"
                           format: "pdf"
-                          description: "A handbook of agile software craftsmanship"
+                          originalDescription: "A handbook of agile software craftsmanship"
+                          description: "Un manual de artesanía de software ágil"
+                          language: "en"
                           similarityScore: null
                         - id: "550e8400-e29b-41d4-a716-446655440001"
                           isbn: null
@@ -201,7 +203,9 @@ paths:
                               name: "architecture"
                           level: "Advanced"
                           format: "epub"
-                          description: "A craftsman's guide to software structure and design"
+                          originalDescription: "A craftsman's guide to software structure and design"
+                          description: "Guía del artesano sobre estructura y diseño de software"
+                          language: "en"
                           similarityScore: null
                       pagination:
                         limit: 50
@@ -227,7 +231,9 @@ paths:
                               name: "programming"
                           level: "Intermediate"
                           format: "pdf"
-                          description: "A handbook of agile software craftsmanship"
+                          originalDescription: "A handbook of agile software craftsmanship"
+                          description: "Un manual de artesanía de software ágil"
+                          language: "en"
                           similarityScore: 0.87
                       pagination:
                         limit: 50
@@ -265,7 +271,9 @@ paths:
                               name: "programming"
                           level: null
                           format: "pdf"
-                          description: "Description"
+                          originalDescription: "Description in original language"
+                          description: "Descripción en el idioma original"
+                          language: "en"
                           similarityScore: null
                       pagination:
                         limit: 10
@@ -350,6 +358,7 @@ paths:
                   title: "Clean Code"
                   authors: ["Robert C. Martin"]
                   description: "A handbook of agile software craftsmanship that teaches programmers how to write clean, maintainable code."
+                  language: "en"
                   type: "technical"
                   format: "pdf"
                   categories: ["programming", "software engineering", "best practices"]
@@ -363,9 +372,20 @@ paths:
                   title: "The Pragmatic Programmer"
                   authors: ["David Thomas", "Andrew Hunt"]
                   description: "A guide to becoming a better programmer through practical advice and timeless tips."
+                  language: "en"
                   type: "technical"
                   format: "epub"
                   categories: ["programming"]
+              spanish_book:
+                summary: Libro en español (sin traducción)
+                value:
+                  title: "Código Limpio"
+                  authors: ["Robert C. Martin"]
+                  description: "Un manual de artesanía de software ágil que enseña a los programadores cómo escribir código limpio y mantenible."
+                  language: "es"
+                  type: "technical"
+                  format: "pdf"
+                  categories: ["programación"]
       responses:
         '201':
           description: Libro creado exitosamente
@@ -373,31 +393,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BookSuccessResponse'
-              example:
-                success: true
-                data:
-                  id: "550e8400-e29b-41d4-a716-446655440000"
-                  title: "Clean Code"
-                  authors:
-                    - id: "990e8400-e29b-41d4-a716-446655440004"
-                      name: "Robert C. Martin"
-                  description: "A handbook of agile software craftsmanship that teaches programmers how to write clean, maintainable code."
-                  type: "technical"
-                  format: "pdf"
-                  level: "Intermediate"
-                  categories:
-                    - id: "660e8400-e29b-41d4-a716-446655440001"
-                      name: "programming"
-                    - id: "770e8400-e29b-41d4-a716-446655440002"
-                      name: "software engineering"
-                    - id: "880e8400-e29b-41d4-a716-446655440003"
-                      name: "best practices"
-                  isbn: "9780132350884"
-                  available: true
-                  path: "/books/clean-code.pdf"
-                  createdAt: "2026-02-09T12:00:00.000Z"
-                  updatedAt: "2026-02-09T12:00:00.000Z"
-                error: null
+              examples:
+                english_book:
+                  summary: Libro en inglés (con traducción)
+                  value:
+                    success: true
+                    data:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      title: "Clean Code"
+                      authors:
+                        - id: "990e8400-e29b-41d4-a716-446655440004"
+                          name: "Robert C. Martin"
+                      originalDescription: "A handbook of agile software craftsmanship that teaches programmers how to write clean, maintainable code."
+                      description: "Un manual de artesanía de software ágil que enseña a los programadores cómo escribir código limpio y mantenible."
+                      language: "en"
+                      type: "technical"
+                      format: "pdf"
+                      level: "Intermediate"
+                      categories:
+                        - id: "660e8400-e29b-41d4-a716-446655440001"
+                          name: "programming"
+                        - id: "770e8400-e29b-41d4-a716-446655440002"
+                          name: "software engineering"
+                        - id: "880e8400-e29b-41d4-a716-446655440003"
+                          name: "best practices"
+                      isbn: "9780132350884"
+                      available: true
+                      path: "/books/clean-code.pdf"
+                      createdAt: "2026-02-09T12:00:00.000Z"
+                      updatedAt: "2026-02-09T12:00:00.000Z"
+                    error: null
+                spanish_book:
+                  summary: Libro en español (sin traducción)
+                  value:
+                    success: true
+                    data:
+                      id: "550e8400-e29b-41d4-a716-446655440001"
+                      title: "Código Limpio"
+                      authors:
+                        - id: "990e8400-e29b-41d4-a716-446655440004"
+                          name: "Robert C. Martin"
+                      originalDescription: "Un manual de artesanía de software ágil."
+                      description: "Un manual de artesanía de software ágil."
+                      language: "es"
+                      type: "technical"
+                      format: "pdf"
+                      level: "Intermediate"
+                      categories:
+                        - id: "660e8400-e29b-41d4-a716-446655440001"
+                          name: "programación"
+                      isbn: null
+                      available: true
+                      path: null
+                      createdAt: "2026-02-09T12:00:00.000Z"
+                      updatedAt: "2026-02-09T12:00:00.000Z"
+                    error: null
         '400':
           description: |
             Solicitud inválida. Posibles causas:
@@ -478,17 +528,31 @@ paths:
                   message: "A book with ISBN \"9780132350884\" already exists"
         '503':
           description: |
-            Servicio no disponible - El servicio de embeddings (Ollama) no está accesible.
+            Servicio no disponible - El servicio de embeddings o traducción (Ollama) no está accesible.
             El libro NO se crea en la base de datos.
+            
+            Posibles causas:
+            - Servicio de embeddings (modelo nomic-embed-text) no disponible
+            - Servicio de traducción (modelo qwen2.5:3b) no disponible (solo si language != 'es')
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-              example:
-                success: false
-                data: null
-                error:
-                  message: "Embedding service unavailable, please try again later"
+              examples:
+                embedding_unavailable:
+                  summary: Servicio de embeddings no disponible
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Embedding service unavailable, please try again later"
+                translation_unavailable:
+                  summary: Servicio de traducción no disponible
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Translation service unavailable, please try again later"
 
   /book-types:
     get:
@@ -736,6 +800,7 @@ components:
         - title
         - authors
         - description
+        - language
         - type
         - format
         - categories
@@ -762,8 +827,21 @@ components:
           type: string
           minLength: 1
           maxLength: 5000
-          description: Descripción del contenido del libro. Campo obligatorio usado para generar embeddings.
+          description: |
+            Descripción del contenido del libro en el idioma original.
+            Si el idioma no es español, la descripción se traducirá automáticamente
+            al español para la búsqueda semántica.
           example: "A handbook of agile software craftsmanship that teaches programmers how to write clean, maintainable code."
+        language:
+          type: string
+          minLength: 2
+          maxLength: 10
+          pattern: "^[a-z]{2}$"
+          description: |
+            Código ISO 639-1 del idioma original de la descripción (2 letras minúsculas).
+            Ejemplos: "en" (inglés), "es" (español), "fr" (francés), "de" (alemán).
+            Si el idioma no es "es", la descripción se traducirá automáticamente al español.
+          example: "en"
         type:
           type: string
           minLength: 1
@@ -845,10 +923,21 @@ components:
           items:
             $ref: '#/components/schemas/Author'
           description: Autores del libro
+        originalDescription:
+          type: string
+          description: Descripción en el idioma original del libro
+          example: "A handbook of agile software craftsmanship"
         description:
           type: string
-          description: Descripción del libro
-          example: "A handbook of agile software craftsmanship"
+          description: |
+            Descripción traducida al español.
+            Si el idioma original es español, es igual a originalDescription.
+          example: "Un manual de artesanía de software ágil"
+        language:
+          type: string
+          pattern: "^[a-z]{2}$"
+          description: Código ISO 639-1 del idioma original de la descripción
+          example: "en"
         type:
           type: string
           description: Tipo/género del libro (entidad dinámica)
@@ -1095,7 +1184,9 @@ components:
         - type
         - categories
         - format
+        - originalDescription
         - description
+        - language
         - similarityScore
       properties:
         id:
@@ -1143,10 +1234,21 @@ components:
             - other
           description: Formato del archivo digital
           example: "pdf"
+        originalDescription:
+          type: string
+          description: Descripción en el idioma original del libro
+          example: "A handbook of agile software craftsmanship"
         description:
           type: string
-          description: Descripción del libro
-          example: "A handbook of agile software craftsmanship"
+          description: |
+            Descripción traducida al español.
+            Si el idioma original es español, es igual a originalDescription.
+          example: "Un manual de artesanía de software ágil"
+        language:
+          type: string
+          pattern: "^[a-z]{2}$"
+          description: Código ISO 639-1 del idioma original de la descripción
+          example: "en"
         similarityScore:
           type: [number, 'null']
           minimum: 0

@@ -74,12 +74,15 @@ interface CursorData {
 
 /**
  * Raw result row from search query
+ * HU-013: Added originalDescription and language fields
  */
 interface SearchResultRow {
   id: string;
   isbn: string | null;
   title: string;
-  description: string;
+  originalDescription: string; // HU-013
+  description: string; // HU-013: Spanish description
+  language: string; // HU-013: ISO 639-1 code
   typeId: string;
   format: string;
   levelId: string | null;
@@ -655,7 +658,9 @@ export class PostgresBookRepository implements BookRepository {
         id: books.id,
         isbn: books.isbn,
         title: books.title,
-        description: books.description,
+        originalDescription: books.originalDescription, // HU-013
+        description: books.description, // HU-013: Spanish description
+        language: books.language, // HU-013
         typeId: books.typeId,
         format: books.format,
         levelId: books.levelId,
@@ -785,7 +790,9 @@ export class PostgresBookRepository implements BookRepository {
         id: row.id,
         isbn: row.isbn,
         title: row.title,
-        description: row.description,
+        originalDescription: row.originalDescription, // HU-013
+        description: row.description, // HU-013: Spanish description
+        language: row.language, // HU-013
         typeId: row.typeId,
         format: row.format,
         levelId: row.levelId,

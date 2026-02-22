@@ -10,6 +10,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { loadEnvConfig } from './infrastructure/config/env.js';
 import { PinoLogger } from './infrastructure/driven/logging/PinoLogger.js';
 import { OllamaEmbeddingService } from './infrastructure/driven/embedding/OllamaEmbeddingService.js';
+import { OllamaTranslationService } from './infrastructure/driven/translation/OllamaTranslationService.js';
 import { PostgresBookRepository } from './infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from './infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { PostgresTypeRepository } from './infrastructure/driven/persistence/PostgresTypeRepository.js';
@@ -51,6 +52,14 @@ async function bootstrap(): Promise<void> {
       model: env.ollama.model,
     });
 
+    // HU-013: Translation service for description translation
+    const translationService = new OllamaTranslationService({
+      baseUrl: env.translation.baseUrl,
+      model: env.translation.model,
+      timeoutMs: env.translation.timeoutMs,
+      retries: env.translation.retries,
+    });
+
     const bookRepository = new PostgresBookRepository(db);
     const categoryRepository = new PostgresCategoryRepository(db);
     const typeRepository = new PostgresTypeRepository(db);
@@ -65,6 +74,7 @@ async function bootstrap(): Promise<void> {
       authorRepository,
       levelRepository,
       embeddingService,
+      translationService, // HU-013
       logger,
     });
 

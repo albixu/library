@@ -57,6 +57,8 @@ export interface SearchBooksInput {
 
 /**
  * Output DTO for a single book in search results
+ *
+ * HU-013: Added originalDescription and language fields
  */
 export interface SearchBooksItemOutput {
   id: string;
@@ -67,7 +69,9 @@ export interface SearchBooksItemOutput {
   categories: { id: string; name: string }[];
   level: string | null;
   format: string;
-  description: string;
+  originalDescription: string; // HU-013: Description in original language
+  description: string; // HU-013: Spanish description
+  language: string; // HU-013: ISO 639-1 code
   similarityScore: number | null;
 }
 
@@ -246,7 +250,9 @@ export class SearchBooksUseCase {
         categories: item.book.categories.map((c) => ({ id: c.id, name: c.name })),
         level: item.levelName,
         format: item.book.format.value,
-        description: item.book.description,
+        originalDescription: item.book.originalDescription, // HU-013
+        description: item.book.description, // HU-013: Spanish description
+        language: item.book.language, // HU-013
         similarityScore: item.similarityScore,
       })),
       pagination: {

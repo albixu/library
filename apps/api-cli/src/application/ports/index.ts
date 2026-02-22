@@ -9,6 +9,12 @@ export type {
 } from './EmbeddingService.js';
 
 export type {
+  TranslationService,
+  TranslationServiceConfig,
+  TranslationResult,
+} from './TranslationService.js';
+
+export type {
   BookRepository,
   SaveBookParams,
   UpdateBookParams,

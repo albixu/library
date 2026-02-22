@@ -9,6 +9,9 @@
 export {
   EmbeddingServiceError,
   EmbeddingServiceUnavailableError,
+  TranslationServiceError,
+  TranslationServiceUnavailableError,
+  TranslationError,
 } from './ApplicationErrors.js';
 
 // Re-export from domain for backwards compatibility

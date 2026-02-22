@@ -86,7 +86,12 @@ library/
 │       ├── 05-hu-003-book-level.md          # Superseded by HU-008
 │       ├── 06-hu-004-standardize-api-responses.md
 │       ├── 07-hu-005-list-book-types.md
-│       └── 08-hu-008-type-category-level-relationships.md
+│       ├── 08-hu-008-type-category-level-relationships.md
+│       ├── 09-hu-009-list-categories.md
+│       ├── 10-hu-010-list-book-levels.md
+│       ├── 11-hu-011-consolidate-books.md
+│       ├── 12-hu-012-search-books.md
+│       └── 13-hu-013-book-description-translation.md
 │
 ├── apps/
 │   ├── api-cli/                             # 🖥️ Backend: API REST
@@ -103,6 +108,18 @@ library/
 │   │   │   │   │   ├── BookFormat.ts
 │   │   │   │   │   ├── ISBN.ts
 │   │   │   │   │   └── index.ts
+│   │   │   │   ├── criteria/                # HU-012: Patrón Criteria para consultas
+│   │   │   │   │   ├── Criteria.ts          # Clase principal de criterio
+│   │   │   │   │   ├── Filter.ts            # Filtro individual
+│   │   │   │   │   ├── Filters.ts           # Colección de filtros
+│   │   │   │   │   ├── FilterField.ts       # Campo del filtro
+│   │   │   │   │   ├── FilterOperator.ts    # Operadores (EQUALS, CONTAINS, etc.)
+│   │   │   │   │   ├── FilterValue.ts       # Valor del filtro
+│   │   │   │   │   ├── Order.ts             # Ordenamiento
+│   │   │   │   │   ├── OrderBy.ts           # Campo de ordenamiento
+│   │   │   │   │   ├── OrderType.ts         # Dirección (ASC/DESC)
+│   │   │   │   │   ├── constants.ts         # Constantes del dominio
+│   │   │   │   │   └── index.ts
 │   │   │   │   ├── validators/
 │   │   │   │   │   ├── uuid.ts              # Validación UUID compartida
 │   │   │   │   │   └── index.ts
@@ -114,7 +131,10 @@ library/
 │   │   │   ├── application/                 # 🔄 CASOS DE USO
 │   │   │   │   ├── use-cases/
 │   │   │   │   │   ├── CreateBookUseCase.ts
+│   │   │   │   │   ├── SearchBooksUseCase.ts    # HU-012: Búsqueda con criterios
 │   │   │   │   │   ├── ListBookTypesUseCase.ts
+│   │   │   │   │   ├── ListCategoriesUseCase.ts # HU-009: Listar categorías
+│   │   │   │   │   ├── ListBookLevelsUseCase.ts # HU-010: Listar niveles
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── ports/
 │   │   │   │   │   ├── BookRepository.ts
@@ -123,6 +143,7 @@ library/
 │   │   │   │   │   ├── CategoryRepository.ts
 │   │   │   │   │   ├── LevelRepository.ts   # Puerto Level (N:M con Type)
 │   │   │   │   │   ├── EmbeddingService.ts
+│   │   │   │   │   ├── TranslationService.ts # Puerto para traducciones (HU-013)
 │   │   │   │   │   ├── Logger.ts
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── errors/
@@ -153,6 +174,9 @@ library/
 │   │   │   │   │   ├── embedding/
 │   │   │   │   │   │   ├── OllamaEmbeddingService.ts
 │   │   │   │   │   │   └── index.ts
+│   │   │   │   │   ├── translation/          # HU-013: Servicio de traducción
+│   │   │   │   │   │   ├── OllamaTranslationService.ts
+│   │   │   │   │   │   └── index.ts
 │   │   │   │   │   └── logging/
 │   │   │   │   │       ├── PinoLogger.ts
 │   │   │   │   │       └── index.ts
@@ -161,15 +185,23 @@ library/
 │   │   │   │   │   └── http/
 │   │   │   │   │       ├── server.ts
 │   │   │   │   │       ├── routes/
-│   │   │   │   │       │   ├── books.routes.ts
-│   │   │   │   │       │   └── book-types.routes.ts
+│   │   │   │   │       │   ├── books.routes.ts       # POST /books, GET /books
+│   │   │   │   │       │   ├── book-types.routes.ts  # GET /book-types
+│   │   │   │   │       │   ├── categories.routes.ts  # GET /book-categories
+│   │   │   │   │       │   └── book-levels.routes.ts # GET /book-levels
 │   │   │   │   │       ├── controllers/
-│   │   │   │   │       │   ├── BooksController.ts
-│   │   │   │   │       │   └── BookTypesController.ts
+│   │   │   │   │       │   ├── BooksController.ts         # Crear libro
+│   │   │   │   │       │   ├── SearchBooksController.ts   # Buscar libros
+│   │   │   │   │       │   ├── BookTypesController.ts     # Listar tipos
+│   │   │   │   │       │   ├── CategoriesController.ts    # Listar categorías
+│   │   │   │   │       │   └── BookLevelsController.ts    # Listar niveles
 │   │   │   │   │       ├── errors/
 │   │   │   │   │       │   └── HttpErrorMapper.ts
 │   │   │   │   │       ├── schemas/
 │   │   │   │   │       │   ├── book.schemas.ts
+│   │   │   │   │       │   ├── search-books.schemas.ts    # HU-012: Schemas de búsqueda
+│   │   │   │   │       │   ├── category.schemas.ts
+│   │   │   │   │       │   ├── book-level.schemas.ts
 │   │   │   │   │       │   └── common.schemas.ts
 │   │   │   │   │       └── index.ts
 │   │   │   │   │

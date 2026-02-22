@@ -10,7 +10,7 @@
  * - Detects duplicates by ISBN (id field in source)
  * - Keeps first occurrence of each ISBN (alphabetical file order)
  * - Preserves ALL original properties from source books
- * - Adds type: 'technical' and format: 'epub' to each book
+ * - HU-013: Preserves type/format from source if present, uses defaults otherwise
  * - Deletes existing books.json before generating new one
  * - Idempotent: can be run multiple times safely
  *
@@ -55,6 +55,7 @@ const OUTPUT_FILE = join(OUTPUT_DIR, 'books.json');
 /**
  * Source book structure (from JSON files)
  * Uses index signature to allow any additional properties
+ * HU-013: type and format can now come from source JSON files
  */
 interface SourceBook {
   readonly id: string;
@@ -66,6 +67,8 @@ interface SourceBook {
   readonly pages?: string;
   readonly publication_date?: string;
   readonly tags?: readonly string[];
+  readonly type?: string;   // HU-013: Can come from source JSON
+  readonly format?: string; // HU-013: Can come from source JSON
   readonly [key: string]: unknown;
 }
 
@@ -92,13 +95,17 @@ interface ConsolidationResult {
 
 /**
  * Enhances a source book with type and format properties.
- * Preserves ALL original properties and adds type: 'technical' and format: 'epub'.
+ * HU-013: Preserves type/format from source if present, otherwise uses defaults.
+ * - If source.type exists and has value → use source.type
+ * - If source.type is undefined → use 'technical'
+ * - If source.format exists and has value → use source.format
+ * - If source.format is undefined → use 'epub'
  */
 function transformBook(source: SourceBook): ConsolidatedBook {
   return Object.freeze({
     ...source,
-    type: 'technical',
-    format: 'epub',
+    type: source.type ?? 'technical',
+    format: source.format ?? 'epub',
   }) as ConsolidatedBook;
 }
 

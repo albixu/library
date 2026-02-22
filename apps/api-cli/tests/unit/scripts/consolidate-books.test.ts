@@ -13,7 +13,7 @@ import {
 
 describe('consolidate-books', () => {
   describe('transformBook', () => {
-    it('should preserve all original properties and add type/format', () => {
+    it('should preserve all original properties and use default type/format when not provided', () => {
       const source: SourceBook = {
         id: '9781234567890',
         language: 'en',
@@ -38,7 +38,7 @@ describe('consolidate-books', () => {
       expect(result.pages).toBe('300');
       expect(result.publication_date).toBe('January 2024');
       expect(result.tags).toEqual(['JavaScript', 'TypeScript']);
-      // Added properties
+      // Default type/format added when not in source
       expect(result.type).toBe('technical');
       expect(result.format).toBe('epub');
     });
@@ -120,6 +120,83 @@ describe('consolidate-books', () => {
 
       const result = transformBook(source);
 
+      expect(result.format).toBe('epub');
+    });
+
+    // HU-013: Tests for preserving type/format from source
+    it('should preserve type from source when provided', () => {
+      const source: SourceBook = {
+        id: '1414141414141',
+        title: 'Book with Type',
+        authors: ['Author'],
+        description: 'Description',
+        type: 'novel',
+      };
+
+      const result = transformBook(source);
+
+      expect(result.type).toBe('novel');
+    });
+
+    it('should preserve format from source when provided', () => {
+      const source: SourceBook = {
+        id: '1515151515151',
+        title: 'Book with Format',
+        authors: ['Author'],
+        description: 'Description',
+        format: 'pdf',
+      };
+
+      const result = transformBook(source);
+
+      expect(result.format).toBe('pdf');
+    });
+
+    it('should preserve both type and format from source when both provided', () => {
+      const source: SourceBook = {
+        id: '1616161616161',
+        title: 'Book with Type and Format',
+        authors: ['Author'],
+        description: 'Description',
+        type: 'biography',
+        format: 'mobi',
+      };
+
+      const result = transformBook(source);
+
+      expect(result.type).toBe('biography');
+      expect(result.format).toBe('mobi');
+    });
+
+    it('should use default type when source type is undefined', () => {
+      const source: SourceBook = {
+        id: '1717171717171',
+        title: 'Book without Type',
+        authors: ['Author'],
+        description: 'Description',
+        type: undefined,
+        format: 'pdf',
+      };
+
+      const result = transformBook(source);
+
+      expect(result.type).toBe('technical');
+      expect(result.format).toBe('pdf');
+    });
+
+    it('should use default format when source format is undefined', () => {
+      const source: SourceBook = {
+        id: '1818181818181',
+        title: 'Book without Format',
+        authors: ['Author'],
+        description: 'Description',
+        type: 'novel',
+        format: undefined,
+      };
+
+      const result = transformBook(source);
+
+      expect(result.type).toBe('novel');
       expect(result.format).toBe('epub');
     });
 

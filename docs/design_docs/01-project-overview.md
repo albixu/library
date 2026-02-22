@@ -49,7 +49,9 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | `isbn` | ISBN | No | ISBN del libro (único cuando presente) |
 | `title` | string | Sí | Título del libro (max 500) |
 | `authors` | Author[] | Sí | Lista de autores (mínimo 1) - Relación N:M |
-| `description` | string | Sí | Sinopsis del contenido (max 5000) |
+| `originalDescription` | string | Sí | Descripción en el idioma original (max 5000) |
+| `description` | string | Sí | Descripción siempre en español (max 5000) |
+| `language` | string | Sí | Código ISO 639-1 del idioma original (ej: 'en', 'es') |
 | `type` | BookType | Sí | Referencia a entidad Type - Relación N:1 |
 | `categories` | Category[] | Sí | Lista de categorías (1-10) - Relación N:M |
 | `format` | BookFormat | Sí | Formato del archivo (enum) |
@@ -59,6 +61,8 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | `embedding` | vector | No | Vector 768 dimensiones |
 | `createdAt` | timestamp | Sí | Fecha de creación |
 | `updatedAt` | timestamp | Sí | Fecha de modificación |
+
+> **Nota HU-013**: Las descripciones de libros se almacenan tanto en su idioma original (`originalDescription`) como traducidas al español (`description`). El campo `language` indica el idioma original usando códigos ISO 639-1. Las traducciones se realizan automáticamente usando Ollama (qwen2.5:3b) durante la creación del libro.
 
 ### 3.2 Entidad: Author
 
@@ -261,6 +265,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 | **Runtime** | Node.js 20 LTS |
 | **Base de datos** | PostgreSQL 16 + pgvector |
 | **Embeddings** | Ollama + nomic-embed-text |
+| **Traducciones** | Ollama + qwen2.5:3b |
 | **Framework HTTP** | Fastify 4.x |
 | **ORM** | Drizzle ORM |
 | **Validación** | Zod |

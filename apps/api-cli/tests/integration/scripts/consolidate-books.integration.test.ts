@@ -99,12 +99,15 @@ describe('consolidate-books.ts integration', () => {
 
     it('should return ISBNs of existing books in database', async () => {
       // Insert test books directly into database
+      // HU-013: Added originalDescription and language fields
       await db.insert(books).values([
         {
           id: crypto.randomUUID(),
           title: 'Book One',
           normalizedTitle: 'book one',
+          originalDescription: 'Description one',
           description: 'Description one',
+          language: 'en',
           typeId: technicalTypeId,
           format: 'epub',
           isbn: '9781234567890',
@@ -114,7 +117,9 @@ describe('consolidate-books.ts integration', () => {
           id: crypto.randomUUID(),
           title: 'Book Two',
           normalizedTitle: 'book two',
+          originalDescription: 'Description two',
           description: 'Description two',
+          language: 'en',
           typeId: technicalTypeId,
           format: 'epub',
           isbn: '9780987654321',
@@ -132,12 +137,15 @@ describe('consolidate-books.ts integration', () => {
 
     it('should filter out books with null ISBN', async () => {
       // Insert books with and without ISBN
+      // HU-013: Added originalDescription and language fields
       await db.insert(books).values([
         {
           id: crypto.randomUUID(),
           title: 'Book With ISBN',
           normalizedTitle: 'book with isbn',
+          originalDescription: 'Has ISBN',
           description: 'Has ISBN',
+          language: 'en',
           typeId: technicalTypeId,
           format: 'epub',
           isbn: '9781111111111',
@@ -147,7 +155,9 @@ describe('consolidate-books.ts integration', () => {
           id: crypto.randomUUID(),
           title: 'Book Without ISBN',
           normalizedTitle: 'book without isbn',
+          originalDescription: 'No ISBN',
           description: 'No ISBN',
+          language: 'en',
           typeId: technicalTypeId,
           format: 'epub',
           isbn: null,
@@ -263,12 +273,15 @@ describe('consolidate-books.ts integration', () => {
   describe('deduplication by ISBN', () => {
     it('should identify books already in database as excludable', async () => {
       // Insert a book in database
+      // HU-013: Added originalDescription and language fields
       const existingIsbn = '9781234567890';
       await db.insert(books).values({
         id: crypto.randomUUID(),
         title: 'Existing Book',
         normalizedTitle: 'existing book',
+        originalDescription: 'Already in DB',
         description: 'Already in DB',
+        language: 'en',
         typeId: technicalTypeId,
         format: 'epub',
         isbn: existingIsbn,
@@ -408,11 +421,14 @@ describe('consolidate-books.ts integration', () => {
 
     it('should exclude same ISBNs on repeated runs', async () => {
       // Insert book in database
+      // HU-013: Added originalDescription and language fields
       await db.insert(books).values({
         id: crypto.randomUUID(),
         title: 'Persistent Book',
         normalizedTitle: 'persistent book',
+        originalDescription: 'Always in DB',
         description: 'Always in DB',
+        language: 'en',
         typeId: technicalTypeId,
         format: 'epub',
         isbn: '9781111111111',

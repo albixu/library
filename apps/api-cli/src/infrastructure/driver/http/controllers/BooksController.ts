@@ -81,6 +81,7 @@ export class BooksController {
         title: input.title,
         authors: input.authors,
         description: input.description,
+        language: input.language, // HU-013
         type: input.type,
         format: input.format,
         categoryNames: input.categories,
@@ -100,7 +101,9 @@ export class BooksController {
         id: result.id,
         title: result.title,
         authors: result.authors,
-        description: result.description,
+        originalDescription: result.originalDescription, // HU-013
+        description: result.description, // HU-013: Spanish description
+        language: result.language, // HU-013
         type: result.type,
         format: result.format,
         level: result.level,
