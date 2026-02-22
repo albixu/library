@@ -1,1 +1,105 @@
-/* You can add global styles to this file, and also import other style files */
+// =============================================================================
+// Global Styles - Library App
+// =============================================================================
+
+// Import Angular Material theme
+@use './styles/material-theme';
+
+// =============================================================================
+// CSS Custom Properties (Design Tokens)
+// =============================================================================
+// These tokens match the design guidelines and are used throughout the app
+
+:root {
+  // Typography
+  --font-family: 'Inter', sans-serif;
+
+  // Border radius
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  // Spacing
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  // Transitions
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+  --transition-slow: 400ms ease-in-out;
+
+  // Light mode colors (default)
+  --color-bg-primary: #f8fafc;
+  --color-bg-surface: #ffffff;
+  --color-accent: #17a1cf;
+  --color-accent-hover: #1493c0;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-border: #e2e8f0;
+}
+
+// Dark mode colors
+.dark-mode {
+  --color-bg-primary: #0f172a;
+  --color-bg-surface: #1e293b;
+  --color-accent: #17a1cf;
+  --color-accent-hover: #3bb8db;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-border: #334155;
+}
+
+// =============================================================================
+// Base Styles
+// =============================================================================
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color var(--transition-normal),
+    color var(--transition-normal);
+}
+
+// =============================================================================
+// Accessibility
+// =============================================================================
+
+// Focus visible styles for keyboard navigation
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+// Reduce motion for users who prefer it
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
