@@ -9,6 +9,7 @@
  * - Checks for existing books by ISBN before creating
  * - Creates authors and categories via the use case
  * - Handles embedding service failures with retries
+ * - HU-013: Translates non-Spanish descriptions to Spanish before embedding
  * - Processes books in batches for large datasets
  * - Shows progress and summary statistics
  *
@@ -20,7 +21,7 @@
  *   DATABASE_URL - PostgreSQL connection string (required)
  *   OLLAMA_BASE_URL - Ollama service URL (default: http://ollama:11434)
  *   BATCH_SIZE - Number of books per batch (default: 50)
- *   MAX_RETRIES - Max retries for embedding failures (default: 3)
+ *   MAX_RETRIES - Max retries for embedding/translation failures (default: 3)
  */
 
 import { readFile } from 'node:fs/promises';
@@ -32,6 +33,7 @@ import * as schema from '../src/infrastructure/driven/persistence/drizzle/schema
 import { loadEnvConfig } from '../src/infrastructure/config/env.js';
 import { PinoLogger } from '../src/infrastructure/driven/logging/PinoLogger.js';
 import { OllamaEmbeddingService } from '../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
+import { OllamaTranslationService } from '../src/infrastructure/driven/translation/OllamaTranslationService.js';
 import { PostgresBookRepository } from '../src/infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from '../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { PostgresTypeRepository } from '../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
@@ -55,12 +57,14 @@ const RETRY_DELAY_MS = 1000;
 
 /**
  * Book structure from consolidated JSON
+ * HU-013: Added language field for translation support
  */
 interface ConsolidatedBook {
   readonly isbn: string;
   readonly title: string;
   readonly authors: readonly string[];
   readonly description: string;
+  readonly language: string; // HU-013: ISO 639-1 code (e.g., 'en', 'es')
   readonly type: string;
   readonly categories: readonly string[];
   readonly format: string;
@@ -108,6 +112,7 @@ function isValidConsolidatedBook(obj: unknown): obj is ConsolidatedBook {
     book.authors.length > 0 &&
     book.authors.every((a) => typeof a === 'string') &&
     typeof book.description === 'string' &&
+    typeof book.language === 'string' && // HU-013: language is required
     typeof book.type === 'string' &&
     Array.isArray(book.categories) &&
     book.categories.every((c) => typeof c === 'string') &&
@@ -143,12 +148,14 @@ async function readBooksFile(filePath: string): Promise<ConsolidatedBook[]> {
 /**
  * Converts a ConsolidatedBook to CreateBookInput
  * HU-008: CreateBookUseCase now expects 'authors' (plural) as string array.
+ * HU-013: Added language field for translation support.
  */
 function toCreateBookInput(book: ConsolidatedBook): CreateBookInput {
   return {
     title: book.title,
     authors: [...book.authors],
     description: book.description,
+    language: book.language, // HU-013: ISO 639-1 code
     type: book.type,
     categoryNames: [...book.categories],
     format: book.format,
@@ -201,9 +208,14 @@ async function seedBook(
                               lastError.message.includes('503') ||
                               lastError.message.includes('service unavailable');
 
-      if (isEmbeddingError && attempt < maxRetries) {
+      // HU-013: Check if it's a translation service error (worth retrying)
+      const isTranslationError = lastError.message.includes('translation') ||
+                                lastError.message.includes('Translation');
+
+      if ((isEmbeddingError || isTranslationError) && attempt < maxRetries) {
         const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1); // Exponential backoff
-        logger.warn(`Embedding service error, retrying in ${delay}ms`, {
+        const errorType = isTranslationError ? 'Translation' : 'Embedding';
+        logger.warn(`${errorType} service error, retrying in ${delay}ms`, {
           isbn: book.isbn,
           attempt,
           maxRetries,
@@ -307,6 +319,14 @@ async function seedDatabase(): Promise<SeedingSummary> {
       model: env.ollama.model,
     });
 
+    // HU-013: Initialize translation service
+    const translationService = new OllamaTranslationService({
+      baseUrl: env.ollama.baseUrl,
+      model: env.translation.model,
+      timeoutMs: env.translation.timeoutMs,
+      retries: env.translation.retries,
+    });
+
     const bookRepository = new PostgresBookRepository(db as any);
     const categoryRepository = new PostgresCategoryRepository(db as any);
     const typeRepository = new PostgresTypeRepository(db as any);
@@ -315,6 +335,7 @@ async function seedDatabase(): Promise<SeedingSummary> {
 
     // Initialize use case
     // HU-008: Now includes levelRepository for level validation and creation
+    // HU-013: Now includes translationService for description translation
     const createBookUseCase = new CreateBookUseCase({
       bookRepository,
       categoryRepository,
@@ -322,6 +343,7 @@ async function seedDatabase(): Promise<SeedingSummary> {
       authorRepository,
       levelRepository,
       embeddingService,
+      translationService,
       logger,
     });
 

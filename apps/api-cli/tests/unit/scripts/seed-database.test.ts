@@ -17,6 +17,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author One'],
         description: 'A test description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: ['JavaScript', 'TypeScript'],
         format: 'pdf',
@@ -32,6 +33,7 @@ describe('seed-database', () => {
         title: 'Multi Author Book',
         authors: ['Author 1', 'Author 2', 'Author 3'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: ['Category1'],
         format: 'pdf',
@@ -47,6 +49,7 @@ describe('seed-database', () => {
         title: 'No Categories Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'es', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -75,6 +78,7 @@ describe('seed-database', () => {
         title: 'No ISBN Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -90,6 +94,7 @@ describe('seed-database', () => {
         title: 'Numeric ISBN Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -104,6 +109,7 @@ describe('seed-database', () => {
         isbn: '9781234567890',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -119,6 +125,7 @@ describe('seed-database', () => {
         title: 123,
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -133,6 +140,7 @@ describe('seed-database', () => {
         isbn: '9781234567890',
         title: 'No Authors Book',
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -148,6 +156,7 @@ describe('seed-database', () => {
         title: 'Empty Authors Book',
         authors: [],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -163,6 +172,7 @@ describe('seed-database', () => {
         title: 'String Author Book',
         authors: 'Single Author',
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -178,6 +188,7 @@ describe('seed-database', () => {
         title: 'Mixed Authors Book',
         authors: ['Valid Author', 123],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -192,6 +203,7 @@ describe('seed-database', () => {
         isbn: '9781234567890',
         title: 'No Description Book',
         authors: ['Author'],
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -207,6 +219,39 @@ describe('seed-database', () => {
         title: 'Numeric Description Book',
         authors: ['Author'],
         description: 12345,
+        language: 'en', // HU-013
+        type: 'technical',
+        categories: [],
+        format: 'pdf',
+        available: false,
+      };
+
+      expect(isValidConsolidatedBook(book)).toBe(false);
+    });
+
+    // HU-013: Tests for language field validation
+    it('should return false for missing language', () => {
+      const book = {
+        isbn: '9781234567890',
+        title: 'No Language Book',
+        authors: ['Author'],
+        description: 'Description',
+        type: 'technical',
+        categories: [],
+        format: 'pdf',
+        available: false,
+      };
+
+      expect(isValidConsolidatedBook(book)).toBe(false);
+    });
+
+    it('should return false for non-string language', () => {
+      const book = {
+        isbn: '9781234567890',
+        title: 'Numeric Language Book',
+        authors: ['Author'],
+        description: 'Description',
+        language: 123,
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -222,6 +267,7 @@ describe('seed-database', () => {
         title: 'No Type Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         categories: [],
         format: 'pdf',
         available: false,
@@ -236,6 +282,7 @@ describe('seed-database', () => {
         title: 'Numeric Type Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 123,
         categories: [],
         format: 'pdf',
@@ -251,6 +298,7 @@ describe('seed-database', () => {
         title: 'No Categories Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         format: 'pdf',
         available: false,
@@ -265,6 +313,7 @@ describe('seed-database', () => {
         title: 'String Categories Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: 'Category',
         format: 'pdf',
@@ -280,6 +329,7 @@ describe('seed-database', () => {
         title: 'Mixed Categories Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: ['Valid', 123],
         format: 'pdf',
@@ -295,6 +345,7 @@ describe('seed-database', () => {
         title: 'No Format Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         available: false,
@@ -309,6 +360,7 @@ describe('seed-database', () => {
         title: 'Numeric Format Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 123,
@@ -324,6 +376,7 @@ describe('seed-database', () => {
         title: 'No Available Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -338,6 +391,7 @@ describe('seed-database', () => {
         title: 'String Available Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -353,6 +407,7 @@ describe('seed-database', () => {
         title: 'Book With Level',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -369,6 +424,7 @@ describe('seed-database', () => {
         title: 'Book Without Level',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -384,6 +440,7 @@ describe('seed-database', () => {
         title: 'Book With Null Level',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -400,6 +457,7 @@ describe('seed-database', () => {
         title: 'Book With Numeric Level',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -418,6 +476,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author One', 'Author Two'],
         description: 'A test description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: ['JavaScript', 'TypeScript'],
         format: 'pdf',
@@ -429,6 +488,7 @@ describe('seed-database', () => {
       expect(result.title).toBe('Test Book');
       expect(result.authors).toEqual(['Author One', 'Author Two']); // HU-008: Now passes all authors
       expect(result.description).toBe('A test description');
+      expect(result.language).toBe('en'); // HU-013
       expect(result.type).toBe('technical');
       expect(result.categoryNames).toEqual(['JavaScript', 'TypeScript']);
       expect(result.format).toBe('pdf');
@@ -444,6 +504,7 @@ describe('seed-database', () => {
         title: 'Test Book With Level',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -462,6 +523,7 @@ describe('seed-database', () => {
         title: 'Test Book Without Level',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -479,6 +541,7 @@ describe('seed-database', () => {
         title: 'Multi Author Book',
         authors: ['First Author', 'Second Author', 'Third Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -497,6 +560,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -514,6 +578,7 @@ describe('seed-database', () => {
         title: 'Available Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: [],
         format: 'epub',
@@ -531,6 +596,7 @@ describe('seed-database', () => {
         title: 'Categorized Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: ['Cat1', 'Cat2', 'Cat3'],
         format: 'pdf',
@@ -548,6 +614,7 @@ describe('seed-database', () => {
         title: 'No Categories Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'novel',
         categories: [],
         format: 'pdf',
@@ -568,6 +635,7 @@ describe('seed-database', () => {
           title: 'Test Book',
           authors: ['Author'],
           description: 'Description',
+          language: 'en', // HU-013
           type: 'technical',
           categories: [],
           format,
@@ -588,6 +656,7 @@ describe('seed-database', () => {
           title: 'Test Book',
           authors: ['Author'],
           description: 'Description',
+          language: 'en', // HU-013
           type,
           categories: [],
           format: 'pdf',
@@ -596,6 +665,46 @@ describe('seed-database', () => {
 
         const result = toCreateBookInput(book);
         expect(result.type).toBe(type);
+      }
+    });
+
+    // HU-013: Tests for language field
+    it('should pass language field to CreateBookInput', () => {
+      const book: ConsolidatedBook = {
+        isbn: '9781234567890',
+        title: 'Spanish Book',
+        authors: ['Author'],
+        description: 'Descripción en español',
+        language: 'es',
+        type: 'technical',
+        categories: [],
+        format: 'pdf',
+        available: false,
+      };
+
+      const result = toCreateBookInput(book);
+
+      expect(result.language).toBe('es');
+    });
+
+    it('should handle different language codes', () => {
+      const languages = ['en', 'es', 'fr', 'de', 'pt'];
+      
+      for (const language of languages) {
+        const book: ConsolidatedBook = {
+          isbn: '9781234567890',
+          title: 'Test Book',
+          authors: ['Author'],
+          description: 'Description',
+          language,
+          type: 'technical',
+          categories: [],
+          format: 'pdf',
+          available: false,
+        };
+
+        const result = toCreateBookInput(book);
+        expect(result.language).toBe(language);
       }
     });
   });
@@ -607,6 +716,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
+        language: 'en', // HU-013
         type: 'technical',
         categories: ['Category'],
         format: 'pdf',
@@ -618,6 +728,7 @@ describe('seed-database', () => {
       expect(book.title).toBe('Test Book');
       expect(book.authors).toEqual(['Author']);
       expect(book.description).toBe('Description');
+      expect(book.language).toBe('en'); // HU-013
       expect(book.type).toBe('technical');
       expect(book.categories).toEqual(['Category']);
       expect(book.format).toBe('pdf');
