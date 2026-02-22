@@ -1,4 +1,4 @@
-import { Injectable, signal, effect, PLATFORM_ID, inject } from '@angular/core';
+import { Injectable, signal, computed, effect, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 export type Theme = 'light' | 'dark';
@@ -8,6 +8,12 @@ export type Theme = 'light' | 'dark';
  *
  * This service handles theme persistence, system preference detection,
  * and applies the theme to the document.
+ *
+ * Features:
+ * - Persists theme choice in localStorage
+ * - Detects system preference (prefers-color-scheme)
+ * - Applies theme via CSS class on document root
+ * - Reactive signals for theme state
  */
 @Injectable({
   providedIn: 'root',
@@ -19,8 +25,19 @@ export class ThemeService {
   /** Current theme signal */
   readonly theme = signal<Theme>(this.getInitialTheme());
 
-  /** Whether dark mode is active */
-  readonly isDarkMode = () => this.theme() === 'dark';
+  /** Computed signal: whether dark mode is active */
+  readonly isDark = computed(() => this.theme() === 'dark');
+
+  /** Computed signal: whether light mode is active */
+  readonly isLight = computed(() => this.theme() === 'light');
+
+  /** Icon name for the current theme (for toggle button) */
+  readonly themeIcon = computed(() => (this.isDark() ? 'light_mode' : 'dark_mode'));
+
+  /** Accessible label for the toggle button */
+  readonly toggleLabel = computed(() =>
+    this.isDark() ? 'Switch to light mode' : 'Switch to dark mode'
+  );
 
   constructor() {
     // Apply theme changes to document

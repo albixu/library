@@ -3,8 +3,7 @@
 // =============================================================================
 // Reusable components, directives, pipes, and utilities
 
-// Components will be exported here as they are created
-// export * from './components';
+export * from './components';
 
 // Directives will be exported here as they are created
 // export * from './directives';
