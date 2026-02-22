@@ -19,6 +19,20 @@ export interface OllamaConfig {
 }
 
 /**
+ * Translation service configuration (HU-013)
+ */
+export interface TranslationConfig {
+  /** Base URL of the translation service (Ollama) */
+  baseUrl: string;
+  /** Model to use for translation */
+  model: string;
+  /** Request timeout in milliseconds */
+  timeoutMs: number;
+  /** Number of retry attempts */
+  retries: number;
+}
+
+/**
  * Database configuration
  */
 export interface DatabaseConfig {
@@ -45,6 +59,7 @@ export interface EnvConfig {
   app: AppConfig;
   database: DatabaseConfig;
   ollama: OllamaConfig;
+  translation: TranslationConfig; // HU-013
 }
 
 /**
@@ -57,6 +72,10 @@ const DEFAULTS = {
   OLLAMA_BASE_URL: 'http://ollama:11434',
   OLLAMA_MODEL: 'nomic-embed-text',
   OLLAMA_TIMEOUT_MS: 30000,
+  // HU-013: Translation service defaults
+  TRANSLATION_MODEL: 'qwen2.5:3b',
+  TRANSLATION_TIMEOUT_MS: 60000,
+  TRANSLATION_RETRIES: 3,
 } as const;
 
 /**
@@ -108,6 +127,21 @@ export function loadEnvConfig(): EnvConfig {
         process.env['OLLAMA_TIMEOUT_MS'],
         DEFAULTS.OLLAMA_TIMEOUT_MS,
         'OLLAMA_TIMEOUT_MS',
+      ),
+    },
+    // HU-013: Translation service configuration
+    translation: {
+      baseUrl: process.env['OLLAMA_BASE_URL'] ?? DEFAULTS.OLLAMA_BASE_URL,
+      model: process.env['TRANSLATION_MODEL'] ?? DEFAULTS.TRANSLATION_MODEL,
+      timeoutMs: safeParseInt(
+        process.env['TRANSLATION_TIMEOUT_MS'],
+        DEFAULTS.TRANSLATION_TIMEOUT_MS,
+        'TRANSLATION_TIMEOUT_MS',
+      ),
+      retries: safeParseInt(
+        process.env['TRANSLATION_RETRIES'],
+        DEFAULTS.TRANSLATION_RETRIES,
+        'TRANSLATION_RETRIES',
       ),
     },
   };

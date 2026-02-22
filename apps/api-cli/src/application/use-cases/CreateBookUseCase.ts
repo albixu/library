@@ -32,6 +32,7 @@ import type { TypeRepository } from '../ports/TypeRepository.js';
 import type { AuthorRepository } from '../ports/AuthorRepository.js';
 import type { LevelRepository } from '../ports/LevelRepository.js';
 import type { EmbeddingService } from '../ports/EmbeddingService.js';
+import type { TranslationService } from '../ports/TranslationService.js';
 import type { Logger } from '../ports/Logger.js';
 import { noopLogger } from '../ports/Logger.js';
 import {
@@ -116,6 +117,7 @@ export interface CreateBookOutput {
  * Dependencies required by CreateBookUseCase
  *
  * HU-008: Added levelRepository for level validation and creation.
+ * HU-013: Added translationService for description translation.
  */
 export interface CreateBookUseCaseDeps {
   bookRepository: BookRepository;
@@ -124,6 +126,7 @@ export interface CreateBookUseCaseDeps {
   authorRepository: AuthorRepository;
   levelRepository: LevelRepository;
   embeddingService: EmbeddingService;
+  translationService: TranslationService; // HU-013: For translating descriptions to Spanish
   logger?: Logger;
 }
 
@@ -137,10 +140,12 @@ export interface CreateBookUseCaseDeps {
  * - Category validation/auto-creation with type scoping
  * - Level validation/auto-creation with type association
  * - Author auto-creation
+ * - Description translation to Spanish (HU-013)
  * - Embedding generation
  * - Atomic persistence
  *
  * HU-008: Now validates that categories and levels belong to the book's type.
+ * HU-013: Translates descriptions to Spanish before generating embeddings.
  */
 export class CreateBookUseCase {
   private readonly bookRepository: BookRepository;
@@ -149,6 +154,7 @@ export class CreateBookUseCase {
   private readonly authorRepository: AuthorRepository;
   private readonly levelRepository: LevelRepository;
   private readonly embeddingService: EmbeddingService;
+  private readonly translationService: TranslationService;
   private readonly logger: Logger;
 
   constructor(deps: CreateBookUseCaseDeps) {
@@ -158,6 +164,7 @@ export class CreateBookUseCase {
     this.authorRepository = deps.authorRepository;
     this.levelRepository = deps.levelRepository;
     this.embeddingService = deps.embeddingService;
+    this.translationService = deps.translationService;
     this.logger = deps.logger?.child({ name: 'CreateBookUseCase' }) ?? noopLogger;
   }
 
@@ -248,14 +255,41 @@ export class CreateBookUseCase {
       authors: authorEntities.map(a => ({ id: a.id, name: a.name })),
     });
 
-    // 7. Create Book entity with validated fields, type, authors, categories, and levelId
-    // HU-013: For now, we pass description as-is. Translation will be added in T05.
-    // The Book entity stores description in originalDescription and uses it for description too.
+    // 7. Translate description to Spanish if needed (HU-013)
+    const originalDescription = input.description;
+    let translatedDescription: string;
+
+    if (input.language.toLowerCase() === 'es') {
+      // Already in Spanish, no translation needed
+      translatedDescription = originalDescription;
+      this.logger.debug('Description already in Spanish, skipping translation');
+    } else {
+      // Translate to Spanish
+      this.logger.debug('Translating description to Spanish', {
+        language: input.language,
+        textLength: originalDescription.length,
+      });
+
+      const translationResult = await this.translationService.translate(
+        originalDescription,
+        'es',
+      );
+      translatedDescription = translationResult.translatedText;
+
+      this.logger.debug('Description translated successfully', {
+        originalLength: originalDescription.length,
+        translatedLength: translatedDescription.length,
+      });
+    }
+
+    // 8. Create Book entity with validated fields, type, authors, categories, and levelId
+    // HU-013: Book receives original description, language, and translated description
     const book = Book.create({
       id: generateUUID(),
       title: input.title,
       authors: authorEntities,
       description: input.description,
+      translatedDescription, // HU-013: Spanish translation
       language: input.language, // HU-013
       type: bookType,
       categories,
@@ -266,7 +300,7 @@ export class CreateBookUseCase {
       path: input.path,
     });
 
-    // 8. Generate embedding text and validate length
+    // 9. Generate embedding text and validate length
     const embeddingText = book.getTextForEmbedding();
 
     if (embeddingText.length > MAX_EMBEDDING_TEXT_LENGTH) {
@@ -280,7 +314,7 @@ export class CreateBookUseCase {
       );
     }
 
-    // 9. Generate embedding (may throw EmbeddingServiceUnavailableError)
+    // 10. Generate embedding (may throw EmbeddingServiceUnavailableError)
     this.logger.debug('Generating embedding', {
       textLength: embeddingText.length,
     });
@@ -297,7 +331,7 @@ export class CreateBookUseCase {
       throw error;
     }
 
-    // 10. Persist book with embedding atomically
+    // 11. Persist book with embedding atomically
     const savedBook = await this.bookRepository.save({
       book,
       embedding: embeddingResult.embedding,
@@ -310,7 +344,7 @@ export class CreateBookUseCase {
       levelId: savedBook.levelId,
     });
 
-    // 11. Return output DTO
+    // 12. Return output DTO
     return this.toOutput(savedBook, levelName);
   }
 
