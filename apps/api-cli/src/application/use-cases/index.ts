@@ -23,3 +23,12 @@ export {
   ListBookLevelsUseCase,
   type BookLevelListItem,
 } from './ListBookLevelsUseCase.js';
+
+export {
+  SearchBooksUseCase,
+  type SearchBooksInput,
+  type SearchBooksOutput,
+  type SearchBooksItemOutput,
+  type SearchBooksPagination,
+  type SearchBooksUseCaseDeps,
+} from './SearchBooksUseCase.js';

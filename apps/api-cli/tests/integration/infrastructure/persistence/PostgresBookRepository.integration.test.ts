@@ -19,6 +19,8 @@ import { Author } from '../../../../src/domain/entities/Author.js';
 import { BookType } from '../../../../src/domain/entities/BookType.js';
 import { Category } from '../../../../src/domain/entities/Category.js';
 import { Level } from '../../../../src/domain/entities/Level.js';
+import { Criteria } from '../../../../src/domain/criteria/Criteria.js';
+import { Order } from '../../../../src/domain/criteria/Order.js';
 import { DuplicateISBNError, BookNotFoundError } from '../../../../src/domain/errors/DomainErrors.js';
 import * as schema from '../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 import { generateUUID } from '../../../../src/shared/utils/uuid.js';
@@ -621,6 +623,683 @@ describe('PostgresBookRepository Integration', () => {
 
       const count = await bookRepository.count();
       expect(count).toBe(0);
+    });
+  });
+
+  describe('search', () => {
+    // Helper to create and save a test book
+    async function createTestBook(options: {
+      title: string;
+      authors: Author[];
+      type: BookType;
+      categories: Category[];
+      levelId?: string;
+      isbn?: string;
+      description?: string;
+      embedding?: number[];
+    }): Promise<Book> {
+      const book = Book.create({
+        id: generateUUID(),
+        title: options.title,
+        authors: options.authors,
+        description: options.description ?? `Description for ${options.title}`,
+        type: options.type,
+        format: 'pdf',
+        categories: options.categories,
+        levelId: options.levelId,
+        isbn: options.isbn,
+      });
+
+      await bookRepository.save({
+        book,
+        embedding: options.embedding ?? generateTestEmbedding(),
+      });
+
+      return book;
+    }
+
+    describe('basic search without filters', () => {
+      it('should return all books when no filters applied', async () => {
+        await createTestBook({
+          title: 'Book A',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Book B',
+          authors: [martinFowler],
+          type: novelType,
+          categories: [softwareCategory],
+        });
+
+        const criteria = Criteria.empty();
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(2);
+        expect(result.totalCount).toBe(2);
+        expect(result.hasNextPage).toBe(false);
+        expect(result.nextCursor).toBeNull();
+      });
+
+      it('should return empty result when no books exist', async () => {
+        const criteria = Criteria.empty();
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(0);
+        expect(result.totalCount).toBe(0);
+        expect(result.hasNextPage).toBe(false);
+        expect(result.nextCursor).toBeNull();
+      });
+
+      it('should order by title ascending by default', async () => {
+        await createTestBook({
+          title: 'Zebra Book',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Alpha Book',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Middle Book',
+          authors: [robertMartin],
+          type: novelType,
+          categories: [softwareCategory],
+        });
+
+        const criteria = Criteria.empty();
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items.map(i => i.book.title)).toEqual([
+          'Alpha Book',
+          'Middle Book',
+          'Zebra Book',
+        ]);
+      });
+    });
+
+    describe('filter by ISBN (EQUALS)', () => {
+      it('should find book by exact ISBN match', async () => {
+        await createTestBook({
+          title: 'Clean Code',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+          isbn: '9780132350884',
+        });
+        await createTestBook({
+          title: 'Other Book',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [programmingCategory],
+          isbn: '9780596517748',
+        });
+
+        const criteria = Criteria.empty().withEquals('isbn', '9780132350884');
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0].book.title).toBe('Clean Code');
+        expect(result.totalCount).toBe(1);
+      });
+
+      it('should return empty when ISBN not found', async () => {
+        await createTestBook({
+          title: 'Some Book',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+          isbn: '9780132350884',
+        });
+
+        const criteria = Criteria.empty().withEquals('isbn', '9999999999999');
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(0);
+        expect(result.totalCount).toBe(0);
+      });
+    });
+
+    describe('filter by title (CONTAINS)', () => {
+      it('should find books by partial title match (case-insensitive)', async () => {
+        await createTestBook({
+          title: 'Clean Code',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'The Clean Coder',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Refactoring',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+
+        const criteria = Criteria.empty().withContains('title', 'clean');
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(2);
+        expect(result.items.map(i => i.book.title).sort()).toEqual([
+          'Clean Code',
+          'The Clean Coder',
+        ]);
+        expect(result.totalCount).toBe(2);
+      });
+    });
+
+    describe('filter by author (CONTAINS)', () => {
+      it('should find books by partial author name (case-insensitive)', async () => {
+        await createTestBook({
+          title: 'Clean Code',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Refactoring',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+
+        const criteria = Criteria.empty().withContains('author', 'martin');
+        const result = await bookRepository.search(criteria);
+
+        // Both books have "Martin" in author name
+        expect(result.items).toHaveLength(2);
+        expect(result.totalCount).toBe(2);
+      });
+
+      it('should find books by specific author', async () => {
+        await createTestBook({
+          title: 'Clean Code',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Refactoring',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+
+        const criteria = Criteria.empty().withContains('author', 'fowler');
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0].book.title).toBe('Refactoring');
+      });
+    });
+
+    describe('filter by types (IN)', () => {
+      it('should find books by single type name (case-insensitive)', async () => {
+        await createTestBook({
+          title: 'Technical Book',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Novel Book',
+          authors: [martinFowler],
+          type: novelType,
+          categories: [softwareCategory],
+        });
+
+        const criteria = Criteria.empty().withIn('type', ['technical']);
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0].book.title).toBe('Technical Book');
+      });
+
+      it('should find books by multiple types (OR logic)', async () => {
+        await createTestBook({
+          title: 'Technical Book',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Novel Book',
+          authors: [martinFowler],
+          type: novelType,
+          categories: [softwareCategory],
+        });
+
+        const criteria = Criteria.empty().withIn('type', ['technical', 'novel']);
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(2);
+        expect(result.totalCount).toBe(2);
+      });
+
+      it('should return empty when type not found', async () => {
+        await createTestBook({
+          title: 'Technical Book',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+
+        const criteria = Criteria.empty().withIn('type', ['nonexistent']);
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(0);
+        expect(result.totalCount).toBe(0);
+      });
+    });
+
+    describe('filter by categories (IN)', () => {
+      it('should find books by category name (case-insensitive)', async () => {
+        await createTestBook({
+          title: 'Programming Book',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Software Book',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [softwareCategory],
+        });
+
+        const criteria = Criteria.empty().withIn('categories', ['programming']);
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0].book.title).toBe('Programming Book');
+      });
+
+      it('should find books with multiple categories (OR logic)', async () => {
+        await createTestBook({
+          title: 'Programming Book',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Software Book',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [softwareCategory],
+        });
+
+        const criteria = Criteria.empty().withIn('categories', ['programming', 'Software Engineering']);
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(2);
+      });
+    });
+
+    describe('filter by levels (IN)', () => {
+      it('should find books by level name (case-insensitive)', async () => {
+        await createTestBook({
+          title: 'Beginner Book',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+          levelId: beginnerLevel.id,
+        });
+        await createTestBook({
+          title: 'Advanced Book',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [programmingCategory],
+          levelId: advancedLevel.id,
+        });
+
+        const criteria = Criteria.empty().withIn('levels', ['beginner']);
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0].book.title).toBe('Beginner Book');
+      });
+
+      it('should find books with multiple levels (OR logic)', async () => {
+        await createTestBook({
+          title: 'Beginner Book',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+          levelId: beginnerLevel.id,
+        });
+        await createTestBook({
+          title: 'Advanced Book',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [programmingCategory],
+          levelId: advancedLevel.id,
+        });
+        await createTestBook({
+          title: 'No Level Book',
+          authors: [robertMartin],
+          type: novelType,
+          categories: [softwareCategory],
+        });
+
+        const criteria = Criteria.empty().withIn('levels', ['beginner', 'advanced']);
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(2);
+        expect(result.totalCount).toBe(2);
+      });
+    });
+
+    describe('combined filters (AND logic)', () => {
+      it('should combine type and author filters', async () => {
+        await createTestBook({
+          title: 'Technical by Martin',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Novel by Martin',
+          authors: [robertMartin],
+          type: novelType,
+          categories: [softwareCategory],
+        });
+        await createTestBook({
+          title: 'Technical by Fowler',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+
+        const criteria = Criteria.empty()
+          .withIn('type', ['technical'])
+          .withContains('author', 'robert');
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0].book.title).toBe('Technical by Martin');
+      });
+
+      it('should combine title and category filters', async () => {
+        await createTestBook({
+          title: 'Clean Code',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Clean Architecture',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [softwareCategory],
+        });
+        await createTestBook({
+          title: 'Refactoring',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+
+        const criteria = Criteria.empty()
+          .withContains('title', 'clean')
+          .withIn('categories', ['programming']);
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0].book.title).toBe('Clean Code');
+      });
+    });
+
+    describe('pagination', () => {
+      it('should respect limit parameter', async () => {
+        for (let i = 1; i <= 5; i++) {
+          await createTestBook({
+            title: `Book ${String(i).padStart(2, '0')}`,
+            authors: [robertMartin],
+            type: technicalType,
+            categories: [programmingCategory],
+          });
+        }
+
+        const criteria = Criteria.empty().withLimit(2);
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(2);
+        expect(result.totalCount).toBe(5);
+        expect(result.hasNextPage).toBe(true);
+        expect(result.nextCursor).not.toBeNull();
+      });
+
+      it('should paginate using cursor', async () => {
+        for (let i = 1; i <= 5; i++) {
+          await createTestBook({
+            title: `Book ${String(i).padStart(2, '0')}`,
+            authors: [robertMartin],
+            type: technicalType,
+            categories: [programmingCategory],
+          });
+        }
+
+        // First page
+        const firstPage = await bookRepository.search(
+          Criteria.empty().withLimit(2)
+        );
+        expect(firstPage.items).toHaveLength(2);
+        expect(firstPage.items.map(i => i.book.title)).toEqual(['Book 01', 'Book 02']);
+        expect(firstPage.hasNextPage).toBe(true);
+
+        // Second page using cursor
+        const secondPage = await bookRepository.search(
+          Criteria.empty().withLimit(2).withCursor(firstPage.nextCursor)
+        );
+        expect(secondPage.items).toHaveLength(2);
+        expect(secondPage.items.map(i => i.book.title)).toEqual(['Book 03', 'Book 04']);
+        expect(secondPage.hasNextPage).toBe(true);
+
+        // Third page (last)
+        const thirdPage = await bookRepository.search(
+          Criteria.empty().withLimit(2).withCursor(secondPage.nextCursor)
+        );
+        expect(thirdPage.items).toHaveLength(1);
+        expect(thirdPage.items.map(i => i.book.title)).toEqual(['Book 05']);
+        expect(thirdPage.hasNextPage).toBe(false);
+        expect(thirdPage.nextCursor).toBeNull();
+      });
+
+      it('should handle pagination with filters', async () => {
+        for (let i = 1; i <= 4; i++) {
+          await createTestBook({
+            title: `Technical Book ${String(i).padStart(2, '0')}`,
+            authors: [robertMartin],
+            type: technicalType,
+            categories: [programmingCategory],
+          });
+        }
+        await createTestBook({
+          title: 'Novel Book',
+          authors: [martinFowler],
+          type: novelType,
+          categories: [softwareCategory],
+        });
+
+        const criteria = Criteria.empty()
+          .withIn('type', ['technical'])
+          .withLimit(2);
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items).toHaveLength(2);
+        expect(result.totalCount).toBe(4); // Only technical books
+        expect(result.hasNextPage).toBe(true);
+      });
+    });
+
+    describe('semantic search with embedding', () => {
+      it('should find similar books with similarity score >= 70%', async () => {
+        // Create books with specific embeddings
+        const baseEmbedding = Array.from({ length: 768 }, () => 0.5);
+        
+        // Similar embedding (small deviation)
+        const similarEmbedding = baseEmbedding.map((v, i) => 
+          i < 100 ? v + 0.05 : v
+        );
+        
+        // Dissimilar embedding (large deviation)
+        const dissimilarEmbedding = Array.from({ length: 768 }, (_, i) => 
+          i % 2 === 0 ? -0.8 : 0.8
+        );
+
+        await createTestBook({
+          title: 'Similar Book',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+          embedding: similarEmbedding,
+        });
+        await createTestBook({
+          title: 'Dissimilar Book',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [programmingCategory],
+          embedding: dissimilarEmbedding,
+        });
+
+        const criteria = Criteria.empty().withSimilarTo('embedding', 'query text');
+        const result = await bookRepository.search(criteria, baseEmbedding);
+
+        // Only the similar book should be returned (similarity >= 70%)
+        expect(result.items.length).toBeGreaterThanOrEqual(1);
+        expect(result.items[0].similarityScore).not.toBeNull();
+        expect(result.items[0].similarityScore!).toBeGreaterThanOrEqual(0.7);
+      });
+
+      it('should order by similarity score descending when embedding provided', async () => {
+        const baseEmbedding = Array.from({ length: 768 }, () => 0.5);
+        
+        // Create embeddings with different similarities
+        const verySimEmbedding = baseEmbedding.map((v, i) => i < 50 ? v + 0.02 : v);
+        const lessSimEmbedding = baseEmbedding.map((v, i) => i < 200 ? v + 0.1 : v);
+
+        await createTestBook({
+          title: 'Less Similar',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+          embedding: lessSimEmbedding,
+        });
+        await createTestBook({
+          title: 'Very Similar',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [programmingCategory],
+          embedding: verySimEmbedding,
+        });
+
+        const criteria = Criteria.empty().withSimilarTo('embedding', 'query');
+        const result = await bookRepository.search(criteria, baseEmbedding);
+
+        // Should be ordered by similarity descending
+        if (result.items.length >= 2) {
+          expect(result.items[0].similarityScore!).toBeGreaterThanOrEqual(
+            result.items[1].similarityScore!
+          );
+        }
+      });
+
+      it('should return null similarity score when no embedding provided', async () => {
+        await createTestBook({
+          title: 'Any Book',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+
+        const criteria = Criteria.empty();
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items[0].similarityScore).toBeNull();
+      });
+
+      it('should combine semantic search with other filters', async () => {
+        const baseEmbedding = Array.from({ length: 768 }, () => 0.5);
+        const similarEmbedding = baseEmbedding.map((v, i) => i < 50 ? v + 0.02 : v);
+
+        await createTestBook({
+          title: 'Technical Similar',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+          embedding: similarEmbedding,
+        });
+        await createTestBook({
+          title: 'Novel Similar',
+          authors: [martinFowler],
+          type: novelType,
+          categories: [softwareCategory],
+          embedding: similarEmbedding,
+        });
+
+        const criteria = Criteria.empty()
+          .withSimilarTo('embedding', 'query')
+          .withIn('type', ['technical']);
+        const result = await bookRepository.search(criteria, baseEmbedding);
+
+        // Should only return technical book
+        const technicalBooks = result.items.filter(i => 
+          i.book.type.name === 'technical'
+        );
+        expect(technicalBooks.length).toBe(result.items.length);
+      });
+    });
+
+    describe('ordering', () => {
+      it('should support custom ordering by title ascending', async () => {
+        await createTestBook({
+          title: 'Zebra',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Alpha',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+
+        const criteria = Criteria.empty().withOrder(Order.asc('title'));
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items.map(i => i.book.title)).toEqual(['Alpha', 'Zebra']);
+      });
+
+      it('should support ordering by title descending', async () => {
+        await createTestBook({
+          title: 'Alpha',
+          authors: [robertMartin],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+        await createTestBook({
+          title: 'Zebra',
+          authors: [martinFowler],
+          type: technicalType,
+          categories: [programmingCategory],
+        });
+
+        const criteria = Criteria.empty().withOrder(Order.desc('title'));
+        const result = await bookRepository.search(criteria);
+
+        expect(result.items.map(i => i.book.title)).toEqual(['Zebra', 'Alpha']);
+      });
     });
   });
 });

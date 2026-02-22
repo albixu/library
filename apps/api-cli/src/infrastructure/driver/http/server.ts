@@ -4,12 +4,15 @@
  * Creates and configures a Fastify server instance.
  * Uses dependency injection to allow different configurations
  * for production, development, and testing.
+ *
+ * HU-012: Added SearchBooksController and GET /api/books endpoint
  */
 
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { Logger } from '../../../application/ports/Logger.js';
 import { noopLogger } from '../../../application/ports/Logger.js';
 import { BooksController } from './controllers/BooksController.js';
+import { SearchBooksController } from './controllers/SearchBooksController.js';
 import { BookTypesController } from './controllers/BookTypesController.js';
 import { CategoriesController } from './controllers/CategoriesController.js';
 import { BookLevelsController } from './controllers/BookLevelsController.js';
@@ -18,6 +21,7 @@ import { bookTypesRoutes } from './routes/book-types.routes.js';
 import { categoriesRoutes } from './routes/categories.routes.js';
 import { bookLevelsRoutes } from './routes/book-levels.routes.js';
 import type { CreateBookUseCase } from '../../../application/use-cases/CreateBookUseCase.js';
+import type { SearchBooksUseCase } from '../../../application/use-cases/SearchBooksUseCase.js';
 import type { ListBookTypesUseCase } from '../../../application/use-cases/ListBookTypesUseCase.js';
 import type { ListCategoriesUseCase } from '../../../application/use-cases/ListCategoriesUseCase.js';
 import type { ListBookLevelsUseCase } from '../../../application/use-cases/ListBookLevelsUseCase.js';
@@ -27,6 +31,7 @@ import type { ListBookLevelsUseCase } from '../../../application/use-cases/ListB
  */
 export interface ServerDeps {
   createBookUseCase: CreateBookUseCase;
+  searchBooksUseCase: SearchBooksUseCase;
   listBookTypesUseCase: ListBookTypesUseCase;
   listCategoriesUseCase: ListCategoriesUseCase;
   listBookLevelsUseCase: ListBookLevelsUseCase;
@@ -52,7 +57,7 @@ export async function createServer(
   deps: ServerDeps,
   options: ServerOptions = {},
 ): Promise<FastifyInstance> {
-  const { createBookUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, logger = noopLogger } = deps;
+  const { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, logger = noopLogger } = deps;
   const { prefix = '/api' } = options;
 
   const serverLogger = logger.child({ name: 'FastifyServer' });
@@ -65,6 +70,11 @@ export async function createServer(
   // Create controllers with dependencies
   const booksController = new BooksController({
     createBookUseCase,
+    logger,
+  });
+
+  const searchBooksController = new SearchBooksController({
+    searchBooksUseCase,
     logger,
   });
 
@@ -87,6 +97,7 @@ export async function createServer(
   await fastify.register(booksRoutes, {
     prefix,
     controller: booksController,
+    searchController: searchBooksController,
   });
 
   await fastify.register(bookTypesRoutes, {
@@ -109,6 +120,7 @@ export async function createServer(
     serverLogger.info('Server routes registered', {
       prefix,
       routes: [
+        { method: 'GET', path: `${prefix}/books` },
         { method: 'POST', path: `${prefix}/books` },
         { method: 'GET', path: `${prefix}/book-types` },
         { method: 'GET', path: `${prefix}/book-categories` },

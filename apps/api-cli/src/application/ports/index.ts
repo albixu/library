@@ -13,6 +13,8 @@ export type {
   SaveBookParams,
   UpdateBookParams,
   DuplicateCheckResult,
+  BookWithScore,
+  SearchBooksResult,
 } from './BookRepository.js';
 
 export type { CategoryRepository } from './CategoryRepository.js';

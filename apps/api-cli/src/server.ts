@@ -17,6 +17,7 @@ import { PostgresAuthorRepository } from './infrastructure/driven/persistence/Po
 import { PostgresLevelRepository } from './infrastructure/driven/persistence/PostgresLevelRepository.js';
 import type { DatabaseClient } from './infrastructure/driven/persistence/types.js';
 import { CreateBookUseCase } from './application/use-cases/CreateBookUseCase.js';
+import { SearchBooksUseCase } from './application/use-cases/SearchBooksUseCase.js';
 import { ListBookTypesUseCase } from './application/use-cases/ListBookTypesUseCase.js';
 import { ListCategoriesUseCase } from './application/use-cases/ListCategoriesUseCase.js';
 import { ListBookLevelsUseCase } from './application/use-cases/ListBookLevelsUseCase.js';
@@ -79,9 +80,15 @@ async function bootstrap(): Promise<void> {
       typeRepository,
     );
 
+    const searchBooksUseCase = new SearchBooksUseCase({
+      bookRepository,
+      embeddingService,
+      logger,
+    });
+
     // Create and start server
     const server = await createServer(
-      { createBookUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, logger },
+      { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, logger },
       { prefix: '/api' },
     );
 

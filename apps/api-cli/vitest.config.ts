@@ -23,5 +23,9 @@ export default defineConfig({
     alias: {
       '@': '/src',
     },
+    extensions: ['.ts', '.js', '.json'],
+  },
+  esbuild: {
+    loader: 'ts',
   },
 });
