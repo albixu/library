@@ -38,63 +38,63 @@ Este documento define la arquitectura y diseño del cliente web para el sistema 
 
 | Categoría | Tecnología | Versión |
 |-----------|------------|---------|
-| Framework | Angular | 19.x (última estable) |
-| Lenguaje | TypeScript | 5.x |
+| Framework | Angular | 21.x (última estable) |
+| Lenguaje | TypeScript | 5.9.x |
 | State Management | Angular Signals | Built-in |
-| UI Components | Angular Material | 19.x |
+| UI Components | Angular Material | 21.x |
 | Estilos | SCSS + CSS Variables | - |
 | HTTP Client | Angular HttpClient | Built-in |
 | Routing | Angular Router | Built-in |
-| Testing Unit | Vitest + Angular Testing Library | Latest |
+| Testing Unit | Vitest | Built-in (Angular 21 default) |
 | Testing E2E | Playwright | Latest |
-| Build Tool | Angular CLI (esbuild) | 19.x |
+| Build Tool | Angular CLI (esbuild) | 21.x |
 
-### 2.2 Arquitectura de Capas
+### 2.2 Arquitectura de Capas (Screaming Architecture)
 
-Siguiendo los principios de Clean Architecture y DDD aplicados al frontend:
+Siguiendo los principios de Clean Architecture, DDD y **Screaming Architecture** aplicados al frontend. La estructura de carpetas "grita" el propósito de la aplicación:
 
 ```
 src/
 ├── app/
 │   ├── core/                    # Singleton services, guards, interceptors
-│   │   ├── services/            # API services, theme service
+│   │   ├── services/            # ThemeService, ApiService
 │   │   ├── interceptors/        # HTTP interceptors (error handling, loading)
 │   │   └── models/              # Domain models/interfaces
 │   │
-│   ├── features/                # Feature modules (lazy loaded)
-│   │   ├── book-search/         # Búsqueda de libros
-│   │   │   ├── components/      # Componentes de la feature
-│   │   │   ├── pages/           # Páginas/routes
-│   │   │   ├── services/        # Services específicos de la feature
-│   │   │   └── book-search.routes.ts
-│   │   │
-│   │   └── book-detail/         # Detalle de libro + envío Kindle
-│   │       ├── components/
-│   │       ├── pages/
-│   │       └── book-detail.routes.ts
+│   ├── catalog/                 # Feature: Gestión del catálogo de libros
+│   │   ├── components/          # Componentes de la feature
+│   │   ├── pages/               # Páginas/routes
+│   │   ├── services/            # Services específicos de la feature
+│   │   ├── catalog.routes.ts    # Lazy-loaded routes
+│   │   └── index.ts             # Public API (barrel export)
+│   │
+│   ├── kindle/                  # Feature: Envío a Kindle
+│   │   ├── components/
+│   │   ├── services/
+│   │   └── index.ts
 │   │
 │   ├── shared/                  # Componentes y utilidades compartidas
-│   │   ├── components/          # Componentes reutilizables (wrappers de Material)
+│   │   ├── components/          # ThemeToggleComponent, etc.
 │   │   ├── directives/          # Directivas custom
 │   │   ├── pipes/               # Pipes custom
 │   │   └── utils/               # Utilidades
 │   │
-│   ├── layouts/                 # Layout components
-│   │   └── main-layout/         # Header, footer, contenedor principal
+│   ├── layout/                  # Layout components
+│   │   ├── main-layout/         # Contenedor principal
+│   │   ├── header/              # Header component
+│   │   ├── footer/              # Footer component
+│   │   └── index.ts
 │   │
-│   └── app.routes.ts            # Rutas principales
-│
-├── assets/                      # Recursos estáticos
-│   └── flags/                   # Banderas ISO para idiomas
+│   ├── app.ts                   # Root component
+│   ├── app.routes.ts            # Rutas principales
+│   └── app.config.ts            # App configuration
 │
 ├── styles/                      # Estilos globales
-│   ├── _variables.scss          # Variables CSS/SCSS
-│   ├── _themes.scss             # Definición de temas (dark/light)
-│   ├── _typography.scss         # Tipografía (Inter)
-│   ├── _material-theme.scss     # Tema personalizado de Angular Material
-│   └── styles.scss              # Entry point
+│   ├── _variables.scss          # CSS custom properties, spacing, breakpoints
+│   ├── _material-theme.scss     # Tema M2 personalizado de Angular Material
+│   └── styles.scss              # Entry point (CSS variables light/dark)
 │
-└── environments/                # Configuración por entorno
+└── index.html                   # Entry point (Inter font, Material Icons)
 ```
 
 ### 2.3 Diagrama de Componentes
@@ -994,7 +994,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
 | Nivel | Herramienta | Cobertura | Responsabilidad |
 |-------|-------------|-----------|-----------------|
-| Unit | Vitest + Angular Testing Library | 100% | Lógica de componentes, services, stores |
+| Unit | Vitest | 100% | Lógica de componentes, services, stores |
 | Integration | Vitest | 80% | Interacción entre componentes |
 | E2E | Playwright | Flujos críticos | Búsqueda, detalle, envío Kindle |
 
@@ -1278,14 +1278,14 @@ Angular Material permite personalización completa manteniendo sus beneficios:
 
 ## 13. Roadmap de Implementación
 
-### Fase 1: Setup y Estructura Base
-1. Inicializar proyecto Angular 19
-2. Instalar y configurar Angular Material
-3. Configurar ESLint, Prettier, Vitest, Playwright
-4. Configurar tema personalizado de Material (colores, tipografía)
-5. Implementar sistema de temas dark/light
-6. Crear layout principal (mat-toolbar, mat-sidenav)
-7. Configurar routing y lazy loading
+### Fase 1: Setup y Estructura Base ✅
+1. ✅ Inicializar proyecto Angular 21
+2. ✅ Instalar y configurar Angular Material
+3. ✅ Configurar ESLint 9, Prettier, Vitest
+4. ✅ Configurar tema M2 personalizado de Material (paleta cyan #17a1cf)
+5. ✅ Implementar sistema de temas dark/light con CSS Variables
+6. ✅ Crear estructura Screaming Architecture (catalog, kindle, core, shared, layout)
+7. ⏳ Configurar routing y lazy loading
 
 ### Fase 2: Feature Búsqueda
 1. Implementar BookService (API integration)
@@ -1382,7 +1382,7 @@ export type BookFormat = 'pdf' | 'epub' | 'mobi' | 'azw3';
 
 ## 15. Referencias
 
-- [Angular 19 Documentation](https://angular.dev)
+- [Angular 21 Documentation](https://angular.dev)
 - [Angular Material](https://material.angular.io)
 - [Angular Signals Guide](https://angular.dev/guide/signals)
 - [Material Design Guidelines](https://m3.material.io)
