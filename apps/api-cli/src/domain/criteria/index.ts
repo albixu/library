@@ -6,6 +6,9 @@
  * ordering, and paginating data without coupling to infrastructure details.
  */
 
+// Constants
+export { PAGINATION, SEMANTIC_SEARCH } from './constants.js';
+
 // Main Criteria class
 export { Criteria, type CriteriaProps } from './Criteria.js';
 

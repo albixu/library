@@ -13,16 +13,8 @@
 import { Filters } from './Filters.js';
 import { Filter } from './Filter.js';
 import { Order } from './Order.js';
+import { PAGINATION } from './constants.js';
 import type { FilterValueType } from './FilterValue.js';
-
-/**
- * Pagination constraints
- */
-const PAGINATION_CONSTRAINTS = {
-  DEFAULT_LIMIT: 50,
-  MIN_LIMIT: 1,
-  MAX_LIMIT: 100,
-} as const;
 
 /**
  * Props for creating a Criteria
@@ -59,7 +51,7 @@ export class Criteria {
    */
   static create(props: CriteriaProps = {}): Criteria {
     const limit = Criteria.validateLimit(
-      props.limit ?? PAGINATION_CONSTRAINTS.DEFAULT_LIMIT,
+      props.limit ?? PAGINATION.DEFAULT_LIMIT,
     );
 
     return new Criteria({
@@ -255,11 +247,11 @@ export class Criteria {
    * Validates and constrains the limit value
    */
   private static validateLimit(limit: number): number {
-    if (limit < PAGINATION_CONSTRAINTS.MIN_LIMIT) {
-      return PAGINATION_CONSTRAINTS.MIN_LIMIT;
+    if (limit < PAGINATION.MIN_LIMIT) {
+      return PAGINATION.MIN_LIMIT;
     }
-    if (limit > PAGINATION_CONSTRAINTS.MAX_LIMIT) {
-      return PAGINATION_CONSTRAINTS.MAX_LIMIT;
+    if (limit > PAGINATION.MAX_LIMIT) {
+      return PAGINATION.MAX_LIMIT;
     }
     return Math.floor(limit);
   }
@@ -268,14 +260,14 @@ export class Criteria {
    * Returns the default limit value
    */
   static getDefaultLimit(): number {
-    return PAGINATION_CONSTRAINTS.DEFAULT_LIMIT;
+    return PAGINATION.DEFAULT_LIMIT;
   }
 
   /**
    * Returns the maximum allowed limit
    */
   static getMaxLimit(): number {
-    return PAGINATION_CONSTRAINTS.MAX_LIMIT;
+    return PAGINATION.MAX_LIMIT;
   }
 
   equals(other: Criteria): boolean {
