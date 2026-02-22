@@ -57,3 +57,23 @@ export {
   InvalidISBNError,
   EmbeddingTextTooLongError,
 } from './errors/index.js';
+
+// Criteria Pattern (for filtering, ordering, pagination)
+export {
+  Criteria,
+  type CriteriaProps,
+  Filter,
+  Filters,
+  FilterField,
+  FilterOperator,
+  FilterValue,
+  type FilterOperatorValue,
+  type FilterValueType,
+  type FilterPrimitiveValue,
+  FILTER_OPERATORS,
+  Order,
+  OrderBy,
+  OrderType,
+  type OrderTypeValue,
+  ORDER_TYPES,
+} from './criteria/index.js';
