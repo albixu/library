@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Book Details - Library Manager</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#17a1cf",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111d21",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<header class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark sticky top-0 z-10">
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-400">arrow_back</span>
+</button>
+<h1 class="text-xl font-bold tracking-tight">Book Details</h1>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+<span>Check Out</span>
+</button>
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-400">more_vert</span>
+</button>
+</div>
+</header>
+<main class="flex-1 flex overflow-hidden">
+<aside class="w-80 border-r border-slate-200 dark:border-slate-800 p-6 flex flex-col gap-6 overflow-y-auto hidden lg:flex bg-white dark:bg-background-dark">
+<div class="w-full aspect-[3/4] rounded-xl overflow-hidden shadow-2xl">
+<img alt="The Midnight Library Cover" class="w-full h-full object-cover" data-alt="Book cover of The Midnight Library with dark mystical theme" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD18UIXL3BzIC5uufMZIkvdK-ojQT5oYUK7dcxPLNu9FCt_t7QTV-qP2kkpy7xyGUCn30wg5rQPJvvJSv9mzK0sPzhuZqWgkbdjrvdfPlChMjIUkqnGBvJ7hcvYX1eN66q-UPTkqlNL_QdubQXQf2iOGbUL8pBmA5nc8dnc3KXQ1zx1nsTRqQA7Sd12zop-jgDXWZJGTuZWqgluq8XMuv1YGPVimPdvRPHlpsDPqHf1saQKR6lirqPwm0ysGHDRNT46C2HVv_g75x8"/>
+</div>
+<div class="space-y-4">
+<div class="flex flex-col gap-2">
+<span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</span>
+<div class="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 text-emerald-500 rounded-lg border border-emerald-500/20">
+<span class="material-symbols-outlined text-[18px] fill">fiber_manual_record</span>
+<span class="font-bold">Available in Branch</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<button class="flex flex-col items-center justify-center gap-1 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-primary">edit</span>
+<span class="text-xs font-medium">Edit</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-primary">share</span>
+<span class="text-xs font-medium">Share</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-primary">bookmark</span>
+<span class="text-xs font-medium">Reserve</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors">
+<span class="material-symbols-outlined">delete</span>
+<span class="text-xs font-medium">Delete</span>
+</button>
+</div>
+</div>
+<div class="mt-auto p-4 bg-primary/5 border border-primary/10 rounded-xl">
+<p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Library ID</p>
+<p class="font-mono text-primary font-bold">LIB-8842-X9</p>
+</div>
+</aside>
+<section class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-6 lg:p-10">
+<div class="max-w-4xl mx-auto space-y-8">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="space-y-2">
+<h2 class="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-slate-50">The Midnight Library</h2>
+<div class="flex items-center gap-4 text-lg">
+<span class="text-primary font-semibold">Matt Haig</span>
+<span class="text-slate-300 dark:text-slate-700">|</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-yellow-500 fill text-[20px]">star</span>
+<span class="font-bold">4.8</span>
+<span class="text-slate-500 dark:text-slate-400 text-sm">(1,240 reviews)</span>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800/50 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+<h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">description</span>
+                        Synopsis
+                    </h3>
+<p class="leading-relaxed text-slate-600 dark:text-slate-300">
+                        Between life and death there is a library, and within that library, the shelves go on forever. Every book provides a chance to try another life you could have lived. To see how things would be if you had made other choices... Would you have done anything different, if you had the chance to undo your regrets? A dazzling novel about all the choices that go into a life well lived.
+                    </p>
+<button class="mt-4 text-primary font-semibold text-sm hover:underline flex items-center gap-1">
+                        Read more <span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+<div class="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+<p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">ISBN-13</p>
+<div class="flex items-center justify-between">
+<p class="font-semibold">978-0525559474</p>
+<span class="material-symbols-outlined text-slate-400 text-[18px] cursor-pointer hover:text-primary">content_copy</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+<p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Language</p>
+<p class="font-semibold">English</p>
+</div>
+<div class="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+<p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Publisher</p>
+<p class="font-semibold">Viking</p>
+</div>
+<div class="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+<p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Format</p>
+<p class="font-semibold">Hardcover</p>
+</div>
+<div class="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+<p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Pages</p>
+<p class="font-semibold">304 pages</p>
+</div>
+<div class="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+<p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Genre</p>
+<p class="font-semibold">Contemporary Fiction</p>
+</div>
+</div>
+<div class="space-y-4">
+<h3 class="text-lg font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">inventory_2</span>
+                        Inventory &amp; Copies
+                    </h3>
+<div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/30">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
+<th class="px-6 py-3">Location</th>
+<th class="px-6 py-3">Barcode</th>
+<th class="px-6 py-3">Status</th>
+<th class="px-6 py-3 text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+<tr>
+<td class="px-6 py-4 font-medium">Main Wing - A4</td>
+<td class="px-6 py-4 font-mono text-sm">334000129482</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">Available</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:text-primary/80 font-bold text-sm">Track</button>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4 font-medium">Fiction Section - Shelf 12</td>
+<td class="px-6 py-4 font-mono text-sm">334000129485</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">Reserved</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:text-primary/80 font-bold text-sm">Track</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+</main>
+<nav class="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark px-4 py-2 flex items-center justify-around">
+<a class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px] font-bold">Dashboard</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined fill">menu_book</span>
+<span class="text-[10px] font-bold">Catalog</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary" href="#">
+<span class="material-symbols-outlined">handshake</span>
+<span class="text-[10px] font-bold">Lending</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-bold">Settings</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BiblioManager - Book Details</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#17a1cf",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111d21",
+                        "surface-dark": "#1a2b32",
+                        "border-dark": "#243e47"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #243e47;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="w-64 flex-shrink-0 border-r border-border-dark bg-background-dark flex flex-col h-screen">
+<div class="p-6 flex items-center gap-3">
+<div class="bg-primary rounded-lg p-1.5 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-2xl">menu_book</span>
+</div>
+<div>
+<h1 class="text-white text-lg font-bold leading-none">BiblioManager</h1>
+<p class="text-primary text-xs font-medium uppercase tracking-wider mt-1">Admin Portal</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1 mt-4">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-surface-dark hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[fill]">book_2</span>
+<span class="text-sm font-medium">Library</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-surface-dark hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">swap_horizontal_circle</span>
+<span class="text-sm font-medium">Borrowing</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-surface-dark hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="text-sm font-medium">Patrons</span>
+</a>
+<div class="pt-4 pb-2">
+<p class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Account</p>
+</div>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-surface-dark hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-surface-dark hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-sm font-medium">Profile</span>
+</a>
+</nav>
+<div class="p-4 border-t border-border-dark">
+<div class="flex items-center gap-3 p-2 bg-surface-dark rounded-xl">
+<img class="w-10 h-10 rounded-full border border-border-dark" data-alt="User avatar icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGegv4UsAqzuQY-e-r1iyev09EOQdnBn98ePs-xcqxe78MS2mY8rcQkGpqU2e7nbuaR9RssXWV8xg2pZAojQspJSFxuBIMapG8zCz0swYDc1ImNDulk5364Oud_te1--Fu5vDNijJ6uuzljkeHB04YFywy2RQH_7EndfPxN11eoR9ZCxvZhqt1qHwwtAeshsw6TPUY9apBje-jwkzQozxGu-4cv31NCNsBFfZYaLwCUomTWbOx12PtR4cEtaBPnOlVAlUj7kO4WC8"/>
+<div class="overflow-hidden">
+<p class="text-sm font-semibold truncate text-white">Alex Librarian</p>
+<p class="text-xs text-slate-400 truncate">Head of Dept.</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col h-screen overflow-hidden">
+<!-- Header / Breadcrumbs -->
+<header class="h-16 flex items-center justify-between px-8 border-b border-border-dark bg-background-dark/50 backdrop-blur-md sticky top-0 z-10">
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 text-slate-400 hover:text-white transition-colors group">
+<span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_back</span>
+<span class="text-sm font-medium">Back to List</span>
+</button>
+<div class="h-4 w-px bg-border-dark mx-2"></div>
+<nav class="flex items-center gap-2 text-sm text-slate-500">
+<a class="hover:text-primary transition-colors" href="#">Library</a>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Fiction</a>
+<span class="material-symbols-outlined text-xs text-primary">chevron_right</span>
+<span class="text-slate-200 font-medium">The Midnight Library</span>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-border-dark hover:bg-surface-dark transition-colors text-slate-400 hover:text-white">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-border-dark hover:bg-surface-dark transition-colors text-slate-400 hover:text-white">
+<span class="material-symbols-outlined">search</span>
+</button>
+</div>
+</header>
+<!-- Book Details Scrollable Area -->
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<div class="max-w-7xl mx-auto px-8 py-10">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Left Column: Image & Status -->
+<div class="lg:col-span-4 space-y-8">
+<div class="relative group">
+<div class="absolute -inset-1 bg-gradient-to-b from-primary/20 to-transparent blur-2xl rounded-xl opacity-50"></div>
+<div class="relative rounded-xl overflow-hidden shadow-2xl border border-border-dark aspect-[2/3] bg-surface-dark">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Modern book cover for The Midnight Library featuring a stylized cosmic clock" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDm-E9VE9mAiCQoqi-BbM8JAFwtWTUuVXXrK0Ut96_1gEFAfS_61aU4-COifNzh8TAsPvGY6cM8HvUPu7_o_-9xxLfqFalw2iKnrlaB3wjrDD5-EQ3VU8maUTXuB8k9wESGs-awZHo4M3_S1F1B-jFM6fTzkzpOwmpS7QUkN7l1Jnj2u-Pg7C7zeKipF9vrHtWbi5Kldk2rERBgNnVHNBV3iC76t6sahevJZfiab002bc5fgU6K6CF3v1U3X8n5IaE_87H583laVg"/>
+<div class="absolute top-4 right-4">
+<span class="bg-primary/90 backdrop-blur text-white px-3 py-1.5 rounded-full text-xs font-bold tracking-wider shadow-lg">AVAILABLE</span>
+</div>
+</div>
+</div>
+<!-- Main Actions Card -->
+<div class="bg-surface-dark border border-border-dark rounded-2xl p-6 space-y-4">
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">bookmark_add</span>
+                                Borrow this Book
+                            </button>
+<div class="grid grid-cols-2 gap-3">
+<button class="flex-1 border border-border-dark hover:bg-background-dark text-slate-300 font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">edit</span>
+                                    Edit Details
+                                </button>
+<button class="flex-1 border border-border-dark hover:bg-background-dark text-slate-300 font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm text-yellow-500">star</span>
+                                    Favorite
+                                </button>
+</div>
+</div>
+</div>
+<!-- Right Column: Content -->
+<div class="lg:col-span-8 space-y-10">
+<!-- Heading Section -->
+<section class="space-y-4">
+<div class="flex flex-wrap items-center gap-3">
+<span class="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-widest">Contemporary Fiction</span>
+<span class="bg-green-500/10 text-green-500 border border-green-500/20 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-widest">Hardcover</span>
+</div>
+<h2 class="text-5xl font-black tracking-tight text-white leading-tight">The Midnight Library</h2>
+<div class="flex items-center gap-3 text-xl text-slate-400">
+<span>by</span>
+<a class="text-primary hover:underline font-medium" href="#">Matt Haig</a>
+<div class="w-1.5 h-1.5 rounded-full bg-slate-700 mx-2"></div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-yellow-500 text-lg">star</span>
+<span class="text-slate-200 font-bold">4.8</span>
+<span class="text-sm">(2,401 reviews)</span>
+</div>
+</div>
+</section>
+<!-- Synopsis Section -->
+<section class="space-y-4 max-w-2xl">
+<h3 class="text-lg font-bold text-white border-l-4 border-primary pl-4">Synopsis</h3>
+<div class="text-slate-400 leading-relaxed space-y-4 text-lg font-light">
+<p>
+                                    Between life and death there is a library, and within that library, the shelves go on forever. Every book provides a chance to try another life you could have lived. To see how things would be if you had made other choices... Would you have done anything different, if you had the chance to undo your regrets?
+                                </p>
+<p>
+                                    Nora Seed finds herself faced with this decision. Faced with the possibility of changing her life for a new one, following a different career, undoing old breakups, realizing her dreams of becoming a glaciologist; she must search within herself as she travels through the Midnight Library to decide what is truly fulfilling in life.
+                                </p>
+</div>
+</section>
+<!-- Metadata Grid -->
+<section class="bg-surface-dark/40 border border-border-dark rounded-2xl p-8 grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-4">
+<div class="space-y-1">
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">barcode_scanner</span> ISBN-13
+                                </p>
+<p class="text-slate-200 font-medium">978-0525559474</p>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">language</span> Language
+                                </p>
+<div class="flex items-center gap-2">
+<img class="w-4 h-3 rounded-sm opacity-80" data-alt="US flag icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCG2vtWEASoI3KzDxMtk4xvjJZTAltVtopjBp46tw33GiqjUzah6Fm3K3MNvec_yThRQuQehO2ZmW8LkNVN6WPbbnygZr6-WgGbYsjI3xHQTUZnv5LYNcip12S-b6JebDS4wXcaT04Fz_VKON2m6IQEnpU1U5ZCvyIX7nyukDi_ASa6nxgiTXQFjOmFryFrSk1w3XG6qXX1tl_2gU9CKY2AJs-hKnTp6D7OMMeRNtzHrGtCSEu-_DZu-kDY1JzCuw5Hlas5amkz19s"/>
+<p class="text-slate-200 font-medium">English (US)</p>
+</div>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">stairs</span> Level
+                                </p>
+<p class="text-slate-200 font-medium">Intermediate</p>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">calendar_today</span> Published
+                                </p>
+<p class="text-slate-200 font-medium">2020</p>
+</div>
+<div class="space-y-1 border-t border-border-dark/50 pt-4 col-span-1">
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">category</span> Category
+                                </p>
+<p class="text-slate-200 font-medium">Literature / Fiction</p>
+</div>
+<div class="space-y-1 border-t border-border-dark/50 pt-4 col-span-1">
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">auto_stories</span> Format
+                                </p>
+<p class="text-slate-200 font-medium">Hardcover, E-book</p>
+</div>
+<div class="space-y-1 border-t border-border-dark/50 pt-4 col-span-1">
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">layers</span> Page Count
+                                </p>
+<p class="text-slate-200 font-medium">304 pages</p>
+</div>
+<div class="space-y-1 border-t border-border-dark/50 pt-4 col-span-1">
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">apartment</span> Publisher
+                                </p>
+<p class="text-slate-200 font-medium">Viking</p>
+</div>
+</section>
+<!-- Footer Details -->
+<div class="flex items-center justify-between py-6 border-t border-border-dark">
+<div class="flex items-center gap-8">
+<div class="flex -space-x-3">
+<img class="w-10 h-10 rounded-full border-2 border-background-dark" data-alt="User profile pic 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsA_OiKDz8J4gibysP_qClBapSgRU70SeGV4UWXKFDUv_8Ta2p3c3k-QNtEB04-xWR1X-yebSGPJ0bDqVFt_Yiy4vFsBuqdwQCoKSfNEqmSm_293Yx1X9CUN3I1sh6Ns2Ln_EtjNRA6xFbrqMKfjTKQznK4bpJhYCJTyRoj-RtEuYoYBu7ZGXgwrmd__1p3rIFaqQaOeGva06bEra4KUOD0LRZKDnkAbXDjNsg3wIabYzRAmHWm_RTVGD2i3EZWs-k4uFlHcdo2HI"/>
+<img class="w-10 h-10 rounded-full border-2 border-background-dark" data-alt="User profile pic 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFMxiU56NZ_DU_C8KQrm5m8a6sur6ygoB27VEhIRmKww2X942hD-8Cb7uz5UrpFDZCGZBjVKWRSADlGa3jO0Z8ubruumu85BtRyQmYmWT3a8UhMB1Tsw5Fh4_4Teoz7NUREKiDKAHISktABRaO0bpIqdmxrSpaif69VqDyDQYGee6rmgl9XKNsSIH1ww5wdmv7XzCM3X3_JKfwoEs-Ak3Lk7dulUHVF7vWHCgPtAxFbvv3rCO-UfvEGANILFiU5x01EKaCMl842qo"/>
+<img class="w-10 h-10 rounded-full border-2 border-background-dark" data-alt="User profile pic 3" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuysHKv9QeAwE3rmCwq4KJk4mJSP6reWINBaERYg7yCTXUAyxl7GXJndwNXN9VrBj-vFWjkgW2SM-qoDR0yRNPPXmt7rktEixIOTs7EwgPKSp7hwrOd5tO8ycmFqIxijxOtxx4zQlGzZuZN29vlzCTyBVcs7ikpRPIwq7qTckt0ojyvWm7STUPIlQjOuzo77NHnzcPgog1nonfPhc3j6BlCT-1AyFcetP7KmXin0mvO92C_a4J2x0r5WaJ1PJZDJpcv7VYazIlGWM"/>
+<div class="w-10 h-10 rounded-full border-2 border-background-dark bg-surface-dark flex items-center justify-center text-[10px] font-bold text-slate-400">+12</div>
+</div>
+<p class="text-sm text-slate-500 font-medium">15 patrons currently reading or in queue</p>
+</div>
+<button class="text-sm font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+                                View Reading History
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Related Section -->
+<section class="mt-20 border-t border-border-dark pt-12">
+<div class="flex items-end justify-between mb-8">
+<div>
+<h3 class="text-2xl font-bold text-white">More by Matt Haig</h3>
+<p class="text-slate-500 mt-1">Discover other works by this author in our library</p>
+</div>
+<a class="text-sm font-bold text-primary hover:underline" href="#">View all titles</a>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+<!-- Similar Book Card 1 -->
+<div class="group cursor-pointer">
+<div class="aspect-[2/3] rounded-lg overflow-hidden bg-surface-dark border border-border-dark mb-3 relative">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-105" data-alt="Book cover for Reasons to Stay Alive" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDLswOxMv3-vAQ8zp3RW3ihMLbMcDz3nkkj8jyQv07J_q1fy6CfoS_W75I8sfh1mUMW8Zz6IEQzsaHnw8qIWU711ssKyd0jk9m6sfaAiVRar1lqEV7GB0cmb72nWmdcelhd9MKU--KTCmZWA9b5YPKX7itahi8-WbSjqXNmJ3RNxM9CdaNjBWsZaDsrSxlR-vsSOSSJDzYfy-ySTR8xsvxL-fs0XkL6NAv4xftfAi3XIYDvtXV9-za8-dq3k_ITVInKZ-gSmO1F1E"/>
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-3xl">info</span>
+</div>
+</div>
+<h4 class="text-white font-semibold text-sm truncate">Reasons to Stay Alive</h4>
+<p class="text-slate-500 text-xs">Matt Haig • 2015</p>
+</div>
+<!-- Similar Book Card 2 -->
+<div class="group cursor-pointer">
+<div class="aspect-[2/3] rounded-lg overflow-hidden bg-surface-dark border border-border-dark mb-3 relative">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-105" data-alt="Book cover for The Humans" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVhv2K1I78bkD_pXub-fwKTfKDKomXyWN3WAPLUJDNZMRejzJGdhMoxw2p6P6nGHNLeDtaYfFAowlTXDq6HR6A8wGb-xG8yYjLxqiak1-wXHFnYnEKh_vXjOXr3OWrK_aFvcPA4IvnRmEWOlNfDmwta4XkaPkrxbsdkQ1mAqYweUqYGDAXiLUOCm_UKfDhrk-lKPejrCjmAAv1q1_mesdRZA5tFeimJwO5WNv8VKwaQ7UGS-eWlflPN8TzAhqbLWqOtYuvkYkTgRo"/>
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-3xl">info</span>
+</div>
+</div>
+<h4 class="text-white font-semibold text-sm truncate">The Humans</h4>
+<p class="text-slate-500 text-xs">Matt Haig • 2013</p>
+</div>
+<!-- Similar Book Card 3 -->
+<div class="group cursor-pointer">
+<div class="aspect-[2/3] rounded-lg overflow-hidden bg-surface-dark border border-border-dark mb-3 relative">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-105" data-alt="Book cover for Notes on a Nervous Planet" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBv-e6w2tlhPOhiy-dbjfnwST6N-edGc-qbL7CCC420DGhUzgKmv_snDWi-0QzHCOW5xdlML_Q-nsl-I76lV0c2dgbddumnILtBLSrvESYzkQ1KBINxIFZfd31YTrzQ9umIeZp5FaGUWGhFfJpgpmr6mZ2JEl0pK1WeOlWNrh_TvAFFWNczZXBNTeT0JdgnBC7_joB0PCEky9b7-lFzbWHviTq_JoYlWdZ-9PH-TumkawK0-zCxG5d1XQ2VNDOstViw9nRAWh7y_9o"/>
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-3xl">info</span>
+</div>
+</div>
+<h4 class="text-white font-semibold text-sm truncate">Notes on a Nervous Planet</h4>
+<p class="text-slate-500 text-xs">Matt Haig • 2018</p>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+</body></html>

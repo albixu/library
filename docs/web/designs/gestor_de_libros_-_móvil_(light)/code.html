@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BiblioManager Mobile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#17a1cf",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111d21",
+                        "surface-dark": "#1a2c32",
+                        "border-dark": "#243e47",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #243e47;
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-light text-slate-900 min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<nav class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<button class="p-2 text-slate-600">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="text-xl font-bold tracking-tight text-primary">BiblioManager</h1>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-2 text-slate-600">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="p-2 text-slate-600">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto px-4 pb-24">
+<!-- Search & Filter Quick Actions -->
+<div class="py-4 flex gap-2 overflow-x-auto no-scrollbar custom-scrollbar">
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-full text-sm font-medium whitespace-nowrap">
+<span class="material-symbols-outlined text-sm">book</span> All Books
+            </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-full text-sm font-medium whitespace-nowrap">
+<span class="material-symbols-outlined text-sm">star</span> Favorites
+            </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-full text-sm font-medium whitespace-nowrap">
+<span class="material-symbols-outlined text-sm">upload</span> Lent Out
+            </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-full text-sm font-medium whitespace-nowrap">
+<span class="material-symbols-outlined text-sm">schedule</span> Reserved
+            </button>
+</div>
+<!-- Section Header -->
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-lg font-semibold text-slate-900">Library Collection</h2>
+<div class="text-sm text-slate-500 dark:text-slate-400">124 Total</div>
+</div>
+<!-- Book Card List -->
+<div class="space-y-3">
+<!-- Book Card 1 -->
+<div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+<div class="flex justify-between items-start mb-2">
+<div class="flex-1">
+<h3 class="font-bold text-slate-900 leading-snug">The Great Gatsby</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">F. Scott Fitzgerald</p>
+</div>
+<span class="px-2 py-1 bg-green-500/20 text-green-500 text-[10px] font-bold uppercase tracking-wider rounded">Available</span>
+</div>
+<div class="flex gap-2 mb-3">
+<span class="text-[11px] px-2 py-0.5 bg-primary/10 text-primary rounded border border-primary/20">Classic</span>
+<span class="text-[11px] px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200">English 🇺🇸</span>
+</div>
+<div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+<div class="flex items-center gap-4 text-slate-500">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">barcode</span>
+<span class="text-xs">978-0743273565</span>
+</div>
+</div>
+<button class="flex items-center gap-1 text-primary text-sm font-medium">
+                        Details <span class="material-symbols-outlined text-lg">keyboard_arrow_down</span>
+</button>
+</div>
+</div>
+<!-- Book Card 2 -->
+<div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+<div class="flex justify-between items-start mb-2">
+<div class="flex-1">
+<h3 class="font-bold text-slate-900 leading-snug">Don Quijote de la Mancha</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Miguel de Cervantes</p>
+</div>
+<span class="px-2 py-1 bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider rounded">Lent Out</span>
+</div>
+<div class="flex gap-2 mb-3">
+<span class="text-[11px] px-2 py-0.5 bg-primary/10 text-primary rounded border border-primary/20">Fiction</span>
+<span class="text-[11px] px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200">Spanish 🇪🇸</span>
+</div>
+<div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+<div class="flex flex-col gap-2 mb-3">
+<p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">The story of the noble alonso quijano who, after reading too many chivalric romances, determines to become a knight-errant.</p>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4 text-slate-500">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">barcode</span>
+<span class="text-xs">978-8420412146</span>
+</div>
+</div>
+<button class="flex items-center gap-1 text-primary text-sm font-medium">
+                            Details <span class="material-symbols-outlined text-lg rotate-180">keyboard_arrow_down</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Book Card 3 -->
+<div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+<div class="flex justify-between items-start mb-2">
+<div class="flex-1">
+<h3 class="font-bold text-slate-900 leading-snug">Les Misérables</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Victor Hugo</p>
+</div>
+<span class="px-2 py-1 bg-slate-500/20 text-slate-400 text-[10px] font-bold uppercase tracking-wider rounded">Reserved</span>
+</div>
+<div class="flex gap-2 mb-3">
+<span class="text-[11px] px-2 py-0.5 bg-primary/10 text-primary rounded border border-primary/20">History</span>
+<span class="text-[11px] px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200">French 🇫🇷</span>
+</div>
+<div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+<div class="flex items-center gap-4 text-slate-500">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">barcode</span>
+<span class="text-xs">978-0451419439</span>
+</div>
+</div>
+<button class="flex items-center gap-1 text-primary text-sm font-medium">
+                        Details <span class="material-symbols-outlined text-lg">keyboard_arrow_down</span>
+</button>
+</div>
+</div>
+<!-- Book Card 4 -->
+<div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+<div class="flex justify-between items-start mb-2">
+<div class="flex-1">
+<h3 class="font-bold text-slate-900 leading-snug">Clean Code</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Robert C. Martin</p>
+</div>
+<span class="px-2 py-1 bg-green-500/20 text-green-500 text-[10px] font-bold uppercase tracking-wider rounded">Available</span>
+</div>
+<div class="flex gap-2 mb-3">
+<span class="text-[11px] px-2 py-0.5 bg-primary/10 text-primary rounded border border-primary/20">Technology</span>
+<span class="text-[11px] px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200">English 🇺🇸</span>
+</div>
+<div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+<div class="flex items-center gap-4 text-slate-500">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">barcode</span>
+<span class="text-xs">978-0132350884</span>
+</div>
+</div>
+<button class="flex items-center gap-1 text-primary text-sm font-medium">
+                        Details <span class="material-symbols-outlined text-lg">keyboard_arrow_down</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Add New Book FAB -->
+<button class="fixed bottom-24 right-6 size-14 bg-primary text-white rounded-full shadow-lg shadow-primary/40 flex items-center justify-center transition-transform active:scale-90">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</main>
+<!-- Sidebar Drawer (Simulated - Hidden by default in actual mobile but visible here as concept) -->
+<!-- This would normally overlay when clicking the menu button -->
+<div class="fixed inset-0 z-50 bg-black/60 pointer-events-none opacity-0 transition-opacity">
+<div class="absolute left-0 top-0 h-full w-4/5 bg-background-dark border-r border-border-dark p-6 pointer-events-auto transform -translate-x-full transition-transform">
+<div class="flex items-center justify-between mb-8">
+<h3 class="text-xl font-bold">Menu</h3>
+<button class="text-slate-400"><span class="material-symbols-outlined">close</span></button>
+</div>
+<div class="space-y-6">
+<div>
+<h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Navigation</h4>
+<ul class="space-y-4">
+<li class="flex items-center gap-3 text-primary font-medium">
+<span class="material-symbols-outlined">library_books</span> Library
+                        </li>
+<li class="flex items-center gap-3 text-slate-300">
+<span class="material-symbols-outlined">trending_up</span> Activity
+                        </li>
+<li class="flex items-center gap-3 text-slate-300">
+<span class="material-symbols-outlined">person</span> Profile
+                        </li>
+</ul>
+</div>
+<div>
+<h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Quick Languages</h4>
+<div class="flex gap-3 flex-wrap">
+<div class="px-3 py-1.5 bg-surface-dark rounded-lg text-xs font-medium border border-border-dark">English 🇺🇸</div>
+<div class="px-3 py-1.5 bg-surface-dark rounded-lg text-xs font-medium border border-border-dark">Spanish 🇪🇸</div>
+<div class="px-3 py-1.5 bg-surface-dark rounded-lg text-xs font-medium border border-border-dark">French 🇫🇷</div>
+</div>
+</div>
+<div>
+<h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Settings</h4>
+<li class="flex items-center gap-3 text-slate-300 list-none">
+<span class="material-symbols-outlined">settings</span> App Settings
+                    </li>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Navigation Bar (Mobile Native Style) -->
+<div class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 pb-safe">
+<div class="flex items-center justify-around h-16">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">library_books</span>
+<span class="text-[10px] font-bold uppercase tracking-tight">Library</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="text-[10px] font-bold uppercase tracking-tight">Search</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] font-bold uppercase tracking-tight">Stats</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-bold uppercase tracking-tight">Account</span>
+</a>
+</div>
+</div>
+</body></html>
