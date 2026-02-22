@@ -27,12 +27,14 @@ import type { Book } from '../../../domain/entities/Book.js';
 import type { Author } from '../../../domain/entities/Author.js';
 import type { BookType } from '../../../domain/entities/BookType.js';
 import type { Category } from '../../../domain/entities/Category.js';
+import type { Criteria } from '../../../domain/criteria/Criteria.js';
 import { DuplicateISBNError, BookNotFoundError } from '../../../domain/errors/DomainErrors.js';
 import type {
   BookRepository,
   SaveBookParams,
   UpdateBookParams,
   DuplicateCheckResult,
+  SearchBooksResult,
 } from '../../../application/ports/BookRepository.js';
 import {
   books,
@@ -328,6 +330,28 @@ export class PostgresBookRepository implements BookRepository {
       .from(books) as { count: number }[];
 
     return result[0]?.count ?? 0;
+  }
+
+  /**
+   * Searches books using the Criteria pattern
+   *
+   * Supports filtering, ordering, and cursor-based pagination.
+   * When an embedding is provided, it enables semantic similarity search
+   * with a minimum threshold of 70% similarity.
+   *
+   * @param _criteria - Domain criteria object with filters, order, limit, cursor
+   * @param _embedding - Optional embedding vector for semantic search (SIMILAR_TO filter)
+   * @returns Promise resolving to paginated search results with similarity scores
+   *
+   * @throws Error - Not implemented yet (Task 4: HU-012-T4)
+   */
+  async search(_criteria: Criteria, _embedding?: number[]): Promise<SearchBooksResult> {
+    // TODO: Implement in Task 4 (HU-012-T4)
+    // - Build WHERE clause from criteria filters
+    // - Add pgvector similarity search when embedding is provided
+    // - Apply ordering (similarity DESC for text search, title ASC otherwise)
+    // - Implement cursor-based pagination
+    throw new Error('PostgresBookRepository.search() not implemented yet - see Task HU-012-T4');
   }
 
   // ==================== Private Helpers ====================

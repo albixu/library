@@ -11,6 +11,31 @@
  */
 
 import type { Book } from '../../domain/entities/Book.js';
+import type { Criteria } from '../../domain/criteria/Criteria.js';
+
+/**
+ * A book with its similarity score (for semantic search results)
+ */
+export interface BookWithScore {
+  /** The book entity */
+  book: Book;
+  /** Similarity score from semantic search (0-1), null if no semantic search was performed */
+  similarityScore: number | null;
+}
+
+/**
+ * Result of a search operation with pagination metadata
+ */
+export interface SearchBooksResult {
+  /** Books matching the search criteria with optional similarity scores */
+  items: BookWithScore[];
+  /** Total count of matching books (for pagination info) */
+  totalCount: number;
+  /** Whether there are more results after the current page */
+  hasNextPage: boolean;
+  /** Cursor to fetch the next page, null if no more pages */
+  nextCursor: string | null;
+}
 
 /**
  * Parameters for saving a book with its embedding
@@ -160,4 +185,17 @@ export interface BookRepository {
    * @returns Promise resolving to the total count
    */
   count(): Promise<number>;
+
+  /**
+   * Searches books using the Criteria pattern
+   *
+   * Supports filtering, ordering, and cursor-based pagination.
+   * When an embedding is provided, it enables semantic similarity search
+   * with a minimum threshold of 70% similarity.
+   *
+   * @param criteria - Domain criteria object with filters, order, limit, cursor
+   * @param embedding - Optional embedding vector for semantic search (SIMILAR_TO filter)
+   * @returns Promise resolving to paginated search results with similarity scores
+   */
+  search(criteria: Criteria, embedding?: number[]): Promise<SearchBooksResult>;
 }
