@@ -326,6 +326,17 @@ body,
 - [ ] Verificar accesibilidad (aria-labels, contraste de colores)
 - [ ] Verificar que todos los tests pasan
 
+### Tarea 10: Actualizar documentacion y Storybook
+**Estimacion**: 1 hora
+
+- [ ] Crear story de Storybook para `ThemeToggleComponent`
+- [ ] Crear story de Storybook para `HeaderComponent`
+- [ ] Crear story de Storybook para `FooterComponent`
+- [ ] Crear story de Storybook para `MainLayoutComponent`
+- [ ] Crear documentacion Markdown en `docs/web/story_books/layout-components.md`
+- [ ] Verificar que todas las stories se visualizan correctamente en Storybook
+- [ ] Documentar variantes (dark/light mode) en las stories
+
 ---
 
 ## Estimacion Total
@@ -341,7 +352,8 @@ body,
 | Integracion | 0.5 |
 | Tests E2E | 1 |
 | Revision | 0.5 |
-| **Total** | **7 horas** |
+| Documentacion y Storybook | 1 |
+| **Total** | **8 horas** |
 
 ---
 
