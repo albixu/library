@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
+import { applicationConfig, moduleMetadata } from '@storybook/angular';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 import { ThemeService } from '@core/services/theme.service';
@@ -27,12 +27,12 @@ const meta: Meta<HeaderComponent> = {
   component: HeaderComponent,
   tags: ['autodocs'],
   decorators: [
+    applicationConfig({
+      providers: [provideAnimationsAsync()],
+    }),
     moduleMetadata({
       imports: [ThemeToggleComponent],
-      providers: [
-        provideAnimationsAsync(),
-        { provide: ThemeService, useFactory: () => createMockThemeService() },
-      ],
+      providers: [{ provide: ThemeService, useFactory: () => createMockThemeService() }],
     }),
   ],
   parameters: {
@@ -82,11 +82,11 @@ export const Default: Story = {
 
 export const DarkTheme: Story = {
   decorators: [
+    applicationConfig({
+      providers: [provideAnimationsAsync()],
+    }),
     moduleMetadata({
-      providers: [
-        provideAnimationsAsync(),
-        { provide: ThemeService, useFactory: () => createMockThemeService(true) },
-      ],
+      providers: [{ provide: ThemeService, useFactory: () => createMockThemeService(true) }],
     }),
   ],
   parameters: {
@@ -101,11 +101,11 @@ export const DarkTheme: Story = {
 
 export const LightTheme: Story = {
   decorators: [
+    applicationConfig({
+      providers: [provideAnimationsAsync()],
+    }),
     moduleMetadata({
-      providers: [
-        provideAnimationsAsync(),
-        { provide: ThemeService, useFactory: () => createMockThemeService(false) },
-      ],
+      providers: [{ provide: ThemeService, useFactory: () => createMockThemeService(false) }],
     }),
   ],
   parameters: {

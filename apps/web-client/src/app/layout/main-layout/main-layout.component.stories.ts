@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
+import { applicationConfig, moduleMetadata } from '@storybook/angular';
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { ThemeService } from '@core/services/theme.service';
@@ -27,12 +27,11 @@ const meta: Meta<MainLayoutComponent> = {
   component: MainLayoutComponent,
   tags: ['autodocs'],
   decorators: [
+    applicationConfig({
+      providers: [provideAnimationsAsync(), provideRouter([])],
+    }),
     moduleMetadata({
-      providers: [
-        provideAnimationsAsync(),
-        provideRouter([]),
-        { provide: ThemeService, useFactory: () => createMockThemeService() },
-      ],
+      providers: [{ provide: ThemeService, useFactory: () => createMockThemeService() }],
     }),
   ],
   parameters: {
