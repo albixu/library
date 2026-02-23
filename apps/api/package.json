@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "build:prod": "tsc -p tsconfig.scripts.json",
+    "start": "node dist/src/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -25,7 +26,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "consolidate:books": "tsx scripts/consolidate-books.ts",
-    "seed:database": "tsx scripts/seed-database.ts"
+    "seed:database": "tsx scripts/seed-database.ts",
+    "seed:prod": "node dist/scripts/seed-database.js"
   },
   "dependencies": {
     "drizzle-orm": "^0.38.3",

@@ -12,13 +12,16 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --ignore-scripts
 
-# Copy source code
+# Copy source code, scripts and drizzle migrations
 COPY tsconfig.json ./
+COPY tsconfig.scripts.json ./
 COPY drizzle.config.ts ./
 COPY src ./src
+COPY scripts ./scripts
+COPY drizzle ./drizzle
 
-# Build TypeScript
-RUN npm run build
+# Build TypeScript (including scripts for production seed)
+RUN npm run build:prod
 
 # Prune dev dependencies
 RUN npm prune --production
@@ -49,13 +52,19 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./
 
-# Copy drizzle migrations
-COPY --from=builder --chown=nodejs:nodejs /app/src/infrastructure/driven/persistence/drizzle/migrations ./dist/infrastructure/driven/persistence/drizzle/migrations
+# Copy drizzle migrations (needed for auto-migrate on startup)
+COPY --from=builder --chown=nodejs:nodejs /app/drizzle ./drizzle
+COPY --from=builder --chown=nodejs:nodejs /app/drizzle.config.ts ./
+
+# Create data directory for seed data (books.json will be mounted or copied)
+RUN mkdir -p /app/data && chown nodejs:nodejs /app/data
 
 # Security: Set proper file permissions (read-only for app files)
 RUN chmod -R 555 /app/dist && \
     chmod -R 555 /app/node_modules && \
-    chmod 444 /app/package.json
+    chmod -R 555 /app/drizzle && \
+    chmod 444 /app/package.json && \
+    chmod 444 /app/drizzle.config.ts
 
 # Security: Create tmp directory with proper permissions for runtime needs
 RUN mkdir -p /app/tmp && chown nodejs:nodejs /app/tmp && chmod 755 /app/tmp
@@ -84,4 +93,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))" || exit 1
 
 # Security: Use exec form to avoid shell injection and ensure proper signal handling
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/src/server.js"]

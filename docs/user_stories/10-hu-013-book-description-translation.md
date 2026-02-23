@@ -194,7 +194,7 @@ ADD COLUMN original_description VARCHAR(5000) NOT NULL;
 
 | Configuración | Valor |
 |---------------|-------|
-| **Modelo** | qwen2.5:3b |
+| **Modelo** | qwen2.5:1.5b |
 | **Servicio** | Ollama (Docker) |
 | **Endpoint** | `POST http://ollama:11434/api/generate` |
 | **Timeout** | 60 segundos |
@@ -216,7 +216,7 @@ const userPrompt = `Translate this text to Spanish:\n\n${text}`;
 
 ```json
 {
-  "model": "qwen2.5:3b",
+  "model": "qwen2.5:1.5b",
   "prompt": "<system_prompt>\n\n<user_prompt>",
   "stream": false,
   "options": {
@@ -565,16 +565,16 @@ function transformBook(source: SourceBook): ConsolidatedBook {
 
 ## 12. Consideraciones Técnicas
 
-### 12.1 Descarga del Modelo qwen2.5:3b
+### 12.1 Descarga del Modelo qwen2.5:1.5b
 
 El modelo debe descargarse en el contenedor de Ollama:
 
 ```bash
 # En docker-compose.yml o script de inicialización
-docker exec ollama ollama pull qwen2.5:3b
+docker exec ollama ollama pull qwen2.5:1.5b
 ```
 
-**Tamaño**: ~2GB
+**Tamaño**: ~1GB
 
 ### 12.2 Performance de Traducción
 
@@ -582,7 +582,7 @@ docker exec ollama ollama pull qwen2.5:3b
 |---------|----------------|
 | Tiempo por descripción | 2-5 segundos |
 | Tokens máximos | ~5000 (descripción completa) |
-| Modelo | qwen2.5:3b (optimizado para traducción) |
+| Modelo | qwen2.5:1.5b (optimizado para traducción) |
 
 ### 12.3 Manejo de Errores
 

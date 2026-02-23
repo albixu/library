@@ -7,6 +7,7 @@
 
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { loadEnvConfig } from './infrastructure/config/env.js';
 import { PinoLogger } from './infrastructure/driven/logging/PinoLogger.js';
 import { OllamaEmbeddingService } from './infrastructure/driven/embedding/OllamaEmbeddingService.js';
@@ -45,6 +46,14 @@ async function bootstrap(): Promise<void> {
     const db: DatabaseClient = drizzle(pool, { schema });
 
     bootstrapLogger.info('Database connection established');
+
+    // Run pending migrations (idempotent - only applies new migrations)
+    // Note: In production, migrations run automatically on startup
+    if (env.app.nodeEnv === 'production') {
+      bootstrapLogger.info('Running database migrations...');
+      await migrate(db, { migrationsFolder: './drizzle' });
+      bootstrapLogger.info('Database migrations completed');
+    }
 
     // Initialize adapters
     const embeddingService = new OllamaEmbeddingService({
@@ -126,7 +135,11 @@ async function bootstrap(): Promise<void> {
     process.on('SIGINT', () => shutdown('SIGINT'));
 
   } catch (error) {
-    bootstrapLogger.error('Failed to start server', { error });
+    bootstrapLogger.error('Failed to start server', { 
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     process.exit(1);
   }
 }

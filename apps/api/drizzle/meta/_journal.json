@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1770581217895,
-      "tag": "0000_flippant_pride",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1771845600000,
-      "tag": "0001_hu008_type_category_level_relationships",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1771932000000,
-      "tag": "0002_hu013_add_original_description",
+      "when": 1771850164424,
+      "tag": "0000_friendly_talkback",
       "breakpoints": true
     }
   ]

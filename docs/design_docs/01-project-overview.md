@@ -67,7 +67,7 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | `createdAt` | timestamp | Sí | Fecha de creación |
 | `updatedAt` | timestamp | Sí | Fecha de modificación |
 
-> **Nota HU-013**: Las descripciones de libros se almacenan tanto en su idioma original (`originalDescription`) como traducidas al español (`description`). El campo `language` indica el idioma original usando códigos ISO 639-1. Las traducciones se realizan automáticamente usando Ollama (qwen2.5:3b) durante la creación del libro.
+> **Nota HU-013**: Las descripciones de libros se almacenan tanto en su idioma original (`originalDescription`) como traducidas al español (`description`). El campo `language` indica el idioma original usando códigos ISO 639-1. Las traducciones se realizan automáticamente usando Ollama (qwen2.5:1.5b) durante la creación del libro.
 
 ### 3.2 Entidad: Author
 
@@ -198,7 +198,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 │                           │+ pgvector │   │(embeddings)│  │(translate)│     │
 │                           │           │   │           │   │           │     │
 │                           │ Puerto:   │   │ nomic-    │   │ qwen2.5:  │     │
-│                           │ 5432      │   │ embed-text│   │ 3b        │     │
+│                           │ 5432      │   │ embed-text│   │ 1.5b      │     │
 │                           └───────────┘   └───────────┘   └───────────┘     │
 │                                                                               │
 │                           ┌───────────────────────────────────────────┐      │
@@ -218,7 +218,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 | **Web Client** | Angular 19, Signals, SCSS | Interfaz web responsive con Design System propio | `03-web-client-design.md` |
 | **Base de Datos** | PostgreSQL 16 + pgvector | Almacenamiento de datos y búsqueda vectorial | - |
 | **Embeddings** | Ollama + nomic-embed-text | Generación de embeddings para búsqueda semántica | - |
-| **Traducciones** | Ollama + qwen2.5:3b | Traducción automática de descripciones al español | - |
+| **Traducciones** | Ollama + qwen2.5:1.5b | Traducción automática de descripciones al español | - |
 
 ### 4.3 Flujo de Datos Principal
 
@@ -347,7 +347,7 @@ Usuario                Web Client               API                    PostgreSQ
 | **Runtime** | Node.js 20 LTS |
 | **Base de datos** | PostgreSQL 16 + pgvector |
 | **Embeddings** | Ollama + nomic-embed-text |
-| **Traducciones** | Ollama + qwen2.5:3b |
+| **Traducciones** | Ollama + qwen2.5:1.5b |
 | **Framework HTTP** | Fastify 4.x |
 | **ORM** | Drizzle ORM |
 | **Validación** | Zod |

@@ -73,7 +73,7 @@ const DEFAULTS = {
   OLLAMA_MODEL: 'nomic-embed-text',
   OLLAMA_TIMEOUT_MS: 30000,
   // HU-013: Translation service defaults
-  TRANSLATION_MODEL: 'qwen2.5:3b',
+  TRANSLATION_MODEL: 'qwen2.5:1.5b',
   TRANSLATION_TIMEOUT_MS: 60000,
   TRANSLATION_RETRIES: 3,
 } as const;
