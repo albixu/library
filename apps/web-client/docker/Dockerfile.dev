@@ -1,0 +1,91 @@
+# ================================
+# DEVELOPMENT DOCKERFILE - Web Client
+# Optimized for hot reload with mounted volumes
+# Security-hardened for development environment
+# ================================
+
+FROM node:20-alpine
+
+# Security: Add metadata labels
+LABEL maintainer="Library Team" \
+      org.opencontainers.image.title="Library Web Client (Development)" \
+      org.opencontainers.image.description="Development image for Library Angular Web Client"
+
+# Install dependencies:
+# - chromium, firefox for Playwright E2E tests
+# - su-exec for privilege dropping in entrypoint
+# - fonts for proper text rendering in browsers
+RUN apk update && \
+    apk upgrade --no-cache && \
+    apk add --no-cache \
+        chromium \
+        firefox \
+        su-exec \
+        # Fonts for proper text rendering in browsers
+        font-noto \
+        font-noto-cjk \
+        # Required for some npm packages
+        python3 \
+        make \
+        g++ && \
+    rm -rf /var/cache/apk/*
+
+# Security: Create non-root user with specific UID/GID
+# Using same UID as API for consistency
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs -h /home/nodejs -s /sbin/nologin
+
+WORKDIR /app
+
+# Copy package files first for better layer caching
+COPY --chown=nodejs:nodejs package*.json ./
+
+# Install dependencies and Angular CLI globally
+RUN npm install && \
+    npm install -g @angular/cli && \
+    npm cache clean --force
+
+# Configure Playwright to use system browsers
+ENV PLAYWRIGHT_BROWSERS_PATH=/home/nodejs/.cache/ms-playwright \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
+
+# Install Playwright browsers (chromium and firefox)
+# This needs to run after npm install since playwright is a dev dependency
+RUN npx playwright install chromium firefox && \
+    chown -R nodejs:nodejs /home/nodejs/.cache
+
+# Create necessary directories with proper ownership
+RUN mkdir -p /app/src /app/node_modules /app/.angular/cache && \
+    chown -R nodejs:nodejs /app
+
+# Copy entrypoint script
+COPY --chmod=755 docker/entrypoint.dev.sh /usr/local/bin/entrypoint.sh
+
+# Environment variables
+ENV NODE_ENV=development \
+    NPM_CONFIG_UPDATE_NOTIFIER=false \
+    # Angular CLI analytics disabled
+    NG_CLI_ANALYTICS=false \
+    # Chromium flags for running in container
+    CHROME_BIN=/usr/bin/chromium-browser \
+    FIREFOX_BIN=/usr/bin/firefox
+
+# Expose ports:
+# - 4200: Angular dev server
+# - 6006: Storybook
+EXPOSE 4200 6006
+
+# Health check for Angular dev server
+# Uses wget since it's available in Alpine
+HEALTHCHECK --interval=60s --timeout=10s --start-period=90s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:4200/ || exit 1
+
+# Note: We do NOT switch to nodejs user here because:
+# 1. The entrypoint runs as root to fix volume permissions
+# 2. Then drops privileges to nodejs using su-exec
+ENTRYPOINT ["entrypoint.sh"]
+
+# Default command: start Angular dev server
+# --host 0.0.0.0: Allow connections from outside container
+# --poll 2000: Use polling for file changes (required for Docker volumes on Windows)
+CMD ["ng", "serve", "--host", "0.0.0.0", "--poll", "2000"]
