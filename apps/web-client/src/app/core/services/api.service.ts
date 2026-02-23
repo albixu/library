@@ -5,10 +5,7 @@ import { Observable } from 'rxjs';
 /**
  * Query parameters type for API requests
  */
-export type QueryParams = Record<
-  string,
-  string | number | boolean | string[] | undefined
->;
+export type QueryParams = Record<string, string | number | boolean | string[] | undefined>;
 
 /**
  * ApiService - Core HTTP service for API communication

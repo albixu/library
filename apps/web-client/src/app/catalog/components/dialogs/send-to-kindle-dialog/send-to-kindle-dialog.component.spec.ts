@@ -47,8 +47,8 @@ describe('SendToKindleDialogComponent', () => {
     } as unknown as jest.Mocked<KindleService>;
 
     // Default mock implementations
-    mockKindleService.validateKindleEmail.mockImplementation(
-      (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    mockKindleService.validateKindleEmail.mockImplementation((email: string) =>
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
     );
     mockKindleService.isKindleEmail.mockImplementation((email: string) =>
       email.toLowerCase().endsWith('@kindle.com')
@@ -345,8 +345,8 @@ describe('SendToKindleDialogComponent', () => {
         isKindleEmail: vi.fn(),
       } as unknown as jest.Mocked<KindleService>;
 
-      mockKindleService.validateKindleEmail.mockImplementation(
-        (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      mockKindleService.validateKindleEmail.mockImplementation((email: string) =>
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
       );
       mockKindleService.isKindleEmail.mockImplementation((email: string) =>
         email.toLowerCase().endsWith('@kindle.com')

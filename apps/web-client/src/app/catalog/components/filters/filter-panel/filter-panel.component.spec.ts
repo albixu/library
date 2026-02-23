@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { Component, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { FilterPanelComponent, SearchFilters } from './filter-panel.component.js';
@@ -60,33 +59,25 @@ describe('FilterPanelComponent', () => {
   describe('Filter Inputs', () => {
     it('should render ISBN text filter input', () => {
       fixture.detectChanges();
-      const isbnFilter = fixture.debugElement.query(
-        By.css('[data-testid="isbn-filter"]')
-      );
+      const isbnFilter = fixture.debugElement.query(By.css('[data-testid="isbn-filter"]'));
       expect(isbnFilter).toBeTruthy();
     });
 
     it('should render title text filter input', () => {
       fixture.detectChanges();
-      const titleFilter = fixture.debugElement.query(
-        By.css('[data-testid="title-filter"]')
-      );
+      const titleFilter = fixture.debugElement.query(By.css('[data-testid="title-filter"]'));
       expect(titleFilter).toBeTruthy();
     });
 
     it('should render author text filter input', () => {
       fixture.detectChanges();
-      const authorFilter = fixture.debugElement.query(
-        By.css('[data-testid="author-filter"]')
-      );
+      const authorFilter = fixture.debugElement.query(By.css('[data-testid="author-filter"]'));
       expect(authorFilter).toBeTruthy();
     });
 
     it('should render type select', () => {
       fixture.detectChanges();
-      const typeSelect = fixture.debugElement.query(
-        By.css('[data-testid="type-filter"]')
-      );
+      const typeSelect = fixture.debugElement.query(By.css('[data-testid="type-filter"]'));
       expect(typeSelect).toBeTruthy();
     });
 
@@ -100,9 +91,7 @@ describe('FilterPanelComponent', () => {
 
     it('should render levels multi-select', () => {
       fixture.detectChanges();
-      const levelsSelect = fixture.debugElement.query(
-        By.css('[data-testid="levels-filter"]')
-      );
+      const levelsSelect = fixture.debugElement.query(By.css('[data-testid="levels-filter"]'));
       expect(levelsSelect).toBeTruthy();
     });
 
@@ -177,9 +166,7 @@ describe('FilterPanelComponent', () => {
       component.onIsbnChange('978-0-13-468599-1');
       tick();
 
-      expect(emitSpy).toHaveBeenCalledWith(
-        jasmine.objectContaining({ isbn: '978-0-13-468599-1' })
-      );
+      expect(emitSpy).toHaveBeenCalledWith(jasmine.objectContaining({ isbn: '978-0-13-468599-1' }));
     }));
 
     it('should emit filtersChange when title changes', fakeAsync(() => {
@@ -189,9 +176,7 @@ describe('FilterPanelComponent', () => {
       component.onTitleChange('Clean Code');
       tick();
 
-      expect(emitSpy).toHaveBeenCalledWith(
-        jasmine.objectContaining({ title: 'Clean Code' })
-      );
+      expect(emitSpy).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Clean Code' }));
     }));
 
     it('should emit filtersChange when author changes', fakeAsync(() => {
@@ -213,9 +198,7 @@ describe('FilterPanelComponent', () => {
       component.onTypeChange('technical');
       tick();
 
-      expect(emitSpy).toHaveBeenCalledWith(
-        jasmine.objectContaining({ type: 'technical' })
-      );
+      expect(emitSpy).toHaveBeenCalledWith(jasmine.objectContaining({ type: 'technical' }));
     }));
 
     it('should emit typeChange when type changes', fakeAsync(() => {
@@ -315,8 +298,6 @@ describe('FilterPanelComponent', () => {
       component.onCategoriesChange(['programming']);
       component.onLevelsChange(['Beginner']);
       tick();
-
-      const emitSpy = spyOn(component.filtersChange, 'emit');
 
       // Set type to same value
       component.onTypeChange('technical');
@@ -492,9 +473,7 @@ describe('FilterPanelComponent', () => {
   describe('Accessibility', () => {
     it('should have accessible panel with role region', () => {
       fixture.detectChanges();
-      const panel = fixture.debugElement.query(
-        By.css('[data-testid="filter-panel"]')
-      );
+      const panel = fixture.debugElement.query(By.css('[data-testid="filter-panel"]'));
       expect(panel.nativeElement.getAttribute('role')).toBe('region');
     });
 

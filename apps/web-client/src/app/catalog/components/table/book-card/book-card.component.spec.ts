@@ -116,9 +116,9 @@ describe('BookCardComponent', () => {
   });
 
   describe('Actions', () => {
-    it('should emit select event when card is clicked', () => {
+    it('should emit bookSelect event when card is clicked', () => {
       const selectSpy = vi.fn();
-      component.select.subscribe(selectSpy);
+      component.bookSelect.subscribe(selectSpy);
 
       fixture.componentRef.setInput('book', mockBook);
       fixture.detectChanges();
@@ -144,7 +144,7 @@ describe('BookCardComponent', () => {
 
     it('should stop propagation when kindle button is clicked', () => {
       const selectSpy = vi.fn();
-      component.select.subscribe(selectSpy);
+      component.bookSelect.subscribe(selectSpy);
 
       fixture.componentRef.setInput('book', mockBook);
       fixture.detectChanges();
