@@ -23,6 +23,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author One'],
         description: 'A test description',
+        translatedDescription: 'Una descripción de prueba',
         language: 'en',
         type: 'technical',
         tags: ['JavaScript', 'TypeScript'],
@@ -38,6 +39,7 @@ describe('seed-database', () => {
         title: 'Multi Author Book',
         authors: ['Author 1', 'Author 2', 'Author 3'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         tags: ['Category1'],
@@ -53,6 +55,7 @@ describe('seed-database', () => {
         title: 'No Tags Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'es',
         type: 'technical',
         format: 'pdf',
@@ -67,6 +70,7 @@ describe('seed-database', () => {
         title: 'Empty Tags Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'es',
         type: 'technical',
         tags: [],
@@ -95,6 +99,7 @@ describe('seed-database', () => {
         title: 'No ID Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -109,6 +114,7 @@ describe('seed-database', () => {
         title: 'Numeric ID Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -122,6 +128,7 @@ describe('seed-database', () => {
         id: '9781234567890',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -136,6 +143,7 @@ describe('seed-database', () => {
         title: 123,
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -149,6 +157,7 @@ describe('seed-database', () => {
         id: '9781234567890',
         title: 'No Authors Book',
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -163,6 +172,7 @@ describe('seed-database', () => {
         title: 'Empty Authors Book',
         authors: [],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -177,6 +187,7 @@ describe('seed-database', () => {
         title: 'String Author Book',
         authors: 'Single Author',
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -191,6 +202,7 @@ describe('seed-database', () => {
         title: 'Mixed Authors Book',
         authors: ['Valid Author', 123],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -204,6 +216,7 @@ describe('seed-database', () => {
         id: '9781234567890',
         title: 'No Description Book',
         authors: ['Author'],
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -218,6 +231,36 @@ describe('seed-database', () => {
         title: 'Numeric Description Book',
         authors: ['Author'],
         description: 12345,
+        translatedDescription: 'Descripción',
+        language: 'en',
+        type: 'technical',
+        format: 'pdf',
+      };
+
+      expect(isValidSourceBook(book)).toBe(false);
+    });
+
+    it('should return false for missing translatedDescription', () => {
+      const book = {
+        id: '9781234567890',
+        title: 'No Translated Description Book',
+        authors: ['Author'],
+        description: 'Description',
+        language: 'en',
+        type: 'technical',
+        format: 'pdf',
+      };
+
+      expect(isValidSourceBook(book)).toBe(false);
+    });
+
+    it('should return false for non-string translatedDescription', () => {
+      const book = {
+        id: '9781234567890',
+        title: 'Numeric Translated Description Book',
+        authors: ['Author'],
+        description: 'Description',
+        translatedDescription: 12345,
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -232,6 +275,7 @@ describe('seed-database', () => {
         title: 'No Language Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         type: 'technical',
         format: 'pdf',
       };
@@ -245,6 +289,7 @@ describe('seed-database', () => {
         title: 'Numeric Language Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 123,
         type: 'technical',
         format: 'pdf',
@@ -259,6 +304,7 @@ describe('seed-database', () => {
         title: 'No Type Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         format: 'pdf',
       };
@@ -272,6 +318,7 @@ describe('seed-database', () => {
         title: 'Numeric Type Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 123,
         format: 'pdf',
@@ -286,6 +333,7 @@ describe('seed-database', () => {
         title: 'String Tags Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         tags: 'Tag',
@@ -301,6 +349,7 @@ describe('seed-database', () => {
         title: 'Mixed Tags Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         tags: ['Valid', 123],
@@ -316,6 +365,7 @@ describe('seed-database', () => {
         title: 'No Format Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
       };
@@ -329,6 +379,7 @@ describe('seed-database', () => {
         title: 'Numeric Format Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 123,
@@ -343,6 +394,7 @@ describe('seed-database', () => {
         title: 'Book With Level',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -358,6 +410,7 @@ describe('seed-database', () => {
         title: 'Book Without Level',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -372,6 +425,7 @@ describe('seed-database', () => {
         title: 'Book With Null Level',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -387,6 +441,7 @@ describe('seed-database', () => {
         title: 'Book With Numeric Level',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -402,6 +457,7 @@ describe('seed-database', () => {
         title: 'Book With Extra Fields',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -421,6 +477,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -437,6 +494,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         tags: ['JavaScript', 'TypeScript'],
@@ -454,6 +512,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -470,6 +529,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -480,12 +540,13 @@ describe('seed-database', () => {
       expect(result.available).toBe(true);
     });
 
-    it('should preserve all other fields', () => {
+    it('should preserve all other fields including translatedDescription', () => {
       const source: SourceBook = {
         id: '9781234567890',
         title: 'Test Book',
         authors: ['Author One', 'Author Two'],
         description: 'A test description',
+        translatedDescription: 'Una descripción de prueba',
         language: 'es',
         type: 'novel',
         tags: ['Fiction'],
@@ -498,6 +559,7 @@ describe('seed-database', () => {
       expect(result.title).toBe('Test Book');
       expect(result.authors).toEqual(['Author One', 'Author Two']);
       expect(result.description).toBe('A test description');
+      expect(result.translatedDescription).toBe('Una descripción de prueba');
       expect(result.language).toBe('es');
       expect(result.type).toBe('novel');
       expect(result.format).toBe('epub');
@@ -510,6 +572,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -527,6 +590,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         format: 'pdf',
@@ -535,6 +599,23 @@ describe('seed-database', () => {
       const result = transformSourceBook(source);
 
       expect(result.level).toBeUndefined();
+    });
+
+    it('should preserve translatedDescription in output', () => {
+      const source: SourceBook = {
+        id: '9781234567890',
+        title: 'Test Book',
+        authors: ['Author'],
+        description: 'English description',
+        translatedDescription: 'Descripción en español',
+        language: 'en',
+        type: 'technical',
+        format: 'pdf',
+      };
+
+      const result = transformSourceBook(source);
+
+      expect(result.translatedDescription).toBe('Descripción en español');
     });
   });
 
@@ -545,6 +626,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author One', 'Author Two'],
         description: 'A test description',
+        translatedDescription: 'Una descripción de prueba',
         language: 'en',
         type: 'technical',
         categories: ['JavaScript', 'TypeScript'],
@@ -557,6 +639,7 @@ describe('seed-database', () => {
       expect(result.title).toBe('Test Book');
       expect(result.authors).toEqual(['Author One', 'Author Two']);
       expect(result.description).toBe('A test description');
+      expect(result.translatedDescription).toBe('Una descripción de prueba');
       expect(result.language).toBe('en');
       expect(result.type).toBe('technical');
       expect(result.categoryNames).toEqual(['JavaScript', 'TypeScript']);
@@ -573,6 +656,7 @@ describe('seed-database', () => {
         title: 'Test Book With Level',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         categories: [],
@@ -592,6 +676,7 @@ describe('seed-database', () => {
         title: 'Test Book Without Level',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         categories: [],
@@ -610,6 +695,7 @@ describe('seed-database', () => {
         title: 'Multi Author Book',
         authors: ['First Author', 'Second Author', 'Third Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         categories: [],
@@ -628,6 +714,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         categories: [],
@@ -646,6 +733,7 @@ describe('seed-database', () => {
         title: 'Available Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         categories: [],
@@ -658,6 +746,7 @@ describe('seed-database', () => {
         title: 'Unavailable Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         categories: [],
@@ -675,6 +764,7 @@ describe('seed-database', () => {
         title: 'Categorized Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'technical',
         categories: ['Cat1', 'Cat2', 'Cat3'],
@@ -693,6 +783,7 @@ describe('seed-database', () => {
         title: 'No Categories Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         type: 'novel',
         categories: [],
@@ -714,6 +805,7 @@ describe('seed-database', () => {
           title: 'Test Book',
           authors: ['Author'],
           description: 'Description',
+          translatedDescription: 'Descripción',
           language: 'en',
           type: 'technical',
           categories: [],
@@ -735,6 +827,7 @@ describe('seed-database', () => {
           title: 'Test Book',
           authors: ['Author'],
           description: 'Description',
+          translatedDescription: 'Descripción',
           language: 'en',
           type,
           categories: [],
@@ -756,6 +849,7 @@ describe('seed-database', () => {
           title: 'Test Book',
           authors: ['Author'],
           description: 'Description',
+          translatedDescription: 'Descripción',
           language,
           type: 'technical',
           categories: [],
@@ -767,15 +861,35 @@ describe('seed-database', () => {
         expect(result.language).toBe(language);
       }
     });
+
+    it('should pass translatedDescription to CreateBookInput', () => {
+      const book: ConsolidatedBook = {
+        isbn: '9781234567890',
+        title: 'Test Book',
+        authors: ['Author'],
+        description: 'English description',
+        translatedDescription: 'Descripción en español',
+        language: 'en',
+        type: 'technical',
+        categories: [],
+        format: 'pdf',
+        available: true,
+      };
+
+      const result = toCreateBookInput(book);
+
+      expect(result.translatedDescription).toBe('Descripción en español');
+    });
   });
 
   describe('SourceBook and ConsolidatedBook type structures', () => {
-    it('should have correct SourceBook structure', () => {
+    it('should have correct SourceBook structure with translatedDescription', () => {
       const source: SourceBook = {
         id: '9781234567890',
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción traducida',
         language: 'en',
         type: 'technical',
         tags: ['Category'],
@@ -789,6 +903,7 @@ describe('seed-database', () => {
       expect(source.title).toBe('Test Book');
       expect(source.authors).toEqual(['Author']);
       expect(source.description).toBe('Description');
+      expect(source.translatedDescription).toBe('Descripción traducida');
       expect(source.language).toBe('en');
       expect(source.type).toBe('technical');
       expect(source.tags).toEqual(['Category']);
@@ -798,12 +913,13 @@ describe('seed-database', () => {
       expect(source.publication_date).toBe('June 2024');
     });
 
-    it('should have correct ConsolidatedBook structure', () => {
+    it('should have correct ConsolidatedBook structure with translatedDescription', () => {
       const book: ConsolidatedBook = {
         isbn: '9781234567890',
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción traducida',
         language: 'en',
         type: 'technical',
         categories: ['Category'],
@@ -816,6 +932,7 @@ describe('seed-database', () => {
       expect(book.title).toBe('Test Book');
       expect(book.authors).toEqual(['Author']);
       expect(book.description).toBe('Description');
+      expect(book.translatedDescription).toBe('Descripción traducida');
       expect(book.language).toBe('en');
       expect(book.type).toBe('technical');
       expect(book.categories).toEqual(['Category']);
@@ -827,7 +944,7 @@ describe('seed-database', () => {
 
   describe('end-to-end transformation', () => {
     it('should correctly transform and convert a real book from books.json format', () => {
-      // Simulate a real entry from books.json
+      // Simulate a real entry from initial_data/*.json (output of consolidate-books.ts)
       const sourceFromJson = {
         id: '9781394254699',
         language: 'en',
@@ -837,6 +954,7 @@ describe('seed-database', () => {
         pages: '1200',
         publication_date: 'June 2024',
         description: 'CISSP Study Guide - fully updated for the 2024 CISSP Body of Knowledge',
+        translatedDescription: 'Guía de estudio CISSP - completamente actualizada para el Body of Knowledge 2024',
         tags: ['Security', 'Security Certifications', 'CISSP'],
         type: 'technical',
         format: 'epub',
@@ -852,6 +970,7 @@ describe('seed-database', () => {
       expect(consolidated.title).toBe('ISC2 CISSP Certified Information Systems Security Professional Official Study Guide');
       expect(consolidated.authors).toEqual(['Mike Chapple', 'James Michael Stewart', 'Darril Gibson']);
       expect(consolidated.description).toBe('CISSP Study Guide - fully updated for the 2024 CISSP Body of Knowledge');
+      expect(consolidated.translatedDescription).toBe('Guía de estudio CISSP - completamente actualizada para el Body of Knowledge 2024');
       expect(consolidated.language).toBe('en');
       expect(consolidated.type).toBe('technical');
       expect(consolidated.categories).toEqual(['Security', 'Security Certifications', 'CISSP']);
@@ -866,6 +985,7 @@ describe('seed-database', () => {
       expect(input.title).toBe('ISC2 CISSP Certified Information Systems Security Professional Official Study Guide');
       expect(input.authors).toEqual(['Mike Chapple', 'James Michael Stewart', 'Darril Gibson']);
       expect(input.description).toBe('CISSP Study Guide - fully updated for the 2024 CISSP Body of Knowledge');
+      expect(input.translatedDescription).toBe('Guía de estudio CISSP - completamente actualizada para el Body of Knowledge 2024');
       expect(input.language).toBe('en');
       expect(input.type).toBe('technical');
       expect(input.categoryNames).toEqual(['Security', 'Security Certifications', 'CISSP']);
@@ -873,6 +993,31 @@ describe('seed-database', () => {
       expect(input.available).toBe(true);
       expect(input.level).toBe('Intermediate to advanced');
       expect(input.path).toBeNull();
+    });
+
+    it('should carry translatedDescription through the entire transformation pipeline', () => {
+      const sourceFromJson = {
+        id: '9781234567890',
+        title: 'Test Book',
+        authors: ['Author'],
+        description: 'This is a test description in English',
+        translatedDescription: 'Esta es una descripción de prueba en español',
+        language: 'en',
+        type: 'technical',
+        tags: ['Testing'],
+        format: 'pdf',
+      };
+
+      // Validate
+      expect(isValidSourceBook(sourceFromJson)).toBe(true);
+
+      // Transform
+      const consolidated = transformSourceBook(sourceFromJson as SourceBook);
+      expect(consolidated.translatedDescription).toBe('Esta es una descripción de prueba en español');
+
+      // Convert to CreateBookInput
+      const input = toCreateBookInput(consolidated);
+      expect(input.translatedDescription).toBe('Esta es una descripción de prueba en español');
     });
   });
 });

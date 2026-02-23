@@ -2,7 +2,7 @@
  * Script: consolidate-books.ts
  *
  * Consolidates multiple JSON files containing book data from original_data/
- * into a single deduplicated JSON file at docs/db/books.json.
+ * into multiple partitioned JSON files at docs/db/initial_data/.
  *
  * Features:
  * - Reads all *.json files from original_data/ directory (monorepo root)
@@ -10,25 +10,37 @@
  * - Detects duplicates by ISBN (id field in source)
  * - Keeps first occurrence of each ISBN (alphabetical file order)
  * - Preserves ALL original properties from source books
- * - HU-013: Preserves type/format from source if present, uses defaults otherwise
- * - Deletes existing books.json before generating new one
+ * - Translates non-Spanish descriptions to Spanish using Ollama
+ * - Generates multiple output files with configurable batch size (default: 1000)
+ * - Deletes existing output directory before generating new files
  * - Idempotent: can be run multiple times safely
+ * - Shows progress with ETA for translation
  *
  * Requirements:
  * - Database must be running (uses DATABASE_URL env var)
+ * - Ollama service must be running with qwen2.5:1.5b model
  *
  * Usage:
  *   npx tsx scripts/consolidate-books.ts
  *   npm run consolidate:books
+ *
+ * Environment variables:
+ *   DATABASE_URL - PostgreSQL connection string (required)
+ *   OLLAMA_BASE_URL - Ollama service URL (default: http://ollama:11434)
+ *   TRANSLATION_MODEL - Model for translation (default: qwen2.5:1.5b)
+ *   TRANSLATION_TIMEOUT_MS - Timeout for translation (default: 180000)
+ *   BOOKS_PER_FILE - Number of books per output file (default: 1000)
  */
 
-import { readdir, readFile, writeFile, mkdir, unlink, access } from 'node:fs/promises';
+import { readdir, readFile, writeFile, mkdir, rm, access } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '../src/infrastructure/driven/persistence/drizzle/schema.js';
 import { loadEnvConfig } from '../src/infrastructure/config/env.js';
+import { OllamaTranslationService } from '../src/infrastructure/driven/translation/OllamaTranslationService.js';
+import type { TranslationService } from '../src/application/ports/TranslationService.js';
 
 /**
  * Drizzle database type for type safety
@@ -48,14 +60,18 @@ const APP_ROOT = join(__dirname, '..');
 const MONOREPO_ROOT = process.env['MONOREPO_ROOT'] ?? join(APP_ROOT, '..', '..');
 const SOURCE_DIR = join(MONOREPO_ROOT, 'original_data');
 
-// Output goes to docs/db at monorepo root
-const OUTPUT_DIR = join(MONOREPO_ROOT, 'docs', 'db');
-const OUTPUT_FILE = join(OUTPUT_DIR, 'books.json');
+// Output goes to docs/db/initial_data at monorepo root
+const OUTPUT_DIR = join(MONOREPO_ROOT, 'docs', 'db', 'initial_data');
+
+// Configuration
+const DEFAULT_BOOKS_PER_FILE = 1000;
+const DEFAULT_TRANSLATION_TIMEOUT_MS = 180000;
+const RETRY_DELAY_MS = 2000;
+const MAX_RETRIES = 3;
 
 /**
  * Source book structure (from JSON files)
  * Uses index signature to allow any additional properties
- * HU-013: type and format can now come from source JSON files
  */
 interface SourceBook {
   readonly id: string;
@@ -67,18 +83,19 @@ interface SourceBook {
   readonly pages?: string;
   readonly publication_date?: string;
   readonly tags?: readonly string[];
-  readonly type?: string;   // HU-013: Can come from source JSON
-  readonly format?: string; // HU-013: Can come from source JSON
+  readonly type?: string;
+  readonly format?: string;
   readonly [key: string]: unknown;
 }
 
 /**
- * Consolidated book structure (preserves all original properties + type/format)
- * The output maintains ALL original properties and adds type/format
+ * Consolidated book structure with translation fields
+ * The output includes the original description and translated description
  */
 interface ConsolidatedBook extends SourceBook {
   readonly type: string;
   readonly format: string;
+  readonly translatedDescription: string; // Spanish translation of description
 }
 
 /**
@@ -90,22 +107,27 @@ interface ConsolidationResult {
   readonly uniqueBooks: number;
   readonly duplicatesSkipped: number;
   readonly existingInDbSkipped: number;
-  readonly outputPath: string;
+  readonly translatedCount: number;
+  readonly translationErrors: number;
+  readonly outputFilesGenerated: number;
+  readonly outputDirectory: string;
+  readonly durationMs: number;
 }
 
 /**
- * Enhances a source book with type and format properties.
- * HU-013: Preserves type/format from source if present, otherwise uses defaults.
- * - If source.type exists and has value → use source.type
- * - If source.type is undefined → use 'technical'
- * - If source.format exists and has value → use source.format
- * - If source.format is undefined → use 'epub'
+ * Enhances a source book with type, format, and translated description.
+ * - If source.type exists and has value -> use source.type
+ * - If source.type is undefined -> use 'technical'
+ * - If source.format exists and has value -> use source.format
+ * - If source.format is undefined -> use 'epub'
+ * - translatedDescription is added by the translation process
  */
-function transformBook(source: SourceBook): ConsolidatedBook {
+function transformBook(source: SourceBook, translatedDescription: string): ConsolidatedBook {
   return Object.freeze({
     ...source,
     type: source.type ?? 'technical',
     format: source.format ?? 'epub',
+    translatedDescription,
   }) as ConsolidatedBook;
 }
 
@@ -176,15 +198,131 @@ async function readJsonFile(filePath: string): Promise<SourceBook[]> {
 }
 
 /**
+ * Translates a description to Spanish with retry logic
+ */
+async function translateDescription(
+  description: string,
+  language: string | undefined,
+  translationService: TranslationService,
+): Promise<{ translated: string; success: boolean }> {
+  // If already Spanish or empty, no translation needed
+  if (language?.toLowerCase() === 'es' || description.trim().length === 0) {
+    return { translated: description, success: true };
+  }
+
+  // Attempt translation with retries
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await translationService.translate(description, 'es');
+      return { translated: result.translatedText, success: true };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (attempt < MAX_RETRIES) {
+        const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+        console.warn(`  Translation attempt ${attempt}/${MAX_RETRIES} failed, retrying in ${delay}ms...`);
+        await sleep(delay);
+      } else {
+        console.error(`  Translation failed after ${MAX_RETRIES} attempts: ${errorMessage}`);
+        // Return original description on failure
+        return { translated: description, success: false };
+      }
+    }
+  }
+
+  return { translated: description, success: false };
+}
+
+/**
+ * Sleep for a specified number of milliseconds
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Formats duration in human-readable format
+ */
+function formatDuration(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds % 60}s`;
+  }
+  return `${seconds}s`;
+}
+
+/**
+ * Writes books to partitioned JSON files
+ */
+async function writePartitionedFiles(
+  books: ConsolidatedBook[],
+  outputDir: string,
+  booksPerFile: number,
+): Promise<number> {
+  // Ensure output directory exists
+  await mkdir(outputDir, { recursive: true });
+
+  const totalFiles = Math.ceil(books.length / booksPerFile);
+  
+  for (let i = 0; i < totalFiles; i++) {
+    const start = i * booksPerFile;
+    const end = Math.min(start + booksPerFile, books.length);
+    const batch = books.slice(start, end);
+    
+    // Format: books_0001.json, books_0002.json, etc.
+    const fileName = `books_${String(i + 1).padStart(4, '0')}.json`;
+    const filePath = join(outputDir, fileName);
+    
+    await writeFile(filePath, JSON.stringify(batch, null, 2), 'utf-8');
+    console.log(`  Written ${batch.length} books to ${fileName}`);
+  }
+
+  return totalFiles;
+}
+
+/**
  * Main consolidation function
  */
 async function consolidateBooks(): Promise<ConsolidationResult> {
-  console.log('Starting book consolidation...');
+  const startTime = Date.now();
+  
+  console.log('Starting book consolidation with translation...');
   console.log(`Source directory: ${SOURCE_DIR}`);
-  console.log(`Output file: ${OUTPUT_FILE}`);
+  console.log(`Output directory: ${OUTPUT_DIR}`);
 
-  // Load environment configuration and connect to database
+  // Load configuration
   const env = loadEnvConfig();
+  const booksPerFile = parseInt(process.env['BOOKS_PER_FILE'] ?? '', 10) || DEFAULT_BOOKS_PER_FILE;
+  const translationTimeoutMs = parseInt(process.env['TRANSLATION_TIMEOUT_MS'] ?? '', 10) || DEFAULT_TRANSLATION_TIMEOUT_MS;
+
+  console.log(`Books per file: ${booksPerFile}`);
+  console.log(`Translation timeout: ${translationTimeoutMs}ms`);
+
+  // Initialize translation service
+  const translationService = new OllamaTranslationService({
+    baseUrl: env.translation.baseUrl,
+    model: env.translation.model,
+    timeoutMs: translationTimeoutMs,
+    retries: 1, // We handle retries ourselves for better logging
+  });
+
+  // Check if translation service is available
+  const isTranslationAvailable = await translationService.isAvailable();
+  if (!isTranslationAvailable) {
+    throw new Error(
+      `Translation service not available at ${env.translation.baseUrl}. ` +
+      'Make sure Ollama is running with the translation model loaded.'
+    );
+  }
+  console.log(`Translation service available (model: ${env.translation.model})`);
+
+  // Initialize database connection
   const pool = new Pool({ connectionString: env.database.url });
   const db = drizzle(pool, { schema });
 
@@ -206,12 +344,13 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
 
     // Track seen ISBNs to detect duplicates
     const seenIsbns = new Set<string>();
-    const consolidatedBooks: ConsolidatedBook[] = [];
+    const booksToProcess: SourceBook[] = [];
     let totalBooksRead = 0;
     let duplicatesSkipped = 0;
     let existingInDbSkipped = 0;
 
-    // Process each file in alphabetical order
+    // First pass: read and deduplicate all books
+    console.log('\n--- Phase 1: Reading and deduplicating books ---');
     for (const file of jsonFiles) {
       const filePath = join(SOURCE_DIR, file);
       console.log(`Processing: ${file}`);
@@ -233,24 +372,90 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
         }
 
         seenIsbns.add(book.id);
-        consolidatedBooks.push(transformBook(book));
+        booksToProcess.push(book);
       }
     }
 
-    // Ensure output directory exists
-    await mkdir(OUTPUT_DIR, { recursive: true });
+    console.log(`\nBooks to process: ${booksToProcess.length}`);
+    console.log(`Duplicates skipped: ${duplicatesSkipped}`);
+    console.log(`Already in database: ${existingInDbSkipped}`);
 
-    // Delete existing output file if it exists (ensures idempotent generation)
-    try {
-      await access(OUTPUT_FILE);
-      await unlink(OUTPUT_FILE);
-      console.log(`Deleted existing output file: ${OUTPUT_FILE}`);
-    } catch {
-      // File doesn't exist, nothing to delete
+    if (booksToProcess.length === 0) {
+      console.log('No books to process');
+      return {
+        totalFiles: jsonFiles.length,
+        totalBooksRead,
+        uniqueBooks: 0,
+        duplicatesSkipped,
+        existingInDbSkipped,
+        translatedCount: 0,
+        translationErrors: 0,
+        outputFilesGenerated: 0,
+        outputDirectory: OUTPUT_DIR,
+        durationMs: Date.now() - startTime,
+      };
     }
 
-    // Write consolidated output
-    await writeFile(OUTPUT_FILE, JSON.stringify(consolidatedBooks, null, 2), 'utf-8');
+    // Second pass: translate descriptions
+    console.log('\n--- Phase 2: Translating descriptions ---');
+    const consolidatedBooks: ConsolidatedBook[] = [];
+    let translatedCount = 0;
+    let translationErrors = 0;
+    const translationStartTime = Date.now();
+
+    for (let i = 0; i < booksToProcess.length; i++) {
+      const book = booksToProcess[i]!;
+      const progress = ((i + 1) / booksToProcess.length * 100).toFixed(1);
+      
+      // Calculate ETA
+      const elapsed = Date.now() - translationStartTime;
+      const avgTimePerBook = i > 0 ? elapsed / i : 0;
+      const remaining = booksToProcess.length - i - 1;
+      const eta = avgTimePerBook * remaining;
+
+      const needsTranslation = book.language?.toLowerCase() !== 'es' && book.description.trim().length > 0;
+      const statusIcon = needsTranslation ? '🔄' : '✓';
+      
+      console.log(
+        `[${progress}%] ${statusIcon} ${i + 1}/${booksToProcess.length} - "${book.title.substring(0, 50)}..." ` +
+        `(ETA: ${formatDuration(eta)})`
+      );
+
+      const { translated, success } = await translateDescription(
+        book.description,
+        book.language,
+        translationService,
+      );
+
+      if (needsTranslation) {
+        if (success) {
+          translatedCount++;
+        } else {
+          translationErrors++;
+        }
+      }
+
+      consolidatedBooks.push(transformBook(book, translated));
+    }
+
+    // Delete existing output directory and recreate
+    console.log('\n--- Phase 3: Writing output files ---');
+    try {
+      await access(OUTPUT_DIR);
+      await rm(OUTPUT_DIR, { recursive: true, force: true });
+      console.log(`Deleted existing output directory: ${OUTPUT_DIR}`);
+    } catch {
+      // Directory doesn't exist, nothing to delete
+    }
+
+    // Write partitioned files
+    const outputFilesGenerated = await writePartitionedFiles(
+      consolidatedBooks,
+      OUTPUT_DIR,
+      booksPerFile,
+    );
+
+    const durationMs = Date.now() - startTime;
 
     const result: ConsolidationResult = Object.freeze({
       totalFiles: jsonFiles.length,
@@ -258,7 +463,11 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
       uniqueBooks: consolidatedBooks.length,
       duplicatesSkipped,
       existingInDbSkipped,
-      outputPath: OUTPUT_FILE,
+      translatedCount,
+      translationErrors,
+      outputFilesGenerated,
+      outputDirectory: OUTPUT_DIR,
+      durationMs,
     });
 
     console.log('\n--- Consolidation Complete ---');
@@ -267,7 +476,11 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
     console.log(`Unique books: ${result.uniqueBooks}`);
     console.log(`Duplicates skipped: ${result.duplicatesSkipped}`);
     console.log(`Already in database: ${result.existingInDbSkipped}`);
-    console.log(`Output written to: ${result.outputPath}`);
+    console.log(`Translated: ${result.translatedCount}`);
+    console.log(`Translation errors: ${result.translationErrors}`);
+    console.log(`Output files generated: ${result.outputFilesGenerated}`);
+    console.log(`Output directory: ${result.outputDirectory}`);
+    console.log(`Total duration: ${formatDuration(result.durationMs)}`);
 
     return result;
   } finally {

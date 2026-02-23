@@ -1,18 +1,20 @@
 /**
  * Script: seed-database.ts
  *
- * Loads book data from docs/db/books.json into the database using CreateBookUseCase.
+ * Loads book data from docs/db/initial_data/*.json into the database using CreateBookUseCase.
  * This script is idempotent - running it multiple times will only add new books.
  *
  * Features:
- * - Reads consolidated books from docs/db/books.json
- * - Transforms source format (id→isbn, tags→categories) to internal format
+ * - Reads partitioned book files from docs/db/initial_data/ (books_0001.json, etc.)
+ * - Uses pre-translated descriptions (translatedDescription field)
  * - Checks for existing books by ISBN before creating
  * - Creates authors and categories via the use case
  * - Handles embedding service failures with retries
- * - HU-013: Translates non-Spanish descriptions to Spanish before embedding
  * - Processes books in batches for large datasets
  * - Shows progress and summary statistics
+ *
+ * IMPORTANT: This script expects books to already have translatedDescription.
+ * Run consolidate-books.ts first to generate the initial_data files with translations.
  *
  * Usage:
  *   Development: npx tsx scripts/seed-database.ts
@@ -23,10 +25,10 @@
  *   DATABASE_URL - PostgreSQL connection string (required)
  *   OLLAMA_BASE_URL - Ollama service URL (default: http://ollama:11434)
  *   BATCH_SIZE - Number of books per batch (default: 50)
- *   MAX_RETRIES - Max retries for embedding/translation failures (default: 3)
+ *   MAX_RETRIES - Max retries for embedding failures (default: 3)
  */
 
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
@@ -35,7 +37,6 @@ import * as schema from '../src/infrastructure/driven/persistence/drizzle/schema
 import { loadEnvConfig } from '../src/infrastructure/config/env.js';
 import { PinoLogger } from '../src/infrastructure/driven/logging/PinoLogger.js';
 import { OllamaEmbeddingService } from '../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
-import { OllamaTranslationService } from '../src/infrastructure/driven/translation/OllamaTranslationService.js';
 import { PostgresBookRepository } from '../src/infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from '../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { PostgresTypeRepository } from '../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
@@ -49,20 +50,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Path resolution for both development and production:
-// - Development (tsx): scripts/ is at apps/api/scripts/, books.json at monorepo/docs/db/
-// - Production (node): dist/scripts/ is at /app/dist/scripts/, books.json at /app/data/
-// Use BOOKS_FILE env var to override, or detect based on __dirname
-const getDefaultBooksPath = (): string => {
+// - Development (tsx): scripts/ is at apps/api/scripts/, initial_data at monorepo/docs/db/initial_data/
+// - Production (node): dist/scripts/ is at /app/dist/scripts/, initial_data at /app/data/initial_data/
+// Use INITIAL_DATA_DIR env var to override, or detect based on __dirname
+const getDefaultInitialDataDir = (): string => {
   // Check if running from compiled dist folder
   if (__dirname.includes('dist')) {
-    // Production: /app/dist/scripts → /app/data/books.json
-    return join(__dirname, '..', '..', 'data', 'books.json');
+    // Production: /app/dist/scripts → /app/data/initial_data
+    return join(__dirname, '..', '..', 'data', 'initial_data');
   }
-  // Development: apps/api/scripts → monorepo/docs/db/books.json
-  return join(__dirname, '..', '..', '..', 'docs', 'db', 'books.json');
+  // Development: apps/api/scripts → monorepo/docs/db/initial_data
+  return join(__dirname, '..', '..', '..', 'docs', 'db', 'initial_data');
 };
 
-const BOOKS_FILE = process.env['BOOKS_FILE'] ?? getDefaultBooksPath();
+const INITIAL_DATA_DIR = process.env['INITIAL_DATA_DIR'] ?? getDefaultInitialDataDir();
 
 // Configuration
 const DEFAULT_BATCH_SIZE = 50;
@@ -70,14 +71,15 @@ const DEFAULT_MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
 /**
- * Source book structure from consolidated JSON file (books.json)
- * This reflects the actual format in docs/db/books.json
+ * Source book structure from initial_data JSON files
+ * This reflects the output format from consolidate-books.ts
  */
 interface SourceBook {
   readonly id: string;           // ISBN (stored as 'id' in source)
   readonly title: string;
   readonly authors: readonly string[];
   readonly description: string;
+  readonly translatedDescription: string; // Pre-translated Spanish description
   readonly language: string;     // ISO 639-1 code (e.g., 'en', 'es')
   readonly type: string;
   readonly tags?: readonly string[]; // Categories (stored as 'tags' in source)
@@ -97,6 +99,7 @@ interface ConsolidatedBook {
   readonly title: string;
   readonly authors: readonly string[];
   readonly description: string;
+  readonly translatedDescription: string;
   readonly language: string;
   readonly type: string;
   readonly categories: readonly string[];
@@ -123,7 +126,7 @@ interface SeedingSummary {
 }
 
 /**
- * Validates that an object is a valid SourceBook from books.json
+ * Validates that an object is a valid SourceBook from initial_data files
  */
 function isValidSourceBook(obj: unknown): obj is SourceBook {
   if (typeof obj !== 'object' || obj === null) {
@@ -150,6 +153,7 @@ function isValidSourceBook(obj: unknown): obj is SourceBook {
     book.authors.length > 0 &&
     book.authors.every((a) => typeof a === 'string') &&
     typeof book.description === 'string' &&
+    typeof book.translatedDescription === 'string' && // Required: pre-translated description
     typeof book.language === 'string' &&
     typeof book.type === 'string' &&
     typeof book.format === 'string' &&
@@ -168,6 +172,7 @@ function transformSourceBook(source: SourceBook): ConsolidatedBook {
     title: source.title,
     authors: source.authors,
     description: source.description,
+    translatedDescription: source.translatedDescription,
     language: source.language,
     type: source.type,
     categories: source.tags ?? [],
@@ -178,28 +183,47 @@ function transformSourceBook(source: SourceBook): ConsolidatedBook {
 }
 
 /**
- * Reads and parses the consolidated books JSON file
- * Transforms from source format (id, tags) to internal format (isbn, categories)
+ * Reads and parses all JSON files from the initial_data directory
+ * Returns books from all files combined
  */
-async function readBooksFile(filePath: string): Promise<ConsolidatedBook[]> {
-  const content = await readFile(filePath, 'utf-8');
-  const parsed: unknown = JSON.parse(content);
+async function readInitialDataFiles(dirPath: string): Promise<ConsolidatedBook[]> {
+  const files = await readdir(dirPath);
+  const jsonFiles = files.filter((f) => f.endsWith('.json')).sort();
 
-  if (!Array.isArray(parsed)) {
-    throw new Error(`Books file does not contain an array: ${filePath}`);
+  if (jsonFiles.length === 0) {
+    throw new Error(`No JSON files found in ${dirPath}. Run consolidate-books.ts first.`);
   }
 
-  const validBooks: ConsolidatedBook[] = [];
+  console.log(`Found ${jsonFiles.length} data files`);
+
+  const allBooks: ConsolidatedBook[] = [];
   let invalidCount = 0;
 
-  for (const item of parsed) {
-    if (isValidSourceBook(item)) {
-      validBooks.push(transformSourceBook(item));
-    } else {
-      invalidCount++;
-      if (invalidCount <= 3) {
-        console.warn('Warning: Invalid book entry in file, skipping:', 
-          typeof item === 'object' && item !== null ? (item as Record<string, unknown>).id ?? 'unknown' : 'invalid');
+  for (const file of jsonFiles) {
+    const filePath = join(dirPath, file);
+    console.log(`Reading: ${file}`);
+
+    const content = await readFile(filePath, 'utf-8');
+    const parsed: unknown = JSON.parse(content);
+
+    if (!Array.isArray(parsed)) {
+      console.warn(`Warning: ${file} does not contain an array, skipping`);
+      continue;
+    }
+
+    for (const item of parsed) {
+      if (isValidSourceBook(item)) {
+        allBooks.push(transformSourceBook(item));
+      } else {
+        invalidCount++;
+        if (invalidCount <= 3) {
+          console.warn(
+            'Warning: Invalid book entry in file, skipping:',
+            typeof item === 'object' && item !== null
+              ? (item as Record<string, unknown>).id ?? 'unknown'
+              : 'invalid',
+          );
+        }
       }
     }
   }
@@ -208,19 +232,19 @@ async function readBooksFile(filePath: string): Promise<ConsolidatedBook[]> {
     console.warn(`... and ${invalidCount - 3} more invalid entries skipped`);
   }
 
-  return validBooks;
+  return allBooks;
 }
 
 /**
  * Converts a ConsolidatedBook to CreateBookInput
- * HU-008: CreateBookUseCase expects 'authors' (plural) as string array.
- * HU-013: Includes language field for translation support.
+ * Uses the pre-translated description for embedding generation
  */
 function toCreateBookInput(book: ConsolidatedBook): CreateBookInput {
   return {
     title: book.title,
     authors: [...book.authors],
     description: book.description,
+    translatedDescription: book.translatedDescription, // Pass pre-translated description
     language: book.language,
     type: book.type,
     categoryNames: [...book.categories],
@@ -247,7 +271,7 @@ async function seedBook(
   createBookUseCase: CreateBookUseCase,
   bookRepository: { existsByIsbn(isbn: string): Promise<boolean> },
   logger: Logger,
-  maxRetries: number
+  maxRetries: number,
 ): Promise<BookResult> {
   // Check if book already exists by ISBN
   const exists = await bookRepository.existsByIsbn(book.isbn);
@@ -267,21 +291,17 @@ async function seedBook(
       return 'created';
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      
+
       // Check if it's an embedding service error (worth retrying)
-      const isEmbeddingError = lastError.message.includes('embedding') || 
-                              lastError.message.includes('Ollama') ||
-                              lastError.message.includes('503') ||
-                              lastError.message.includes('service unavailable');
+      const isEmbeddingError =
+        lastError.message.includes('embedding') ||
+        lastError.message.includes('Ollama') ||
+        lastError.message.includes('503') ||
+        lastError.message.includes('service unavailable');
 
-      // HU-013: Check if it's a translation service error (worth retrying)
-      const isTranslationError = lastError.message.includes('translation') ||
-                                lastError.message.includes('Translation');
-
-      if ((isEmbeddingError || isTranslationError) && attempt < maxRetries) {
+      if (isEmbeddingError && attempt < maxRetries) {
         const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1); // Exponential backoff
-        const errorType = isTranslationError ? 'Translation' : 'Embedding';
-        logger.warn(`${errorType} service error, retrying in ${delay}ms`, {
+        logger.warn(`Embedding service error, retrying in ${delay}ms`, {
           isbn: book.isbn,
           attempt,
           maxRetries,
@@ -317,7 +337,7 @@ async function processBatch(
   createBookUseCase: CreateBookUseCase,
   bookRepository: { existsByIsbn(isbn: string): Promise<boolean> },
   logger: Logger,
-  maxRetries: number
+  maxRetries: number,
 ): Promise<{ created: number; skipped: number; errors: number; failedIsbns: string[] }> {
   logger.info(`Processing batch ${batchNumber}/${totalBatches}...`, {
     booksInBatch: books.length,
@@ -330,7 +350,7 @@ async function processBatch(
 
   for (const book of books) {
     const result = await seedBook(book, createBookUseCase, bookRepository, logger, maxRetries);
-    
+
     switch (result) {
       case 'created':
         created++;
@@ -353,9 +373,9 @@ async function processBatch(
  */
 async function seedDatabase(): Promise<SeedingSummary> {
   const startTime = Date.now();
-  
+
   console.log('Starting database seeding...');
-  console.log(`Books file: ${BOOKS_FILE}`);
+  console.log(`Initial data directory: ${INITIAL_DATA_DIR}`);
 
   // Load configuration
   const env = loadEnvConfig();
@@ -385,23 +405,14 @@ async function seedDatabase(): Promise<SeedingSummary> {
       model: env.ollama.model,
     });
 
-    // HU-013: Initialize translation service
-    const translationService = new OllamaTranslationService({
-      baseUrl: env.ollama.baseUrl,
-      model: env.translation.model,
-      timeoutMs: env.translation.timeoutMs,
-      retries: env.translation.retries,
-    });
-
     const bookRepository = new PostgresBookRepository(db as any);
     const categoryRepository = new PostgresCategoryRepository(db as any);
     const typeRepository = new PostgresTypeRepository(db as any);
     const authorRepository = new PostgresAuthorRepository(db as any);
     const levelRepository = new PostgresLevelRepository(db as any);
 
-    // Initialize use case
-    // HU-008: Now includes levelRepository for level validation and creation
-    // HU-013: Now includes translationService for description translation
+    // Initialize use case WITHOUT translation service
+    // Books already have pre-translated descriptions from consolidate-books.ts
     const createBookUseCase = new CreateBookUseCase({
       bookRepository,
       categoryRepository,
@@ -409,13 +420,12 @@ async function seedDatabase(): Promise<SeedingSummary> {
       authorRepository,
       levelRepository,
       embeddingService,
-      translationService,
       logger,
     });
 
-    // Read books file
-    const books = await readBooksFile(BOOKS_FILE);
-    seedLogger.info(`Loaded ${books.length} books from file`);
+    // Read all books from initial_data files
+    const books = await readInitialDataFiles(INITIAL_DATA_DIR);
+    seedLogger.info(`Loaded ${books.length} books from initial data files`);
 
     if (books.length === 0) {
       seedLogger.warn('No books to process');
@@ -453,7 +463,7 @@ async function seedDatabase(): Promise<SeedingSummary> {
           createBookUseCase,
           bookRepository,
           seedLogger,
-          maxRetries
+          maxRetries,
         );
 
         totalCreated += result.created;
@@ -505,5 +515,5 @@ seedDatabase().catch((error: unknown) => {
   process.exit(1);
 });
 
-export { seedDatabase, readBooksFile, toCreateBookInput, isValidSourceBook, transformSourceBook };
+export { seedDatabase, readInitialDataFiles, toCreateBookInput, isValidSourceBook, transformSourceBook };
 export type { SourceBook, ConsolidatedBook, SeedingSummary, BookResult };

@@ -351,6 +351,148 @@ describe('CreateBookUseCase Integration', () => {
     });
   });
 
+  // HU-011: Tests for pre-translated description (batch operations)
+  // This feature allows scripts like seed-database.ts to provide pre-translated descriptions,
+  // avoiding slow translation service calls during bulk operations.
+  describe('pre-translated description handling (HU-011)', () => {
+    it('should use provided translatedDescription instead of calling translation service', async () => {
+      const englishDescription = 'A handbook of agile software craftsmanship';
+      const preTranslatedDescription = 'Un manual de artesanía de software ágil (pre-traducido)';
+      
+      const input = createValidInput({
+        description: englishDescription,
+        translatedDescription: preTranslatedDescription,
+        language: 'en',
+        isbn: '9781491950357', // Different ISBN
+      });
+
+      const result = await useCase.execute(input);
+
+      // originalDescription should be the English input
+      expect(result.originalDescription).toBe(englishDescription);
+      
+      // description should be the pre-translated Spanish, not a new translation
+      expect(result.description).toBe(preTranslatedDescription);
+    });
+
+    it('should use translatedDescription even for Spanish books', async () => {
+      const spanishDescription = 'Una descripción original en español';
+      const differentTranslation = 'Una traducción diferente proporcionada manualmente';
+      
+      const input = createValidInput({
+        description: spanishDescription,
+        translatedDescription: differentTranslation,
+        language: 'es',
+        isbn: '9781491950364', // Different ISBN
+      });
+
+      const result = await useCase.execute(input);
+
+      // When translatedDescription is explicitly provided, it should be used
+      // even if the language is Spanish
+      expect(result.originalDescription).toBe(spanishDescription);
+      expect(result.description).toBe(differentTranslation);
+    });
+
+    it('should persist pre-translated description to database', async () => {
+      const englishDescription = 'Clean code principles for modern developers';
+      const preTranslatedDescription = 'Principios de código limpio para desarrolladores modernos';
+      
+      const input = createValidInput({
+        description: englishDescription,
+        translatedDescription: preTranslatedDescription,
+        language: 'en',
+        isbn: '9781491950371', // Different ISBN
+      });
+
+      const created = await useCase.execute(input);
+      const found = await bookRepository.findById(created.id);
+
+      expect(found).not.toBeNull();
+      expect(found!.originalDescription).toBe(englishDescription);
+      expect(found!.description).toBe(preTranslatedDescription);
+    });
+
+    it('should generate embedding from pre-translated description', async () => {
+      const englishDescription = 'Test book for pre-translated embedding';
+      const preTranslatedDescription = 'Libro de prueba para embedding pre-traducido';
+      
+      const input = createValidInput({
+        description: englishDescription,
+        translatedDescription: preTranslatedDescription,
+        language: 'en',
+        isbn: '9781491950388', // Different ISBN
+      });
+
+      const result = await useCase.execute(input);
+
+      // Verify the book was created successfully
+      // This implies embedding was generated from the pre-translated Spanish description
+      expect(result.id).toBeDefined();
+      expect(result.description).toBe(preTranslatedDescription);
+      
+      const found = await bookRepository.findById(result.id);
+      expect(found).not.toBeNull();
+    });
+
+    it('should work with CreateBookUseCase initialized without translationService', async () => {
+      // This simulates how seed-database.ts uses the use case
+      const useCaseWithoutTranslation = new CreateBookUseCase({
+        bookRepository,
+        categoryRepository,
+        typeRepository,
+        authorRepository,
+        levelRepository,
+        embeddingService,
+        // Note: NO translationService provided
+      });
+
+      const englishDescription = 'Book created without translation service';
+      const preTranslatedDescription = 'Libro creado sin servicio de traducción';
+      
+      const input = createValidInput({
+        description: englishDescription,
+        translatedDescription: preTranslatedDescription,
+        language: 'en',
+        isbn: '9781491950395', // Different ISBN
+      });
+
+      const result = await useCaseWithoutTranslation.execute(input);
+
+      expect(result.originalDescription).toBe(englishDescription);
+      expect(result.description).toBe(preTranslatedDescription);
+    });
+
+    it('should fallback to original description when no translationService and no translatedDescription', async () => {
+      // Edge case: English book, no translation service, no pre-translated description
+      const useCaseWithoutTranslation = new CreateBookUseCase({
+        bookRepository,
+        categoryRepository,
+        typeRepository,
+        authorRepository,
+        levelRepository,
+        embeddingService,
+        // Note: NO translationService provided
+      });
+
+      const englishDescription = 'Book without any translation';
+      
+      const input = createValidInput({
+        description: englishDescription,
+        language: 'en',
+        isbn: '9781491950401', // Different ISBN
+        // Note: NO translatedDescription provided
+      });
+
+      const result = await useCaseWithoutTranslation.execute(input);
+
+      // Without translation service and without translatedDescription,
+      // both descriptions should be the original
+      expect(result.originalDescription).toBe(englishDescription);
+      expect(result.description).toBe(englishDescription);
+    });
+  });
+
   // HU-013: Tests for translation functionality
   // NOTE: These tests require the translation model (qwen2.5:3b) to be installed in Ollama.
   // Run: docker exec library-ollama ollama pull qwen2.5:3b

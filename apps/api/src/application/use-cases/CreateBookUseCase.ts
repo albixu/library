@@ -70,6 +70,11 @@ const MAX_EMBEDDING_TEXT_LENGTH = 7000;
  * - language: ISO 639-1 code (e.g., 'en', 'es', 'fr')
  * - description will be stored in originalDescription
  * - Spanish description will be generated if language !== 'es'
+ *
+ * HU-011: translatedDescription can be pre-provided for batch operations.
+ * - If translatedDescription is provided, it will be used directly (no translation call)
+ * - If not provided and translationService exists, translation will be performed
+ * - If not provided and no translationService, original description will be used
  */
 export interface CreateBookInput {
   title: string;
@@ -83,6 +88,7 @@ export interface CreateBookInput {
   level?: string | null; // Level name (not ID), will be validated against type
   available?: boolean;
   path?: string | null;
+  translatedDescription?: string; // HU-011: Pre-translated Spanish description (optional)
 }
 
 /**
@@ -118,6 +124,7 @@ export interface CreateBookOutput {
  *
  * HU-008: Added levelRepository for level validation and creation.
  * HU-013: Added translationService for description translation.
+ * HU-011: translationService is now optional to support batch operations with pre-translated data.
  */
 export interface CreateBookUseCaseDeps {
   bookRepository: BookRepository;
@@ -126,7 +133,7 @@ export interface CreateBookUseCaseDeps {
   authorRepository: AuthorRepository;
   levelRepository: LevelRepository;
   embeddingService: EmbeddingService;
-  translationService: TranslationService; // HU-013: For translating descriptions to Spanish
+  translationService?: TranslationService; // HU-011: Optional for batch operations
   logger?: Logger;
 }
 
@@ -154,7 +161,7 @@ export class CreateBookUseCase {
   private readonly authorRepository: AuthorRepository;
   private readonly levelRepository: LevelRepository;
   private readonly embeddingService: EmbeddingService;
-  private readonly translationService: TranslationService;
+  private readonly translationService?: TranslationService; // HU-011: Optional
   private readonly logger: Logger;
 
   constructor(deps: CreateBookUseCaseDeps) {
@@ -164,7 +171,7 @@ export class CreateBookUseCase {
     this.authorRepository = deps.authorRepository;
     this.levelRepository = deps.levelRepository;
     this.embeddingService = deps.embeddingService;
-    this.translationService = deps.translationService;
+    this.translationService = deps.translationService; // HU-011: May be undefined
     this.logger = deps.logger?.child({ name: 'CreateBookUseCase' }) ?? noopLogger;
   }
 
@@ -255,16 +262,23 @@ export class CreateBookUseCase {
       authors: authorEntities.map(a => ({ id: a.id, name: a.name })),
     });
 
-    // 7. Translate description to Spanish if needed (HU-013)
+    // 7. Translate description to Spanish if needed (HU-013, HU-011)
     const originalDescription = input.description;
     let translatedDescription: string;
 
-    if (input.language.toLowerCase() === 'es') {
+    if (input.translatedDescription) {
+      // HU-011: Use pre-provided translation (batch operations)
+      translatedDescription = input.translatedDescription;
+      this.logger.debug('Using pre-provided translated description', {
+        originalLength: originalDescription.length,
+        translatedLength: translatedDescription.length,
+      });
+    } else if (input.language.toLowerCase() === 'es') {
       // Already in Spanish, no translation needed
       translatedDescription = originalDescription;
       this.logger.debug('Description already in Spanish, skipping translation');
-    } else {
-      // Translate to Spanish
+    } else if (this.translationService) {
+      // Translate to Spanish using translation service
       this.logger.debug('Translating description to Spanish', {
         language: input.language,
         textLength: originalDescription.length,
@@ -280,6 +294,11 @@ export class CreateBookUseCase {
         originalLength: originalDescription.length,
         translatedLength: translatedDescription.length,
       });
+    } else {
+      // HU-011: No translation service and no pre-translated description
+      // Fall back to using original description
+      translatedDescription = originalDescription;
+      this.logger.debug('No translation service available, using original description');
     }
 
     // 8. Create Book entity with validated fields, type, authors, categories, and levelId

@@ -607,6 +607,99 @@ describe('CreateBookUseCase', () => {
       });
     });
 
+    describe('pre-translated description handling (HU-011)', () => {
+      it('should use pre-provided translatedDescription instead of calling translation service', async () => {
+        const inputWithPreTranslation: CreateBookInput = {
+          ...validInput,
+          translatedDescription: 'Un manual de artesanía ágil de software',
+        };
+
+        const result = await useCase.execute(inputWithPreTranslation);
+
+        // Should NOT call translation service
+        expect(mockTranslationService.translate).not.toHaveBeenCalled();
+        // Should use the pre-provided translation
+        expect(result.description).toBe('Un manual de artesanía ágil de software');
+        expect(result.originalDescription).toBe('A handbook of agile software craftsmanship');
+      });
+
+      it('should use pre-provided translatedDescription even when language is Spanish', async () => {
+        const inputWithPreTranslation: CreateBookInput = {
+          ...validInput,
+          language: 'es',
+          description: 'Descripción original',
+          translatedDescription: 'Descripción pre-traducida',
+        };
+
+        const result = await useCase.execute(inputWithPreTranslation);
+
+        expect(mockTranslationService.translate).not.toHaveBeenCalled();
+        expect(result.description).toBe('Descripción pre-traducida');
+        expect(result.originalDescription).toBe('Descripción original');
+      });
+
+      it('should work without translationService when translatedDescription is provided', async () => {
+        // Create use case WITHOUT translation service
+        const depsWithoutTranslation: CreateBookUseCaseDeps = {
+          bookRepository: mockBookRepository,
+          categoryRepository: mockCategoryRepository,
+          typeRepository: mockTypeRepository,
+          authorRepository: mockAuthorRepository,
+          levelRepository: mockLevelRepository,
+          embeddingService: mockEmbeddingService,
+          // translationService is NOT provided
+        };
+
+        const useCaseWithoutTranslation = new CreateBookUseCase(depsWithoutTranslation);
+
+        const inputWithPreTranslation: CreateBookInput = {
+          ...validInput,
+          translatedDescription: 'Traducción pre-proporcionada',
+        };
+
+        const result = await useCaseWithoutTranslation.execute(inputWithPreTranslation);
+
+        expect(result.description).toBe('Traducción pre-proporcionada');
+        expect(result.originalDescription).toBe('A handbook of agile software craftsmanship');
+      });
+
+      it('should fall back to original description when no translationService and no translatedDescription', async () => {
+        // Create use case WITHOUT translation service
+        const depsWithoutTranslation: CreateBookUseCaseDeps = {
+          bookRepository: mockBookRepository,
+          categoryRepository: mockCategoryRepository,
+          typeRepository: mockTypeRepository,
+          authorRepository: mockAuthorRepository,
+          levelRepository: mockLevelRepository,
+          embeddingService: mockEmbeddingService,
+          // translationService is NOT provided
+        };
+
+        const useCaseWithoutTranslation = new CreateBookUseCase(depsWithoutTranslation);
+
+        // Input WITHOUT translatedDescription
+        const result = await useCaseWithoutTranslation.execute(validInput);
+
+        // Should use original description as fallback
+        expect(result.description).toBe('A handbook of agile software craftsmanship');
+        expect(result.originalDescription).toBe('A handbook of agile software craftsmanship');
+      });
+
+      it('should use pre-translated description for embedding generation', async () => {
+        const inputWithPreTranslation: CreateBookInput = {
+          ...validInput,
+          translatedDescription: 'Descripción en español para embedding',
+        };
+
+        await useCase.execute(inputWithPreTranslation);
+
+        const embeddingCallArg = (mockEmbeddingService.generateEmbedding as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        // The embedding should use the PRE-PROVIDED translated description
+        expect(embeddingCallArg).toContain('Descripción en español para embedding');
+        expect(embeddingCallArg).not.toContain('[Translated]');
+      });
+    });
+
     describe('execution order', () => {
       it('should validate type before checking duplicates', async () => {
         const invalidInput = { ...validInput, type: 'nonexistent' };

@@ -26,7 +26,8 @@ describe('consolidate-books', () => {
         tags: ['JavaScript', 'TypeScript'],
       };
 
-      const result = transformBook(source);
+      const translatedDescription = 'Una descripción de prueba';
+      const result = transformBook(source, translatedDescription);
 
       // Original properties preserved
       expect(result.id).toBe('9781234567890');
@@ -41,6 +42,8 @@ describe('consolidate-books', () => {
       // Default type/format added when not in source
       expect(result.type).toBe('technical');
       expect(result.format).toBe('epub');
+      // Translated description added
+      expect(result.translatedDescription).toBe('Una descripción de prueba');
     });
 
     it('should preserve id field (not rename to isbn)', () => {
@@ -51,7 +54,7 @@ describe('consolidate-books', () => {
         description: 'Description here',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Descripción aquí');
 
       expect(result.id).toBe('0987654321098');
     });
@@ -65,7 +68,7 @@ describe('consolidate-books', () => {
         tags: ['Category1', 'Category2', 'Category3'],
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Tiene etiquetas');
 
       expect(result.tags).toEqual(['Category1', 'Category2', 'Category3']);
     });
@@ -78,7 +81,7 @@ describe('consolidate-books', () => {
         description: 'No tags here',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Sin etiquetas');
 
       expect(result.tags).toBeUndefined();
     });
@@ -92,12 +95,12 @@ describe('consolidate-books', () => {
         tags: [],
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Etiquetas vacías');
 
       expect(result.tags).toEqual([]);
     });
 
-    it('should always set type to technical', () => {
+    it('should always set type to technical when not provided', () => {
       const source: SourceBook = {
         id: '4444444444444',
         title: 'Any Book',
@@ -105,12 +108,12 @@ describe('consolidate-books', () => {
         description: 'Any description',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Cualquier descripción');
 
       expect(result.type).toBe('technical');
     });
 
-    it('should always set format to epub', () => {
+    it('should always set format to epub when not provided', () => {
       const source: SourceBook = {
         id: '5555555555555',
         title: 'Any Book',
@@ -118,7 +121,7 @@ describe('consolidate-books', () => {
         description: 'Any description',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Cualquier descripción');
 
       expect(result.format).toBe('epub');
     });
@@ -133,7 +136,7 @@ describe('consolidate-books', () => {
         type: 'novel',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Descripción');
 
       expect(result.type).toBe('novel');
     });
@@ -147,7 +150,7 @@ describe('consolidate-books', () => {
         format: 'pdf',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Descripción');
 
       expect(result.format).toBe('pdf');
     });
@@ -162,7 +165,7 @@ describe('consolidate-books', () => {
         format: 'mobi',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Descripción');
 
       expect(result.type).toBe('biography');
       expect(result.format).toBe('mobi');
@@ -178,7 +181,7 @@ describe('consolidate-books', () => {
         format: 'pdf',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Descripción');
 
       expect(result.type).toBe('technical');
       expect(result.format).toBe('pdf');
@@ -194,7 +197,7 @@ describe('consolidate-books', () => {
         format: undefined,
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Descripción');
 
       expect(result.type).toBe('novel');
       expect(result.format).toBe('epub');
@@ -209,7 +212,7 @@ describe('consolidate-books', () => {
         description: 'Descripción',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Descripción');
 
       expect(result.language).toBe('es');
     });
@@ -223,7 +226,7 @@ describe('consolidate-books', () => {
         description: 'Expert content',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Contenido experto');
 
       expect(result.level).toBe('Advanced');
     });
@@ -237,7 +240,7 @@ describe('consolidate-books', () => {
         description: 'Lots of content',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Mucho contenido');
 
       expect(result.pages).toBe('500');
     });
@@ -251,7 +254,7 @@ describe('consolidate-books', () => {
         description: 'Future content',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Contenido futuro');
 
       expect(result.publication_date).toBe('March 2025');
     });
@@ -264,7 +267,7 @@ describe('consolidate-books', () => {
         description: 'Let it go',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Suéltalo');
 
       expect(Object.isFrozen(result)).toBe(true);
     });
@@ -277,7 +280,7 @@ describe('consolidate-books', () => {
         description: 'Written by many',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Escrito por muchos');
 
       expect(result.authors).toEqual([
         'First Author',
@@ -285,6 +288,21 @@ describe('consolidate-books', () => {
         'Third Author',
         'Fourth Author',
       ]);
+    });
+
+    it('should include translatedDescription in output', () => {
+      const source: SourceBook = {
+        id: '1919191919191',
+        title: 'Translation Test Book',
+        authors: ['Author'],
+        description: 'This is the original English description',
+      };
+
+      const translatedDescription = 'Esta es la descripción original en español';
+      const result = transformBook(source, translatedDescription);
+
+      expect(result.translatedDescription).toBe('Esta es la descripción original en español');
+      expect(result.description).toBe('This is the original English description');
     });
   });
 
@@ -506,12 +524,13 @@ describe('consolidate-books', () => {
   });
 
   describe('ConsolidatedBook type structure', () => {
-    it('should have correct readonly properties preserving source and adding type/format', () => {
+    it('should have correct readonly properties preserving source and adding type/format/translatedDescription', () => {
       const book: ConsolidatedBook = {
         id: '9781234567890',
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
+        translatedDescription: 'Descripción',
         language: 'en',
         level: 'Intermediate',
         pages: '250',
@@ -535,6 +554,7 @@ describe('consolidate-books', () => {
       // Added properties
       expect(book.type).toBe('technical');
       expect(book.format).toBe('epub');
+      expect(book.translatedDescription).toBe('Descripción');
     });
 
     it('should work with minimal source book properties', () => {
@@ -543,6 +563,7 @@ describe('consolidate-books', () => {
         title: 'Minimal Book',
         authors: ['Author'],
         description: 'A description',
+        translatedDescription: 'Una descripción',
         type: 'technical',
         format: 'epub',
       };
@@ -551,6 +572,7 @@ describe('consolidate-books', () => {
       expect(book.title).toBe('Minimal Book');
       expect(book.type).toBe('technical');
       expect(book.format).toBe('epub');
+      expect(book.translatedDescription).toBe('Una descripción');
       // Optional properties are undefined
       expect(book.language).toBeUndefined();
       expect(book.tags).toBeUndefined();
