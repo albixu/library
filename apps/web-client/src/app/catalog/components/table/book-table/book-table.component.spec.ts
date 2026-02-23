@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BookTableComponent } from './book-table.component';
-import { Book } from '../book-card/book-card.component';
+import { Book } from '../../../../core/models/index';
 
 describe('BookTableComponent', () => {
   let component: BookTableComponent;
@@ -10,23 +10,39 @@ describe('BookTableComponent', () => {
   const mockBooks: Book[] = [
     {
       id: '1',
+      isbn: '978-0132350884',
       title: 'Clean Code',
-      authors: ['Robert C. Martin'],
-      categories: ['Programming'],
+      authors: [{ id: 'a1', name: 'Robert C. Martin' }],
+      type: 'Technical',
+      categories: [{ id: 'c1', name: 'Programming' }],
       level: 'Intermediate',
-      format: 'PDF',
+      format: 'pdf',
       language: 'en',
       description: 'A handbook of agile software craftsmanship.',
+      originalDescription: 'A handbook of agile software craftsmanship.',
+      available: true,
+      similarityScore: null,
     },
     {
       id: '2',
+      isbn: '978-0201616224',
       title: 'The Pragmatic Programmer',
-      authors: ['David Thomas', 'Andrew Hunt'],
-      categories: ['Programming', 'Career'],
+      authors: [
+        { id: 'a2', name: 'David Thomas' },
+        { id: 'a3', name: 'Andrew Hunt' },
+      ],
+      type: 'Technical',
+      categories: [
+        { id: 'c1', name: 'Programming' },
+        { id: 'c2', name: 'Career' },
+      ],
       level: 'Advanced',
-      format: 'EPUB',
+      format: 'epub',
       language: 'en',
       description: 'Your journey to mastery.',
+      originalDescription: 'Your journey to mastery.',
+      available: true,
+      similarityScore: null,
     },
   ];
 

@@ -1,23 +1,13 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRippleModule } from '@angular/material/core';
 import { CategoryChipsComponent } from '../../data-display/category-chips/category-chips.component.js';
-import { LevelBadgeComponent, BookLevel } from '../../data-display/level-badge/level-badge.component.js';
-import { FormatIconComponent, BookFormat } from '../../data-display/format-icon/format-icon.component.js';
-import { LanguageFlagComponent, LanguageCode } from '../../data-display/language-flag/language-flag.component.js';
+import { LevelBadgeComponent } from '../../data-display/level-badge/level-badge.component.js';
+import { FormatIconComponent } from '../../data-display/format-icon/format-icon.component.js';
+import { LanguageFlagComponent } from '../../data-display/language-flag/language-flag.component.js';
 import { TruncatedTextComponent } from '../../data-display/truncated-text/truncated-text.component.js';
-
-export interface Book {
-  id: string;
-  title: string;
-  authors: string[];
-  categories: string[];
-  level?: BookLevel;
-  format?: BookFormat;
-  language?: LanguageCode;
-  description?: string;
-}
+import { Book } from '../../../../core/models/index.js';
 
 @Component({
   selector: 'app-book-card',
@@ -58,7 +48,7 @@ export interface Book {
       </header>
 
       <h3 class="book-card-title">{{ book().title }}</h3>
-      <p class="book-card-authors">{{ book().authors.join(', ') }}</p>
+      <p class="book-card-authors">{{ authorNames() }}</p>
 
       @if (book().description) {
         <app-truncated-text
@@ -68,7 +58,7 @@ export interface Book {
       }
 
       <footer class="book-card-footer">
-        <app-category-chips [categories]="book().categories" [maxVisible]="2" />
+        <app-category-chips [categories]="categoryNames()" [maxVisible]="2" />
       </footer>
     </article>
   `,
@@ -147,6 +137,15 @@ export class BookCardComponent {
 
   readonly select = output<Book>();
   readonly sendToKindle = output<Book>();
+
+  // Computed signals to extract names from Author/Category objects
+  readonly authorNames = computed(() =>
+    this.book().authors.map((a) => a.name).join(', ')
+  );
+
+  readonly categoryNames = computed(() =>
+    this.book().categories.map((c) => c.name)
+  );
 
   onSelect(): void {
     this.select.emit(this.book());

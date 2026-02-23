@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { BookCardComponent, Book } from './book-card.component';
+import { BookCardComponent } from './book-card.component';
+import { Book } from '../../../../core/models/index';
 
 describe('BookCardComponent', () => {
   let component: BookCardComponent;
@@ -8,13 +9,21 @@ describe('BookCardComponent', () => {
 
   const mockBook: Book = {
     id: '1',
+    isbn: '978-0132350884',
     title: 'Clean Code',
-    authors: ['Robert C. Martin'],
-    categories: ['Programming', 'Best Practices'],
+    authors: [{ id: 'a1', name: 'Robert C. Martin' }],
+    type: 'Technical',
+    categories: [
+      { id: 'c1', name: 'Programming' },
+      { id: 'c2', name: 'Best Practices' },
+    ],
     level: 'Intermediate',
-    format: 'PDF',
+    format: 'pdf',
     language: 'en',
     description: 'A handbook of agile software craftsmanship.',
+    originalDescription: 'A handbook of agile software craftsmanship.',
+    available: true,
+    similarityScore: null,
   };
 
   beforeEach(async () => {
@@ -50,7 +59,13 @@ describe('BookCardComponent', () => {
     });
 
     it('should display multiple authors separated by comma', () => {
-      const multiAuthorBook = { ...mockBook, authors: ['Author 1', 'Author 2'] };
+      const multiAuthorBook: Book = {
+        ...mockBook,
+        authors: [
+          { id: 'a1', name: 'Author 1' },
+          { id: 'a2', name: 'Author 2' },
+        ],
+      };
       fixture.componentRef.setInput('book', multiAuthorBook);
       fixture.detectChanges();
 

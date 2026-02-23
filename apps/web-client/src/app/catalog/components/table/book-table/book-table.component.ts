@@ -9,7 +9,7 @@ import { LanguageFlagComponent } from '../../data-display/language-flag/language
 import { TruncatedTextComponent } from '../../data-display/truncated-text/truncated-text.component.js';
 import { EmptyStateComponent } from '../empty-state/empty-state.component.js';
 import { LoadingOverlayComponent } from '../loading-overlay/loading-overlay.component.js';
-import { Book } from '../book-card/book-card.component.js';
+import { Book } from '../../../../core/models/index.js';
 
 @Component({
   selector: 'app-book-table',
@@ -52,7 +52,7 @@ import { Book } from '../book-card/book-card.component.js';
           <ng-container matColumnDef="authors">
             <th mat-header-cell *matHeaderCellDef>Authors</th>
             <td mat-cell *matCellDef="let book">
-              {{ book.authors.join(', ') }}
+              {{ getAuthorNames(book) }}
             </td>
           </ng-container>
 
@@ -60,7 +60,7 @@ import { Book } from '../book-card/book-card.component.js';
           <ng-container matColumnDef="categories">
             <th mat-header-cell *matHeaderCellDef>Categories</th>
             <td mat-cell *matCellDef="let book">
-              <app-category-chips [categories]="book.categories" [maxVisible]="2" />
+              <app-category-chips [categories]="getCategoryNames(book)" [maxVisible]="2" />
             </td>
           </ng-container>
 
@@ -204,5 +204,14 @@ export class BookTableComponent {
   onSendToKindle(event: Event, book: Book): void {
     event.stopPropagation();
     this.sendToKindle.emit(book);
+  }
+
+  // Helper methods to extract names from Author/Category objects
+  getAuthorNames(book: Book): string {
+    return book.authors.map((a) => a.name).join(', ');
+  }
+
+  getCategoryNames(book: Book): string[] {
+    return book.categories.map((c) => c.name);
   }
 }
