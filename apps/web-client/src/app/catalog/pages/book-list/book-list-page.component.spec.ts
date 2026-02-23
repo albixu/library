@@ -6,7 +6,14 @@ import { of } from 'rxjs';
 
 import { BookListPageComponent } from './book-list-page.component.js';
 import { BookSearchStore } from '../../../core/services/book-search.store.js';
-import { Book, PaginationInfo, SearchFilters, BookType, BookLevel, CategoryListItem } from '../../../core/models/index.js';
+import {
+  Book,
+  PaginationInfo,
+  SearchFilters,
+  BookType,
+  BookLevel,
+  CategoryListItem,
+} from '../../../core/models/index.js';
 
 describe('BookListPageComponent', () => {
   let component: BookListPageComponent;
@@ -249,7 +256,9 @@ describe('BookListPageComponent', () => {
   describe('Responsive behavior', () => {
     it('should not show mobile filter toggle by default (desktop view)', () => {
       // By default isMobile is false
-      const mobileToggle = fixture.nativeElement.querySelector('[data-testid="mobile-filter-toggle"]');
+      const mobileToggle = fixture.nativeElement.querySelector(
+        '[data-testid="mobile-filter-toggle"]'
+      );
       expect(mobileToggle).toBeFalsy();
     });
 

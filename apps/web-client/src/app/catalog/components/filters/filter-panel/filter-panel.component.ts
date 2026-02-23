@@ -1,4 +1,12 @@
-import { Component, input, output, signal, computed, effect, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  input,
+  output,
+  signal,
+  computed,
+  effect,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 
 import { TextFilterInputComponent } from '../text-filter-input/index.js';
 import { SearchableSelectComponent } from '../searchable-select/index.js';
@@ -10,7 +18,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { SearchFilters, SelectOption } from '../../../../core/models/index.js';
 
 // Re-export for convenience
-export { SearchFilters, SelectOption };
+export type { SearchFilters, SelectOption };
 
 /**
  * Internal filter state with all fields required for form handling

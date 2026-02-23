@@ -1,4 +1,11 @@
-import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  computed,
+  OnInit,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -122,10 +129,7 @@ import {
               <!-- Mobile: Cards view -->
               <div class="cards-container" role="list">
                 @for (book of store.books(); track book.id) {
-                  <app-book-card
-                    [book]="book"
-                    (sendToKindle)="onSendToKindle($event)"
-                  />
+                  <app-book-card [book]="book" (sendToKindle)="onSendToKindle($event)" />
                 }
               </div>
             } @else {

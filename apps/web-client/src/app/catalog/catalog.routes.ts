@@ -11,9 +11,7 @@ export const catalogRoutes: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./pages/book-list/book-list-page.component.js').then(
-        (m) => m.BookListPageComponent
-      ),
+      import('./pages/book-list/book-list-page.component.js').then((m) => m.BookListPageComponent),
     title: 'Book Catalog',
   },
   // Future: Book detail route

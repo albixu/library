@@ -1,1 +1,1 @@
-export { PaginatorComponent, type PageEvent } from './paginator.component.js';
+export { PaginatorComponent } from './paginator.component.js';

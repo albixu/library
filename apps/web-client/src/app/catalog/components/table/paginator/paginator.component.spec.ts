@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { PaginatorComponent, PageEvent } from './paginator.component';
+import { PaginatorComponent } from './paginator.component';
 
 describe('PaginatorComponent', () => {
   let component: PaginatorComponent;
@@ -25,14 +25,24 @@ describe('PaginatorComponent', () => {
       expect(component.pageSize()).toBe(25);
     });
 
-    it('should have default pageIndex of 0', () => {
+    it('should have default totalCount of 0', () => {
       fixture.detectChanges();
-      expect(component.pageIndex()).toBe(0);
+      expect(component.totalCount()).toBe(0);
     });
 
-    it('should have default totalItems of 0', () => {
+    it('should have default currentCount of 0', () => {
       fixture.detectChanges();
-      expect(component.totalItems()).toBe(0);
+      expect(component.currentCount()).toBe(0);
+    });
+
+    it('should have default hasNextPage of false', () => {
+      fixture.detectChanges();
+      expect(component.hasNextPage()).toBe(false);
+    });
+
+    it('should have default loading of false', () => {
+      fixture.detectChanges();
+      expect(component.loading()).toBe(false);
     });
   });
 
@@ -50,225 +60,142 @@ describe('PaginatorComponent', () => {
   });
 
   describe('Display', () => {
-    it('should display current range', () => {
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('pageSize', 25);
-      fixture.componentRef.setInput('pageIndex', 0);
+    it('should display current count of total count', () => {
+      fixture.componentRef.setInput('totalCount', 100);
+      fixture.componentRef.setInput('currentCount', 25);
       fixture.detectChanges();
 
       const rangeLabel = fixture.nativeElement.textContent;
-      expect(rangeLabel).toContain('1');
-      expect(rangeLabel).toContain('25');
-      expect(rangeLabel).toContain('100');
+      expect(rangeLabel).toContain('25 of 100');
     });
 
-    it('should display correct range for second page', () => {
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('pageSize', 25);
-      fixture.componentRef.setInput('pageIndex', 1);
+    it('should display 0 of 0 when no items', () => {
+      fixture.componentRef.setInput('totalCount', 0);
+      fixture.componentRef.setInput('currentCount', 0);
       fixture.detectChanges();
 
       const rangeLabel = fixture.nativeElement.textContent;
-      expect(rangeLabel).toContain('26');
-      expect(rangeLabel).toContain('50');
+      expect(rangeLabel).toContain('0 of 0');
     });
 
-    it('should display correct range for last page with partial results', () => {
-      fixture.componentRef.setInput('totalItems', 73);
-      fixture.componentRef.setInput('pageSize', 25);
-      fixture.componentRef.setInput('pageIndex', 2);
+    it('should display all items loaded correctly', () => {
+      fixture.componentRef.setInput('totalCount', 45);
+      fixture.componentRef.setInput('currentCount', 45);
       fixture.detectChanges();
 
       const rangeLabel = fixture.nativeElement.textContent;
-      expect(rangeLabel).toContain('51');
-      expect(rangeLabel).toContain('73');
+      expect(rangeLabel).toContain('45 of 45');
     });
   });
 
-  describe('Navigation buttons', () => {
-    it('should disable previous button on first page', () => {
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('pageIndex', 0);
+  describe('Load more button', () => {
+    it('should show load more button when hasNextPage is true', () => {
+      fixture.componentRef.setInput('totalCount', 100);
+      fixture.componentRef.setInput('currentCount', 25);
+      fixture.componentRef.setInput('hasNextPage', true);
+      fixture.componentRef.setInput('loading', false);
       fixture.detectChanges();
 
-      const prevButton = fixture.nativeElement.querySelector('[aria-label="Previous page"]');
-      expect(prevButton.disabled).toBe(true);
+      const loadMoreButton = fixture.nativeElement.querySelector(
+        '[data-testid="load-more-button"]'
+      );
+      expect(loadMoreButton).toBeTruthy();
     });
 
-    it('should enable previous button when not on first page', () => {
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('pageIndex', 1);
+    it('should not show load more button when hasNextPage is false', () => {
+      fixture.componentRef.setInput('totalCount', 45);
+      fixture.componentRef.setInput('currentCount', 45);
+      fixture.componentRef.setInput('hasNextPage', false);
+      fixture.componentRef.setInput('loading', false);
       fixture.detectChanges();
 
-      const prevButton = fixture.nativeElement.querySelector('[aria-label="Previous page"]');
-      expect(prevButton.disabled).toBe(false);
+      const loadMoreButton = fixture.nativeElement.querySelector(
+        '[data-testid="load-more-button"]'
+      );
+      expect(loadMoreButton).toBeFalsy();
     });
 
-    it('should disable next button on last page', () => {
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('pageSize', 25);
-      fixture.componentRef.setInput('pageIndex', 3);
+    it('should show spinner instead of load more button when loading', () => {
+      fixture.componentRef.setInput('totalCount', 100);
+      fixture.componentRef.setInput('currentCount', 25);
+      fixture.componentRef.setInput('hasNextPage', true);
+      fixture.componentRef.setInput('loading', true);
       fixture.detectChanges();
 
-      const nextButton = fixture.nativeElement.querySelector('[aria-label="Next page"]');
-      expect(nextButton.disabled).toBe(true);
-    });
+      const loadMoreButton = fixture.nativeElement.querySelector(
+        '[data-testid="load-more-button"]'
+      );
+      const spinner = fixture.nativeElement.querySelector('mat-spinner');
 
-    it('should enable next button when not on last page', () => {
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('pageSize', 25);
-      fixture.componentRef.setInput('pageIndex', 0);
-      fixture.detectChanges();
-
-      const nextButton = fixture.nativeElement.querySelector('[aria-label="Next page"]');
-      expect(nextButton.disabled).toBe(false);
+      expect(loadMoreButton).toBeFalsy();
+      expect(spinner).toBeTruthy();
     });
   });
 
-  describe('Page change events', () => {
-    it('should emit page event when next is clicked', () => {
-      const pageSpy = vi.fn();
-      component.page.subscribe(pageSpy);
+  describe('Events', () => {
+    it('should emit loadMore event when load more button is clicked', () => {
+      const loadMoreSpy = vi.fn();
+      component.loadMore.subscribe(loadMoreSpy);
 
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('pageSize', 25);
-      fixture.componentRef.setInput('pageIndex', 0);
+      fixture.componentRef.setInput('totalCount', 100);
+      fixture.componentRef.setInput('currentCount', 25);
+      fixture.componentRef.setInput('hasNextPage', true);
+      fixture.componentRef.setInput('loading', false);
       fixture.detectChanges();
 
-      const nextButton = fixture.nativeElement.querySelector('[aria-label="Next page"]');
-      nextButton.click();
-
-      expect(pageSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          pageIndex: 1,
-          pageSize: 25,
-          previousPageIndex: 0,
-        })
+      const loadMoreButton = fixture.nativeElement.querySelector(
+        '[data-testid="load-more-button"]'
       );
+      loadMoreButton.click();
+
+      expect(loadMoreSpy).toHaveBeenCalled();
     });
 
-    it('should emit page event when previous is clicked', () => {
-      const pageSpy = vi.fn();
-      component.page.subscribe(pageSpy);
+    it('should emit pageSizeChange event when page size changes', () => {
+      const pageSizeChangeSpy = vi.fn();
+      component.pageSizeChange.subscribe(pageSizeChangeSpy);
 
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('pageSize', 25);
-      fixture.componentRef.setInput('pageIndex', 2);
+      fixture.componentRef.setInput('totalCount', 100);
+      fixture.componentRef.setInput('currentCount', 25);
       fixture.detectChanges();
 
-      const prevButton = fixture.nativeElement.querySelector('[aria-label="Previous page"]');
-      prevButton.click();
-
-      expect(pageSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          pageIndex: 1,
-          pageSize: 25,
-          previousPageIndex: 2,
-        })
-      );
-    });
-
-    it('should emit page event when page size changes', () => {
-      const pageSpy = vi.fn();
-      component.page.subscribe(pageSpy);
-
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('pageSize', 25);
-      fixture.componentRef.setInput('pageIndex', 1);
-      fixture.detectChanges();
-
-      // Simulate page size change
       component.onPageSizeChange(50);
 
-      expect(pageSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          pageIndex: 0, // Reset to first page
-          pageSize: 50,
-          previousPageIndex: 1,
-        })
-      );
+      expect(pageSizeChangeSpy).toHaveBeenCalledWith(50);
     });
   });
 
-  describe('First and last page buttons', () => {
-    it('should disable first page button on first page', () => {
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('pageIndex', 0);
+  describe('Loading state', () => {
+    it('should disable page size select when loading', () => {
+      fixture.componentRef.setInput('totalCount', 100);
+      fixture.componentRef.setInput('loading', true);
       fixture.detectChanges();
 
-      const firstButton = fixture.nativeElement.querySelector('[aria-label="First page"]');
-      expect(firstButton.disabled).toBe(true);
-    });
-
-    it('should disable last page button on last page', () => {
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('pageSize', 25);
-      fixture.componentRef.setInput('pageIndex', 3);
-      fixture.detectChanges();
-
-      const lastButton = fixture.nativeElement.querySelector('[aria-label="Last page"]');
-      expect(lastButton.disabled).toBe(true);
-    });
-
-    it('should navigate to first page when first button is clicked', () => {
-      const pageSpy = vi.fn();
-      component.page.subscribe(pageSpy);
-
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('pageSize', 25);
-      fixture.componentRef.setInput('pageIndex', 2);
-      fixture.detectChanges();
-
-      const firstButton = fixture.nativeElement.querySelector('[aria-label="First page"]');
-      firstButton.click();
-
-      expect(pageSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          pageIndex: 0,
-        })
-      );
-    });
-
-    it('should navigate to last page when last button is clicked', () => {
-      const pageSpy = vi.fn();
-      component.page.subscribe(pageSpy);
-
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('pageSize', 25);
-      fixture.componentRef.setInput('pageIndex', 0);
-      fixture.detectChanges();
-
-      const lastButton = fixture.nativeElement.querySelector('[aria-label="Last page"]');
-      lastButton.click();
-
-      expect(pageSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          pageIndex: 3,
-        })
-      );
-    });
-  });
-
-  describe('Disabled state', () => {
-    it('should disable all controls when disabled', () => {
-      fixture.componentRef.setInput('totalItems', 100);
-      fixture.componentRef.setInput('disabled', true);
-      fixture.detectChanges();
-
-      const buttons = fixture.nativeElement.querySelectorAll('button');
-      buttons.forEach((button: HTMLButtonElement) => {
-        expect(button.disabled).toBe(true);
-      });
+      const select = fixture.nativeElement.querySelector('mat-select');
+      expect(select.getAttribute('aria-disabled')).toBe('true');
     });
   });
 
   describe('Accessibility', () => {
     it('should have navigation aria-label', () => {
-      fixture.componentRef.setInput('totalItems', 100);
+      fixture.componentRef.setInput('totalCount', 100);
       fixture.detectChanges();
 
       const nav = fixture.nativeElement.querySelector('nav');
       expect(nav.getAttribute('aria-label')).toBe('Pagination');
+    });
+
+    it('should have aria-label on load more button', () => {
+      fixture.componentRef.setInput('totalCount', 100);
+      fixture.componentRef.setInput('currentCount', 25);
+      fixture.componentRef.setInput('hasNextPage', true);
+      fixture.componentRef.setInput('loading', false);
+      fixture.detectChanges();
+
+      const loadMoreButton = fixture.nativeElement.querySelector(
+        '[data-testid="load-more-button"]'
+      );
+      expect(loadMoreButton.getAttribute('aria-label')).toBe('Load more items');
     });
   });
 });

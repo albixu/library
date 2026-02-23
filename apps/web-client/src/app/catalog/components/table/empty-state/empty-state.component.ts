@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -51,10 +45,7 @@ const STATE_CONFIGS: Record<EmptyStateType, StateConfig> = {
       <h3 class="empty-state-title">{{ displayTitle() }}</h3>
       <p class="empty-state-description">{{ displayDescription() }}</p>
       @if (actionLabel()) {
-        <button
-          mat-flat-button
-          class="empty-state-action"
-          (click)="action.emit()">
+        <button mat-flat-button class="empty-state-action" (click)="action.emit()">
           {{ actionLabel() }}
         </button>
       }
@@ -107,21 +98,13 @@ export class EmptyStateComponent {
 
   readonly action = output<void>();
 
-  private readonly stateConfig = computed(
-    () => STATE_CONFIGS[this.type()] || STATE_CONFIGS.empty
-  );
+  private readonly stateConfig = computed(() => STATE_CONFIGS[this.type()] || STATE_CONFIGS.empty);
 
-  readonly displayIcon = computed(
-    () => this.icon() || this.stateConfig().icon
-  );
-  readonly displayTitle = computed(
-    () => this.title() || this.stateConfig().title
-  );
+  readonly displayIcon = computed(() => this.icon() || this.stateConfig().icon);
+  readonly displayTitle = computed(() => this.title() || this.stateConfig().title);
   readonly displayDescription = computed(
     () => this.description() || this.stateConfig().description
   );
 
-  readonly ariaLabel = computed(
-    () => `${this.displayTitle()}: ${this.displayDescription()}`
-  );
+  readonly ariaLabel = computed(() => `${this.displayTitle()}: ${this.displayDescription()}`);
 }

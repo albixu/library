@@ -12,7 +12,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
         [class.transparent]="transparent()"
         role="status"
         aria-busy="true"
-        [attr.aria-label]="ariaLabel()">
+        [attr.aria-label]="ariaLabel()"
+      >
         <div class="loading-content">
           <mat-spinner [diameter]="diameter()"></mat-spinner>
           @if (message()) {

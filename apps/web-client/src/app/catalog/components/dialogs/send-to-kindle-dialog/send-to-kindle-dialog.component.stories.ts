@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
+import { applicationConfig, moduleMetadata } from '@storybook/angular';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { action } from '@storybook/addon-actions';
 
 import { SendToKindleDialogComponent } from './send-to-kindle-dialog.component.js';
 import { KindleService } from '../../../../core/services/kindle.service.js';
@@ -39,9 +38,11 @@ const longTitleBook: Book = {
     'The Complete Guide to Understanding Modern JavaScript Frameworks and Their Ecosystem: A Comprehensive Study',
 };
 
-// Mock dialog ref
+// Mock dialog ref with simple logging
 const mockDialogRef = {
-  close: action('dialog-closed'),
+  close: (result?: unknown): void => {
+    console.log('[Storybook] Dialog closed with result:', result);
+  },
 };
 
 const meta: Meta<SendToKindleDialogComponent> = {
@@ -49,12 +50,11 @@ const meta: Meta<SendToKindleDialogComponent> = {
   component: SendToKindleDialogComponent,
   tags: ['autodocs'],
   decorators: [
+    applicationConfig({
+      providers: [provideAnimationsAsync()],
+    }),
     moduleMetadata({
-      providers: [
-        provideAnimationsAsync(),
-        KindleService,
-        { provide: MatDialogRef, useValue: mockDialogRef },
-      ],
+      providers: [KindleService, { provide: MatDialogRef, useValue: mockDialogRef }],
     }),
   ],
   parameters: {
