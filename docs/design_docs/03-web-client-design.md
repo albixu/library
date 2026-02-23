@@ -1285,37 +1285,36 @@ Angular Material permite personalización completa manteniendo sus beneficios:
 4. ✅ Configurar tema M2 personalizado de Material (paleta cyan #17a1cf)
 5. ✅ Implementar sistema de temas dark/light con CSS Variables
 6. ✅ Crear estructura Screaming Architecture (catalog, kindle, core, shared, layout)
-7. ⏳ Configurar routing y lazy loading
+7. ✅ Configurar routing y lazy loading
 
-### Fase 2: Feature Búsqueda
-1. Implementar BookService (API integration)
-2. Crear BookSearchStore (Signals)
-3. Desarrollar FilterPanelComponent (mat-sidenav, mat-select)
-4. Desarrollar SemanticSearchComponent (mat-form-field + textarea)
-5. Desarrollar BookTableComponent (mat-table, mat-paginator, mat-sort)
-6. Implementar paginación con cursor
-7. Tests unitarios y de integración
+### Fase 2: Feature Búsqueda ✅
+1. ✅ Implementar BookService (API integration)
+2. ✅ Crear BookSearchStore (Signals)
+3. ✅ Desarrollar FilterPanelComponent (mat-sidenav, mat-select)
+4. ✅ Desarrollar SemanticSearchComponent (mat-form-field + textarea)
+5. ✅ Desarrollar BookTableComponent (mat-table)
+6. ✅ Implementar paginación con cursor
+7. ✅ Tests unitarios y de integración
 
-### Fase 3: Feature Detalle
-1. Implementar página de detalle (mat-card)
-2. Crear BookInfoCardComponent
-3. Desarrollar SendToKindleFormComponent (mat-form-field, mat-button)
-4. Implementar SendToKindleDialog (mat-dialog)
-5. Integrar mat-snackbar para notificaciones
-6. Tests unitarios y de integración
+### Fase 3: Feature Detalle / Send to Kindle ✅
+1. ✅ Desarrollar SendToKindleDialogComponent (mat-dialog)
+2. ✅ Implementar KindleService
+3. ✅ Integrar diálogo con BookListPage
+4. ✅ Tests unitarios
 
-### Fase 4: Polish y E2E
-1. Responsive design ajustes (mat-sidenav colapsable en mobile)
-2. Animaciones y transiciones
-3. Tests E2E completos
-4. Optimización de performance
-5. Accesibilidad review
+### Fase 4: Polish, Responsive y E2E ✅
+1. ✅ Responsive design (mat-sidenav colapsable en mobile, BookCardComponent)
+2. ✅ Componentes data-display (CategoryChips, FormatIcon, LanguageFlag, LevelBadge, TruncatedText)
+3. ✅ Componentes table (EmptyState, LoadingOverlay, Paginator)
+4. ✅ Tests E2E con Playwright
+5. ✅ Accesibilidad review
+6. ✅ Documentación Storybook
 
-### Fase 5: Dockerización
-1. Crear Dockerfile
-2. Configurar nginx
-3. Actualizar docker-compose
-4. Tests en entorno containerizado
+### Fase 5: Dockerización (Pendiente)
+1. ⏳ Crear Dockerfile
+2. ⏳ Configurar nginx
+3. ⏳ Actualizar docker-compose
+4. ⏳ Tests en entorno containerizado
 
 ---
 

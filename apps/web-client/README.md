@@ -1,6 +1,15 @@
 # Library Web Client
 
-Cliente web Angular para el sistema de gestión de biblioteca digital **Library**. Permite buscar libros en el catálogo y enviarlos a dispositivos Kindle.
+Cliente web Angular para el sistema de gestión de biblioteca digital **Library**. Permite buscar libros en el catálogo, filtrar por múltiples criterios y enviarlos a dispositivos Kindle.
+
+## Features
+
+- 📚 **Catálogo de libros** con búsqueda y filtrado avanzado
+- 🔍 **Filtros múltiples**: ISBN, título, autor, tipo, categorías, niveles y búsqueda semántica
+- 📱 **Responsive**: Vista tabla en desktop, tarjetas en móvil
+- 📧 **Envío a Kindle** directamente desde la interfaz
+- 🌗 **Tema claro/oscuro** con detección automática del sistema
+- ♿ **Accesible** con soporte completo para ARIA
 
 ## Stack Tecnologico
 
@@ -18,6 +27,7 @@ Cliente web Angular para el sistema de gestión de biblioteca digital **Library*
 # Desarrollo
 npm start              # Servidor de desarrollo (http://localhost:4200)
 npm run watch          # Build en modo watch
+npm run storybook      # Iniciar Storybook para documentación de componentes
 
 # Testing
 npm test               # Ejecutar tests
@@ -30,6 +40,9 @@ npm run build          # Build de produccion
 # Linting
 npm run lint           # Ejecutar ESLint
 npm run lint:fix       # Ejecutar ESLint con auto-fix
+
+# E2E Testing
+npm run e2e            # Tests end-to-end con Playwright
 ```
 
 ## Estructura del Proyecto (Screaming Architecture)
@@ -114,7 +127,14 @@ El cliente soporta modo claro y oscuro con:
 
 - **Framework**: Vitest (default en Angular 21)
 - **Coverage**: `@vitest/coverage-v8`
-- **Tests actuales**: 24 tests (ThemeService: 15, ThemeToggle: 6, App: 3)
+- **E2E**: Playwright
+
+### Tipos de Tests
+
+| Tipo | Descripción | Comando |
+|------|-------------|---------|
+| Unit | Tests de componentes y servicios | `npm test` |
+| E2E | Tests end-to-end con Playwright | `npm run e2e` |
 
 ```bash
 # Ejecutar tests
@@ -122,7 +142,24 @@ npm test
 
 # Ver cobertura
 npm run test:coverage
+
+# E2E tests
+npm run e2e
 ```
+
+## Storybook
+
+El proyecto incluye Storybook para documentación visual de componentes:
+
+```bash
+npm run storybook
+```
+
+Los componentes están organizados en categorías:
+- **Catalog > Data Display**: CategoryChips, FormatIcon, LanguageFlag, LevelBadge, TruncatedText
+- **Catalog > Filters**: TextFilterInput, SearchableSelect, MultiSelectChips, SemanticSearch, FilterPanel
+- **Catalog > Table**: EmptyState, LoadingOverlay, Paginator, BookCard, BookTable
+- **Catalog > Dialogs**: SendToKindleDialog
 
 ## Desarrollo
 

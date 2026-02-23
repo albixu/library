@@ -154,13 +154,18 @@ Mobile-optimized card component for displaying book information.
 ```typescript
 interface Book {
   id: string;
+  isbn: string | null;
   title: string;
-  authors: string[];
-  categories: string[];
-  level?: BookLevel;     // 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert'
-  format?: BookFormat;   // 'PDF' | 'EPUB' | 'MOBI' | 'AZW3' | 'TXT'
-  language?: LanguageCode; // 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt'
-  description?: string;
+  authors: Author[];           // Array of {id, name}
+  type: string;
+  categories: Category[];      // Array of {id, name}
+  level: BookLevelName | null; // 'Beginner' | 'Intermediate' | 'Advanced' | compound levels
+  format: BookFormat;          // 'pdf' | 'epub' | 'mobi' | etc. (lowercase)
+  originalDescription: string;
+  description: string;
+  language: string;            // 'en' | 'es' | 'fr' | etc.
+  available: boolean;
+  similarityScore: number | null;
 }
 ```
 
@@ -211,8 +216,8 @@ Desktop-optimized table component for displaying books in a data grid.
 | Title | Book title with truncated description |
 | Authors | Comma-separated author names |
 | Categories | Category chips (max 2 visible) |
-| Level | Level badge (Beginner/Intermediate/Advanced/Expert) |
-| Format | Format icon (PDF/EPUB/MOBI/AZW3/TXT) |
+| Level | Level badge (Beginner/Intermediate/Advanced/compound levels) |
+| Format | Format icon (pdf/epub/mobi/azw3/etc.) |
 | Language | Language flag emoji |
 | Actions | Send to Kindle button |
 

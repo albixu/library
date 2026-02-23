@@ -43,11 +43,16 @@ Displays a book's difficulty level as a colored badge.
 **Inputs:**
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
-| `level` | `BookLevel \| undefined` | `undefined` | Book difficulty level |
+| `level` | `BookLevelName \| null \| undefined` | `undefined` | Book difficulty level |
 
-**BookLevel Type:**
+**BookLevelName Type:**
 ```typescript
-type BookLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+type BookLevelName = 
+  | 'Beginner' 
+  | 'Intermediate' 
+  | 'Advanced' 
+  | 'Beginner to Intermediate' 
+  | 'Intermediate to Advanced';
 ```
 
 **Level Colors:**
@@ -56,7 +61,8 @@ type BookLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
 | Beginner | Green (bg-green-100, text-green-700) | Green (bg-green-900/30, text-green-400) |
 | Intermediate | Amber (bg-amber-100, text-amber-700) | Amber (bg-amber-900/30, text-amber-400) |
 | Advanced | Red (bg-red-100, text-red-700) | Red (bg-red-900/30, text-red-400) |
-| Expert | Purple (bg-purple-100, text-purple-700) | Purple (bg-purple-900/30, text-purple-400) |
+| Beginner to Intermediate | Teal (bg-teal-50, text-teal-700) | Teal (bg-teal-900/30, text-teal-400) |
+| Intermediate to Advanced | Orange (bg-orange-100, text-orange-700) | Orange (bg-orange-900/30, text-orange-400) |
 
 **Usage:**
 ```html
@@ -80,18 +86,21 @@ Displays a Material icon representing the book format.
 
 **BookFormat Type:**
 ```typescript
-type BookFormat = 'PDF' | 'EPUB' | 'MOBI' | 'AZW3' | 'TXT';
+type BookFormat = 'pdf' | 'epub' | 'mobi' | 'azw3' | 'djvu' | 'cbz' | 'cbr' | 'txt' | 'other';
 ```
 
 **Format Icons:**
 | Format | Icon |
 |--------|------|
-| PDF | picture_as_pdf |
-| EPUB | book |
-| MOBI | tablet_android |
-| AZW3 | tablet_android |
-| TXT | description |
-| Other | insert_drive_file |
+| pdf | picture_as_pdf |
+| epub | book |
+| mobi | tablet_android |
+| azw3 | tablet_android |
+| djvu | photo_library |
+| cbz | collections |
+| cbr | collections |
+| txt | description |
+| other | insert_drive_file |
 
 **Sizes:**
 | Size | Font Size |
@@ -102,7 +111,7 @@ type BookFormat = 'PDF' | 'EPUB' | 'MOBI' | 'AZW3' | 'TXT';
 
 **Usage:**
 ```html
-<app-format-icon [format]="'PDF'" />
+<app-format-icon [format]="'pdf'" />
 <app-format-icon [format]="book.format" [size]="'large'" />
 ```
 
