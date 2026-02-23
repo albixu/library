@@ -2,10 +2,19 @@
 # DEVELOPMENT - Docker Compose
 # ================================
 # Usage:
-#   docker-compose up -d          # Start all services
-#   docker-compose up -d postgres # Start only postgres
-#   docker-compose logs -f api    # Follow api logs
-#   docker-compose down           # Stop all services
+#   docker-compose up -d              # Start all services
+#   docker-compose up -d api          # Start only API and dependencies
+#   docker-compose up -d web-client   # Start only web client
+#   docker-compose logs -f api        # Follow api logs
+#   docker-compose logs -f web-client # Follow web-client logs
+#   docker-compose down               # Stop all services
+#
+# Web Client Commands:
+#   docker exec library-web-client npm test          # Run unit tests
+#   docker exec library-web-client npm run lint      # Run linting
+#   docker exec library-web-client npm run build     # Build for production
+#   docker exec -it library-web-client npm run storybook  # Start Storybook
+#   docker exec library-web-client npm run test:e2e  # Run E2E tests
 # ================================
 
 services:
@@ -51,6 +60,42 @@ services:
         condition: service_healthy
       ollama:
         condition: service_started
+    networks:
+      - library-network
+    restart: unless-stopped
+
+  # ----- Web Client Application -----
+  web-client:
+    build:
+      context: ./apps/web-client
+      dockerfile: docker/Dockerfile.dev
+    container_name: library-web-client
+    ports:
+      - "4200:4200"   # Angular dev server
+      - "6006:6006"   # Storybook
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/web-client/src:/app/src
+      - ./apps/web-client/public:/app/public
+      - ./apps/web-client/e2e:/app/e2e
+      - ./apps/web-client/.storybook:/app/.storybook
+      # Configuration files
+      - ./apps/web-client/package.json:/app/package.json
+      - ./apps/web-client/tsconfig.json:/app/tsconfig.json
+      - ./apps/web-client/tsconfig.app.json:/app/tsconfig.app.json
+      - ./apps/web-client/tsconfig.spec.json:/app/tsconfig.spec.json
+      - ./apps/web-client/angular.json:/app/angular.json
+      - ./apps/web-client/eslint.config.js:/app/eslint.config.js
+      - ./apps/web-client/playwright.config.ts:/app/playwright.config.ts
+      - ./apps/web-client/.prettierrc:/app/.prettierrc
+      # Named volumes for caches (prevents overwrite by host)
+      - web_client_node_modules:/app/node_modules
+      - web_client_angular_cache:/app/.angular
+    environment:
+      - NODE_ENV=development
+      - NG_CLI_ANALYTICS=false
+      # API URL for HTTP calls (internal Docker network)
+      - API_URL=http://api:3000
     networks:
       - library-network
     restart: unless-stopped
@@ -104,3 +149,7 @@ volumes:
     name: library-ollama-data
   api_node_modules:
     name: library-api-node-modules
+  web_client_node_modules:
+    name: library-web-client-node-modules
+  web_client_angular_cache:
+    name: library-web-client-angular-cache
