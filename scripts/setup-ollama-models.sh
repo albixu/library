@@ -2,11 +2,16 @@
 # ============================================================
 # setup-ollama-models.sh
 # ============================================================
-# Script to download and initialize required AI models in Ollama.
+# Script to download, verify, and warm-up required AI models in Ollama.
 #
 # Models:
 #   - nomic-embed-text: For generating embeddings (semantic search)
-#   - qwen2.5:3b: For translating descriptions to Spanish
+#   - qwen2.5:1.5b: For translating descriptions to Spanish (lightweight)
+#
+# Features:
+#   - Downloads models if not present
+#   - Verifies models work correctly
+#   - Warms up models (pre-loads into memory) for faster first requests
 #
 # Usage:
 #   ./scripts/setup-ollama-models.sh
@@ -28,7 +33,7 @@ OLLAMA_CONTAINER="${OLLAMA_CONTAINER:-library-ollama}"
 # Models to download
 MODELS=(
     "nomic-embed-text"
-    "qwen2.5:3b"
+    "qwen2.5:1.5b"
 )
 
 # Colors for output
@@ -172,6 +177,28 @@ verify_model() {
     return 0
 }
 
+warmup_model() {
+    local model_name="$1"
+    
+    log_info "Warming up model: ${model_name} (pre-loading into memory)..."
+    
+    # For embedding model, run a simple embedding to load into memory
+    if [[ "$model_name" == *"embed"* ]]; then
+        curl -s -X POST "${OLLAMA_HOST}/api/embeddings" \
+            -H "Content-Type: application/json" \
+            -d "{\"model\": \"${model_name}\", \"prompt\": \"Warmup embedding request to pre-load model into memory for faster subsequent requests.\"}" \
+            --max-time 120 > /dev/null 2>&1
+    else
+        # For LLM models, run a simple generation to load into memory
+        curl -s -X POST "${OLLAMA_HOST}/api/generate" \
+            -H "Content-Type: application/json" \
+            -d "{\"model\": \"${model_name}\", \"prompt\": \"Respond with OK\", \"stream\": false}" \
+            --max-time 180 > /dev/null 2>&1
+    fi
+    
+    log_success "Model ${model_name} warmed up and ready!"
+}
+
 # ============================================================
 # Main
 # ============================================================
@@ -209,6 +236,18 @@ main() {
         echo ""
     done
     
+    # Warm up all models (pre-load into memory for faster first requests)
+    echo "------------------------------------------------------------"
+    log_info "Warming up models (pre-loading into memory)..."
+    echo ""
+    
+    for model in "${MODELS[@]}"; do
+        if check_model_exists "$model"; then
+            warmup_model "$model"
+        fi
+    done
+    
+    echo ""
     echo "============================================================"
     
     if [ ${#failed_models[@]} -eq 0 ]; then

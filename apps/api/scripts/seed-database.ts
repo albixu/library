@@ -6,6 +6,7 @@
  *
  * Features:
  * - Reads consolidated books from docs/db/books.json
+ * - Transforms source format (id→isbn, tags→categories) to internal format
  * - Checks for existing books by ISBN before creating
  * - Creates authors and categories via the use case
  * - Handles embedding service failures with retries
@@ -14,8 +15,9 @@
  * - Shows progress and summary statistics
  *
  * Usage:
- *   npx tsx scripts/seed-database.ts
- *   npm run seed:database
+ *   Development: npx tsx scripts/seed-database.ts
+ *   Production:  node dist/scripts/seed-database.js
+ *   npm scripts: npm run seed:database (dev) | npm run seed:prod (prod)
  *
  * Environment variables:
  *   DATABASE_URL - PostgreSQL connection string (required)
@@ -46,9 +48,21 @@ import type { Logger } from '../src/application/ports/Logger.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// In Docker: scripts is at /app/scripts, so /app/docs/db/books.json
-const APP_ROOT = join(__dirname, '..');
-const BOOKS_FILE = join(APP_ROOT, 'docs', 'db', 'books.json');
+// Path resolution for both development and production:
+// - Development (tsx): scripts/ is at apps/api/scripts/, books.json at monorepo/docs/db/
+// - Production (node): dist/scripts/ is at /app/dist/scripts/, books.json at /app/data/
+// Use BOOKS_FILE env var to override, or detect based on __dirname
+const getDefaultBooksPath = (): string => {
+  // Check if running from compiled dist folder
+  if (__dirname.includes('dist')) {
+    // Production: /app/dist/scripts → /app/data/books.json
+    return join(__dirname, '..', '..', 'data', 'books.json');
+  }
+  // Development: apps/api/scripts → monorepo/docs/db/books.json
+  return join(__dirname, '..', '..', '..', 'docs', 'db', 'books.json');
+};
+
+const BOOKS_FILE = process.env['BOOKS_FILE'] ?? getDefaultBooksPath();
 
 // Configuration
 const DEFAULT_BATCH_SIZE = 50;
@@ -56,15 +70,34 @@ const DEFAULT_MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
 /**
- * Book structure from consolidated JSON
- * HU-013: Added language field for translation support
+ * Source book structure from consolidated JSON file (books.json)
+ * This reflects the actual format in docs/db/books.json
+ */
+interface SourceBook {
+  readonly id: string;           // ISBN (stored as 'id' in source)
+  readonly title: string;
+  readonly authors: readonly string[];
+  readonly description: string;
+  readonly language: string;     // ISO 639-1 code (e.g., 'en', 'es')
+  readonly type: string;
+  readonly tags?: readonly string[]; // Categories (stored as 'tags' in source)
+  readonly format: string;
+  readonly level?: string;
+  // Additional fields that may be present but not used
+  readonly pages?: string;
+  readonly publication_date?: string;
+}
+
+/**
+ * Internal book structure after transformation
+ * This is what the rest of the script works with
  */
 interface ConsolidatedBook {
   readonly isbn: string;
   readonly title: string;
   readonly authors: readonly string[];
   readonly description: string;
-  readonly language: string; // HU-013: ISO 639-1 code (e.g., 'en', 'es')
+  readonly language: string;
   readonly type: string;
   readonly categories: readonly string[];
   readonly format: string;
@@ -90,9 +123,9 @@ interface SeedingSummary {
 }
 
 /**
- * Validates that an object is a valid ConsolidatedBook
+ * Validates that an object is a valid SourceBook from books.json
  */
-function isValidConsolidatedBook(obj: unknown): obj is ConsolidatedBook {
+function isValidSourceBook(obj: unknown): obj is SourceBook {
   if (typeof obj !== 'object' || obj === null) {
     return false;
   }
@@ -105,25 +138,48 @@ function isValidConsolidatedBook(obj: unknown): obj is ConsolidatedBook {
     book.level === null ||
     typeof book.level === 'string';
 
+  // tags is optional - if present, must be array of strings
+  const tagsValid =
+    book.tags === undefined ||
+    (Array.isArray(book.tags) && book.tags.every((t) => typeof t === 'string'));
+
   return (
-    typeof book.isbn === 'string' &&
+    typeof book.id === 'string' &&
     typeof book.title === 'string' &&
     Array.isArray(book.authors) &&
     book.authors.length > 0 &&
     book.authors.every((a) => typeof a === 'string') &&
     typeof book.description === 'string' &&
-    typeof book.language === 'string' && // HU-013: language is required
+    typeof book.language === 'string' &&
     typeof book.type === 'string' &&
-    Array.isArray(book.categories) &&
-    book.categories.every((c) => typeof c === 'string') &&
     typeof book.format === 'string' &&
-    typeof book.available === 'boolean' &&
+    tagsValid &&
     levelValid
   );
 }
 
 /**
+ * Transforms a SourceBook to ConsolidatedBook (internal format)
+ * Maps: id→isbn, tags→categories, adds available=true default
+ */
+function transformSourceBook(source: SourceBook): ConsolidatedBook {
+  return {
+    isbn: source.id,
+    title: source.title,
+    authors: source.authors,
+    description: source.description,
+    language: source.language,
+    type: source.type,
+    categories: source.tags ?? [],
+    format: source.format,
+    available: true, // Default: all imported books are available
+    level: source.level,
+  };
+}
+
+/**
  * Reads and parses the consolidated books JSON file
+ * Transforms from source format (id, tags) to internal format (isbn, categories)
  */
 async function readBooksFile(filePath: string): Promise<ConsolidatedBook[]> {
   const content = await readFile(filePath, 'utf-8');
@@ -134,12 +190,22 @@ async function readBooksFile(filePath: string): Promise<ConsolidatedBook[]> {
   }
 
   const validBooks: ConsolidatedBook[] = [];
+  let invalidCount = 0;
+
   for (const item of parsed) {
-    if (isValidConsolidatedBook(item)) {
-      validBooks.push(item);
+    if (isValidSourceBook(item)) {
+      validBooks.push(transformSourceBook(item));
     } else {
-      console.warn('Warning: Invalid book entry in consolidated file, skipping');
+      invalidCount++;
+      if (invalidCount <= 3) {
+        console.warn('Warning: Invalid book entry in file, skipping:', 
+          typeof item === 'object' && item !== null ? (item as Record<string, unknown>).id ?? 'unknown' : 'invalid');
+      }
     }
+  }
+
+  if (invalidCount > 3) {
+    console.warn(`... and ${invalidCount - 3} more invalid entries skipped`);
   }
 
   return validBooks;
@@ -147,15 +213,15 @@ async function readBooksFile(filePath: string): Promise<ConsolidatedBook[]> {
 
 /**
  * Converts a ConsolidatedBook to CreateBookInput
- * HU-008: CreateBookUseCase now expects 'authors' (plural) as string array.
- * HU-013: Added language field for translation support.
+ * HU-008: CreateBookUseCase expects 'authors' (plural) as string array.
+ * HU-013: Includes language field for translation support.
  */
 function toCreateBookInput(book: ConsolidatedBook): CreateBookInput {
   return {
     title: book.title,
     authors: [...book.authors],
     description: book.description,
-    language: book.language, // HU-013: ISO 639-1 code
+    language: book.language,
     type: book.type,
     categoryNames: [...book.categories],
     format: book.format,
@@ -439,5 +505,5 @@ seedDatabase().catch((error: unknown) => {
   process.exit(1);
 });
 
-export { seedDatabase, readBooksFile, toCreateBookInput, isValidConsolidatedBook };
-export type { ConsolidatedBook, SeedingSummary, BookResult };
+export { seedDatabase, readBooksFile, toCreateBookInput, isValidSourceBook, transformSourceBook };
+export type { SourceBook, ConsolidatedBook, SeedingSummary, BookResult };

@@ -1,471 +1,540 @@
 /**
  * Unit tests for seed-database.ts script
+ * 
+ * Tests the source book validation (isValidSourceBook) and transformation
+ * (transformSourceBook) functions that convert from books.json format
+ * to internal ConsolidatedBook format.
  */
 
 import { describe, it, expect } from 'vitest';
 import {
   toCreateBookInput,
-  isValidConsolidatedBook,
+  isValidSourceBook,
+  transformSourceBook,
+  type SourceBook,
   type ConsolidatedBook,
 } from '../../../scripts/seed-database.js';
 
 describe('seed-database', () => {
-  describe('isValidConsolidatedBook', () => {
-    it('should return true for valid consolidated book with all fields', () => {
+  describe('isValidSourceBook', () => {
+    it('should return true for valid source book with all fields', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'Test Book',
         authors: ['Author One'],
         description: 'A test description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: ['JavaScript', 'TypeScript'],
+        tags: ['JavaScript', 'TypeScript'],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(true);
+      expect(isValidSourceBook(book)).toBe(true);
     });
 
     it('should return true for valid book with multiple authors', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'Multi Author Book',
         authors: ['Author 1', 'Author 2', 'Author 3'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: ['Category1'],
+        tags: ['Category1'],
         format: 'pdf',
-        available: true,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(true);
+      expect(isValidSourceBook(book)).toBe(true);
     });
 
-    it('should return true for book with empty categories', () => {
+    it('should return true for book without tags (optional field)', () => {
       const book = {
-        isbn: '9781234567890',
-        title: 'No Categories Book',
+        id: '9781234567890',
+        title: 'No Tags Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'es', // HU-013
+        language: 'es',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(true);
+      expect(isValidSourceBook(book)).toBe(true);
+    });
+
+    it('should return true for book with empty tags array', () => {
+      const book = {
+        id: '9781234567890',
+        title: 'Empty Tags Book',
+        authors: ['Author'],
+        description: 'Description',
+        language: 'es',
+        type: 'technical',
+        tags: [],
+        format: 'pdf',
+      };
+
+      expect(isValidSourceBook(book)).toBe(true);
     });
 
     it('should return false for null', () => {
-      expect(isValidConsolidatedBook(null)).toBe(false);
+      expect(isValidSourceBook(null)).toBe(false);
     });
 
     it('should return false for undefined', () => {
-      expect(isValidConsolidatedBook(undefined)).toBe(false);
+      expect(isValidSourceBook(undefined)).toBe(false);
     });
 
     it('should return false for primitive values', () => {
-      expect(isValidConsolidatedBook('string')).toBe(false);
-      expect(isValidConsolidatedBook(123)).toBe(false);
-      expect(isValidConsolidatedBook(true)).toBe(false);
+      expect(isValidSourceBook('string')).toBe(false);
+      expect(isValidSourceBook(123)).toBe(false);
+      expect(isValidSourceBook(true)).toBe(false);
     });
 
-    it('should return false for missing isbn', () => {
+    it('should return false for missing id', () => {
       const book = {
-        title: 'No ISBN Book',
+        title: 'No ID Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
-    it('should return false for non-string isbn', () => {
+    it('should return false for non-string id', () => {
       const book = {
-        isbn: 12345,
-        title: 'Numeric ISBN Book',
+        id: 12345,
+        title: 'Numeric ID Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return false for missing title', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return false for non-string title', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 123,
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return false for missing authors', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'No Authors Book',
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return false for empty authors array', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'Empty Authors Book',
         authors: [],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return false for non-array authors', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'String Author Book',
         authors: 'Single Author',
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return false for authors with non-string elements', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'Mixed Authors Book',
         authors: ['Valid Author', 123],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return false for missing description', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'No Description Book',
         authors: ['Author'],
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return false for non-string description', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'Numeric Description Book',
         authors: ['Author'],
         description: 12345,
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
-    // HU-013: Tests for language field validation
     it('should return false for missing language', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'No Language Book',
         authors: ['Author'],
         description: 'Description',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return false for non-string language', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'Numeric Language Book',
         authors: ['Author'],
         description: 'Description',
         language: 123,
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return false for missing type', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'No Type Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
-        categories: [],
+        language: 'en',
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return false for non-string type', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'Numeric Type Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 123,
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
-    it('should return false for missing categories', () => {
+    it('should return false for non-array tags', () => {
       const book = {
-        isbn: '9781234567890',
-        title: 'No Categories Book',
+        id: '9781234567890',
+        title: 'String Tags Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
+        tags: 'Tag',
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
-    it('should return false for non-array categories', () => {
+    it('should return false for tags with non-string elements', () => {
       const book = {
-        isbn: '9781234567890',
-        title: 'String Categories Book',
+        id: '9781234567890',
+        title: 'Mixed Tags Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: 'Category',
+        tags: ['Valid', 123],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
-    });
-
-    it('should return false for categories with non-string elements', () => {
-      const book = {
-        isbn: '9781234567890',
-        title: 'Mixed Categories Book',
-        authors: ['Author'],
-        description: 'Description',
-        language: 'en', // HU-013
-        type: 'technical',
-        categories: ['Valid', 123],
-        format: 'pdf',
-        available: false,
-      };
-
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return false for missing format', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'No Format Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return false for non-string format', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'Numeric Format Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 123,
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
-    });
-
-    it('should return false for missing available', () => {
-      const book = {
-        isbn: '9781234567890',
-        title: 'No Available Book',
-        authors: ['Author'],
-        description: 'Description',
-        language: 'en', // HU-013
-        type: 'technical',
-        categories: [],
-        format: 'pdf',
-      };
-
-      expect(isValidConsolidatedBook(book)).toBe(false);
-    });
-
-    it('should return false for non-boolean available', () => {
-      const book = {
-        isbn: '9781234567890',
-        title: 'String Available Book',
-        authors: ['Author'],
-        description: 'Description',
-        language: 'en', // HU-013
-        type: 'technical',
-        categories: [],
-        format: 'pdf',
-        available: 'yes',
-      };
-
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
     });
 
     it('should return true for book with valid level', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'Book With Level',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
         level: 'Beginner',
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(true);
+      expect(isValidSourceBook(book)).toBe(true);
     });
 
     it('should return true for book without level (optional field)', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'Book Without Level',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(true);
+      expect(isValidSourceBook(book)).toBe(true);
     });
 
     it('should return true for book with null level', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'Book With Null Level',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
         level: null,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(true);
+      expect(isValidSourceBook(book)).toBe(true);
     });
 
     it('should return false for book with non-string level', () => {
       const book = {
-        isbn: '9781234567890',
+        id: '9781234567890',
         title: 'Book With Numeric Level',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
-        categories: [],
         format: 'pdf',
-        available: false,
         level: 123,
       };
 
-      expect(isValidConsolidatedBook(book)).toBe(false);
+      expect(isValidSourceBook(book)).toBe(false);
+    });
+
+    it('should allow additional properties (pages, publication_date, etc.)', () => {
+      const book = {
+        id: '9781234567890',
+        title: 'Book With Extra Fields',
+        authors: ['Author'],
+        description: 'Description',
+        language: 'en',
+        type: 'technical',
+        format: 'pdf',
+        pages: '500',
+        publication_date: 'June 2024',
+        extra_field: 'ignored',
+      };
+
+      expect(isValidSourceBook(book)).toBe(true);
+    });
+  });
+
+  describe('transformSourceBook', () => {
+    it('should transform id to isbn', () => {
+      const source: SourceBook = {
+        id: '9781234567890',
+        title: 'Test Book',
+        authors: ['Author'],
+        description: 'Description',
+        language: 'en',
+        type: 'technical',
+        format: 'pdf',
+      };
+
+      const result = transformSourceBook(source);
+
+      expect(result.isbn).toBe('9781234567890');
+    });
+
+    it('should transform tags to categories', () => {
+      const source: SourceBook = {
+        id: '9781234567890',
+        title: 'Test Book',
+        authors: ['Author'],
+        description: 'Description',
+        language: 'en',
+        type: 'technical',
+        tags: ['JavaScript', 'TypeScript'],
+        format: 'pdf',
+      };
+
+      const result = transformSourceBook(source);
+
+      expect(result.categories).toEqual(['JavaScript', 'TypeScript']);
+    });
+
+    it('should set categories to empty array when tags is undefined', () => {
+      const source: SourceBook = {
+        id: '9781234567890',
+        title: 'Test Book',
+        authors: ['Author'],
+        description: 'Description',
+        language: 'en',
+        type: 'technical',
+        format: 'pdf',
+      };
+
+      const result = transformSourceBook(source);
+
+      expect(result.categories).toEqual([]);
+    });
+
+    it('should set available to true by default', () => {
+      const source: SourceBook = {
+        id: '9781234567890',
+        title: 'Test Book',
+        authors: ['Author'],
+        description: 'Description',
+        language: 'en',
+        type: 'technical',
+        format: 'pdf',
+      };
+
+      const result = transformSourceBook(source);
+
+      expect(result.available).toBe(true);
+    });
+
+    it('should preserve all other fields', () => {
+      const source: SourceBook = {
+        id: '9781234567890',
+        title: 'Test Book',
+        authors: ['Author One', 'Author Two'],
+        description: 'A test description',
+        language: 'es',
+        type: 'novel',
+        tags: ['Fiction'],
+        format: 'epub',
+        level: 'Intermediate',
+      };
+
+      const result = transformSourceBook(source);
+
+      expect(result.title).toBe('Test Book');
+      expect(result.authors).toEqual(['Author One', 'Author Two']);
+      expect(result.description).toBe('A test description');
+      expect(result.language).toBe('es');
+      expect(result.type).toBe('novel');
+      expect(result.format).toBe('epub');
+      expect(result.level).toBe('Intermediate');
+    });
+
+    it('should preserve level when provided', () => {
+      const source: SourceBook = {
+        id: '9781234567890',
+        title: 'Test Book',
+        authors: ['Author'],
+        description: 'Description',
+        language: 'en',
+        type: 'technical',
+        format: 'pdf',
+        level: 'Beginner to intermediate',
+      };
+
+      const result = transformSourceBook(source);
+
+      expect(result.level).toBe('Beginner to intermediate');
+    });
+
+    it('should set level to undefined when not provided', () => {
+      const source: SourceBook = {
+        id: '9781234567890',
+        title: 'Test Book',
+        authors: ['Author'],
+        description: 'Description',
+        language: 'en',
+        type: 'technical',
+        format: 'pdf',
+      };
+
+      const result = transformSourceBook(source);
+
+      expect(result.level).toBeUndefined();
     });
   });
 
@@ -476,24 +545,24 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author One', 'Author Two'],
         description: 'A test description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
         categories: ['JavaScript', 'TypeScript'],
         format: 'pdf',
-        available: false,
+        available: true,
       };
 
       const result = toCreateBookInput(book);
 
       expect(result.title).toBe('Test Book');
-      expect(result.authors).toEqual(['Author One', 'Author Two']); // HU-008: Now passes all authors
+      expect(result.authors).toEqual(['Author One', 'Author Two']);
       expect(result.description).toBe('A test description');
-      expect(result.language).toBe('en'); // HU-013
+      expect(result.language).toBe('en');
       expect(result.type).toBe('technical');
       expect(result.categoryNames).toEqual(['JavaScript', 'TypeScript']);
       expect(result.format).toBe('pdf');
       expect(result.isbn).toBe('9781234567890');
-      expect(result.available).toBe(false);
+      expect(result.available).toBe(true);
       expect(result.path).toBeNull();
       expect(result.level).toBeNull();
     });
@@ -504,11 +573,11 @@ describe('seed-database', () => {
         title: 'Test Book With Level',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
         categories: [],
         format: 'pdf',
-        available: false,
+        available: true,
         level: 'Intermediate',
       };
 
@@ -523,11 +592,11 @@ describe('seed-database', () => {
         title: 'Test Book Without Level',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
         categories: [],
         format: 'pdf',
-        available: false,
+        available: true,
       };
 
       const result = toCreateBookInput(book);
@@ -541,16 +610,15 @@ describe('seed-database', () => {
         title: 'Multi Author Book',
         authors: ['First Author', 'Second Author', 'Third Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
         categories: [],
         format: 'pdf',
-        available: false,
+        available: true,
       };
 
       const result = toCreateBookInput(book);
 
-      // HU-008: Now passes all authors as an array
       expect(result.authors).toEqual(['First Author', 'Second Author', 'Third Author']);
     });
 
@@ -560,7 +628,7 @@ describe('seed-database', () => {
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
         categories: [],
         format: 'pdf',
@@ -572,22 +640,33 @@ describe('seed-database', () => {
       expect(result.path).toBeNull();
     });
 
-    it('should preserve available true value', () => {
-      const book: ConsolidatedBook = {
+    it('should preserve available value', () => {
+      const bookAvailable: ConsolidatedBook = {
         isbn: '9781234567890',
         title: 'Available Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
         categories: [],
         format: 'epub',
         available: true,
       };
 
-      const result = toCreateBookInput(book);
+      const bookUnavailable: ConsolidatedBook = {
+        isbn: '9781234567891',
+        title: 'Unavailable Book',
+        authors: ['Author'],
+        description: 'Description',
+        language: 'en',
+        type: 'technical',
+        categories: [],
+        format: 'epub',
+        available: false,
+      };
 
-      expect(result.available).toBe(true);
+      expect(toCreateBookInput(bookAvailable).available).toBe(true);
+      expect(toCreateBookInput(bookUnavailable).available).toBe(false);
     });
 
     it('should convert categories to categoryNames', () => {
@@ -596,11 +675,11 @@ describe('seed-database', () => {
         title: 'Categorized Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
         categories: ['Cat1', 'Cat2', 'Cat3'],
         format: 'pdf',
-        available: false,
+        available: true,
       };
 
       const result = toCreateBookInput(book);
@@ -614,11 +693,11 @@ describe('seed-database', () => {
         title: 'No Categories Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'novel',
         categories: [],
         format: 'pdf',
-        available: false,
+        available: true,
       };
 
       const result = toCreateBookInput(book);
@@ -635,11 +714,11 @@ describe('seed-database', () => {
           title: 'Test Book',
           authors: ['Author'],
           description: 'Description',
-          language: 'en', // HU-013
+          language: 'en',
           type: 'technical',
           categories: [],
           format,
-          available: false,
+          available: true,
         };
 
         const result = toCreateBookInput(book);
@@ -656,35 +735,16 @@ describe('seed-database', () => {
           title: 'Test Book',
           authors: ['Author'],
           description: 'Description',
-          language: 'en', // HU-013
+          language: 'en',
           type,
           categories: [],
           format: 'pdf',
-          available: false,
+          available: true,
         };
 
         const result = toCreateBookInput(book);
         expect(result.type).toBe(type);
       }
-    });
-
-    // HU-013: Tests for language field
-    it('should pass language field to CreateBookInput', () => {
-      const book: ConsolidatedBook = {
-        isbn: '9781234567890',
-        title: 'Spanish Book',
-        authors: ['Author'],
-        description: 'Descripción en español',
-        language: 'es',
-        type: 'technical',
-        categories: [],
-        format: 'pdf',
-        available: false,
-      };
-
-      const result = toCreateBookInput(book);
-
-      expect(result.language).toBe('es');
     });
 
     it('should handle different language codes', () => {
@@ -700,7 +760,7 @@ describe('seed-database', () => {
           type: 'technical',
           categories: [],
           format: 'pdf',
-          available: false,
+          available: true,
         };
 
         const result = toCreateBookInput(book);
@@ -709,30 +769,110 @@ describe('seed-database', () => {
     });
   });
 
-  describe('ConsolidatedBook type structure', () => {
-    it('should have correct readonly properties', () => {
+  describe('SourceBook and ConsolidatedBook type structures', () => {
+    it('should have correct SourceBook structure', () => {
+      const source: SourceBook = {
+        id: '9781234567890',
+        title: 'Test Book',
+        authors: ['Author'],
+        description: 'Description',
+        language: 'en',
+        type: 'technical',
+        tags: ['Category'],
+        format: 'pdf',
+        level: 'Beginner',
+        pages: '500',
+        publication_date: 'June 2024',
+      };
+
+      expect(source.id).toBe('9781234567890');
+      expect(source.title).toBe('Test Book');
+      expect(source.authors).toEqual(['Author']);
+      expect(source.description).toBe('Description');
+      expect(source.language).toBe('en');
+      expect(source.type).toBe('technical');
+      expect(source.tags).toEqual(['Category']);
+      expect(source.format).toBe('pdf');
+      expect(source.level).toBe('Beginner');
+      expect(source.pages).toBe('500');
+      expect(source.publication_date).toBe('June 2024');
+    });
+
+    it('should have correct ConsolidatedBook structure', () => {
       const book: ConsolidatedBook = {
         isbn: '9781234567890',
         title: 'Test Book',
         authors: ['Author'],
         description: 'Description',
-        language: 'en', // HU-013
+        language: 'en',
         type: 'technical',
         categories: ['Category'],
         format: 'pdf',
-        available: false,
+        available: true,
+        level: 'Beginner',
       };
 
-      // Type check - these should compile and have correct values
       expect(book.isbn).toBe('9781234567890');
       expect(book.title).toBe('Test Book');
       expect(book.authors).toEqual(['Author']);
       expect(book.description).toBe('Description');
-      expect(book.language).toBe('en'); // HU-013
+      expect(book.language).toBe('en');
       expect(book.type).toBe('technical');
       expect(book.categories).toEqual(['Category']);
       expect(book.format).toBe('pdf');
-      expect(book.available).toBe(false);
+      expect(book.available).toBe(true);
+      expect(book.level).toBe('Beginner');
+    });
+  });
+
+  describe('end-to-end transformation', () => {
+    it('should correctly transform and convert a real book from books.json format', () => {
+      // Simulate a real entry from books.json
+      const sourceFromJson = {
+        id: '9781394254699',
+        language: 'en',
+        level: 'Intermediate to advanced',
+        title: 'ISC2 CISSP Certified Information Systems Security Professional Official Study Guide',
+        authors: ['Mike Chapple', 'James Michael Stewart', 'Darril Gibson'],
+        pages: '1200',
+        publication_date: 'June 2024',
+        description: 'CISSP Study Guide - fully updated for the 2024 CISSP Body of Knowledge',
+        tags: ['Security', 'Security Certifications', 'CISSP'],
+        type: 'technical',
+        format: 'epub',
+      };
+
+      // First validate
+      expect(isValidSourceBook(sourceFromJson)).toBe(true);
+
+      // Then transform
+      const consolidated = transformSourceBook(sourceFromJson as SourceBook);
+
+      expect(consolidated.isbn).toBe('9781394254699');
+      expect(consolidated.title).toBe('ISC2 CISSP Certified Information Systems Security Professional Official Study Guide');
+      expect(consolidated.authors).toEqual(['Mike Chapple', 'James Michael Stewart', 'Darril Gibson']);
+      expect(consolidated.description).toBe('CISSP Study Guide - fully updated for the 2024 CISSP Body of Knowledge');
+      expect(consolidated.language).toBe('en');
+      expect(consolidated.type).toBe('technical');
+      expect(consolidated.categories).toEqual(['Security', 'Security Certifications', 'CISSP']);
+      expect(consolidated.format).toBe('epub');
+      expect(consolidated.available).toBe(true);
+      expect(consolidated.level).toBe('Intermediate to advanced');
+
+      // Finally convert to CreateBookInput
+      const input = toCreateBookInput(consolidated);
+
+      expect(input.isbn).toBe('9781394254699');
+      expect(input.title).toBe('ISC2 CISSP Certified Information Systems Security Professional Official Study Guide');
+      expect(input.authors).toEqual(['Mike Chapple', 'James Michael Stewart', 'Darril Gibson']);
+      expect(input.description).toBe('CISSP Study Guide - fully updated for the 2024 CISSP Body of Knowledge');
+      expect(input.language).toBe('en');
+      expect(input.type).toBe('technical');
+      expect(input.categoryNames).toEqual(['Security', 'Security Certifications', 'CISSP']);
+      expect(input.format).toBe('epub');
+      expect(input.available).toBe(true);
+      expect(input.level).toBe('Intermediate to advanced');
+      expect(input.path).toBeNull();
     });
   });
 });
