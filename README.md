@@ -549,6 +549,56 @@ docker exec library-api npm run db:migrate
 docker exec library-api npm run seed:database
 ```
 
+### Inicialización de la base de datos
+
+La inicialización de la base de datos en producción ocurre en dos fases:
+
+#### Fase 1: Schema (Automático)
+
+El archivo `docs/db/init-db.sql` está montado en `/docker-entrypoint-initdb.d/` del contenedor PostgreSQL. Esto significa que:
+
+- PostgreSQL ejecuta automáticamente este script **la primera vez** que se crea el volumen
+- Si el volumen ya existe (con datos), el script **NO se ejecuta**
+- Este comportamiento es nativo de PostgreSQL Docker
+
+```bash
+# Para forzar la reinicialización del schema (⚠️ BORRA TODOS LOS DATOS):
+docker-compose -f docker-compose.prod.yml down -v
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+#### Fase 2: Datos iniciales (Manual o Automático)
+
+Los datos de libros se cargan desde `docs/db/books.json` usando el script `seed:database`:
+
+```bash
+# Ejecución manual (recomendado para producción)
+docker exec library-api npm run seed:database
+```
+
+El script es **idempotente**: verifica cada libro por ISBN antes de insertarlo. Si el libro ya existe, lo salta. Esto permite ejecutarlo múltiples veces sin duplicar datos.
+
+**Carga automática (opcional):**
+
+Para ambientes de staging o desarrollo, puedes habilitar la carga automática al iniciar el contenedor añadiendo esta variable de entorno:
+
+```bash
+# En .env o docker-compose
+AUTO_SEED=true
+```
+
+Con `AUTO_SEED=true`, el seeding se ejecuta automáticamente al arrancar la API. Como es idempotente, si los libros ya existen no se duplican.
+
+#### Verificar estado de la base de datos
+
+```bash
+# Verificar que hay libros cargados
+curl http://localhost:3000/api/books?limit=1
+
+# Contar libros en la base de datos
+docker exec library-postgres psql -U library -d library -c "SELECT COUNT(*) FROM books;"
+```
+
 ### Comandos de producción
 
 ```bash
