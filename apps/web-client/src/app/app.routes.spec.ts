@@ -1,21 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { RouterModule, Router, provideRouter } from '@angular/router';
-import { Component } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 
-// Dummy component for testing
-@Component({ template: '' })
-class DummyComponent {}
-
 describe('Application Routes', () => {
-  let router: Router;
-
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       providers: [provideRouter(routes)],
     }).compileComponents();
-
-    router = TestBed.inject(Router);
   });
 
   describe('Route configuration', () => {

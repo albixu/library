@@ -1,26 +1,30 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-export interface PageEvent {
-  pageIndex: number;
-  previousPageIndex: number;
-  pageSize: number;
-  length: number;
-}
-
+/**
+ * PaginatorComponent - Cursor-based pagination with "load more" functionality
+ *
+ * Features:
+ * - Shows current vs total count (e.g., "25 of 120")
+ * - "Load more" button when more pages available
+ * - Page size selector
+ * - Loading state with spinner
+ * - Accessible with proper ARIA labels
+ */
 @Component({
   selector: 'app-paginator',
   standalone: true,
-  imports: [MatButtonModule, MatIconModule, MatSelectModule, MatFormFieldModule],
+  imports: [
+    MatButtonModule,
+    MatIconModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    MatProgressSpinnerModule,
+  ],
   template: `
     <nav class="paginator" aria-label="Pagination">
       <div class="paginator-page-size">
@@ -28,8 +32,9 @@ export interface PageEvent {
         <mat-form-field appearance="outline" class="paginator-select">
           <mat-select
             [value]="pageSize()"
-            [disabled]="disabled()"
-            (selectionChange)="onPageSizeChange($event.value)">
+            [disabled]="loading()"
+            (selectionChange)="onPageSizeChange($event.value)"
+          >
             @for (option of pageSizeOptions(); track option) {
               <mat-option [value]="option">{{ option }}</mat-option>
             }
@@ -42,34 +47,19 @@ export interface PageEvent {
       </div>
 
       <div class="paginator-controls">
-        <button
-          mat-icon-button
-          aria-label="First page"
-          [disabled]="isFirstPage() || disabled()"
-          (click)="goToFirstPage()">
-          <mat-icon>first_page</mat-icon>
-        </button>
-        <button
-          mat-icon-button
-          aria-label="Previous page"
-          [disabled]="isFirstPage() || disabled()"
-          (click)="goToPreviousPage()">
-          <mat-icon>chevron_left</mat-icon>
-        </button>
-        <button
-          mat-icon-button
-          aria-label="Next page"
-          [disabled]="isLastPage() || disabled()"
-          (click)="goToNextPage()">
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-        <button
-          mat-icon-button
-          aria-label="Last page"
-          [disabled]="isLastPage() || disabled()"
-          (click)="goToLastPage()">
-          <mat-icon>last_page</mat-icon>
-        </button>
+        @if (loading()) {
+          <mat-spinner diameter="24"></mat-spinner>
+        } @else if (hasNextPage()) {
+          <button
+            mat-stroked-button
+            data-testid="load-more-button"
+            aria-label="Load more items"
+            (click)="onLoadMore()"
+          >
+            <mat-icon>expand_more</mat-icon>
+            Load more
+          </button>
+        }
       </div>
     </nav>
   `,
@@ -118,69 +108,46 @@ export interface PageEvent {
     .paginator-controls {
       display: flex;
       align-items: center;
+      min-width: 120px;
+      justify-content: center;
+    }
+
+    .paginator-controls button mat-icon {
+      margin-right: 4px;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PaginatorComponent {
-  readonly pageIndex = input<number>(0);
+  // Cursor-based pagination inputs
+  readonly totalCount = input<number>(0);
+  readonly currentCount = input<number>(0);
+  readonly hasNextPage = input<boolean>(false);
   readonly pageSize = input<number>(25);
-  readonly totalItems = input<number>(0);
   readonly pageSizeOptions = input<number[]>([25, 50, 100]);
-  readonly disabled = input<boolean>(false);
+  readonly loading = input<boolean>(false);
 
-  readonly page = output<PageEvent>();
+  // Outputs
+  readonly loadMore = output<void>();
+  readonly pageSizeChange = output<number>();
 
-  readonly totalPages = computed(() => {
-    const total = this.totalItems();
-    const size = this.pageSize();
-    return Math.ceil(total / size) || 1;
-  });
-
-  readonly isFirstPage = computed(() => this.pageIndex() === 0);
-  readonly isLastPage = computed(
-    () => this.pageIndex() >= this.totalPages() - 1
-  );
-
+  // Computed
   readonly rangeLabel = computed(() => {
-    const total = this.totalItems();
+    const total = this.totalCount();
+    const current = this.currentCount();
+
     if (total === 0) {
       return '0 of 0';
     }
-    const start = this.pageIndex() * this.pageSize() + 1;
-    const end = Math.min((this.pageIndex() + 1) * this.pageSize(), total);
-    return `${start} – ${end} of ${total}`;
+
+    return `${current} of ${total}`;
   });
 
+  onLoadMore(): void {
+    this.loadMore.emit();
+  }
+
   onPageSizeChange(newSize: number): void {
-    this.emitPageEvent(0, newSize);
-  }
-
-  goToFirstPage(): void {
-    this.emitPageEvent(0);
-  }
-
-  goToPreviousPage(): void {
-    this.emitPageEvent(this.pageIndex() - 1);
-  }
-
-  goToNextPage(): void {
-    this.emitPageEvent(this.pageIndex() + 1);
-  }
-
-  goToLastPage(): void {
-    this.emitPageEvent(this.totalPages() - 1);
-  }
-
-  private emitPageEvent(
-    newPageIndex: number,
-    newPageSize: number = this.pageSize()
-  ): void {
-    this.page.emit({
-      pageIndex: newPageIndex,
-      previousPageIndex: this.pageIndex(),
-      pageSize: newPageSize,
-      length: this.totalItems(),
-    });
+    this.pageSizeChange.emit(newSize);
   }
 }

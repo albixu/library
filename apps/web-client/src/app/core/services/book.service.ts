@@ -80,10 +80,7 @@ export class BookService {
   /**
    * Build query params for book search
    */
-  private buildSearchParams(
-    filters: SearchFilters,
-    pagination: PaginationParams
-  ): QueryParams {
+  private buildSearchParams(filters: SearchFilters, pagination: PaginationParams): QueryParams {
     const params: QueryParams = {
       limit: pagination.limit ?? DEFAULT_LIMIT,
       cursor: pagination.cursor,
@@ -91,29 +88,29 @@ export class BookService {
 
     // Add text filters (only if non-empty)
     if (filters.isbn) {
-      params.isbn = filters.isbn;
+      params['isbn'] = filters.isbn;
     }
     if (filters.title) {
-      params.title = filters.title;
+      params['title'] = filters.title;
     }
     if (filters.author) {
-      params.author = filters.author;
+      params['author'] = filters.author;
     }
     if (filters.text) {
-      params.text = filters.text;
+      params['text'] = filters.text;
     }
 
     // Add type filter (API uses 'types' param)
     if (filters.type) {
-      params.types = filters.type;
+      params['types'] = filters.type;
     }
 
     // Add array filters (only if non-empty arrays)
     if (filters.categories && filters.categories.length > 0) {
-      params.categories = filters.categories;
+      params['categories'] = filters.categories;
     }
     if (filters.levels && filters.levels.length > 0) {
-      params.levels = filters.levels;
+      params['levels'] = filters.levels;
     }
 
     return params;

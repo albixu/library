@@ -17,7 +17,8 @@ const sampleBook: Book = {
   format: 'pdf',
   language: 'en',
   originalDescription: 'A comprehensive guide to writing clean, maintainable code.',
-  description: 'A comprehensive guide to writing clean, maintainable code. Learn how to write code that is easy to read, understand, and modify.',
+  description:
+    'A comprehensive guide to writing clean, maintainable code. Learn how to write code that is easy to read, understand, and modify.',
   available: true,
   similarityScore: null,
 };
@@ -44,7 +45,7 @@ Mobile-optimized card component for displaying book information.
 \`\`\`html
 <app-book-card
   [book]="book"
-  (select)="onBookSelect($event)"
+  (bookSelect)="onBookSelect($event)"
   (sendToKindle)="onSendToKindle($event)" />
 
 <app-book-card
@@ -193,8 +194,10 @@ export const SpanishBook: Story = {
       level: 'Advanced',
       format: 'pdf',
       language: 'es',
-      originalDescription: 'Una guía para desarrolladores sobre los principios del diseño y la arquitectura de software.',
-      description: 'Una guía para desarrolladores sobre los principios del diseño y la arquitectura de software.',
+      originalDescription:
+        'Una guía para desarrolladores sobre los principios del diseño y la arquitectura de software.',
+      description:
+        'Una guía para desarrolladores sobre los principios del diseño y la arquitectura de software.',
       available: true,
       similarityScore: null,
     },
@@ -223,8 +226,10 @@ export const BeginnerLevel: Story = {
       level: 'Beginner',
       format: 'mobi',
       language: 'en',
-      originalDescription: 'Start your journey into programming with this beginner-friendly guide to JavaScript.',
-      description: 'Start your journey into programming with this beginner-friendly guide to JavaScript.',
+      originalDescription:
+        'Start your journey into programming with this beginner-friendly guide to JavaScript.',
+      description:
+        'Start your journey into programming with this beginner-friendly guide to JavaScript.',
       available: true,
       similarityScore: null,
     },
@@ -253,8 +258,10 @@ export const BeginnerToIntermediateLevel: Story = {
       level: 'Beginner to Intermediate',
       format: 'epub',
       language: 'en',
-      originalDescription: 'A progressive guide that takes you from JavaScript basics to intermediate concepts.',
-      description: 'A progressive guide that takes you from JavaScript basics to intermediate concepts.',
+      originalDescription:
+        'A progressive guide that takes you from JavaScript basics to intermediate concepts.',
+      description:
+        'A progressive guide that takes you from JavaScript basics to intermediate concepts.',
       available: true,
       similarityScore: null,
     },
@@ -317,8 +324,10 @@ export const LongDescription: Story = {
       level: 'Intermediate',
       format: 'epub',
       language: 'en',
-      originalDescription: 'A comprehensive guide covering dozens of practical tips for improving your programming skills.',
-      description: 'A comprehensive guide covering dozens of practical tips for improving your programming skills. This book teaches you how to be a better programmer through real-world examples, insightful advice, and practical exercises that will transform the way you approach software development.',
+      originalDescription:
+        'A comprehensive guide covering dozens of practical tips for improving your programming skills.',
+      description:
+        'A comprehensive guide covering dozens of practical tips for improving your programming skills. This book teaches you how to be a better programmer through real-world examples, insightful advice, and practical exercises that will transform the way you approach software development.',
       available: true,
       similarityScore: null,
     },
@@ -337,7 +346,8 @@ export const LongTitle: Story = {
     book: {
       id: '8',
       isbn: '978-0321125217',
-      title: 'Domain-Driven Design: Tackling Complexity in the Heart of Software - A Comprehensive Guide to Building Enterprise Applications',
+      title:
+        'Domain-Driven Design: Tackling Complexity in the Heart of Software - A Comprehensive Guide to Building Enterprise Applications',
       authors: [{ id: '11', name: 'Eric Evans' }],
       type: 'Book',
       categories: [

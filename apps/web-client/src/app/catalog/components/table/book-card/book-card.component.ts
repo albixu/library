@@ -31,7 +31,8 @@ import { Book } from '../../../../core/models/index.js';
       tabindex="0"
       matRipple
       (click)="onSelect()"
-      (keydown.enter)="onSelect()">
+      (keydown.enter)="onSelect()"
+    >
       <header class="book-card-header">
         <div class="book-card-meta">
           <app-format-icon [format]="book().format" [size]="'medium'" />
@@ -42,7 +43,8 @@ import { Book } from '../../../../core/models/index.js';
           mat-icon-button
           aria-label="Send to Kindle"
           class="book-card-action"
-          (click)="onSendToKindle($event)">
+          (click)="onSendToKindle($event)"
+        >
           <mat-icon>send_to_mobile</mat-icon>
         </button>
       </header>
@@ -54,7 +56,8 @@ import { Book } from '../../../../core/models/index.js';
         <app-truncated-text
           [text]="book().description!"
           [maxLines]="2"
-          class="book-card-description" />
+          class="book-card-description"
+        />
       }
 
       <footer class="book-card-footer">
@@ -70,7 +73,9 @@ import { Book } from '../../../../core/models/index.js';
       background-color: var(--mat-sys-surface-container-low);
       border-radius: 0.75rem;
       cursor: pointer;
-      transition: box-shadow 0.2s ease, background-color 0.2s ease;
+      transition:
+        box-shadow 0.2s ease,
+        background-color 0.2s ease;
 
       &:hover {
         background-color: var(--mat-sys-surface-container);
@@ -135,20 +140,20 @@ export class BookCardComponent {
   readonly book = input.required<Book>();
   readonly selected = input<boolean>(false);
 
-  readonly select = output<Book>();
+  readonly bookSelect = output<Book>();
   readonly sendToKindle = output<Book>();
 
   // Computed signals to extract names from Author/Category objects
   readonly authorNames = computed(() =>
-    this.book().authors.map((a) => a.name).join(', ')
+    this.book()
+      .authors.map((a) => a.name)
+      .join(', ')
   );
 
-  readonly categoryNames = computed(() =>
-    this.book().categories.map((c) => c.name)
-  );
+  readonly categoryNames = computed(() => this.book().categories.map((c) => c.name));
 
   onSelect(): void {
-    this.select.emit(this.book());
+    this.bookSelect.emit(this.book());
   }
 
   onSendToKindle(event: Event): void {

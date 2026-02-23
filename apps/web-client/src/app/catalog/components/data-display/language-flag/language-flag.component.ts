@@ -59,7 +59,7 @@ const DEFAULT_LANGUAGE: LanguageInfo = { flag: '🌐', name: 'Unknown' };
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LanguageFlagComponent {
-  readonly languageCode = input<LanguageCode | undefined>();
+  readonly languageCode = input<string | undefined>();
   readonly showName = input<boolean>(false);
 
   readonly languageInfo = computed((): LanguageInfo => {

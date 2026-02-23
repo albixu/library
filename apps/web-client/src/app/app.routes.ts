@@ -15,8 +15,7 @@ export const routes: Routes = [
   // Catalog feature (lazy loaded)
   {
     path: 'books',
-    loadChildren: () =>
-      import('./catalog/catalog.routes.js').then((m) => m.catalogRoutes),
+    loadChildren: () => import('./catalog/catalog.routes.js').then((m) => m.catalogRoutes),
   },
   // Fallback: redirect unknown routes to books
   {

@@ -1,68 +1,72 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { PaginatorComponent } from './paginator.component';
+import { applicationConfig } from '@storybook/angular';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { PaginatorComponent } from './paginator.component.js';
 
 const meta: Meta<PaginatorComponent> = {
   title: 'Catalog/Table/Paginator',
   component: PaginatorComponent,
   tags: ['autodocs'],
+  decorators: [
+    applicationConfig({
+      providers: [provideAnimationsAsync()],
+    }),
+  ],
   parameters: {
     docs: {
       description: {
         component: `
-Pagination component with page size selector and navigation controls.
+Cursor-based pagination component with "load more" functionality.
 
 ## Features
+- Shows current vs total count (e.g., "25 of 120")
+- "Load more" button when more pages available
 - Page size selector with customizable options
-- First, previous, next, last page navigation
-- Range label showing current items
-- Disabled state support
+- Loading state with spinner
 - Full keyboard accessibility
 
 ## Usage
 \`\`\`html
 <app-paginator
-  [pageIndex]="currentPage"
-  [pageSize]="itemsPerPage"
-  [totalItems]="totalBooks"
-  (page)="onPageChange($event)" />
-
-<app-paginator
-  [pageIndex]="0"
-  [pageSize]="50"
-  [totalItems]="1000"
-  [pageSizeOptions]="[25, 50, 100]"
-  (page)="handlePage($event)" />
+  [totalCount]="store.pagination().totalCount"
+  [currentCount]="store.books().length"
+  [hasNextPage]="store.pagination().hasNextPage"
+  [pageSize]="store.pagination().limit"
+  [loading]="store.loading()"
+  (loadMore)="onLoadMore()"
+  (pageSizeChange)="onPageSizeChange($event)" />
 \`\`\`
 
-## Page Event
-The \`page\` output emits a \`PageEvent\` object with:
-- \`pageIndex\`: New page index
-- \`previousPageIndex\`: Previous page index
-- \`pageSize\`: Current page size
-- \`length\`: Total items
+## Events
+- \`loadMore\`: Emitted when "Load more" button is clicked
+- \`pageSizeChange\`: Emitted when page size is changed (number)
         `,
       },
     },
   },
   argTypes: {
-    pageIndex: {
-      description: 'Current page index (0-based)',
+    totalCount: {
+      description: 'Total number of items available',
       control: { type: 'number' },
+    },
+    currentCount: {
+      description: 'Number of items currently loaded',
+      control: { type: 'number' },
+    },
+    hasNextPage: {
+      description: 'Whether more items can be loaded',
+      control: { type: 'boolean' },
     },
     pageSize: {
-      description: 'Number of items per page',
-      control: { type: 'number' },
-    },
-    totalItems: {
-      description: 'Total number of items',
+      description: 'Current page size',
       control: { type: 'number' },
     },
     pageSizeOptions: {
       description: 'Available page size options',
       control: { type: 'object' },
     },
-    disabled: {
-      description: 'Disables all pagination controls',
+    loading: {
+      description: 'Shows loading spinner instead of load more button',
       control: { type: 'boolean' },
     },
   },
@@ -71,85 +75,73 @@ The \`page\` output emits a \`PageEvent\` object with:
 export default meta;
 type Story = StoryObj<PaginatorComponent>;
 
+/**
+ * Default state - partial data loaded with more available.
+ */
 export const Default: Story = {
   args: {
-    pageIndex: 0,
+    totalCount: 120,
+    currentCount: 25,
+    hasNextPage: true,
     pageSize: 25,
-    totalItems: 100,
     pageSizeOptions: [25, 50, 100],
+    loading: false,
   },
 };
 
-export const MiddlePage: Story = {
+/**
+ * Loading state - spinner shown while fetching more data.
+ */
+export const Loading: Story = {
   args: {
-    pageIndex: 2,
+    totalCount: 120,
+    currentCount: 25,
+    hasNextPage: true,
     pageSize: 25,
-    totalItems: 150,
     pageSizeOptions: [25, 50, 100],
+    loading: true,
   },
   parameters: {
     docs: {
       description: {
-        story: 'Paginator showing a middle page with all navigation enabled.',
+        story: 'Shows loading spinner while fetching the next page of results.',
       },
     },
   },
 };
 
-export const LastPage: Story = {
+/**
+ * All loaded - no more items to fetch.
+ */
+export const AllLoaded: Story = {
   args: {
-    pageIndex: 3,
+    totalCount: 45,
+    currentCount: 45,
+    hasNextPage: false,
     pageSize: 25,
-    totalItems: 100,
     pageSizeOptions: [25, 50, 100],
+    loading: false,
   },
   parameters: {
     docs: {
       description: {
-        story: 'On last page - next and last buttons are disabled.',
+        story: 'All items loaded - no "Load more" button shown.',
       },
     },
   },
 };
 
-export const FirstPage: Story = {
-  args: {
-    pageIndex: 0,
-    pageSize: 25,
-    totalItems: 100,
-    pageSizeOptions: [25, 50, 100],
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: 'On first page - first and previous buttons are disabled.',
-      },
-    },
-  },
-};
-
-export const SinglePage: Story = {
-  args: {
-    pageIndex: 0,
-    pageSize: 25,
-    totalItems: 15,
-    pageSizeOptions: [25, 50, 100],
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: 'Only one page exists - all navigation buttons are disabled.',
-      },
-    },
-  },
-};
-
+/**
+ * Empty state - no items.
+ */
 export const NoItems: Story = {
   args: {
-    pageIndex: 0,
+    totalCount: 0,
+    currentCount: 0,
+    hasNextPage: false,
     pageSize: 25,
-    totalItems: 0,
     pageSizeOptions: [25, 50, 100],
+    loading: false,
   },
   parameters: {
     docs: {
@@ -160,50 +152,43 @@ export const NoItems: Story = {
   },
 };
 
-export const Disabled: Story = {
+/**
+ * Large dataset with many items remaining.
+ */
+export const LargeDataset: Story = {
   args: {
-    pageIndex: 1,
-    pageSize: 25,
-    totalItems: 100,
-    pageSizeOptions: [25, 50, 100],
-    disabled: true,
+    totalCount: 10000,
+    currentCount: 200,
+    hasNextPage: true,
+    pageSize: 100,
+    pageSizeOptions: [50, 100, 200],
+    loading: false,
   },
   parameters: {
     docs: {
       description: {
-        story: 'All controls disabled during loading or other operations.',
+        story: 'Large dataset with 200 of 10,000 items loaded.',
       },
     },
   },
 };
 
+/**
+ * Custom page size options.
+ */
 export const CustomPageSizes: Story = {
   args: {
-    pageIndex: 0,
+    totalCount: 500,
+    currentCount: 10,
+    hasNextPage: true,
     pageSize: 10,
-    totalItems: 500,
     pageSizeOptions: [10, 20, 50, 100, 200],
+    loading: false,
   },
   parameters: {
     docs: {
       description: {
         story: 'Custom page size options for different use cases.',
-      },
-    },
-  },
-};
-
-export const LargeDataset: Story = {
-  args: {
-    pageIndex: 50,
-    pageSize: 100,
-    totalItems: 10000,
-    pageSizeOptions: [50, 100, 200],
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: 'Large dataset showing items 5001-5100 of 10,000.',
       },
     },
   },

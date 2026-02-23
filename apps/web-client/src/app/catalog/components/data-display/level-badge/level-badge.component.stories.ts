@@ -33,7 +33,13 @@ Displays a book's difficulty level as a colored badge.
     level: {
       description: 'The difficulty level of the book',
       control: { type: 'select' },
-      options: ['Beginner', 'Intermediate', 'Advanced', 'Beginner to Intermediate', 'Intermediate to Advanced'],
+      options: [
+        'Beginner',
+        'Intermediate',
+        'Advanced',
+        'Beginner to Intermediate',
+        'Intermediate to Advanced',
+      ],
     },
   },
 };

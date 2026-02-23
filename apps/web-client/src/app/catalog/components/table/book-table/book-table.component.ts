@@ -42,7 +42,8 @@ import { Book } from '../../../../core/models/index.js';
                   <app-truncated-text
                     [text]="book.description"
                     [maxLines]="1"
-                    class="book-description" />
+                    class="book-description"
+                  />
                 }
               </div>
             </td>
@@ -95,7 +96,8 @@ import { Book } from '../../../../core/models/index.js';
               <button
                 mat-icon-button
                 aria-label="Send to Kindle"
-                (click)="onSendToKindle($event, book)">
+                (click)="onSendToKindle($event, book)"
+              >
                 <mat-icon>send_to_mobile</mat-icon>
               </button>
             </td>
@@ -108,8 +110,8 @@ import { Book } from '../../../../core/models/index.js';
             class="book-row"
             tabindex="0"
             (click)="onRowClick(row)"
-            (keydown.enter)="onRowClick(row)">
-          </tr>
+            (keydown.enter)="onRowClick(row)"
+          ></tr>
         </table>
       } @else if (!loading()) {
         <app-empty-state [type]="emptyStateType()" />
