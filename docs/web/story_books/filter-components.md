@@ -158,6 +158,129 @@ A textarea for semantic/natural language search queries.
 
 ---
 
+### FilterPanelComponent
+
+A smart container component that integrates all filter inputs into a cohesive filter panel.
+
+**Location:** `src/app/catalog/components/filters/filter-panel/`
+
+**Features:**
+- Integrates all filter components (text, select, multi-select, semantic search)
+- Handles dependency logic: When Type changes, Categories and Levels are cleared
+- Provides "Clear all filters" functionality
+- Emits consolidated filter changes
+
+**Inputs:**
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `types` | `SelectOption[]` | `[]` | Available book types |
+| `categories` | `SelectOption[]` | `[]` | Available categories (filtered by type) |
+| `levels` | `SelectOption[]` | `[]` | Available levels (filtered by type) |
+| `typesLoading` | `boolean` | `false` | Shows loading state for types |
+| `categoriesLoading` | `boolean` | `false` | Shows loading state for categories |
+| `levelsLoading` | `boolean` | `false` | Shows loading state for levels |
+| `disabled` | `boolean` | `false` | Disables all inputs |
+| `value` | `SearchFilters \| null` | `null` | External filter values to sync |
+
+**Outputs:**
+| Output | Type | Description |
+|--------|------|-------------|
+| `filtersChange` | `SearchFilters` | Emitted when any filter value changes |
+| `typeChange` | `string` | Emitted when type changes (for loading dependent data) |
+
+**SearchFilters Interface:**
+```typescript
+interface SearchFilters {
+  isbn: string;
+  title: string;
+  author: string;
+  type: string;
+  categories: string[];
+  levels: string[];
+  text: string;
+}
+```
+
+**Filter Behavior:**
+- All text inputs (ISBN, Title, Author, Semantic Search) have built-in 300ms debounce
+- Categories and Levels are disabled until a Type is selected
+- When Type changes, Categories and Levels selections are automatically cleared
+- The `typeChange` output allows parent components to load dependent data
+- All filters combine with **AND** logic
+
+**Usage:**
+```html
+<app-filter-panel
+  [types]="bookTypes"
+  [categories]="categories"
+  [levels]="levels"
+  [typesLoading]="isLoadingTypes"
+  [categoriesLoading]="isLoadingCategories"
+  [levelsLoading]="isLoadingLevels"
+  (filtersChange)="onFiltersChange($event)"
+  (typeChange)="loadDependentData($event)"
+/>
+```
+
+**Integration Example:**
+```typescript
+@Component({
+  template: `
+    <app-filter-panel
+      [types]="types()"
+      [categories]="categories()"
+      [levels]="levels()"
+      [typesLoading]="typesLoading()"
+      [categoriesLoading]="categoriesLoading()"
+      [levelsLoading]="levelsLoading()"
+      (filtersChange)="onFiltersChange($event)"
+      (typeChange)="onTypeChange($event)"
+    />
+  `
+})
+export class BookListPageComponent {
+  types = signal<SelectOption[]>([]);
+  categories = signal<SelectOption[]>([]);
+  levels = signal<SelectOption[]>([]);
+
+  typesLoading = signal(true);
+  categoriesLoading = signal(false);
+  levelsLoading = signal(false);
+
+  async ngOnInit() {
+    this.types.set(await this.bookService.getTypes());
+    this.typesLoading.set(false);
+  }
+
+  async onTypeChange(typeId: string) {
+    if (!typeId) {
+      this.categories.set([]);
+      this.levels.set([]);
+      return;
+    }
+
+    this.categoriesLoading.set(true);
+    this.levelsLoading.set(true);
+
+    const [categories, levels] = await Promise.all([
+      this.bookService.getCategories(typeId),
+      this.bookService.getLevels(typeId),
+    ]);
+
+    this.categories.set(categories);
+    this.levels.set(levels);
+    this.categoriesLoading.set(false);
+    this.levelsLoading.set(false);
+  }
+
+  onFiltersChange(filters: SearchFilters) {
+    this.searchBooks(filters);
+  }
+}
+```
+
+---
+
 ## Accessibility
 
 All filter components follow accessibility best practices:
