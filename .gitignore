@@ -8,6 +8,9 @@
 .DS_Store
 Thumbs.db
 
+# Environment (contains secrets)
+.env
+
 # Dependencies
 node_modules/
 # Note: package-lock.json files ARE tracked for reproducible builds
