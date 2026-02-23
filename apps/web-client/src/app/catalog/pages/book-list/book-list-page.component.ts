@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -8,14 +8,20 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 
-import { FilterPanelComponent, SearchFilters } from '../../components/filters/index.js';
+import { FilterPanelComponent } from '../../components/filters/index.js';
 import { BookTableComponent } from '../../components/table/book-table/index.js';
 import { BookCardComponent } from '../../components/table/book-card/index.js';
 import { PaginatorComponent } from '../../components/table/paginator/index.js';
 import { SendToKindleDialogComponent } from '../../components/dialogs/index.js';
 import { BookSearchStore } from '../../../core/services/book-search.store.js';
-import { Book, BookType, CategoryListItem, BookLevel } from '../../../core/models/index.js';
-import { SelectOption } from '../../components/filters/searchable-select/index.js';
+import {
+  Book,
+  BookType,
+  CategoryListItem,
+  BookLevel,
+  SearchFilters,
+  SelectOption,
+} from '../../../core/models/index.js';
 
 /**
  * BookListPageComponent - Main page for book catalog search and listing
@@ -267,6 +273,7 @@ import { SelectOption } from '../../components/filters/searchable-select/index.j
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BookListPageComponent implements OnInit {
   readonly store = inject(BookSearchStore);
@@ -330,6 +337,11 @@ export class BookListPageComponent implements OnInit {
   onFiltersChange(filters: SearchFilters): void {
     this.store.setFilters(filters);
     this.store.searchBooks();
+
+    // Close mobile drawer after applying filters
+    if (this.isMobile()) {
+      this.isMobileDrawerOpen.set(false);
+    }
   }
 
   onTypeChange(type: string): void {

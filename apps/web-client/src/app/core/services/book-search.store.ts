@@ -1,4 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 import { BookService } from './book.service.js';
 import {
@@ -34,6 +36,12 @@ const DEFAULT_PAGINATION: PaginationInfo = {
 })
 export class BookSearchStore {
   private readonly bookService = inject(BookService);
+
+  // Cancellation subjects for in-flight requests
+  private readonly cancelSearch$ = new Subject<void>();
+  private readonly cancelTypes$ = new Subject<void>();
+  private readonly cancelCategories$ = new Subject<void>();
+  private readonly cancelLevels$ = new Subject<void>();
 
   // ==========================================================================
   // State Signals
@@ -103,36 +111,44 @@ export class BookSearchStore {
   /**
    * Search books with current filters
    * Replaces current results (use loadNextPage for pagination)
+   * Cancels any in-flight search requests
    */
   searchBooks(): void {
+    // Cancel any previous search request
+    this.cancelSearch$.next();
+
     this._loading.set(true);
     this._error.set(null);
 
     const filters = this._filters();
     const pagination = { limit: this._pagination().limit };
 
-    this.bookService.searchBooks(filters, pagination).subscribe({
-      next: (response) => {
-        this._loading.set(false);
+    this.bookService
+      .searchBooks(filters, pagination)
+      .pipe(takeUntil(this.cancelSearch$))
+      .subscribe({
+        next: (response) => {
+          this._loading.set(false);
 
-        if (response.success && response.data) {
-          this._books.set(response.data.items);
-          this._pagination.set(response.data.pagination);
-        } else {
-          this._error.set(response.error?.message ?? 'Unknown error');
-          this._books.set([]);
-        }
-      },
-      error: (err: Error) => {
-        this._loading.set(false);
-        this._error.set(err.message);
-      },
-    });
+          if (response.success && response.data) {
+            this._books.set(response.data.items);
+            this._pagination.set(response.data.pagination);
+          } else {
+            this._error.set(response.error?.message ?? 'Unknown error');
+            this._books.set([]);
+          }
+        },
+        error: (err: Error) => {
+          this._loading.set(false);
+          this._error.set(err.message);
+        },
+      });
   }
 
   /**
    * Load next page of results
    * Appends to current results
+   * Cancels any in-flight search requests
    */
   loadNextPage(): void {
     const currentPagination = this._pagination();
@@ -140,6 +156,9 @@ export class BookSearchStore {
     if (!currentPagination.hasNextPage || !currentPagination.nextCursor) {
       return;
     }
+
+    // Cancel any previous search request
+    this.cancelSearch$.next();
 
     this._loading.set(true);
 
@@ -149,23 +168,26 @@ export class BookSearchStore {
       cursor: currentPagination.nextCursor,
     };
 
-    this.bookService.searchBooks(filters, pagination).subscribe({
-      next: (response) => {
-        this._loading.set(false);
+    this.bookService
+      .searchBooks(filters, pagination)
+      .pipe(takeUntil(this.cancelSearch$))
+      .subscribe({
+        next: (response) => {
+          this._loading.set(false);
 
-        if (response.success && response.data) {
-          // Append new books to existing ones
-          this._books.update((books) => [...books, ...response.data!.items]);
-          this._pagination.set(response.data.pagination);
-        } else {
-          this._error.set(response.error?.message ?? 'Unknown error');
-        }
-      },
-      error: (err: Error) => {
-        this._loading.set(false);
-        this._error.set(err.message);
-      },
-    });
+          if (response.success && response.data) {
+            // Append new books to existing ones
+            this._books.update((books) => [...books, ...response.data!.items]);
+            this._pagination.set(response.data.pagination);
+          } else {
+            this._error.set(response.error?.message ?? 'Unknown error');
+          }
+        },
+        error: (err: Error) => {
+          this._loading.set(false);
+          this._error.set(err.message);
+        },
+      });
   }
 
   /**
@@ -188,29 +210,37 @@ export class BookSearchStore {
 
   /**
    * Load book types for filter dropdown
+   * Cancels any in-flight types request
    */
   loadTypes(): void {
+    this.cancelTypes$.next();
     this._typesLoading.set(true);
 
-    this.bookService.getBookTypes().subscribe({
-      next: (response) => {
-        this._typesLoading.set(false);
+    this.bookService
+      .getBookTypes()
+      .pipe(takeUntil(this.cancelTypes$))
+      .subscribe({
+        next: (response) => {
+          this._typesLoading.set(false);
 
-        if (response.success && response.data) {
-          this._types.set(response.data);
-        }
-      },
-      error: () => {
-        this._typesLoading.set(false);
-      },
-    });
+          if (response.success && response.data) {
+            this._types.set(response.data);
+          }
+        },
+        error: () => {
+          this._typesLoading.set(false);
+        },
+      });
   }
 
   /**
    * Load categories for filter dropdown
    * @param type - Book type to filter by (empty string clears categories)
+   * Cancels any in-flight categories request
    */
   loadCategories(type: string): void {
+    this.cancelCategories$.next();
+
     if (!type) {
       this._categories.set([]);
       return;
@@ -218,25 +248,31 @@ export class BookSearchStore {
 
     this._categoriesLoading.set(true);
 
-    this.bookService.getCategories(type).subscribe({
-      next: (response) => {
-        this._categoriesLoading.set(false);
+    this.bookService
+      .getCategories(type)
+      .pipe(takeUntil(this.cancelCategories$))
+      .subscribe({
+        next: (response) => {
+          this._categoriesLoading.set(false);
 
-        if (response.success && response.data) {
-          this._categories.set(response.data);
-        }
-      },
-      error: () => {
-        this._categoriesLoading.set(false);
-      },
-    });
+          if (response.success && response.data) {
+            this._categories.set(response.data);
+          }
+        },
+        error: () => {
+          this._categoriesLoading.set(false);
+        },
+      });
   }
 
   /**
    * Load levels for filter dropdown
    * @param type - Book type to filter by (empty string clears levels)
+   * Cancels any in-flight levels request
    */
   loadLevels(type: string): void {
+    this.cancelLevels$.next();
+
     if (!type) {
       this._levels.set([]);
       return;
@@ -244,18 +280,21 @@ export class BookSearchStore {
 
     this._levelsLoading.set(true);
 
-    this.bookService.getLevels(type).subscribe({
-      next: (response) => {
-        this._levelsLoading.set(false);
+    this.bookService
+      .getLevels(type)
+      .pipe(takeUntil(this.cancelLevels$))
+      .subscribe({
+        next: (response) => {
+          this._levelsLoading.set(false);
 
-        if (response.success && response.data) {
-          this._levels.set(response.data);
-        }
-      },
-      error: () => {
-        this._levelsLoading.set(false);
-      },
-    });
+          if (response.success && response.data) {
+            this._levels.set(response.data);
+          }
+        },
+        error: () => {
+          this._levelsLoading.set(false);
+        },
+      });
   }
 
   /**

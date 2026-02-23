@@ -1,20 +1,21 @@
-import { Component, input, output, signal, computed, effect } from '@angular/core';
+import { Component, input, output, signal, computed, effect, ChangeDetectionStrategy } from '@angular/core';
 
 import { TextFilterInputComponent } from '../text-filter-input/index.js';
-import {
-  SearchableSelectComponent,
-  SelectOption,
-} from '../searchable-select/index.js';
+import { SearchableSelectComponent } from '../searchable-select/index.js';
 import { MultiSelectChipsComponent } from '../multi-select-chips/index.js';
 import { SemanticSearchComponent } from '../semantic-search/index.js';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
+import { SearchFilters, SelectOption } from '../../../../core/models/index.js';
+
+// Re-export for convenience
+export { SearchFilters, SelectOption };
 
 /**
- * SearchFilters interface representing all filter values
+ * Internal filter state with all fields required for form handling
  */
-export interface SearchFilters {
+interface FilterState {
   isbn: string;
   title: string;
   author: string;
@@ -27,7 +28,7 @@ export interface SearchFilters {
 /**
  * Default empty filters state
  */
-const DEFAULT_FILTERS: SearchFilters = {
+const DEFAULT_FILTERS: FilterState = {
   isbn: '',
   title: '',
   author: '',
@@ -256,6 +257,7 @@ const DEFAULT_FILTERS: SearchFilters = {
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FilterPanelComponent {
   // Option inputs
@@ -276,8 +278,8 @@ export class FilterPanelComponent {
   readonly filtersChange = output<SearchFilters>();
   readonly typeChange = output<string>();
 
-  // Internal state
-  readonly currentFilters = signal<SearchFilters>({ ...DEFAULT_FILTERS });
+  // Internal state (uses FilterState with required fields for form handling)
+  readonly currentFilters = signal<FilterState>({ ...DEFAULT_FILTERS });
 
   // Track previous type to detect changes
   private previousType = '';
@@ -301,8 +303,14 @@ export class FilterPanelComponent {
     effect(() => {
       const externalValue = this.value();
       if (externalValue) {
-        this.currentFilters.set({ ...externalValue });
-        this.previousType = externalValue.type;
+        // Merge with defaults to ensure all fields are present
+        this.currentFilters.set({
+          ...DEFAULT_FILTERS,
+          ...externalValue,
+          categories: externalValue.categories ?? [],
+          levels: externalValue.levels ?? [],
+        });
+        this.previousType = externalValue.type ?? '';
       }
     });
   }
@@ -349,16 +357,33 @@ export class FilterPanelComponent {
     this.currentFilters.set({ ...DEFAULT_FILTERS });
     this.previousType = '';
     this.typeChange.emit('');
-    this.filtersChange.emit({ ...DEFAULT_FILTERS });
+    this.filtersChange.emit(this.toSearchFilters(DEFAULT_FILTERS));
   }
 
   // Private helpers
-  private updateFilters(partial: Partial<SearchFilters>): void {
+  private updateFilters(partial: Partial<FilterState>): void {
     const newFilters = {
       ...this.currentFilters(),
       ...partial,
     };
     this.currentFilters.set(newFilters);
-    this.filtersChange.emit(newFilters);
+    this.filtersChange.emit(this.toSearchFilters(newFilters));
+  }
+
+  /**
+   * Convert internal FilterState to SearchFilters (only include non-empty values)
+   */
+  private toSearchFilters(state: FilterState): SearchFilters {
+    const filters: SearchFilters = {};
+
+    if (state.isbn) filters.isbn = state.isbn;
+    if (state.title) filters.title = state.title;
+    if (state.author) filters.author = state.author;
+    if (state.type) filters.type = state.type;
+    if (state.categories.length > 0) filters.categories = state.categories;
+    if (state.levels.length > 0) filters.levels = state.levels;
+    if (state.text) filters.text = state.text;
+
+    return filters;
   }
 }

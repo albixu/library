@@ -1,18 +1,14 @@
-import { Component, input, output, signal, computed, effect, ViewChild } from '@angular/core';
+import { Component, input, output, signal, computed, effect, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule, MatSelect } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { SelectOption } from '../../../../core/models/index.js';
 
-/**
- * Option interface for select items
- */
-export interface SelectOption {
-  id: string;
-  name: string;
-}
+// Re-export for convenience
+export { SelectOption };
 
 /**
  * SearchableSelectComponent - Single-select dropdown with search/filter capability
@@ -124,6 +120,7 @@ export interface SelectOption {
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SearchableSelectComponent {
   @ViewChild('selectRef') selectRef!: MatSelect;

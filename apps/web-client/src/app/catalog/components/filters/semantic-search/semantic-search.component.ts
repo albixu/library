@@ -5,16 +5,17 @@ import {
   signal,
   effect,
   computed,
-  OnDestroy,
   inject,
   DestroyRef,
+  ChangeDetectionStrategy,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { Subject, debounceTime } from 'rxjs';
 
 /**
  * SemanticSearchComponent - Textarea for semantic/natural language search
@@ -87,11 +88,11 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SemanticSearchComponent implements OnDestroy {
+export class SemanticSearchComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly inputSubject = new Subject<string>();
-  private readonly destroy$ = new Subject<void>();
 
   // Inputs
   readonly label = input<string>('Semantic Search');
@@ -118,24 +119,12 @@ export class SemanticSearchComponent implements OnDestroy {
       this.internalValue.set(this.value());
     });
 
-    // Setup debounced emission
-    effect(() => {
-      const debounceTime$ = this.debounceMs();
-
-      // Re-subscribe when debounce time changes
-      this.destroy$.next();
-
-      this.inputSubject
-        .pipe(debounceTime(debounceTime$), takeUntil(this.destroy$))
-        .subscribe((value) => {
-          this.valueChange.emit(value);
-        });
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    // Setup debounced emission using takeUntilDestroyed
+    this.inputSubject
+      .pipe(debounceTime(this.debounceMs()), takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        this.valueChange.emit(value);
+      });
   }
 
   onInput(event: Event): void {

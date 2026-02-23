@@ -1,4 +1,4 @@
-import { Component, input, output, signal, computed, effect, ViewChild } from '@angular/core';
+import { Component, input, output, signal, computed, effect, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule, MatSelect } from '@angular/material/select';
@@ -7,14 +7,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { SelectOption } from '../../../../core/models/index.js';
 
-/**
- * Option interface for select items
- */
-export interface SelectOption {
-  id: string;
-  name: string;
-}
+// Re-export for convenience
+export { SelectOption };
 
 /**
  * MultiSelectChipsComponent - Multi-select dropdown that displays selections as chips
@@ -222,6 +218,7 @@ export interface SelectOption {
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MultiSelectChipsComponent {
   @ViewChild('selectRef') selectRef!: MatSelect;
