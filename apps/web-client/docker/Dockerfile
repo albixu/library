@@ -30,7 +30,8 @@ ENV API_URL=${API_URL}
 RUN npm run build -- --configuration production
 
 # ----- Stage 2: Production (Nginx) -----
-FROM nginx:alpine AS production
+# Using alpine-slim for smaller image size (~20MB vs ~60MB)
+FROM nginx:alpine-slim AS production
 
 # Security: Add metadata labels
 LABEL maintainer="Library Team" \
