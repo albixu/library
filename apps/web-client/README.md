@@ -165,10 +165,84 @@ Los componentes están organizados en categorías:
 
 ### Requisitos
 
-- Node.js 22+
+- Node.js 22+ (o Docker)
 - npm 10+
 
-### Inicio rapido
+### Opcion 1: Docker (Recomendado)
+
+El proyecto incluye configuracion Docker para desarrollo sin necesidad de instalar Node.js localmente:
+
+```bash
+# Desde la raiz del monorepo
+
+# Construir la imagen
+docker compose build web-client
+
+# Iniciar el servidor de desarrollo
+docker compose up web-client
+
+# Abrir en navegador
+open http://localhost:4200
+```
+
+#### Comandos Docker
+
+```bash
+# Tests unitarios
+docker exec library-web-client npm test
+
+# Tests en modo watch
+docker exec -it library-web-client npm run test:watch
+
+# Linting
+docker exec library-web-client npm run lint
+docker exec library-web-client npm run lint:fix
+
+# Build de produccion
+docker exec library-web-client npm run build
+
+# Storybook (puerto 6006)
+docker exec -it library-web-client npm run storybook
+
+# Tests E2E con Playwright
+docker exec library-web-client npm run test:e2e
+
+# Shell dentro del contenedor
+docker exec -it library-web-client sh
+```
+
+#### Hot Reload
+
+El hot reload funciona automaticamente. Si modificas archivos en `src/`, Angular detectara los cambios y recargara el navegador.
+
+> **Nota Windows**: Se usa `--poll 2000` para detectar cambios en volumes de Docker. Esto puede causar un pequeno retraso (hasta 2 segundos) en la deteccion de cambios.
+
+#### Troubleshooting Docker
+
+**Error: EACCES permission denied**
+```bash
+# Reconstruir la imagen sin cache
+docker compose build --no-cache web-client
+
+# Eliminar volumes y reconstruir
+docker compose down -v
+docker volume rm library-web-client-node-modules library-web-client-angular-cache
+docker compose build web-client
+```
+
+**Hot reload no funciona**
+```bash
+# Reiniciar el contenedor
+docker compose restart web-client
+```
+
+**Tests E2E fallan con errores de browser**
+```bash
+# Reinstalar Playwright browsers
+docker exec library-web-client npx playwright install
+```
+
+### Opcion 2: Local (Sin Docker)
 
 ```bash
 # Instalar dependencias
