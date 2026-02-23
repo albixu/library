@@ -32,8 +32,8 @@ describe('ThemeService', () => {
       writable: true,
     });
 
-    // Clean up document classes
-    document.documentElement.classList.remove('dark-mode');
+    // Clean up document data-theme attribute
+    document.documentElement.removeAttribute('data-theme');
   });
 
   afterEach(() => {
@@ -57,22 +57,32 @@ describe('ThemeService', () => {
       expect(service.theme()).toBe('dark');
     });
 
-    it('should use system preference when no stored theme', () => {
-      localStorageSpy.getItem.mockReturnValue(null);
-      matchMediaSpy.mockReturnValue({ matches: true });
-
-      service = createService();
-
-      expect(service.theme()).toBe('dark');
-    });
-
-    it('should default to light when no stored theme and system prefers light', () => {
-      localStorageSpy.getItem.mockReturnValue(null);
-      matchMediaSpy.mockReturnValue({ matches: false });
+    it('should use stored light theme from localStorage', () => {
+      localStorageSpy.getItem.mockReturnValue('light');
 
       service = createService();
 
       expect(service.theme()).toBe('light');
+    });
+
+    it('should use system preference for light when no stored theme', () => {
+      localStorageSpy.getItem.mockReturnValue(null);
+      // System prefers light mode (prefers-color-scheme: light matches)
+      matchMediaSpy.mockReturnValue({ matches: true });
+
+      service = createService();
+
+      expect(service.theme()).toBe('light');
+    });
+
+    it('should default to dark when no stored theme and system does not prefer light', () => {
+      localStorageSpy.getItem.mockReturnValue(null);
+      // System does not prefer light mode (prefers-color-scheme: light does NOT match)
+      matchMediaSpy.mockReturnValue({ matches: false });
+
+      service = createService();
+
+      expect(service.theme()).toBe('dark');
     });
   });
 
@@ -179,6 +189,36 @@ describe('ThemeService', () => {
       service.toggleTheme();
 
       expect(service.themeIcon()).toBe('light_mode');
+    });
+  });
+
+  describe('theme application', () => {
+    it('should apply data-theme attribute to document on initialization', () => {
+      localStorageSpy.getItem.mockReturnValue('dark');
+
+      service = createService();
+
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    });
+
+    it('should update data-theme attribute when theme changes', () => {
+      localStorageSpy.getItem.mockReturnValue('light');
+      service = createService();
+
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+
+      service.setTheme('dark');
+
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    });
+
+    it('should persist theme to localStorage when theme changes', () => {
+      localStorageSpy.getItem.mockReturnValue('light');
+      service = createService();
+
+      service.setTheme('dark');
+
+      expect(localStorageSpy.setItem).toHaveBeenCalledWith('library-theme', 'dark');
     });
   });
 });

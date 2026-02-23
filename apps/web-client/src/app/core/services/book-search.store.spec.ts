@@ -14,7 +14,12 @@ import {
 
 describe('BookSearchStore', () => {
   let store: BookSearchStore;
-  let bookServiceSpy: jasmine.SpyObj<BookService>;
+  let bookServiceMock: {
+    searchBooks: ReturnType<typeof vi.fn>;
+    getBookTypes: ReturnType<typeof vi.fn>;
+    getCategories: ReturnType<typeof vi.fn>;
+    getLevels: ReturnType<typeof vi.fn>;
+  };
 
   const mockBook: Book = {
     id: '550e8400-e29b-41d4-a716-446655440000',
@@ -74,19 +79,18 @@ describe('BookSearchStore', () => {
   };
 
   beforeEach(() => {
-    const spy = jasmine.createSpyObj('BookService', [
-      'searchBooks',
-      'getBookTypes',
-      'getCategories',
-      'getLevels',
-    ]);
+    bookServiceMock = {
+      searchBooks: vi.fn(),
+      getBookTypes: vi.fn(),
+      getCategories: vi.fn(),
+      getLevels: vi.fn(),
+    };
 
     TestBed.configureTestingModule({
-      providers: [BookSearchStore, { provide: BookService, useValue: spy }],
+      providers: [BookSearchStore, { provide: BookService, useValue: bookServiceMock }],
     });
 
     store = TestBed.inject(BookSearchStore);
-    bookServiceSpy = TestBed.inject(BookService) as jasmine.SpyObj<BookService>;
   });
 
   describe('Store Creation', () => {
@@ -119,7 +123,7 @@ describe('BookSearchStore', () => {
 
   describe('searchBooks', () => {
     it('should set loading to true when searching', fakeAsync(() => {
-      bookServiceSpy.searchBooks.and.returnValue(of(mockSearchResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
 
       store.searchBooks();
       expect(store.loading()).toBe(true);
@@ -129,7 +133,7 @@ describe('BookSearchStore', () => {
     }));
 
     it('should update books with search results', fakeAsync(() => {
-      bookServiceSpy.searchBooks.and.returnValue(of(mockSearchResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
 
       store.searchBooks();
       tick();
@@ -138,7 +142,7 @@ describe('BookSearchStore', () => {
     }));
 
     it('should update pagination with search results', fakeAsync(() => {
-      bookServiceSpy.searchBooks.and.returnValue(of(mockSearchResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
 
       store.searchBooks();
       tick();
@@ -152,14 +156,14 @@ describe('BookSearchStore', () => {
     }));
 
     it('should call BookService with current filters', fakeAsync(() => {
-      bookServiceSpy.searchBooks.and.returnValue(of(mockSearchResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
 
       const filters: SearchFilters = { title: 'Clean' };
       store.setFilters(filters);
       store.searchBooks();
       tick();
 
-      expect(bookServiceSpy.searchBooks).toHaveBeenCalledWith(filters, { limit: 50 });
+      expect(bookServiceMock.searchBooks).toHaveBeenCalledWith(filters, { limit: 50 });
     }));
 
     it('should set error when search fails', fakeAsync(() => {
@@ -168,7 +172,7 @@ describe('BookSearchStore', () => {
         data: null,
         error: { message: 'Search failed' },
       };
-      bookServiceSpy.searchBooks.and.returnValue(of(errorResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(errorResponse));
 
       store.searchBooks();
       tick();
@@ -178,7 +182,7 @@ describe('BookSearchStore', () => {
     }));
 
     it('should set error when http request fails', fakeAsync(() => {
-      bookServiceSpy.searchBooks.and.returnValue(throwError(() => new Error('Network error')));
+      bookServiceMock.searchBooks.mockReturnValue(throwError(() => new Error('Network error')));
 
       store.searchBooks();
       tick();
@@ -188,13 +192,13 @@ describe('BookSearchStore', () => {
 
     it('should clear error on successful search', fakeAsync(() => {
       // First, set an error
-      bookServiceSpy.searchBooks.and.returnValue(throwError(() => new Error('Network error')));
+      bookServiceMock.searchBooks.mockReturnValue(throwError(() => new Error('Network error')));
       store.searchBooks();
       tick();
       expect(store.error()).toBe('Network error');
 
       // Then, successful search should clear error
-      bookServiceSpy.searchBooks.and.returnValue(of(mockSearchResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
       store.searchBooks();
       tick();
 
@@ -212,7 +216,7 @@ describe('BookSearchStore', () => {
     });
 
     it('should reset pagination cursor when filters change', fakeAsync(() => {
-      bookServiceSpy.searchBooks.and.returnValue(of(mockSearchResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
 
       // First search to get a cursor
       store.searchBooks();
@@ -229,7 +233,7 @@ describe('BookSearchStore', () => {
   describe('loadNextPage', () => {
     it('should load next page with cursor', fakeAsync(() => {
       // First search
-      bookServiceSpy.searchBooks.and.returnValue(of(mockSearchResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
       store.searchBooks();
       tick();
 
@@ -242,17 +246,17 @@ describe('BookSearchStore', () => {
         },
         error: null,
       };
-      bookServiceSpy.searchBooks.and.returnValue(of(nextPageResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(nextPageResponse));
 
       store.loadNextPage();
       tick();
 
-      expect(bookServiceSpy.searchBooks).toHaveBeenCalledWith({}, { limit: 50, cursor: 'abc123' });
+      expect(bookServiceMock.searchBooks).toHaveBeenCalledWith({}, { limit: 50, cursor: 'abc123' });
     }));
 
     it('should append books when loading next page', fakeAsync(() => {
       // First search
-      bookServiceSpy.searchBooks.and.returnValue(of(mockSearchResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
       store.searchBooks();
       tick();
 
@@ -265,7 +269,7 @@ describe('BookSearchStore', () => {
         },
         error: null,
       };
-      bookServiceSpy.searchBooks.and.returnValue(of(nextPageResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(nextPageResponse));
 
       store.loadNextPage();
       tick();
@@ -284,16 +288,16 @@ describe('BookSearchStore', () => {
         },
         error: null,
       };
-      bookServiceSpy.searchBooks.and.returnValue(of(noMorePagesResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(noMorePagesResponse));
 
       store.searchBooks();
       tick();
-      bookServiceSpy.searchBooks.calls.reset();
+      bookServiceMock.searchBooks.mockClear();
 
       store.loadNextPage();
       tick();
 
-      expect(bookServiceSpy.searchBooks).not.toHaveBeenCalled();
+      expect(bookServiceMock.searchBooks).not.toHaveBeenCalled();
     }));
   });
 
@@ -305,18 +309,18 @@ describe('BookSearchStore', () => {
     });
 
     it('should trigger new search with new page size', fakeAsync(() => {
-      bookServiceSpy.searchBooks.and.returnValue(of(mockSearchResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
 
       store.setPageSize(25);
       tick();
 
-      expect(bookServiceSpy.searchBooks).toHaveBeenCalledWith({}, { limit: 25 });
+      expect(bookServiceMock.searchBooks).toHaveBeenCalledWith({}, { limit: 25 });
     }));
   });
 
   describe('loadTypes', () => {
     it('should set typesLoading to true while loading', fakeAsync(() => {
-      bookServiceSpy.getBookTypes.and.returnValue(of(mockTypesResponse));
+      bookServiceMock.getBookTypes.mockReturnValue(of(mockTypesResponse));
 
       store.loadTypes();
       expect(store.typesLoading()).toBe(true);
@@ -326,7 +330,7 @@ describe('BookSearchStore', () => {
     }));
 
     it('should update types with response data', fakeAsync(() => {
-      bookServiceSpy.getBookTypes.and.returnValue(of(mockTypesResponse));
+      bookServiceMock.getBookTypes.mockReturnValue(of(mockTypesResponse));
 
       store.loadTypes();
       tick();
@@ -340,7 +344,7 @@ describe('BookSearchStore', () => {
 
   describe('loadCategories', () => {
     it('should set categoriesLoading to true while loading', fakeAsync(() => {
-      bookServiceSpy.getCategories.and.returnValue(of(mockCategoriesResponse));
+      bookServiceMock.getCategories.mockReturnValue(of(mockCategoriesResponse));
 
       store.loadCategories('technical');
       expect(store.categoriesLoading()).toBe(true);
@@ -350,16 +354,16 @@ describe('BookSearchStore', () => {
     }));
 
     it('should call BookService.getCategories with type', fakeAsync(() => {
-      bookServiceSpy.getCategories.and.returnValue(of(mockCategoriesResponse));
+      bookServiceMock.getCategories.mockReturnValue(of(mockCategoriesResponse));
 
       store.loadCategories('technical');
       tick();
 
-      expect(bookServiceSpy.getCategories).toHaveBeenCalledWith('technical');
+      expect(bookServiceMock.getCategories).toHaveBeenCalledWith('technical');
     }));
 
     it('should update categories with response data', fakeAsync(() => {
-      bookServiceSpy.getCategories.and.returnValue(of(mockCategoriesResponse));
+      bookServiceMock.getCategories.mockReturnValue(of(mockCategoriesResponse));
 
       store.loadCategories('technical');
       tick();
@@ -369,7 +373,7 @@ describe('BookSearchStore', () => {
     }));
 
     it('should clear categories when called without type', fakeAsync(() => {
-      bookServiceSpy.getCategories.and.returnValue(of(mockCategoriesResponse));
+      bookServiceMock.getCategories.mockReturnValue(of(mockCategoriesResponse));
 
       // First load some categories
       store.loadCategories('technical');
@@ -386,7 +390,7 @@ describe('BookSearchStore', () => {
 
   describe('loadLevels', () => {
     it('should set levelsLoading to true while loading', fakeAsync(() => {
-      bookServiceSpy.getLevels.and.returnValue(of(mockLevelsResponse));
+      bookServiceMock.getLevels.mockReturnValue(of(mockLevelsResponse));
 
       store.loadLevels('technical');
       expect(store.levelsLoading()).toBe(true);
@@ -396,16 +400,16 @@ describe('BookSearchStore', () => {
     }));
 
     it('should call BookService.getLevels with type', fakeAsync(() => {
-      bookServiceSpy.getLevels.and.returnValue(of(mockLevelsResponse));
+      bookServiceMock.getLevels.mockReturnValue(of(mockLevelsResponse));
 
       store.loadLevels('technical');
       tick();
 
-      expect(bookServiceSpy.getLevels).toHaveBeenCalledWith('technical');
+      expect(bookServiceMock.getLevels).toHaveBeenCalledWith('technical');
     }));
 
     it('should update levels with response data', fakeAsync(() => {
-      bookServiceSpy.getLevels.and.returnValue(of(mockLevelsResponse));
+      bookServiceMock.getLevels.mockReturnValue(of(mockLevelsResponse));
 
       store.loadLevels('technical');
       tick();
@@ -415,7 +419,7 @@ describe('BookSearchStore', () => {
     }));
 
     it('should clear levels when called without type', fakeAsync(() => {
-      bookServiceSpy.getLevels.and.returnValue(of(mockLevelsResponse));
+      bookServiceMock.getLevels.mockReturnValue(of(mockLevelsResponse));
 
       // First load some levels
       store.loadLevels('technical');
@@ -433,8 +437,8 @@ describe('BookSearchStore', () => {
   describe('reset', () => {
     it('should reset all state to initial values', fakeAsync(() => {
       // First, populate some state
-      bookServiceSpy.searchBooks.and.returnValue(of(mockSearchResponse));
-      bookServiceSpy.getBookTypes.and.returnValue(of(mockTypesResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
+      bookServiceMock.getBookTypes.mockReturnValue(of(mockTypesResponse));
 
       store.setFilters({ title: 'Clean' });
       store.searchBooks();
@@ -462,7 +466,7 @@ describe('BookSearchStore', () => {
     });
 
     it('isEmpty should return false when there are books', fakeAsync(() => {
-      bookServiceSpy.searchBooks.and.returnValue(of(mockSearchResponse));
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
 
       store.searchBooks();
       tick();

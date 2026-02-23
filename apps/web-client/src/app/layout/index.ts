@@ -4,6 +4,6 @@
 // Layout components: header, footer, main-layout
 
 // Layout components will be exported here as they are created
-// export * from './main-layout';
-// export * from './header';
-// export * from './footer';
+export * from './main-layout/index.js';
+export * from './header/index.js';
+export * from './footer/index.js';

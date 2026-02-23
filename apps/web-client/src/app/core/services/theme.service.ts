@@ -62,10 +62,15 @@ export class ThemeService {
 
   /**
    * Get the initial theme from storage or system preference
+   *
+   * Priority:
+   * 1. localStorage preference
+   * 2. System preference (prefers-color-scheme)
+   * 3. Default to dark mode
    */
   private getInitialTheme(): Theme {
     if (!isPlatformBrowser(this.platformId)) {
-      return 'light';
+      return 'dark';
     }
 
     // Check localStorage first
@@ -75,15 +80,18 @@ export class ThemeService {
     }
 
     // Fall back to system preference
-    if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
+    if (window.matchMedia?.('(prefers-color-scheme: light)').matches) {
+      return 'light';
     }
 
-    return 'light';
+    // Default to dark mode
+    return 'dark';
   }
 
   /**
    * Apply theme to the document and persist to storage
+   *
+   * Uses data-theme attribute on <html> element for CSS variable switching
    */
   private applyTheme(theme: Theme): void {
     if (!isPlatformBrowser(this.platformId)) {
@@ -91,12 +99,7 @@ export class ThemeService {
     }
 
     const html = document.documentElement;
-
-    if (theme === 'dark') {
-      html.classList.add('dark-mode');
-    } else {
-      html.classList.remove('dark-mode');
-    }
+    html.setAttribute('data-theme', theme);
 
     localStorage.setItem(this.storageKey, theme);
   }

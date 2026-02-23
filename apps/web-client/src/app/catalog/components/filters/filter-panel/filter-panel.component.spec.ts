@@ -161,49 +161,47 @@ describe('FilterPanelComponent', () => {
   describe('Filter Change Events', () => {
     it('should emit filtersChange when ISBN changes', fakeAsync(() => {
       fixture.detectChanges();
-      const emitSpy = spyOn(component.filtersChange, 'emit');
+      const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onIsbnChange('978-0-13-468599-1');
       tick();
 
-      expect(emitSpy).toHaveBeenCalledWith(jasmine.objectContaining({ isbn: '978-0-13-468599-1' }));
+      expect(emitSpy).toHaveBeenCalledWith(expect.objectContaining({ isbn: '978-0-13-468599-1' }));
     }));
 
     it('should emit filtersChange when title changes', fakeAsync(() => {
       fixture.detectChanges();
-      const emitSpy = spyOn(component.filtersChange, 'emit');
+      const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onTitleChange('Clean Code');
       tick();
 
-      expect(emitSpy).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Clean Code' }));
+      expect(emitSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Clean Code' }));
     }));
 
     it('should emit filtersChange when author changes', fakeAsync(() => {
       fixture.detectChanges();
-      const emitSpy = spyOn(component.filtersChange, 'emit');
+      const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onAuthorChange('Robert C. Martin');
       tick();
 
-      expect(emitSpy).toHaveBeenCalledWith(
-        jasmine.objectContaining({ author: 'Robert C. Martin' })
-      );
+      expect(emitSpy).toHaveBeenCalledWith(expect.objectContaining({ author: 'Robert C. Martin' }));
     }));
 
     it('should emit filtersChange when type changes', fakeAsync(() => {
       fixture.detectChanges();
-      const emitSpy = spyOn(component.filtersChange, 'emit');
+      const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onTypeChange('technical');
       tick();
 
-      expect(emitSpy).toHaveBeenCalledWith(jasmine.objectContaining({ type: 'technical' }));
+      expect(emitSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'technical' }));
     }));
 
     it('should emit typeChange when type changes', fakeAsync(() => {
       fixture.detectChanges();
-      const emitSpy = spyOn(component.typeChange, 'emit');
+      const emitSpy = vi.spyOn(component.typeChange, 'emit');
 
       component.onTypeChange('technical');
       tick();
@@ -213,37 +211,37 @@ describe('FilterPanelComponent', () => {
 
     it('should emit filtersChange when categories change', fakeAsync(() => {
       fixture.detectChanges();
-      const emitSpy = spyOn(component.filtersChange, 'emit');
+      const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onCategoriesChange(['programming', 'databases']);
       tick();
 
       expect(emitSpy).toHaveBeenCalledWith(
-        jasmine.objectContaining({ categories: ['programming', 'databases'] })
+        expect.objectContaining({ categories: ['programming', 'databases'] })
       );
     }));
 
     it('should emit filtersChange when levels change', fakeAsync(() => {
       fixture.detectChanges();
-      const emitSpy = spyOn(component.filtersChange, 'emit');
+      const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onLevelsChange(['Beginner', 'Intermediate']);
       tick();
 
       expect(emitSpy).toHaveBeenCalledWith(
-        jasmine.objectContaining({ levels: ['Beginner', 'Intermediate'] })
+        expect.objectContaining({ levels: ['Beginner', 'Intermediate'] })
       );
     }));
 
     it('should emit filtersChange when semantic search changes', fakeAsync(() => {
       fixture.detectChanges();
-      const emitSpy = spyOn(component.filtersChange, 'emit');
+      const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onSemanticSearchChange('books about design patterns');
       tick();
 
       expect(emitSpy).toHaveBeenCalledWith(
-        jasmine.objectContaining({ text: 'books about design patterns' })
+        expect.objectContaining({ text: 'books about design patterns' })
       );
     }));
   });
@@ -251,40 +249,36 @@ describe('FilterPanelComponent', () => {
   describe('Type Change - Clear Dependent Filters', () => {
     it('should clear categories when type changes', fakeAsync(() => {
       fixture.detectChanges();
-      const emitSpy = spyOn(component.filtersChange, 'emit');
+      const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       // First set some categories
       component.onCategoriesChange(['programming']);
       tick();
-      emitSpy.calls.reset();
+      emitSpy.mockClear();
 
       // Now change the type
       component.onTypeChange('fiction');
       tick();
 
       // Should emit with empty categories
-      expect(emitSpy).toHaveBeenCalledWith(
-        jasmine.objectContaining({ categories: [], levels: [] })
-      );
+      expect(emitSpy).toHaveBeenCalledWith(expect.objectContaining({ categories: [], levels: [] }));
     }));
 
     it('should clear levels when type changes', fakeAsync(() => {
       fixture.detectChanges();
-      const emitSpy = spyOn(component.filtersChange, 'emit');
+      const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       // First set some levels
       component.onLevelsChange(['Beginner']);
       tick();
-      emitSpy.calls.reset();
+      emitSpy.mockClear();
 
       // Now change the type
       component.onTypeChange('fiction');
       tick();
 
       // Should emit with empty levels
-      expect(emitSpy).toHaveBeenCalledWith(
-        jasmine.objectContaining({ categories: [], levels: [] })
-      );
+      expect(emitSpy).toHaveBeenCalledWith(expect.objectContaining({ categories: [], levels: [] }));
     }));
 
     it('should not clear categories and levels when type is set to same value', fakeAsync(() => {
@@ -323,7 +317,7 @@ describe('FilterPanelComponent', () => {
       component.onSemanticSearchChange('design patterns');
       tick();
 
-      const emitSpy = spyOn(component.filtersChange, 'emit');
+      const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       // Click clear button
       component.clearFilters();
@@ -367,7 +361,7 @@ describe('FilterPanelComponent', () => {
       component.onTypeChange('technical');
       tick();
 
-      const emitSpy = spyOn(component.typeChange, 'emit');
+      const emitSpy = vi.spyOn(component.typeChange, 'emit');
       component.clearFilters();
       tick();
 

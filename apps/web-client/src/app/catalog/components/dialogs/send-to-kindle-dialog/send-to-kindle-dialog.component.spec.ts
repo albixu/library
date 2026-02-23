@@ -10,8 +10,12 @@ import { Book } from '../../../../core/models/index.js';
 describe('SendToKindleDialogComponent', () => {
   let component: SendToKindleDialogComponent;
   let fixture: ComponentFixture<SendToKindleDialogComponent>;
-  let mockDialogRef: jest.Mocked<MatDialogRef<SendToKindleDialogComponent>>;
-  let mockKindleService: jest.Mocked<KindleService>;
+  let mockDialogRef: { close: ReturnType<typeof vi.fn> };
+  let mockKindleService: {
+    sendToKindle: ReturnType<typeof vi.fn>;
+    validateKindleEmail: ReturnType<typeof vi.fn>;
+    isKindleEmail: ReturnType<typeof vi.fn>;
+  };
 
   const mockBook: Book = {
     id: '123e4567-e89b-12d3-a456-426614174000',
@@ -38,13 +42,13 @@ describe('SendToKindleDialogComponent', () => {
   beforeEach(async () => {
     mockDialogRef = {
       close: vi.fn(),
-    } as unknown as jest.Mocked<MatDialogRef<SendToKindleDialogComponent>>;
+    };
 
     mockKindleService = {
       sendToKindle: vi.fn(),
       validateKindleEmail: vi.fn(),
       isKindleEmail: vi.fn(),
-    } as unknown as jest.Mocked<KindleService>;
+    };
 
     // Default mock implementations
     mockKindleService.validateKindleEmail.mockImplementation((email: string) =>
@@ -337,13 +341,13 @@ describe('SendToKindleDialogComponent', () => {
 
       mockDialogRef = {
         close: vi.fn(),
-      } as unknown as jest.Mocked<MatDialogRef<SendToKindleDialogComponent>>;
+      };
 
       mockKindleService = {
         sendToKindle: vi.fn(),
         validateKindleEmail: vi.fn(),
         isKindleEmail: vi.fn(),
-      } as unknown as jest.Mocked<KindleService>;
+      };
 
       mockKindleService.validateKindleEmail.mockImplementation((email: string) =>
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
