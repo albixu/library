@@ -43,7 +43,7 @@ Este documento define la arquitectura y diseño del backend API para el sistema 
 | Testing | Vitest | Latest |
 | Logging | Pino | Latest |
 | Embeddings | Ollama (nomic-embed-text) | Latest |
-| Traducción | Ollama (qwen2.5:3b) | Latest |
+| Traducción | Ollama (qwen2.5:1.5b) | Latest |
 
 ### 2.2 Arquitectura Hexagonal (Ports & Adapters)
 
@@ -782,7 +782,7 @@ class OllamaEmbeddingService implements EmbeddingService {
 class OllamaTranslationService implements TranslationService {
   // Configuración
   baseUrl: string;           // Default: http://ollama:11434
-  model: string;             // Default: qwen2.5:3b
+  model: string;             // Default: qwen2.5:1.5b
   timeoutMs: number;         // Default: 60000
   retries: number;           // Default: 3
 
@@ -1259,7 +1259,7 @@ services:
 ollama pull nomic-embed-text
 
 # Traducción
-ollama pull qwen2.5:3b
+ollama pull qwen2.5:1.5b
 ```
 
 ---

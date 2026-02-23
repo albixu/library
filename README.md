@@ -27,7 +27,7 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 | Lenguaje | TypeScript + Node.js 20 |
 | Base de datos | PostgreSQL 16 + pgvector |
 | Embeddings | Ollama + nomic-embed-text |
-| Traducciones | Ollama + qwen2.5:3b |
+| Traducciones | Ollama + qwen2.5:1.5b |
 | API | Fastify |
 | ORM | Drizzle ORM |
 | Frontend | Angular 21 + Angular Material |
@@ -81,7 +81,7 @@ docker-compose ps
 docker exec library-ollama ollama pull nomic-embed-text
 
 # Modelo para traducciones (descripción de libros)
-docker exec library-ollama ollama pull qwen2.5:3b
+docker exec library-ollama ollama pull qwen2.5:1.5b
 ```
 
 ### 5. Ejecutar migraciones de base de datos
@@ -373,7 +373,7 @@ docker exec library-api-dev npm run seed:database
 docker exec library-ollama ollama pull nomic-embed-text
 
 # Descargar modelo de traducción
-docker exec library-ollama ollama pull qwen2.5:3b
+docker exec library-ollama ollama pull qwen2.5:1.5b
 
 # Listar modelos descargados
 docker exec library-ollama ollama list
@@ -709,7 +709,7 @@ curl http://localhost:11434/api/tags
 
 # Descargar modelos manualmente
 docker exec library-ollama ollama pull nomic-embed-text
-docker exec library-ollama ollama pull qwen2.5:3b
+docker exec library-ollama ollama pull qwen2.5:1.5b
 ```
 
 #### Error de conexión a la base de datos
@@ -766,7 +766,7 @@ docker-compose -f docker-compose.prod.yml up -d
 
 Los modelos de IA requieren memoria significativa:
 - `nomic-embed-text`: ~500MB
-- `qwen2.5:3b`: ~3GB
+- `qwen2.5:1.5b`: ~1GB
 
 ```bash
 # Verificar memoria disponible en el contenedor

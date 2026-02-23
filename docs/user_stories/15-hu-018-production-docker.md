@@ -43,7 +43,7 @@ Actualmente el proyecto tiene:
 | Modelo | Propósito | Configuración |
 |--------|-----------|---------------|
 | `nomic-embed-text` | Generación de embeddings para búsqueda semántica | `OLLAMA_MODEL` |
-| `qwen2.5:3b` | Traducción de descripciones al español | `TRANSLATION_MODEL` |
+| `qwen2.5:1.5b` | Traducción de descripciones al español | `TRANSLATION_MODEL` |
 
 ---
 
@@ -89,7 +89,7 @@ Actualmente el proyecto tiene:
 - [ ] Fácil de levantar y destruir (`docker-compose -f docker-compose.test.yml up/down`)
 
 ### AC-6: Script de Inicialización de Modelos Ollama
-- [ ] Script que descarga los modelos necesarios (`nomic-embed-text`, `qwen2.5:3b`)
+- [ ] Script que descarga los modelos necesarios (`nomic-embed-text`, `qwen2.5:1.5b`)
 - [ ] Verificación de que los modelos están disponibles antes de iniciar API
 - [ ] Documentación del proceso de setup inicial
 
@@ -416,7 +416,7 @@ docker-compose -f docker-compose.test.yml down -v
 
 1. **API_URL en Build Time**: Angular compila la URL del API en el bundle. Para cambiarla, hay que rebuildar la imagen. Esto es aceptable para este proyecto ya que es de uso personal.
 
-2. **Ollama Memory**: Los modelos de IA requieren significativamente más memoria. `qwen2.5:3b` necesita ~3GB solo para cargarse. El límite de 4GB debería ser suficiente.
+2. **Ollama Memory**: Los modelos de IA requieren significativamente más memoria. `qwen2.5:1.5b` necesita ~1GB solo para cargarse. El límite de 4GB debería ser suficiente.
 
 3. **Volúmenes Separados**: Producción y testing usan volúmenes con nombres diferentes (`-prod` vs `-test`) para evitar contaminación de datos.
 
