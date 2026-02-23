@@ -10,6 +10,9 @@
     "test": "ng test",
     "test:watch": "ng test --watch",
     "test:coverage": "ng test --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "storybook": "ng run web-client:storybook",
@@ -57,6 +60,7 @@
     "@angular-devkit/core": "^21.1.0",
     "@angular/platform-browser-dynamic": "^21.1.0",
     "@compodoc/compodoc": "^1.2.1",
-    "eslint-plugin-storybook": "^10.2.10"
+    "eslint-plugin-storybook": "^10.2.10",
+    "@playwright/test": "^1.52.0"
   }
 }
