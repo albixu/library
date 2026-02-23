@@ -6,4 +6,4 @@
 // Layout components will be exported here as they are created
 // export * from './main-layout';
 export * from './header/index.js';
-// export * from './footer';
+export * from './footer/index.js';
