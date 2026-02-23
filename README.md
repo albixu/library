@@ -30,7 +30,10 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 | Traducciones | Ollama + qwen2.5:3b |
 | API | Fastify |
 | ORM | Drizzle ORM |
-| Testing | Vitest |
+| Frontend | Angular 21 + Angular Material |
+| Testing API | Vitest |
+| Testing Web | Vitest + Playwright |
+| Documentación UI | Storybook |
 
 ## Requisitos Previos
 
@@ -251,7 +254,7 @@ library/
 │   │   ├── tests/
 │   │   └── docker/
 │   │
-│   └── web-client/       # Frontend (futuro)
+│   └── web-client/       # Frontend: Angular 21 + Material
 │
 ├── docker-compose.yml        # Desarrollo
 ├── docker-compose.prod.yml   # Producción
@@ -366,6 +369,81 @@ docker exec library-ollama ollama list
 
 # Verificar estado de Ollama
 curl http://localhost:11434/api/tags
+```
+
+#### Web Client (Angular)
+
+```bash
+# Ir al directorio del cliente web
+cd apps/web-client
+
+# Instalar dependencias (primera vez)
+npm install
+
+# Iniciar servidor de desarrollo
+npm start
+# La aplicación estará disponible en http://localhost:4200
+
+# Iniciar con puerto específico
+npm start -- --port 4300
+```
+
+**Acceso desde el navegador:**
+- **Desarrollo:** http://localhost:4200
+- **API (backend):** http://localhost:3000
+
+#### Tests del Web Client
+
+```bash
+cd apps/web-client
+
+# Tests unitarios
+npm test
+
+# Tests en modo watch (re-ejecuta al detectar cambios)
+npm run test:watch
+
+# Tests con reporte de cobertura
+npm run test:coverage
+
+# Tests end-to-end con Playwright
+npm run test:e2e
+
+# Tests E2E en modo interactivo (con UI de Playwright)
+npm run test:e2e:ui
+
+# Tests E2E con navegador visible
+npm run test:e2e:headed
+```
+
+#### Storybook
+
+Storybook permite desarrollar y documentar componentes de forma aislada.
+
+```bash
+cd apps/web-client
+
+# Iniciar Storybook en modo desarrollo
+npm run storybook
+# Storybook estará disponible en http://localhost:6006
+
+# Compilar Storybook para producción
+npm run build-storybook
+```
+
+**Acceso desde el navegador:**
+- **Storybook:** http://localhost:6006
+
+#### Lint del Web Client
+
+```bash
+cd apps/web-client
+
+# Ejecutar linter
+npm run lint
+
+# Ejecutar linter con auto-fix
+npm run lint:fix
 ```
 
 ### Testing

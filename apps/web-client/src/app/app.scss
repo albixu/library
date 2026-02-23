@@ -1,26 +1,5 @@
-.main-content {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-// Temporary styles for Material test - will be removed
-.material-test {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-xl);
-  gap: var(--spacing-md);
-
-  h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--color-accent);
-  }
-
-  p {
-    color: var(--color-text-secondary);
-    margin-bottom: var(--spacing-md);
-  }
+:host {
+  display: block;
+  height: 100vh;
+  width: 100%;
 }

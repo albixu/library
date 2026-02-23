@@ -10,8 +10,13 @@
     "test": "ng test",
     "test:watch": "ng test --watch",
     "test:coverage": "ng test --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
     "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix"
+    "lint:fix": "eslint src/ --fix",
+    "storybook": "ng run web-client:storybook",
+    "build-storybook": "ng run web-client:build-storybook"
   },
   "private": true,
   "packageManager": "npm@10.9.4",
@@ -44,6 +49,18 @@
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.56.0",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "storybook": "^10.2.10",
+    "@storybook/angular": "^10.2.10",
+    "@storybook/addon-a11y": "^10.2.10",
+    "@storybook/addon-docs": "^10.2.10",
+    "@storybook/addon-onboarding": "^10.2.10",
+    "@angular-devkit/build-angular": "^21.1.0",
+    "@angular-devkit/architect": "^0.2101.0",
+    "@angular-devkit/core": "^21.1.0",
+    "@angular/platform-browser-dynamic": "^21.1.0",
+    "@compodoc/compodoc": "^1.2.1",
+    "eslint-plugin-storybook": "^10.2.10",
+    "@playwright/test": "^1.52.0"
   }
 }
