@@ -43,7 +43,7 @@
 }
 
 // Dark mode colors
-.dark-mode {
+[data-theme='dark'] {
   --color-bg-primary: #0f172a;
   --color-bg-surface: #1e293b;
   --color-bg-elevated: #334155;

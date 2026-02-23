@@ -19,7 +19,7 @@ describe('BookListPageComponent', () => {
   let component: BookListPageComponent;
   let fixture: ComponentFixture<BookListPageComponent>;
   let mockStore: Partial<BookSearchStore>;
-  let mockDialog: jest.Mocked<MatDialog>;
+  let mockDialog: { open: ReturnType<typeof vi.fn> };
 
   const mockBooks: Book[] = [
     {
@@ -105,7 +105,7 @@ describe('BookListPageComponent', () => {
       open: vi.fn().mockReturnValue({
         afterClosed: () => of(undefined),
       } as unknown as MatDialogRef<unknown>),
-    } as unknown as jest.Mocked<MatDialog>;
+    };
 
     await TestBed.configureTestingModule({
       imports: [BookListPageComponent],

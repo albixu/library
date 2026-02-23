@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 import { BookService } from './book.service.js';
 import { ApiService } from './api.service.js';
@@ -14,7 +15,7 @@ import {
 
 describe('BookService', () => {
   let service: BookService;
-  let apiServiceSpy: jasmine.SpyObj<ApiService>;
+  let apiServiceMock: { get: ReturnType<typeof vi.fn> };
 
   const mockBookSearchResponse: BookSearchResponse = {
     success: true,
@@ -75,14 +76,15 @@ describe('BookService', () => {
   };
 
   beforeEach(() => {
-    const spy = jasmine.createSpyObj('ApiService', ['get']);
+    apiServiceMock = {
+      get: vi.fn(),
+    };
 
     TestBed.configureTestingModule({
-      providers: [BookService, { provide: ApiService, useValue: spy }],
+      providers: [BookService, { provide: ApiService, useValue: apiServiceMock }],
     });
 
     service = TestBed.inject(BookService);
-    apiServiceSpy = TestBed.inject(ApiService) as jasmine.SpyObj<ApiService>;
   });
 
   describe('Service Creation', () => {
@@ -92,17 +94,16 @@ describe('BookService', () => {
   });
 
   describe('searchBooks', () => {
-    it('should call ApiService.get with /books endpoint', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockBookSearchResponse));
+    it('should call ApiService.get with /books endpoint', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockBookSearchResponse));
 
-      service.searchBooks().subscribe(() => {
-        expect(apiServiceSpy.get).toHaveBeenCalledWith('/books', jasmine.any(Object));
-        done();
-      });
+      await firstValueFrom(service.searchBooks());
+
+      expect(apiServiceMock.get).toHaveBeenCalledWith('/books', expect.any(Object));
     });
 
-    it('should pass filters as query params', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockBookSearchResponse));
+    it('should pass filters as query params', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockBookSearchResponse));
 
       const filters: SearchFilters = {
         isbn: '9780132350884',
@@ -114,67 +115,63 @@ describe('BookService', () => {
         text: 'design patterns',
       };
 
-      service.searchBooks(filters).subscribe(() => {
-        expect(apiServiceSpy.get).toHaveBeenCalledWith('/books', {
-          isbn: '9780132350884',
-          title: 'Clean',
-          author: 'Martin',
-          types: 'technical',
-          categories: ['programming'],
-          levels: ['Intermediate'],
-          text: 'design patterns',
-          limit: 50,
-          cursor: undefined,
-        });
-        done();
+      await firstValueFrom(service.searchBooks(filters));
+
+      expect(apiServiceMock.get).toHaveBeenCalledWith('/books', {
+        isbn: '9780132350884',
+        title: 'Clean',
+        author: 'Martin',
+        types: 'technical',
+        categories: ['programming'],
+        levels: ['Intermediate'],
+        text: 'design patterns',
+        limit: 50,
+        cursor: undefined,
       });
     });
 
-    it('should pass pagination params', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockBookSearchResponse));
+    it('should pass pagination params', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockBookSearchResponse));
 
       const pagination: PaginationParams = {
         limit: 25,
         cursor: 'abc123',
       };
 
-      service.searchBooks({}, pagination).subscribe(() => {
-        expect(apiServiceSpy.get).toHaveBeenCalledWith(
-          '/books',
-          jasmine.objectContaining({
-            limit: 25,
-            cursor: 'abc123',
-          })
-        );
-        done();
-      });
+      await firstValueFrom(service.searchBooks({}, pagination));
+
+      expect(apiServiceMock.get).toHaveBeenCalledWith(
+        '/books',
+        expect.objectContaining({
+          limit: 25,
+          cursor: 'abc123',
+        })
+      );
     });
 
-    it('should use default limit of 50 when not specified', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockBookSearchResponse));
+    it('should use default limit of 50 when not specified', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockBookSearchResponse));
 
-      service.searchBooks({}).subscribe(() => {
-        expect(apiServiceSpy.get).toHaveBeenCalledWith(
-          '/books',
-          jasmine.objectContaining({ limit: 50 })
-        );
-        done();
-      });
+      await firstValueFrom(service.searchBooks({}));
+
+      expect(apiServiceMock.get).toHaveBeenCalledWith(
+        '/books',
+        expect.objectContaining({ limit: 50 })
+      );
     });
 
-    it('should return BookSearchResponse', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockBookSearchResponse));
+    it('should return BookSearchResponse', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockBookSearchResponse));
 
-      service.searchBooks().subscribe((response) => {
-        expect(response).toEqual(mockBookSearchResponse);
-        expect(response.data?.items.length).toBe(1);
-        expect(response.data?.items[0].title).toBe('Clean Code');
-        done();
-      });
+      const response = await firstValueFrom(service.searchBooks());
+
+      expect(response).toEqual(mockBookSearchResponse);
+      expect(response.data?.items.length).toBe(1);
+      expect(response.data?.items[0].title).toBe('Clean Code');
     });
 
-    it('should not include empty filter values in params', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockBookSearchResponse));
+    it('should not include empty filter values in params', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockBookSearchResponse));
 
       const filters: SearchFilters = {
         title: 'Clean',
@@ -182,94 +179,86 @@ describe('BookService', () => {
         categories: [], // empty array
       };
 
-      service.searchBooks(filters).subscribe(() => {
-        const calledParams = apiServiceSpy.get.calls.mostRecent().args[1];
-        expect(calledParams.author).toBeUndefined();
-        expect(calledParams.categories).toBeUndefined();
-        done();
-      });
+      await firstValueFrom(service.searchBooks(filters));
+
+      const calledParams =
+        apiServiceMock.get.mock.calls[apiServiceMock.get.mock.calls.length - 1][1];
+      expect(calledParams.author).toBeUndefined();
+      expect(calledParams.categories).toBeUndefined();
     });
   });
 
   describe('getBookTypes', () => {
-    it('should call ApiService.get with /book-types endpoint', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockBookTypesResponse));
+    it('should call ApiService.get with /book-types endpoint', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockBookTypesResponse));
 
-      service.getBookTypes().subscribe(() => {
-        expect(apiServiceSpy.get).toHaveBeenCalledWith('/book-types', undefined);
-        done();
-      });
+      await firstValueFrom(service.getBookTypes());
+
+      expect(apiServiceMock.get).toHaveBeenCalledWith('/book-types', undefined);
     });
 
-    it('should return BookTypeListResponse', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockBookTypesResponse));
+    it('should return BookTypeListResponse', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockBookTypesResponse));
 
-      service.getBookTypes().subscribe((response) => {
-        expect(response).toEqual(mockBookTypesResponse);
-        expect(response.data?.length).toBe(2);
-        done();
-      });
+      const response = await firstValueFrom(service.getBookTypes());
+
+      expect(response).toEqual(mockBookTypesResponse);
+      expect(response.data?.length).toBe(2);
     });
   });
 
   describe('getCategories', () => {
-    it('should call ApiService.get with /book-categories endpoint', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockCategoriesResponse));
+    it('should call ApiService.get with /book-categories endpoint', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockCategoriesResponse));
 
-      service.getCategories().subscribe(() => {
-        expect(apiServiceSpy.get).toHaveBeenCalledWith('/book-categories', undefined);
-        done();
-      });
+      await firstValueFrom(service.getCategories());
+
+      expect(apiServiceMock.get).toHaveBeenCalledWith('/book-categories', undefined);
     });
 
-    it('should pass type filter when provided', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockCategoriesResponse));
+    it('should pass type filter when provided', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockCategoriesResponse));
 
-      service.getCategories('technical').subscribe(() => {
-        expect(apiServiceSpy.get).toHaveBeenCalledWith('/book-categories', { type: 'technical' });
-        done();
-      });
+      await firstValueFrom(service.getCategories('technical'));
+
+      expect(apiServiceMock.get).toHaveBeenCalledWith('/book-categories', { type: 'technical' });
     });
 
-    it('should return CategoryListResponse', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockCategoriesResponse));
+    it('should return CategoryListResponse', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockCategoriesResponse));
 
-      service.getCategories().subscribe((response) => {
-        expect(response).toEqual(mockCategoriesResponse);
-        expect(response.data?.length).toBe(2);
-        expect(response.data?.[0].typeId).toBe('2');
-        done();
-      });
+      const response = await firstValueFrom(service.getCategories());
+
+      expect(response).toEqual(mockCategoriesResponse);
+      expect(response.data?.length).toBe(2);
+      expect(response.data?.[0].typeId).toBe('2');
     });
   });
 
   describe('getLevels', () => {
-    it('should call ApiService.get with /book-levels endpoint', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockLevelsResponse));
+    it('should call ApiService.get with /book-levels endpoint', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockLevelsResponse));
 
-      service.getLevels().subscribe(() => {
-        expect(apiServiceSpy.get).toHaveBeenCalledWith('/book-levels', undefined);
-        done();
-      });
+      await firstValueFrom(service.getLevels());
+
+      expect(apiServiceMock.get).toHaveBeenCalledWith('/book-levels', undefined);
     });
 
-    it('should pass type filter when provided', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockLevelsResponse));
+    it('should pass type filter when provided', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockLevelsResponse));
 
-      service.getLevels('technical').subscribe(() => {
-        expect(apiServiceSpy.get).toHaveBeenCalledWith('/book-levels', { type: 'technical' });
-        done();
-      });
+      await firstValueFrom(service.getLevels('technical'));
+
+      expect(apiServiceMock.get).toHaveBeenCalledWith('/book-levels', { type: 'technical' });
     });
 
-    it('should return BookLevelListResponse', (done) => {
-      apiServiceSpy.get.and.returnValue(of(mockLevelsResponse));
+    it('should return BookLevelListResponse', async () => {
+      apiServiceMock.get.mockReturnValue(of(mockLevelsResponse));
 
-      service.getLevels().subscribe((response) => {
-        expect(response).toEqual(mockLevelsResponse);
-        expect(response.data?.length).toBe(3);
-        done();
-      });
+      const response = await firstValueFrom(service.getLevels());
+
+      expect(response).toEqual(mockLevelsResponse);
+      expect(response.data?.length).toBe(3);
     });
   });
 });
