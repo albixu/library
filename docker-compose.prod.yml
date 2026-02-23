@@ -5,9 +5,35 @@
 #   docker-compose -f docker-compose.prod.yml up -d
 #   docker-compose -f docker-compose.prod.yml down
 #   docker-compose -f docker-compose.prod.yml logs -f
+#
+# First-time setup (download AI models):
+#   ./scripts/setup-ollama-models.sh
 # ================================
 
 services:
+  # ----- Web Client (Angular + Nginx) -----
+  web-client:
+    build:
+      context: ./apps/web-client
+      dockerfile: docker/Dockerfile
+      args:
+        API_URL: ${API_URL:-http://localhost:3000}
+    container_name: library-web
+    ports:
+      - "80:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - library-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
   # ----- API Application -----
   api:
     build:
@@ -19,8 +45,11 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - LOG_LEVEL=info
       - DATABASE_URL=postgresql://library:${POSTGRES_PASSWORD}@postgres:5432/library
       - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=nomic-embed-text
+      - TRANSLATION_MODEL=qwen2.5:3b
     depends_on:
       postgres:
         condition: service_healthy
@@ -29,6 +58,12 @@ services:
     networks:
       - library-network
     restart: always
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
     deploy:
       resources:
         limits:
@@ -65,7 +100,7 @@ services:
         reservations:
           memory: 512M
 
-  # ----- Ollama (Embeddings) -----
+  # ----- Ollama (Embeddings + Translation) -----
   ollama:
     image: ollama/ollama:latest
     container_name: library-ollama
@@ -77,12 +112,18 @@ services:
     networks:
       - library-network
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:11434/api/tags || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: 4G
         reservations:
-          memory: 1G
+          memory: 2G
 
 # ----- Networks -----
 networks:
