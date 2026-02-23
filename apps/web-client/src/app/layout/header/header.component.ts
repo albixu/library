@@ -60,7 +60,7 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         justify-content: center;
         width: 40px;
         height: 40px;
-        background-color: #17a1cf;
+        background-color: var(--color-accent);
         border-radius: var(--radius-md);
 
         mat-icon {
