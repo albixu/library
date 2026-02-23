@@ -73,6 +73,10 @@ docker-compose ps
 
 ```bash
 # Esto solo es necesario la primera vez
+# Usar el script automático (recomendado)
+./scripts/setup-ollama-models.sh
+
+# O descargar manualmente:
 # Modelo para embeddings (búsqueda semántica)
 docker exec library-ollama ollama pull nomic-embed-text
 
@@ -255,9 +259,16 @@ library/
 │   │   └── docker/
 │   │
 │   └── web-client/       # Frontend: Angular 21 + Material
+│       └── docker/
+│
+├── scripts/
+│   └── setup-ollama-models.sh    # Setup de modelos de IA
 │
 ├── docker-compose.yml        # Desarrollo
 ├── docker-compose.prod.yml   # Producción
+├── docker-compose.test.yml   # Testing (aislado)
+├── .env.example              # Variables de entorno
+│
 └── docs/
     ├── api/                  # OpenAPI spec
     ├── design_docs/          # Documentación de diseño
@@ -493,32 +504,230 @@ cp .env.example .env
 npm run dev
 ```
 
+## Docker Compose Environments
+
+El proyecto incluye tres configuraciones de Docker Compose:
+
+| Archivo | Propósito | Uso |
+|---------|-----------|-----|
+| `docker-compose.yml` | Desarrollo | Hot reload, debug, desarrollo local |
+| `docker-compose.prod.yml` | Producción | Optimizado, seguro, listo para VPS |
+| `docker-compose.test.yml` | Testing | E2E tests, CI/CD, aislado |
+
+### Puertos por entorno
+
+| Servicio | Desarrollo | Producción | Testing |
+|----------|------------|------------|---------|
+| Web Client | 4200 | 80 | 4200 |
+| API | 3000 | 3000 | 3001 |
+| PostgreSQL | 5432 | (interno) | 5433 |
+| Ollama | 11434 | (interno) | 11435 |
+
 ## Producción
 
 ### Desplegar en producción
 
 ```bash
-# Crear archivo de secretos
-echo "POSTGRES_PASSWORD=tu_password_seguro" > .env
+# 1. Clonar y configurar
+git clone <repository-url>
+cd library
 
-# Iniciar en modo producción
-docker-compose -f docker-compose.prod.yml up -d
+# 2. Crear archivo de variables de entorno
+cp .env.example .env
+# Editar .env y configurar POSTGRES_PASSWORD con una contraseña segura
 
-# Descargar modelos de Ollama
-docker exec library-ollama ollama pull nomic-embed-text
-docker exec library-ollama ollama pull qwen2.5:3b
+# 3. Construir e iniciar servicios
+docker-compose -f docker-compose.prod.yml up -d --build
 
-# Ejecutar migraciones
+# 4. Descargar modelos de IA (primera vez)
+./scripts/setup-ollama-models.sh
+
+# 5. Ejecutar migraciones de base de datos
 docker exec library-api npm run db:migrate
+
+# 6. (Opcional) Cargar datos iniciales
+docker exec library-api npm run seed:database
 ```
+
+### Comandos de producción
+
+```bash
+# Ver estado de los servicios
+docker-compose -f docker-compose.prod.yml ps
+
+# Ver logs en tiempo real
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Ver logs de un servicio específico
+docker-compose -f docker-compose.prod.yml logs -f api
+
+# Reiniciar servicios
+docker-compose -f docker-compose.prod.yml restart
+
+# Detener servicios
+docker-compose -f docker-compose.prod.yml down
+
+# Reconstruir después de cambios
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+### Verificar salud de servicios
+
+```bash
+# Health check del API
+curl http://localhost:3000/health
+
+# Health check del Web Client
+curl http://localhost/health
+
+# Verificar que Ollama tiene los modelos
+curl http://localhost:11434/api/tags
+```
+
+### Variables de entorno de producción
+
+| Variable | Requerida | Descripción | Ejemplo |
+|----------|-----------|-------------|---------|
+| `POSTGRES_PASSWORD` | ✅ | Contraseña de PostgreSQL | `secure_password_123` |
+| `API_URL` | ❌ | URL del API para el web client | `http://192.168.1.100:3000` |
 
 ### Consideraciones de producción
 
-- 🔒 Cambiar las contraseñas por defecto
-- 🔒 No exponer puertos de PostgreSQL y Ollama externamente
+- 🔒 Cambiar `POSTGRES_PASSWORD` por una contraseña segura
+- 🔒 Los puertos de PostgreSQL y Ollama NO se exponen externamente
 - 📊 Configurar monitoreo y alertas
-- 💾 Configurar backups de PostgreSQL
+- 💾 Configurar backups de PostgreSQL (ver sección Backup/Restore)
 - 🔄 Usar un reverse proxy (nginx, traefik) con HTTPS
+
+## Entorno de Testing
+
+El entorno de testing está completamente aislado de producción con su propia base de datos y volúmenes.
+
+### Comandos de testing
+
+```bash
+# Levantar entorno de testing
+docker-compose -f docker-compose.test.yml up -d
+
+# Descargar modelos de Ollama en testing (primera vez)
+OLLAMA_HOST=http://localhost:11435 ./scripts/setup-ollama-models.sh
+
+# Ejecutar tests E2E contra el entorno
+docker exec library-api-test npm run test:e2e
+
+# Ver logs
+docker-compose -f docker-compose.test.yml logs -f
+
+# Destruir entorno (incluyendo volúmenes)
+docker-compose -f docker-compose.test.yml down -v
+```
+
+## Backup y Restore
+
+### Backup de la base de datos
+
+```bash
+# Producción
+docker exec library-postgres pg_dump -U library library > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Con compresión
+docker exec library-postgres pg_dump -U library library | gzip > backup_$(date +%Y%m%d_%H%M%S).sql.gz
+```
+
+### Restore de la base de datos
+
+```bash
+# Desde archivo SQL
+docker exec -i library-postgres psql -U library library < backup.sql
+
+# Desde archivo comprimido
+gunzip -c backup.sql.gz | docker exec -i library-postgres psql -U library library
+```
+
+## Troubleshooting
+
+### Problemas comunes
+
+#### Los modelos de Ollama no se descargan
+
+```bash
+# Verificar que Ollama está corriendo
+docker-compose -f docker-compose.prod.yml logs ollama
+
+# Verificar conectividad
+curl http://localhost:11434/api/tags
+
+# Descargar modelos manualmente
+docker exec library-ollama ollama pull nomic-embed-text
+docker exec library-ollama ollama pull qwen2.5:3b
+```
+
+#### Error de conexión a la base de datos
+
+```bash
+# Verificar que PostgreSQL está corriendo y saludable
+docker-compose -f docker-compose.prod.yml ps postgres
+docker-compose -f docker-compose.prod.yml logs postgres
+
+# Verificar conectividad
+docker exec library-postgres pg_isready -U library -d library
+```
+
+#### El API no arranca
+
+```bash
+# Verificar logs del API
+docker-compose -f docker-compose.prod.yml logs api
+
+# Verificar que las migraciones se ejecutaron
+docker exec library-api npm run db:migrate
+
+# Verificar variables de entorno
+docker exec library-api env | grep -E "(DATABASE|OLLAMA|NODE)"
+```
+
+#### El Web Client no puede conectar con el API
+
+```bash
+# Verificar que el API responde
+curl http://localhost:3000/health
+
+# Verificar CORS headers
+curl -I http://localhost:3000/api/books
+
+# Verificar la URL del API en la build del web client
+# Si cambió, hay que reconstruir la imagen:
+docker-compose -f docker-compose.prod.yml build web-client
+docker-compose -f docker-compose.prod.yml up -d web-client
+```
+
+#### Problemas de permisos en volúmenes (Linux)
+
+```bash
+# Si hay problemas de permisos con volúmenes
+sudo chown -R $(id -u):$(id -g) ./
+
+# O reiniciar con volúmenes limpios
+docker-compose -f docker-compose.prod.yml down -v
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+#### Memoria insuficiente para Ollama
+
+Los modelos de IA requieren memoria significativa:
+- `nomic-embed-text`: ~500MB
+- `qwen2.5:3b`: ~3GB
+
+```bash
+# Verificar memoria disponible en el contenedor
+docker stats library-ollama
+
+# Aumentar límites si es necesario (editar docker-compose.prod.yml)
+# deploy:
+#   resources:
+#     limits:
+#       memory: 6G  # Aumentar si es necesario
+```
 
 ## Arquitectura
 
