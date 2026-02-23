@@ -13,7 +13,7 @@
 #   docker exec library-api npm run seed:prod
 #
 # Add new books:
-#   1. Add new entries to docs/db/books.json
+#   1. Run consolidate-books.ts to generate partitioned files in docs/db/initial_data/
 #   2. Run: docker exec library-api npm run seed:prod
 #   (Existing books are skipped, only new ones are added)
 # ================================
@@ -59,8 +59,8 @@ services:
       - OLLAMA_MODEL=nomic-embed-text
       - TRANSLATION_MODEL=qwen2.5:1.5b
     volumes:
-      # Mount books.json for seeding (run: docker exec library-api npm run seed:prod)
-      - ./docs/db/books.json:/app/data/books.json:ro
+      # Mount initial_data directory for seeding (run: docker exec library-api npm run seed:prod)
+      - ./docs/db/initial_data:/app/data/initial_data:ro
     depends_on:
       postgres:
         condition: service_healthy
