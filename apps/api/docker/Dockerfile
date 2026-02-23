@@ -12,10 +12,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --ignore-scripts
 
-# Copy source code
+# Copy source code and drizzle migrations
 COPY tsconfig.json ./
 COPY drizzle.config.ts ./
 COPY src ./src
+COPY drizzle ./drizzle
 
 # Build TypeScript
 RUN npm run build
@@ -49,13 +50,16 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./
 
-# Copy drizzle migrations
-COPY --from=builder --chown=nodejs:nodejs /app/src/infrastructure/driven/persistence/drizzle/migrations ./dist/infrastructure/driven/persistence/drizzle/migrations
+# Copy drizzle migrations (needed for db:migrate command)
+COPY --from=builder --chown=nodejs:nodejs /app/drizzle ./drizzle
+COPY --from=builder --chown=nodejs:nodejs /app/drizzle.config.ts ./
 
 # Security: Set proper file permissions (read-only for app files)
 RUN chmod -R 555 /app/dist && \
     chmod -R 555 /app/node_modules && \
-    chmod 444 /app/package.json
+    chmod -R 555 /app/drizzle && \
+    chmod 444 /app/package.json && \
+    chmod 444 /app/drizzle.config.ts
 
 # Security: Create tmp directory with proper permissions for runtime needs
 RUN mkdir -p /app/tmp && chown nodejs:nodejs /app/tmp && chmod 755 /app/tmp
