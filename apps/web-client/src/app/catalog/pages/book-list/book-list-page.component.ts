@@ -86,51 +86,64 @@ import { SelectOption } from '../../components/filters/searchable-select/index.j
         }
 
         <div class="content-wrapper">
-          <!-- Results info -->
-          <div class="results-header">
-            <h1 class="results-title">
-              @if (store.loading()) {
-                Loading books...
-              } @else if (store.isEmpty()) {
-                No books found
-              } @else {
-                {{ store.pagination().totalCount }} books found
-              }
-            </h1>
-          </div>
-
-          <!-- Book display -->
-          @if (isMobile()) {
-            <!-- Mobile: Cards view -->
-            <div class="cards-container">
-              @for (book of store.books(); track book.id) {
-                <app-book-card
-                  [book]="book"
-                  (sendToKindle)="onSendToKindle($event)"
-                />
-              }
+          <!-- Error state -->
+          @if (store.error()) {
+            <div class="error-state" role="alert">
+              <mat-icon class="error-icon">error_outline</mat-icon>
+              <h2 class="error-title">Unable to load books</h2>
+              <p class="error-message">{{ store.error() }}</p>
+              <button mat-raised-button color="primary" (click)="onRetrySearch()">
+                <mat-icon>refresh</mat-icon>
+                Retry
+              </button>
             </div>
           } @else {
-            <!-- Desktop: Table view -->
-            <app-book-table
-              [books]="store.books()"
-              [loading]="store.loading()"
-              [emptyStateType]="emptyStateType()"
-              (sendToKindle)="onSendToKindle($event)"
-            />
-          }
+            <!-- Results info -->
+            <div class="results-header">
+              <h1 class="results-title">
+                @if (store.loading()) {
+                  Loading books...
+                } @else if (store.isEmpty()) {
+                  No books found
+                } @else {
+                  {{ store.pagination().totalCount }} books found
+                }
+              </h1>
+            </div>
 
-          <!-- Paginator -->
-          @if (!store.isEmpty()) {
-            <app-paginator
-              [totalCount]="store.pagination().totalCount"
-              [currentCount]="store.books().length"
-              [hasNextPage]="store.pagination().hasNextPage"
-              [pageSize]="store.pagination().limit"
-              [loading]="store.loading()"
-              (loadMore)="onLoadMore()"
-              (pageSizeChange)="onPageSizeChange($event)"
-            />
+            <!-- Book display -->
+            @if (isMobile()) {
+              <!-- Mobile: Cards view -->
+              <div class="cards-container" role="list">
+                @for (book of store.books(); track book.id) {
+                  <app-book-card
+                    [book]="book"
+                    (sendToKindle)="onSendToKindle($event)"
+                  />
+                }
+              </div>
+            } @else {
+              <!-- Desktop: Table view -->
+              <app-book-table
+                [books]="store.books()"
+                [loading]="store.loading()"
+                [emptyStateType]="emptyStateType()"
+                (sendToKindle)="onSendToKindle($event)"
+              />
+            }
+
+            <!-- Paginator -->
+            @if (!store.isEmpty()) {
+              <app-paginator
+                [totalCount]="store.pagination().totalCount"
+                [currentCount]="store.books().length"
+                [hasNextPage]="store.pagination().hasNextPage"
+                [pageSize]="store.pagination().limit"
+                [loading]="store.loading()"
+                (loadMore)="onLoadMore()"
+                (pageSizeChange)="onPageSizeChange($event)"
+              />
+            }
           }
         </div>
       </mat-sidenav-content>
@@ -206,6 +219,37 @@ import { SelectOption } from '../../components/filters/searchable-select/index.j
         gap: 16px;
       }
 
+      .error-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 48px 24px;
+        text-align: center;
+      }
+
+      .error-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        color: var(--mat-sys-error);
+      }
+
+      .error-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: var(--mat-sys-on-surface);
+      }
+
+      .error-message {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--mat-sys-on-surface-variant);
+        max-width: 400px;
+      }
+
       /* Mobile adjustments */
       @media (max-width: 768px) {
         .filter-sidenav {
@@ -266,15 +310,15 @@ export class BookListPageComponent implements OnInit {
 
   // Transform store data to SelectOption format for FilterPanel
   readonly typeOptions = computed((): SelectOption[] =>
-    this.store.types().map((t: BookType) => ({ value: t.name, label: t.name }))
+    this.store.types().map((t: BookType) => ({ id: t.id, name: t.name }))
   );
 
   readonly categoryOptions = computed((): SelectOption[] =>
-    this.store.categories().map((c: CategoryListItem) => ({ value: c.name, label: c.name }))
+    this.store.categories().map((c: CategoryListItem) => ({ id: c.id, name: c.name }))
   );
 
   readonly levelOptions = computed((): SelectOption[] =>
-    this.store.levels().map((l: BookLevel) => ({ value: l.name, label: l.name }))
+    this.store.levels().map((l: BookLevel) => ({ id: l.id, name: l.name }))
   );
 
   ngOnInit(): void {
@@ -307,6 +351,10 @@ export class BookListPageComponent implements OnInit {
       width: '400px',
       maxWidth: '90vw',
     });
+  }
+
+  onRetrySearch(): void {
+    this.store.searchBooks();
   }
 
   toggleMobileDrawer(): void {

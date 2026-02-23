@@ -1,1 +1,2 @@
-export { FormatIconComponent, type BookFormat, type IconSize } from './format-icon.component.js';
+export { FormatIconComponent, type IconSize } from './format-icon.component.js';
+// BookFormat is exported from core/models - import from there instead

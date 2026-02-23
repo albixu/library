@@ -2,15 +2,22 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-export type BookFormat = 'PDF' | 'EPUB' | 'MOBI' | 'AZW3' | 'TXT';
+// Import the canonical BookFormat type from core models
+import { BookFormat } from '../../../../core/models/index.js';
+
 export type IconSize = 'small' | 'medium' | 'large';
 
+// Map lowercase format values to icons (API returns lowercase)
 const FORMAT_ICONS: Record<string, string> = {
-  PDF: 'picture_as_pdf',
-  EPUB: 'book',
-  MOBI: 'tablet_android',
-  AZW3: 'tablet_android',
-  TXT: 'description',
+  pdf: 'picture_as_pdf',
+  epub: 'book',
+  mobi: 'tablet_android',
+  azw3: 'tablet_android',
+  djvu: 'photo_library',
+  cbz: 'collections',
+  cbr: 'collections',
+  txt: 'description',
+  other: 'insert_drive_file',
 };
 
 const DEFAULT_ICON = 'insert_drive_file';

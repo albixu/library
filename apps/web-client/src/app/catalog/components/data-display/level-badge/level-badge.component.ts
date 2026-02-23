@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-export type BookLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+// Import the canonical BookLevelName type from core models
+import { BookLevelName } from '../../../../core/models/index.js';
 
 @Component({
   selector: 'app-level-badge',
@@ -40,9 +41,14 @@ export type BookLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
       color: rgb(185 28 28); /* red-700 */
     }
 
-    .level-expert {
-      background-color: rgb(243 232 255); /* purple-100 */
-      color: rgb(126 34 206); /* purple-700 */
+    .level-beginner-intermediate {
+      background-color: rgb(236 253 245); /* teal-50 */
+      color: rgb(17 94 89); /* teal-700 */
+    }
+
+    .level-intermediate-advanced {
+      background-color: rgb(255 237 213); /* orange-100 */
+      color: rgb(194 65 12); /* orange-700 */
     }
 
     .level-unknown {
@@ -67,9 +73,14 @@ export type BookLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
         color: rgb(248 113 113); /* red-400 */
       }
 
-      .level-expert {
-        background-color: rgb(88 28 135 / 0.3); /* purple-900/30 */
-        color: rgb(192 132 252); /* purple-400 */
+      .level-beginner-intermediate {
+        background-color: rgb(19 78 74 / 0.3); /* teal-900/30 */
+        color: rgb(45 212 191); /* teal-400 */
+      }
+
+      .level-intermediate-advanced {
+        background-color: rgb(124 45 18 / 0.3); /* orange-900/30 */
+        color: rgb(251 146 60); /* orange-400 */
       }
 
       .level-unknown {
@@ -97,10 +108,16 @@ export type BookLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
       color: rgb(248 113 113);
     }
 
-    :host-context(.dark) .level-expert,
-    :host-context([data-theme='dark']) .level-expert {
-      background-color: rgb(88 28 135 / 0.3);
-      color: rgb(192 132 252);
+    :host-context(.dark) .level-beginner-intermediate,
+    :host-context([data-theme='dark']) .level-beginner-intermediate {
+      background-color: rgb(19 78 74 / 0.3);
+      color: rgb(45 212 191);
+    }
+
+    :host-context(.dark) .level-intermediate-advanced,
+    :host-context([data-theme='dark']) .level-intermediate-advanced {
+      background-color: rgb(124 45 18 / 0.3);
+      color: rgb(251 146 60);
     }
 
     :host-context(.dark) .level-unknown,
@@ -112,17 +129,19 @@ export type BookLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LevelBadgeComponent {
-  readonly level = input<BookLevel | undefined>();
+  readonly level = input<BookLevelName | null | undefined>();
 
   readonly levelClass = computed(() => {
     const lvl = this.level();
     if (!lvl) return '';
 
-    const classMap: Record<string, string> = {
+    // Map levels to CSS classes - compound levels use the higher level's style
+    const classMap: Record<BookLevelName, string> = {
       Beginner: 'level-badge level-beginner',
       Intermediate: 'level-badge level-intermediate',
       Advanced: 'level-badge level-advanced',
-      Expert: 'level-badge level-expert',
+      'Beginner to Intermediate': 'level-badge level-beginner-intermediate',
+      'Intermediate to Advanced': 'level-badge level-intermediate-advanced',
     };
 
     return classMap[lvl] || 'level-badge level-unknown';

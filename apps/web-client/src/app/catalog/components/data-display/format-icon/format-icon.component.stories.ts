@@ -14,12 +14,15 @@ Displays a Material icon representing the book format.
 ## Format Icons
 | Format | Icon |
 |--------|------|
-| PDF | picture_as_pdf |
-| EPUB | book |
-| MOBI | tablet_android |
-| AZW3 | tablet_android |
-| TXT | description |
-| Other | insert_drive_file |
+| pdf | picture_as_pdf |
+| epub | book |
+| mobi | tablet_android |
+| azw3 | tablet_android |
+| djvu | photo_library |
+| cbz | collections |
+| cbr | collections |
+| txt | description |
+| other | insert_drive_file |
 
 ## Sizes
 - \`small\` (default): 1rem
@@ -28,8 +31,8 @@ Displays a Material icon representing the book format.
 
 ## Usage
 \`\`\`html
-<app-format-icon [format]="'PDF'" />
-<app-format-icon [format]="'EPUB'" [size]="'large'" />
+<app-format-icon [format]="'pdf'" />
+<app-format-icon [format]="'epub'" [size]="'large'" />
 \`\`\`
         `,
       },
@@ -39,7 +42,7 @@ Displays a Material icon representing the book format.
     format: {
       description: 'The book format to display',
       control: { type: 'select' },
-      options: ['PDF', 'EPUB', 'MOBI', 'AZW3', 'TXT'],
+      options: ['pdf', 'epub', 'mobi', 'azw3', 'djvu', 'cbz', 'cbr', 'txt', 'other'],
     },
     size: {
       description: 'Icon size',
@@ -52,37 +55,65 @@ Displays a Material icon representing the book format.
 export default meta;
 type Story = StoryObj<FormatIconComponent>;
 
-export const PDF: Story = {
+export const Pdf: Story = {
   args: {
-    format: 'PDF',
+    format: 'pdf',
     size: 'small',
   },
 };
 
-export const EPUB: Story = {
+export const Epub: Story = {
   args: {
-    format: 'EPUB',
+    format: 'epub',
     size: 'small',
   },
 };
 
-export const MOBI: Story = {
+export const Mobi: Story = {
   args: {
-    format: 'MOBI',
+    format: 'mobi',
     size: 'small',
   },
 };
 
-export const AZW3: Story = {
+export const Azw3: Story = {
   args: {
-    format: 'AZW3',
+    format: 'azw3',
     size: 'small',
   },
 };
 
-export const TXT: Story = {
+export const Djvu: Story = {
   args: {
-    format: 'TXT',
+    format: 'djvu',
+    size: 'small',
+  },
+};
+
+export const Cbz: Story = {
+  args: {
+    format: 'cbz',
+    size: 'small',
+  },
+};
+
+export const Cbr: Story = {
+  args: {
+    format: 'cbr',
+    size: 'small',
+  },
+};
+
+export const Txt: Story = {
+  args: {
+    format: 'txt',
+    size: 'small',
+  },
+};
+
+export const Other: Story = {
+  args: {
+    format: 'other',
     size: 'small',
   },
 };
@@ -90,26 +121,42 @@ export const TXT: Story = {
 export const AllFormats: Story = {
   render: () => ({
     template: `
-      <div style="display: flex; gap: 1rem; align-items: center;">
+      <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
         <div style="text-align: center;">
-          <app-format-icon [format]="'PDF'" [size]="'medium'" />
-          <div style="font-size: 0.75rem; margin-top: 0.25rem;">PDF</div>
+          <app-format-icon [format]="'pdf'" [size]="'medium'" />
+          <div style="font-size: 0.75rem; margin-top: 0.25rem;">pdf</div>
         </div>
         <div style="text-align: center;">
-          <app-format-icon [format]="'EPUB'" [size]="'medium'" />
-          <div style="font-size: 0.75rem; margin-top: 0.25rem;">EPUB</div>
+          <app-format-icon [format]="'epub'" [size]="'medium'" />
+          <div style="font-size: 0.75rem; margin-top: 0.25rem;">epub</div>
         </div>
         <div style="text-align: center;">
-          <app-format-icon [format]="'MOBI'" [size]="'medium'" />
-          <div style="font-size: 0.75rem; margin-top: 0.25rem;">MOBI</div>
+          <app-format-icon [format]="'mobi'" [size]="'medium'" />
+          <div style="font-size: 0.75rem; margin-top: 0.25rem;">mobi</div>
         </div>
         <div style="text-align: center;">
-          <app-format-icon [format]="'AZW3'" [size]="'medium'" />
-          <div style="font-size: 0.75rem; margin-top: 0.25rem;">AZW3</div>
+          <app-format-icon [format]="'azw3'" [size]="'medium'" />
+          <div style="font-size: 0.75rem; margin-top: 0.25rem;">azw3</div>
         </div>
         <div style="text-align: center;">
-          <app-format-icon [format]="'TXT'" [size]="'medium'" />
-          <div style="font-size: 0.75rem; margin-top: 0.25rem;">TXT</div>
+          <app-format-icon [format]="'djvu'" [size]="'medium'" />
+          <div style="font-size: 0.75rem; margin-top: 0.25rem;">djvu</div>
+        </div>
+        <div style="text-align: center;">
+          <app-format-icon [format]="'cbz'" [size]="'medium'" />
+          <div style="font-size: 0.75rem; margin-top: 0.25rem;">cbz</div>
+        </div>
+        <div style="text-align: center;">
+          <app-format-icon [format]="'cbr'" [size]="'medium'" />
+          <div style="font-size: 0.75rem; margin-top: 0.25rem;">cbr</div>
+        </div>
+        <div style="text-align: center;">
+          <app-format-icon [format]="'txt'" [size]="'medium'" />
+          <div style="font-size: 0.75rem; margin-top: 0.25rem;">txt</div>
+        </div>
+        <div style="text-align: center;">
+          <app-format-icon [format]="'other'" [size]="'medium'" />
+          <div style="font-size: 0.75rem; margin-top: 0.25rem;">other</div>
         </div>
       </div>
     `,
@@ -128,15 +175,15 @@ export const Sizes: Story = {
     template: `
       <div style="display: flex; gap: 1rem; align-items: center;">
         <div style="text-align: center;">
-          <app-format-icon [format]="'PDF'" [size]="'small'" />
+          <app-format-icon [format]="'pdf'" [size]="'small'" />
           <div style="font-size: 0.75rem; margin-top: 0.25rem;">Small</div>
         </div>
         <div style="text-align: center;">
-          <app-format-icon [format]="'PDF'" [size]="'medium'" />
+          <app-format-icon [format]="'pdf'" [size]="'medium'" />
           <div style="font-size: 0.75rem; margin-top: 0.25rem;">Medium</div>
         </div>
         <div style="text-align: center;">
-          <app-format-icon [format]="'PDF'" [size]="'large'" />
+          <app-format-icon [format]="'pdf'" [size]="'large'" />
           <div style="font-size: 0.75rem; margin-top: 0.25rem;">Large</div>
         </div>
       </div>

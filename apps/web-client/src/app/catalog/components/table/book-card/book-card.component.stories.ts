@@ -1,15 +1,25 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { BookCardComponent, Book } from './book-card.component';
+import { BookCardComponent } from './book-card.component';
+import { Book } from '../../../../core/models/index.js';
 
 const sampleBook: Book = {
   id: '1',
+  isbn: '978-0132350884',
   title: 'Clean Code: A Handbook of Agile Software Craftsmanship',
-  authors: ['Robert C. Martin'],
-  categories: ['Software Engineering', 'Clean Code', 'Best Practices'],
+  authors: [{ id: '1', name: 'Robert C. Martin' }],
+  type: 'Book',
+  categories: [
+    { id: '1', name: 'Software Engineering' },
+    { id: '2', name: 'Clean Code' },
+    { id: '3', name: 'Best Practices' },
+  ],
   level: 'Intermediate',
-  format: 'PDF',
+  format: 'pdf',
   language: 'en',
+  originalDescription: 'A comprehensive guide to writing clean, maintainable code.',
   description: 'A comprehensive guide to writing clean, maintainable code. Learn how to write code that is easy to read, understand, and modify.',
+  available: true,
+  similarityScore: null,
 };
 
 const meta: Meta<BookCardComponent> = {
@@ -46,13 +56,18 @@ Mobile-optimized card component for displaying book information.
 \`\`\`typescript
 interface Book {
   id: string;
+  isbn: string | null;
   title: string;
-  authors: string[];
-  categories: string[];
-  level?: BookLevel;
-  format?: BookFormat;
-  language?: LanguageCode;
-  description?: string;
+  authors: Author[];
+  type: string;
+  categories: Category[];
+  level: BookLevelName | null;
+  format: BookFormat;
+  originalDescription: string;
+  description: string;
+  language: string;
+  available: boolean;
+  similarityScore: number | null;
 }
 \`\`\`
         `,
@@ -105,15 +120,24 @@ export const MinimalBook: Story = {
   args: {
     book: {
       id: '2',
+      isbn: null,
       title: 'TypeScript Handbook',
-      authors: ['Microsoft'],
-      categories: ['TypeScript'],
+      authors: [{ id: '2', name: 'Microsoft' }],
+      type: 'Book',
+      categories: [{ id: '4', name: 'TypeScript' }],
+      level: null,
+      format: 'pdf',
+      language: 'en',
+      originalDescription: '',
+      description: '',
+      available: true,
+      similarityScore: null,
     },
   },
   parameters: {
     docs: {
       description: {
-        story: 'Book with minimal information (no format, level, language, or description).',
+        story: 'Book with minimal information (no level or description).',
       },
     },
   },
@@ -123,12 +147,26 @@ export const MultipleAuthors: Story = {
   args: {
     book: {
       id: '3',
+      isbn: '978-0201633610',
       title: 'Design Patterns: Elements of Reusable Object-Oriented Software',
-      authors: ['Erich Gamma', 'Richard Helm', 'Ralph Johnson', 'John Vlissides'],
-      categories: ['Design Patterns', 'Architecture'],
+      authors: [
+        { id: '3', name: 'Erich Gamma' },
+        { id: '4', name: 'Richard Helm' },
+        { id: '5', name: 'Ralph Johnson' },
+        { id: '6', name: 'John Vlissides' },
+      ],
+      type: 'Book',
+      categories: [
+        { id: '5', name: 'Design Patterns' },
+        { id: '6', name: 'Architecture' },
+      ],
       level: 'Advanced',
-      format: 'EPUB',
+      format: 'epub',
       language: 'en',
+      originalDescription: 'Classic book on design patterns.',
+      description: 'Classic book on design patterns.',
+      available: true,
+      similarityScore: null,
     },
   },
   parameters: {
@@ -144,13 +182,21 @@ export const SpanishBook: Story = {
   args: {
     book: {
       id: '4',
+      isbn: '978-8441540033',
       title: 'Arquitectura Limpia',
-      authors: ['Robert C. Martin'],
-      categories: ['Arquitectura', 'Software'],
+      authors: [{ id: '1', name: 'Robert C. Martin' }],
+      type: 'Book',
+      categories: [
+        { id: '7', name: 'Arquitectura' },
+        { id: '8', name: 'Software' },
+      ],
       level: 'Advanced',
-      format: 'PDF',
+      format: 'pdf',
       language: 'es',
+      originalDescription: 'Una guía para desarrolladores sobre los principios del diseño y la arquitectura de software.',
       description: 'Una guía para desarrolladores sobre los principios del diseño y la arquitectura de software.',
+      available: true,
+      similarityScore: null,
     },
   },
   parameters: {
@@ -166,13 +212,21 @@ export const BeginnerLevel: Story = {
   args: {
     book: {
       id: '5',
+      isbn: null,
       title: 'JavaScript for Beginners',
-      authors: ['John Smith'],
-      categories: ['JavaScript', 'Web Development'],
+      authors: [{ id: '7', name: 'John Smith' }],
+      type: 'Book',
+      categories: [
+        { id: '9', name: 'JavaScript' },
+        { id: '10', name: 'Web Development' },
+      ],
       level: 'Beginner',
-      format: 'MOBI',
+      format: 'mobi',
       language: 'en',
+      originalDescription: 'Start your journey into programming with this beginner-friendly guide to JavaScript.',
       description: 'Start your journey into programming with this beginner-friendly guide to JavaScript.',
+      available: true,
+      similarityScore: null,
     },
   },
   parameters: {
@@ -184,16 +238,59 @@ export const BeginnerLevel: Story = {
   },
 };
 
+export const BeginnerToIntermediateLevel: Story = {
+  args: {
+    book: {
+      id: '5b',
+      isbn: null,
+      title: 'Modern JavaScript: From Basics to Beyond',
+      authors: [{ id: '7', name: 'John Smith' }],
+      type: 'Book',
+      categories: [
+        { id: '9', name: 'JavaScript' },
+        { id: '10', name: 'Web Development' },
+      ],
+      level: 'Beginner to Intermediate',
+      format: 'epub',
+      language: 'en',
+      originalDescription: 'A progressive guide that takes you from JavaScript basics to intermediate concepts.',
+      description: 'A progressive guide that takes you from JavaScript basics to intermediate concepts.',
+      available: true,
+      similarityScore: null,
+    },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Beginner to Intermediate level book with teal badge.',
+      },
+    },
+  },
+};
+
 export const ManyCategories: Story = {
   args: {
     book: {
       id: '6',
+      isbn: null,
       title: 'Full Stack Development',
-      authors: ['Jane Developer'],
-      categories: ['JavaScript', 'TypeScript', 'React', 'Node.js', 'PostgreSQL', 'Docker'],
+      authors: [{ id: '8', name: 'Jane Developer' }],
+      type: 'Book',
+      categories: [
+        { id: '11', name: 'JavaScript' },
+        { id: '12', name: 'TypeScript' },
+        { id: '13', name: 'React' },
+        { id: '14', name: 'Node.js' },
+        { id: '15', name: 'PostgreSQL' },
+        { id: '16', name: 'Docker' },
+      ],
       level: 'Intermediate',
-      format: 'PDF',
+      format: 'pdf',
       language: 'en',
+      originalDescription: '',
+      description: '',
+      available: true,
+      similarityScore: null,
     },
   },
   parameters: {
@@ -209,13 +306,21 @@ export const LongDescription: Story = {
   args: {
     book: {
       id: '7',
+      isbn: '978-0135957059',
       title: 'The Pragmatic Programmer',
-      authors: ['David Thomas', 'Andrew Hunt'],
-      categories: ['Software Engineering'],
+      authors: [
+        { id: '9', name: 'David Thomas' },
+        { id: '10', name: 'Andrew Hunt' },
+      ],
+      type: 'Book',
+      categories: [{ id: '1', name: 'Software Engineering' }],
       level: 'Intermediate',
-      format: 'EPUB',
+      format: 'epub',
       language: 'en',
+      originalDescription: 'A comprehensive guide covering dozens of practical tips for improving your programming skills.',
       description: 'A comprehensive guide covering dozens of practical tips for improving your programming skills. This book teaches you how to be a better programmer through real-world examples, insightful advice, and practical exercises that will transform the way you approach software development.',
+      available: true,
+      similarityScore: null,
     },
   },
   parameters: {
@@ -231,12 +336,21 @@ export const LongTitle: Story = {
   args: {
     book: {
       id: '8',
+      isbn: '978-0321125217',
       title: 'Domain-Driven Design: Tackling Complexity in the Heart of Software - A Comprehensive Guide to Building Enterprise Applications',
-      authors: ['Eric Evans'],
-      categories: ['DDD', 'Architecture'],
+      authors: [{ id: '11', name: 'Eric Evans' }],
+      type: 'Book',
+      categories: [
+        { id: '17', name: 'DDD' },
+        { id: '6', name: 'Architecture' },
+      ],
       level: 'Advanced',
-      format: 'PDF',
+      format: 'pdf',
       language: 'en',
+      originalDescription: 'The classic book on Domain-Driven Design.',
+      description: 'The classic book on Domain-Driven Design.',
+      available: true,
+      similarityScore: null,
     },
   },
   parameters: {
