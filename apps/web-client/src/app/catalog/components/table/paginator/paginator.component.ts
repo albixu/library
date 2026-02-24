@@ -1,9 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { NgSelectModule } from '@ng-select/ng-select';
+import { FormsModule } from '@angular/forms';
 
 /**
  * PaginatorComponent - Cursor-based pagination with "load more" functionality
@@ -18,28 +15,22 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 @Component({
   selector: 'app-paginator',
   standalone: true,
-  imports: [
-    MatButtonModule,
-    MatIconModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatProgressSpinnerModule,
-  ],
+  imports: [NgSelectModule, FormsModule],
   template: `
     <nav class="paginator" aria-label="Pagination">
       <div class="paginator-page-size">
         <span class="paginator-label">Items per page:</span>
-        <mat-form-field appearance="outline" class="paginator-select">
-          <mat-select
-            [value]="pageSize()"
-            [disabled]="loading()"
-            (selectionChange)="onPageSizeChange($event.value)"
-          >
-            @for (option of pageSizeOptions(); track option) {
-              <mat-option [value]="option">{{ option }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+        <ng-select
+          class="paginator-select"
+          [items]="pageSizeOptions()"
+          [ngModel]="pageSize()"
+          [disabled]="loading()"
+          [searchable]="false"
+          [clearable]="false"
+          (ngModelChange)="onPageSizeChange($event)"
+          aria-label="Select items per page"
+        >
+        </ng-select>
       </div>
 
       <div class="paginator-range">
@@ -48,15 +39,20 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
       <div class="paginator-controls">
         @if (loading()) {
-          <mat-spinner diameter="24"></mat-spinner>
+          <div class="spinner" role="status" aria-label="Loading more items">
+            <svg class="spinner-icon" viewBox="0 0 24 24">
+              <circle class="spinner-circle" cx="12" cy="12" r="10" fill="none" stroke-width="3"></circle>
+            </svg>
+          </div>
         } @else if (hasNextPage()) {
           <button
-            mat-stroked-button
+            class="load-more-button"
+            type="button"
             data-testid="load-more-button"
             aria-label="Load more items"
             (click)="onLoadMore()"
           >
-            <mat-icon>expand_more</mat-icon>
+            <span class="material-symbols-outlined">expand_more</span>
             Load more
           </button>
         }
@@ -71,7 +67,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
       gap: 1rem;
       padding: 0.5rem 1rem;
       font-size: 0.875rem;
-      color: var(--mat-sys-on-surface-variant);
+      color: #94A3B8; /* slate-400 */
     }
 
     .paginator-page-size {
@@ -86,19 +82,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
     .paginator-select {
       width: 5rem;
-
-      ::ng-deep .mat-mdc-form-field-subscript-wrapper {
-        display: none;
-      }
-
-      ::ng-deep .mat-mdc-text-field-wrapper {
-        padding: 0 0.5rem;
-      }
-
-      ::ng-deep .mat-mdc-form-field-infix {
-        min-height: 2rem;
-        padding: 0.25rem 0;
-      }
     }
 
     .paginator-range {
@@ -112,8 +95,73 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
       justify-content: center;
     }
 
-    .paginator-controls button mat-icon {
-      margin-right: 4px;
+    .load-more-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #17a1cf; /* primary color */
+      background-color: transparent;
+      border: 1px solid #17a1cf;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background-color: rgba(23, 161, 207, 0.1);
+      }
+
+      &:focus-visible {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+      }
+
+      .material-symbols-outlined {
+        font-size: 1.25rem;
+      }
+    }
+
+    .spinner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .spinner-icon {
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+    }
+
+    .spinner-circle {
+      stroke: #17a1cf; /* primary color */
+      stroke-linecap: round;
+      stroke-dasharray: 50, 200;
+      stroke-dashoffset: 0;
+      animation: dash 1.5s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes dash {
+      0% {
+        stroke-dasharray: 1, 200;
+        stroke-dashoffset: 0;
+      }
+      50% {
+        stroke-dasharray: 100, 200;
+        stroke-dashoffset: -15;
+      }
+      100% {
+        stroke-dasharray: 100, 200;
+        stroke-dashoffset: -125;
+      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
