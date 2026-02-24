@@ -7,7 +7,6 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { MatDialog } from '@angular/material/dialog';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,6 +20,7 @@ import { BookCardComponent } from '../../components/table/book-card/index.js';
 import { PaginatorComponent } from '../../components/table/paginator/index.js';
 import { SendToKindleDialogComponent } from '../../components/dialogs/index.js';
 import { BookSearchStore } from '../../../core/services/book-search.store.js';
+import { DialogService } from '../../../core/services/dialog.service.js';
 import {
   Book,
   BookType,
@@ -358,7 +358,7 @@ import {
 })
 export class BookListPageComponent implements OnInit {
   readonly store = inject(BookSearchStore);
-  private readonly dialog = inject(MatDialog);
+  private readonly dialogService = inject(DialogService);
   private readonly breakpointObserver = inject(BreakpointObserver);
 
   // Mobile state
@@ -439,7 +439,7 @@ export class BookListPageComponent implements OnInit {
   }
 
   onSendToKindle(book: Book): void {
-    this.dialog.open(SendToKindleDialogComponent, {
+    this.dialogService.open(SendToKindleDialogComponent, {
       data: book,
       width: '400px',
       maxWidth: '90vw',

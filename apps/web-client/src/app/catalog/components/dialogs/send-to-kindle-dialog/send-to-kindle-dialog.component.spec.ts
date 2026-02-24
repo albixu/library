@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { of, delay } from 'rxjs';
 
 import { SendToKindleDialogComponent } from './send-to-kindle-dialog.component.js';
@@ -61,9 +60,8 @@ describe('SendToKindleDialogComponent', () => {
     await TestBed.configureTestingModule({
       imports: [SendToKindleDialogComponent],
       providers: [
-        provideAnimationsAsync(),
-        { provide: MatDialogRef, useValue: mockDialogRef },
-        { provide: MAT_DIALOG_DATA, useValue: mockBook },
+        { provide: DialogRef, useValue: mockDialogRef },
+        { provide: DIALOG_DATA, useValue: mockBook },
         { provide: KindleService, useValue: mockKindleService },
       ],
     }).compileComponents();
@@ -359,9 +357,8 @@ describe('SendToKindleDialogComponent', () => {
       await TestBed.configureTestingModule({
         imports: [SendToKindleDialogComponent],
         providers: [
-          provideAnimationsAsync(),
-          { provide: MatDialogRef, useValue: mockDialogRef },
-          { provide: MAT_DIALOG_DATA, useValue: mockUnavailableBook },
+          { provide: DialogRef, useValue: mockDialogRef },
+          { provide: DIALOG_DATA, useValue: mockUnavailableBook },
           { provide: KindleService, useValue: mockKindleService },
         ],
       }).compileComponents();
