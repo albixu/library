@@ -31,12 +31,14 @@ import { FooterComponent } from '../footer/footer.component.js';
     `
       :host {
         display: block;
+        height: 100%;
       }
 
       .main-layout {
         display: flex;
         flex-direction: column;
-        min-height: 100vh;
+        height: 100vh;
+        overflow: hidden;
       }
 
       .main-layout__content {
@@ -45,6 +47,7 @@ import { FooterComponent } from '../footer/footer.component.js';
         flex-direction: column;
         background-color: var(--color-bg-primary);
         transition: background-color var(--transition-normal);
+        overflow: hidden;
       }
     `,
   ],

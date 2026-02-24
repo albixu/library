@@ -190,20 +190,27 @@ import {
       :host {
         display: block;
         height: 100%;
+        overflow: hidden;
       }
 
       .book-list-container {
         height: 100%;
+        overflow: hidden;
       }
 
       .filter-sidenav {
-        width: 320px;
+        width: 280px;
         background: var(--color-bg-surface);
         border-right: 1px solid var(--color-border);
+        overflow-y: auto;
       }
 
       .main-content {
         background: var(--color-bg-primary);
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
       }
 
       .mobile-toolbar {
@@ -236,6 +243,7 @@ import {
         max-width: 1400px;
         margin: 0 auto;
         width: 100%;
+        overflow-y: auto;
       }
 
       .results-header {

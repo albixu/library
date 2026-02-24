@@ -204,64 +204,79 @@ const DEFAULT_FILTERS: FilterState = {
       :host {
         display: block;
         width: 100%;
+        height: 100%;
       }
 
       .filter-panel {
-        padding: 16px;
+        padding: var(--spacing-6);
         height: 100%;
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: var(--spacing-6);
+        overflow: hidden;
       }
 
       .filter-panel__header {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-shrink: 0;
       }
 
       .filter-panel__title {
         margin: 0;
-        font-size: 1.25rem;
-        font-weight: 500;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-text-muted);
       }
 
       .clear-filters-btn {
-        font-size: 0.875rem;
+        font-size: 0.75rem;
+        color: var(--color-text-secondary);
 
         mat-icon {
-          font-size: 18px;
-          width: 18px;
-          height: 18px;
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
           margin-right: 4px;
+        }
+
+        &:hover:not(:disabled) {
+          color: var(--color-accent);
         }
       }
 
       .filter-panel__content {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: var(--spacing-6);
         overflow-y: auto;
         flex: 1;
+        padding-right: var(--spacing-2);
       }
 
       .filter-section {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: var(--spacing-4);
+        flex-shrink: 0;
       }
 
       .filter-section__title {
         margin: 0;
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: var(--mat-text-secondary-color, rgba(0, 0, 0, 0.6));
+        font-size: 0.75rem;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.05em;
+        color: var(--color-text-muted);
       }
 
       mat-divider {
         margin: 0;
+        border-color: var(--color-border);
+        flex-shrink: 0;
       }
     `,
   ],
