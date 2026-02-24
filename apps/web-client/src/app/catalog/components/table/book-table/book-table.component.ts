@@ -1,7 +1,4 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { CategoryChipsComponent } from '../../data-display/category-chips/category-chips.component.js';
 import { LevelBadgeComponent } from '../../data-display/level-badge/level-badge.component.js';
 import { LanguageFlagComponent } from '../../data-display/language-flag/language-flag.component.js';
@@ -14,9 +11,6 @@ import { Book } from '../../../../core/models/index.js';
   selector: 'app-book-table',
   standalone: true,
   imports: [
-    MatTableModule,
-    MatButtonModule,
-    MatIconModule,
     CategoryChipsComponent,
     LevelBadgeComponent,
     LanguageFlagComponent,
@@ -31,101 +25,76 @@ import { Book } from '../../../../core/models/index.js';
       @if (books().length > 0) {
         <div class="book-table-container">
           <div class="table-scroll">
-            <table mat-table [dataSource]="books()" aria-label="Books" class="book-table">
-              <!-- ISBN Column -->
-              <ng-container matColumnDef="isbn">
-                <th mat-header-cell *matHeaderCellDef>ISBN</th>
-                <td mat-cell *matCellDef="let book">
-                  <span class="isbn-text">{{ book.isbn || '-' }}</span>
-                </td>
-              </ng-container>
-
-              <!-- Title Column -->
-              <ng-container matColumnDef="title">
-                <th mat-header-cell *matHeaderCellDef>Book Details</th>
-                <td mat-cell *matCellDef="let book">
-                  <div class="title-cell">
-                    <span class="book-title">{{ book.title }}</span>
-                    <span class="book-author">{{ getAuthorNames(book) }}</span>
-                  </div>
-                </td>
-              </ng-container>
-
-              <!-- Type/Category Column -->
-              <ng-container matColumnDef="typeCategory">
-                <th mat-header-cell *matHeaderCellDef>Type / Category</th>
-                <td mat-cell *matCellDef="let book">
-                  <div class="type-category-cell">
-                    <span class="book-type">{{ book.type?.name || 'Unknown' }}</span>
-                    <app-category-chips [categories]="getCategoryNames(book)" [maxVisible]="1" />
-                  </div>
-                </td>
-              </ng-container>
-
-              <!-- Language Column -->
-              <ng-container matColumnDef="language">
-                <th mat-header-cell *matHeaderCellDef class="text-center">Lang</th>
-                <td mat-cell *matCellDef="let book" class="text-center">
-                  <app-language-flag [languageCode]="book.language" />
-                </td>
-              </ng-container>
-
-              <!-- Level Column -->
-              <ng-container matColumnDef="level">
-                <th mat-header-cell *matHeaderCellDef>Level</th>
-                <td mat-cell *matCellDef="let book">
-                  <app-level-badge [level]="book.level" />
-                </td>
-              </ng-container>
-
-              <!-- Format Column -->
-              <ng-container matColumnDef="format">
-                <th mat-header-cell *matHeaderCellDef>Format</th>
-                <td mat-cell *matCellDef="let book">
-                  <span class="format-text">{{ book.format || '-' }}</span>
-                </td>
-              </ng-container>
-
-              <!-- Description Column -->
-              <ng-container matColumnDef="description">
-                <th mat-header-cell *matHeaderCellDef>Description</th>
-                <td mat-cell *matCellDef="let book">
-                  @if (book.description) {
-                    <app-truncated-text
-                      [text]="book.description"
-                      [maxLines]="1"
-                      class="description-text"
-                    />
-                  } @else {
-                    <span class="description-text">-</span>
-                  }
-                </td>
-              </ng-container>
-
-              <!-- Actions Column -->
-              <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="text-right">Actions</th>
-                <td mat-cell *matCellDef="let book" class="text-right">
-                  <button
-                    mat-icon-button
-                    class="action-button"
-                    aria-label="Send to Kindle"
-                    (click)="onSendToKindle($event, book)"
+            <table aria-label="Books" class="book-table">
+              <thead>
+                <tr>
+                  <th>ISBN</th>
+                  <th>Book Details</th>
+                  <th>Type / Category</th>
+                  <th class="text-center">Lang</th>
+                  <th>Level</th>
+                  <th>Format</th>
+                  <th>Description</th>
+                  <th class="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (book of books(); track book.id) {
+                  <tr
+                    class="book-row"
+                    tabindex="0"
+                    (click)="onRowClick(book)"
+                    (keydown.enter)="onRowClick(book)"
                   >
-                    <mat-icon>send_to_mobile</mat-icon>
-                  </button>
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr
-                mat-row
-                *matRowDef="let row; columns: displayedColumns"
-                class="book-row"
-                tabindex="0"
-                (click)="onRowClick(row)"
-                (keydown.enter)="onRowClick(row)"
-              ></tr>
+                    <td class="isbn-column">
+                      <span class="isbn-text">{{ book.isbn || '-' }}</span>
+                    </td>
+                    <td class="title-column">
+                      <div class="title-cell">
+                        <span class="book-title">{{ book.title }}</span>
+                        <span class="book-author">{{ getAuthorNames(book) }}</span>
+                      </div>
+                    </td>
+                    <td class="type-category-column">
+                      <div class="type-category-cell">
+                        <span class="book-type">{{ book.type?.name || 'Unknown' }}</span>
+                        <app-category-chips [categories]="getCategoryNames(book)" [maxVisible]="1" />
+                      </div>
+                    </td>
+                    <td class="language-column text-center">
+                      <app-language-flag [languageCode]="book.language" />
+                    </td>
+                    <td class="level-column">
+                      <app-level-badge [level]="book.level" />
+                    </td>
+                    <td class="format-column">
+                      <span class="format-text">{{ book.format || '-' }}</span>
+                    </td>
+                    <td class="description-column">
+                      @if (book.description) {
+                        <app-truncated-text
+                          [text]="book.description"
+                          [maxLines]="1"
+                          class="description-text"
+                        />
+                      } @else {
+                        <span class="description-text">-</span>
+                      }
+                    </td>
+                    <td class="actions-column text-right">
+                      <button
+                        class="action-button"
+                        type="button"
+                        aria-label="Send to Kindle"
+                        title="Send to Kindle"
+                        (click)="onSendToKindle($event, book)"
+                      >
+                        <span class="material-symbols-outlined">send_to_mobile</span>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
             </table>
           </div>
         </div>
@@ -235,16 +204,36 @@ import { Book } from '../../../../core/models/index.js';
     }
 
     .action-button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       color: #F1F5F9; /* slate-100 - FROM FIGMA for action icons */
-      transition: color 0.15s ease;
+      transition: all 0.15s ease;
 
       &:hover {
+        background-color: rgba(30, 41, 59, 0.5);
         color: #17a1cf; /* primary/cyan color */
+      }
+
+      &:focus-visible {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+      }
+
+      .material-symbols-outlined {
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
       }
     }
 
     // Header cells styling - FROM FIGMA
-    th.mat-mdc-header-cell {
+    th {
       padding: 1rem 1.5rem; /* px-6 py-4 */
       font-size: 0.75rem; /* text-xs - 12px */
       font-weight: 600; /* font-semibold */
@@ -253,35 +242,36 @@ import { Book } from '../../../../core/models/index.js';
       color: #64748B; /* slate-500 - FROM FIGMA */
       background-color: rgba(30, 41, 59, 0.5); /* slate-800/50 - FROM FIGMA */
       border-bottom: 1px solid #334155; /* slate-700 - FROM FIGMA */
+      text-align: left;
     }
 
     // Body cells styling
-    td.mat-mdc-cell {
+    td {
       padding: 1rem 1.5rem; /* px-6 py-4 */
       vertical-align: middle;
     }
 
-    td.mat-column-actions {
+    .actions-column {
       width: 80px;
     }
 
-    td.mat-column-isbn {
+    .isbn-column {
       width: 140px;
     }
 
-    td.mat-column-language {
+    .language-column {
       width: 80px;
     }
 
-    td.mat-column-level {
+    .level-column {
       width: 140px;
     }
 
-    td.mat-column-format {
+    .format-column {
       width: 100px;
     }
 
-    td.mat-column-description {
+    .description-column {
       max-width: 250px;
     }
   `,
@@ -294,17 +284,6 @@ export class BookTableComponent {
 
   readonly rowClick = output<Book>();
   readonly sendToKindle = output<Book>();
-
-  readonly displayedColumns = [
-    'isbn',
-    'title',
-    'typeCategory',
-    'language',
-    'level',
-    'format',
-    'description',
-    'actions',
-  ];
 
   onRowClick(book: Book): void {
     this.rowClick.emit(book);
