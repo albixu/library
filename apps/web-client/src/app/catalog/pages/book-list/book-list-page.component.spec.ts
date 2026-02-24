@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { signal } from '@angular/core';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { DialogRef } from '@angular/cdk/dialog';
 import { of } from 'rxjs';
 
 import { BookListPageComponent } from './book-list-page.component.js';
 import { BookSearchStore } from '../../../core/services/book-search.store.js';
+import { DialogService } from '../../../core/services/dialog.service.js';
 import {
   Book,
   PaginationInfo,
@@ -19,7 +20,7 @@ describe('BookListPageComponent', () => {
   let component: BookListPageComponent;
   let fixture: ComponentFixture<BookListPageComponent>;
   let mockStore: Partial<BookSearchStore>;
-  let mockDialog: { open: ReturnType<typeof vi.fn> };
+  let mockDialogService: { open: ReturnType<typeof vi.fn> };
 
   const mockBooks: Book[] = [
     {
@@ -101,10 +102,10 @@ describe('BookListPageComponent', () => {
       reset: vi.fn(),
     };
 
-    mockDialog = {
+    mockDialogService = {
       open: vi.fn().mockReturnValue({
-        afterClosed: () => of(undefined),
-      } as unknown as MatDialogRef<unknown>),
+        closed: of(undefined),
+      } as unknown as DialogRef<unknown>),
     };
 
     await TestBed.configureTestingModule({
@@ -112,7 +113,7 @@ describe('BookListPageComponent', () => {
       providers: [
         provideAnimationsAsync(),
         { provide: BookSearchStore, useValue: mockStore },
-        { provide: MatDialog, useValue: mockDialog },
+        { provide: DialogService, useValue: mockDialogService },
       ],
     }).compileComponents();
 
@@ -207,14 +208,14 @@ describe('BookListPageComponent', () => {
       const book = mockBooks[0];
       component.onSendToKindle(book);
 
-      expect(mockDialog.open).toHaveBeenCalled();
+      expect(mockDialogService.open).toHaveBeenCalled();
     });
 
     it('should pass book data to dialog', () => {
       const book = mockBooks[0];
       component.onSendToKindle(book);
 
-      expect(mockDialog.open).toHaveBeenCalledWith(
+      expect(mockDialogService.open).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
           data: book,
