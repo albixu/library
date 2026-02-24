@@ -40,6 +40,11 @@ WORKDIR /app
 # Copy package files first for better layer caching
 COPY --chown=nodejs:nodejs package*.json ./
 
+# Copy configuration files needed for Angular dev server
+COPY --chown=nodejs:nodejs angular.json ./
+COPY --chown=nodejs:nodejs proxy.conf.json ./
+COPY --chown=nodejs:nodejs tsconfig*.json ./
+
 # Install dependencies and Angular CLI globally
 RUN npm install && \
     npm install -g @angular/cli && \
