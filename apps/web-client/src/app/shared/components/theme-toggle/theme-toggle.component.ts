@@ -1,7 +1,4 @@
 import { Component, inject } from '@angular/core';
-import { MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
-import { MatTooltip } from '@angular/material/tooltip';
 import { ThemeService } from '@core/services/theme.service';
 
 /**
@@ -15,15 +12,15 @@ import { ThemeService } from '@core/services/theme.service';
 @Component({
   selector: 'app-theme-toggle',
   standalone: true,
-  imports: [MatIconButton, MatIcon, MatTooltip],
+  imports: [],
   template: `
     <button
-      mat-icon-button
+      class="theme-toggle"
       [attr.aria-label]="themeService.toggleLabel()"
-      [matTooltip]="themeService.toggleLabel()"
+      [title]="themeService.toggleLabel()"
       (click)="themeService.toggleTheme()"
     >
-      <mat-icon>{{ themeService.themeIcon() }}</mat-icon>
+      <span class="material-symbols-outlined">{{ themeService.themeIcon() }}</span>
     </button>
   `,
   styles: [
@@ -32,20 +29,51 @@ import { ThemeService } from '@core/services/theme.service';
         display: inline-flex;
       }
 
-      button {
-        transition: transform var(--transition-fast);
-
-        &:hover {
-          transform: scale(1.1);
-        }
-
-        &:active {
-          transform: scale(0.95);
-        }
+      .theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border: none;
+        border-radius: 0.5rem;
+        background-color: transparent;
+        color: rgb(100 116 139); /* slate-500 */
+        cursor: pointer;
+        transition: all 150ms ease;
       }
 
-      mat-icon {
-        transition: transform var(--transition-normal);
+      :host-context([data-theme='dark']) .theme-toggle {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+
+      .theme-toggle:hover {
+        background-color: rgb(241 245 249); /* slate-100 */
+        color: rgb(15 23 42); /* slate-900 */
+        transform: scale(1.1);
+      }
+
+      :host-context([data-theme='dark']) .theme-toggle:hover {
+        background-color: rgb(30 41 59); /* slate-800 */
+        color: rgb(241 245 249); /* slate-100 */
+      }
+
+      .theme-toggle:active {
+        transform: scale(0.95);
+      }
+
+      .theme-toggle:focus-visible {
+        outline: 2px solid #17a1cf;
+        outline-offset: 2px;
+      }
+
+      .material-symbols-outlined {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+        transition: transform 250ms ease;
       }
     `,
   ],
