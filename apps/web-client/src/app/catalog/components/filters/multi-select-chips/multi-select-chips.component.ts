@@ -5,17 +5,10 @@ import {
   signal,
   computed,
   effect,
-  ViewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule, MatSelect } from '@angular/material/select';
-import { MatInputModule } from '@angular/material/input';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MultiSelect } from 'primeng/multiselect';
 import { SelectOption } from '../../../../core/models/index.js';
 
 // Re-export for convenience
@@ -32,25 +25,17 @@ export type { SelectOption };
  * - Loading state indicator
  * - Accessible with proper ARIA labels
  * - Supports disabled state
+ * - Styled with Tailwind CSS (unstyled PrimeNG)
  */
 @Component({
   selector: 'app-multi-select-chips',
   standalone: true,
-  imports: [
-    FormsModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
-    MatIconModule,
-    MatButtonModule,
-    MatChipsModule,
-    MatProgressSpinnerModule,
-  ],
+  imports: [FormsModule, MultiSelect],
   template: `
-    <div class="multi-select-chips">
+    <div class="multi-select-chips-container">
       <!-- Selected chips -->
       @if (selectedOptions().length > 0) {
-        <div class="chips-container">
+        <div class="chips-wrapper">
           @for (option of selectedOptions(); track option.id) {
             <span class="chip" data-testid="selected-chip">
               {{ option.name }}
@@ -62,7 +47,7 @@ export type { SelectOption };
                   [attr.aria-label]="'Remove ' + option.name"
                   (click)="removeOption(option.id)"
                 >
-                  <mat-icon>close</mat-icon>
+                  <span class="material-symbols-outlined">close</span>
                 </button>
               }
             </span>
@@ -82,48 +67,48 @@ export type { SelectOption };
       }
 
       <!-- Select field -->
-      <mat-form-field appearance="outline" class="select-field">
-        <mat-label>{{ label() }}</mat-label>
-        @if (loading()) {
-          <mat-spinner diameter="20" matSuffix></mat-spinner>
-        }
-        <mat-select
-          multiple
-          [value]="internalValue()"
+      <div class="multi-select-field">
+        <label [for]="inputId()" class="multi-select-label">
+          {{ label() }}
+        </label>
+
+        <p-multiselect
+          [options]="options()"
+          [ngModel]="internalValue()"
           [disabled]="disabled() || loading()"
-          [attr.aria-label]="label()"
+          [filter]="true"
+          [filterBy]="'name'"
           [placeholder]="placeholder()"
-          (selectionChange)="onSelectionChange($event.value)"
-          (openedChange)="onOpenedChange($event)"
-          #selectRef
+          [inputId]="inputId()"
+          [ariaLabel]="label()"
+          optionLabel="name"
+          optionValue="id"
+          emptyMessage="No results found"
+          emptyFilterMessage="No results found"
+          display="chip"
+          [showToggleAll]="false"
+          (ngModelChange)="onSelectionChange($event)"
         >
-          <!-- Search input inside panel -->
-          <div class="search-container">
-            <mat-form-field appearance="outline" class="search-field">
-              <mat-icon matPrefix>search</mat-icon>
-              <input
-                matInput
-                data-testid="search-input"
-                [placeholder]="searchPlaceholder()"
-                [value]="searchTerm()"
-                (input)="onSearchInput($event)"
-                (keydown)="onSearchKeydown($event)"
-              />
-            </mat-form-field>
-          </div>
-
-          @for (option of filteredOptions(); track option.id) {
-            <mat-option [value]="option.id">{{ option.name }}</mat-option>
-          }
-
-          @if (filteredOptions().length === 0 && searchTerm().length > 0) {
-            <div class="no-results" data-testid="no-results">
-              <mat-icon>search_off</mat-icon>
-              <span>No results found</span>
-            </div>
-          }
-        </mat-select>
-      </mat-form-field>
+          <ng-template pTemplate="dropdownicon">
+            @if (loading()) {
+              <span class="multi-select-spinner">
+                <svg class="spinner-icon" viewBox="0 0 24 24">
+                  <circle
+                    class="spinner-circle"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    fill="none"
+                    stroke-width="3"
+                  ></circle>
+                </svg>
+              </span>
+            } @else {
+              <span class="material-symbols-outlined">arrow_drop_down</span>
+            }
+          </ng-template>
+        </p-multiselect>
+      </div>
     </div>
   `,
   styles: [
@@ -133,105 +118,319 @@ export type { SelectOption };
         width: 100%;
       }
 
-      .multi-select-chips {
+      .multi-select-chips-container {
         width: 100%;
       }
 
-      .chips-container {
+      /* Custom chips display (above the select) */
+      .chips-wrapper {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 8px;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
         align-items: center;
       }
 
       .chip {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 4px 8px;
-        border-radius: 16px;
-        font-size: 13px;
-        background-color: var(--mat-chip-elevated-container-color, rgba(0, 0, 0, 0.08));
-        color: var(--mat-chip-label-text-color, inherit);
+        gap: 0.25rem;
+        padding: 0.375rem 0.625rem;
+        border-radius: 1rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        background-color: rgba(23, 161, 207, 0.15); /* primary with opacity */
+        color: #17a1cf; /* primary */
+        border: 1px solid rgba(23, 161, 207, 0.3);
+        transition: all 0.15s ease;
+      }
+
+      .chip:hover {
+        background-color: rgba(23, 161, 207, 0.25);
       }
 
       .chip-remove {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 18px;
-        height: 18px;
+        width: 1.125rem;
+        height: 1.125rem;
         border: none;
         border-radius: 50%;
         background: transparent;
         cursor: pointer;
         padding: 0;
+        color: currentColor;
+        transition: background-color 0.15s ease;
+      }
 
-        mat-icon {
-          font-size: 14px;
-          width: 14px;
-          height: 14px;
-        }
+      .chip-remove .material-symbols-outlined {
+        font-size: 0.875rem;
+      }
 
-        &:hover {
-          background-color: rgba(0, 0, 0, 0.1);
-        }
+      .chip-remove:hover {
+        background-color: rgba(23, 161, 207, 0.2);
       }
 
       .clear-all-btn {
-        font-size: 12px;
-        color: var(--mat-text-secondary-color);
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #94a3b8; /* slate-400 */
         background: none;
         border: none;
         cursor: pointer;
-        padding: 4px 8px;
-
-        &:hover {
-          text-decoration: underline;
-        }
+        padding: 0.375rem 0.625rem;
+        border-radius: 0.25rem;
+        transition: all 0.15s ease;
       }
 
-      .select-field {
+      .clear-all-btn:hover {
+        color: #f1f5f9; /* slate-100 */
+        background-color: #334155; /* slate-700 */
+      }
+
+      /* Select field */
+      .multi-select-field {
         width: 100%;
       }
 
-      .search-container {
-        padding: 8px;
-        position: sticky;
-        top: 0;
-        background: var(--mat-select-panel-background-color);
-        z-index: 1;
+      .multi-select-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #f1f5f9; /* slate-100 */
+        margin-bottom: 0.5rem;
       }
 
-      .search-field {
+      /* PrimeNG MultiSelect base styles (unstyled mode) */
+      :host ::ng-deep .p-multiselect {
+        display: flex;
+        align-items: center;
+        position: relative;
         width: 100%;
-
-        ::ng-deep .mat-mdc-form-field-subscript-wrapper {
-          display: none;
-        }
+        min-height: 2.75rem;
+        padding: 0.625rem 2.5rem 0.625rem 0.875rem;
+        font-size: 0.875rem;
+        color: #f1f5f9; /* slate-100 */
+        background-color: #1e293b; /* slate-800 */
+        border: 1px solid #334155; /* slate-700 */
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
       }
 
-      .no-results {
+      :host ::ng-deep .p-multiselect:hover:not(.p-disabled) {
+        border-color: #17a1cf; /* primary */
+        background-color: #334155; /* slate-700 */
+      }
+
+      :host ::ng-deep .p-multiselect:focus-visible,
+      :host ::ng-deep .p-multiselect.p-focus {
+        outline: 2px solid #17a1cf;
+        outline-offset: 2px;
+        border-color: #17a1cf;
+      }
+
+      :host ::ng-deep .p-multiselect.p-disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Hide PrimeNG's built-in chip display (we use custom chips above) */
+      :host ::ng-deep .p-multiselect-label-container {
+        display: none;
+      }
+
+      /* Dropdown trigger icon container */
+      :host ::ng-deep .p-multiselect-dropdown {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        padding: 16px;
-        color: var(--mat-option-label-text-color);
-        opacity: 0.6;
+        color: #94a3b8; /* slate-400 */
+        pointer-events: none;
       }
 
-      mat-spinner {
-        margin-right: 8px;
+      :host ::ng-deep .p-multiselect-dropdown .material-symbols-outlined {
+        font-size: 1.5rem;
+      }
+
+      /* Loading spinner */
+      .multi-select-spinner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .spinner-icon {
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+      }
+
+      .spinner-circle {
+        stroke: #17a1cf; /* primary */
+        stroke-linecap: round;
+        stroke-dasharray: 50, 200;
+        stroke-dashoffset: 0;
+        animation: dash 1.5s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes dash {
+        0% {
+          stroke-dasharray: 1, 200;
+          stroke-dashoffset: 0;
+        }
+        50% {
+          stroke-dasharray: 100, 200;
+          stroke-dashoffset: -15;
+        }
+        100% {
+          stroke-dasharray: 100, 200;
+          stroke-dashoffset: -125;
+        }
+      }
+
+      /* Label when nothing selected */
+      :host ::ng-deep .p-multiselect-label {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      :host ::ng-deep .p-multiselect-label.p-placeholder {
+        color: #64748b; /* slate-500 */
+      }
+
+      /* Overlay panel */
+      :host ::ng-deep .p-multiselect-overlay {
+        background-color: #1e293b; /* slate-800 */
+        border: 1px solid #334155; /* slate-700 */
+        border-radius: 0.375rem;
+        box-shadow:
+          0 10px 15px -3px rgba(0, 0, 0, 0.3),
+          0 4px 6px -4px rgba(0, 0, 0, 0.2);
+        margin-top: 0.25rem;
+        overflow: hidden;
+      }
+
+      /* Filter input container */
+      :host ::ng-deep .p-multiselect-filter-container {
+        padding: 0.75rem;
+        border-bottom: 1px solid #334155; /* slate-700 */
+      }
+
+      /* Filter input */
+      :host ::ng-deep .p-multiselect-filter {
+        width: 100%;
+        padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+        font-size: 0.875rem;
+        color: #f1f5f9; /* slate-100 */
+        background-color: #334155; /* slate-700 */
+        border: 1px solid #475569; /* slate-600 */
+        border-radius: 0.375rem;
+        outline: none;
+        transition: all 0.15s ease;
+      }
+
+      :host ::ng-deep .p-multiselect-filter:focus {
+        border-color: #17a1cf; /* primary */
+        box-shadow: 0 0 0 3px rgba(23, 161, 207, 0.1);
+      }
+
+      /* Filter icon */
+      :host ::ng-deep .p-multiselect-filter-icon {
+        position: absolute;
+        left: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8; /* slate-400 */
+      }
+
+      /* Options list */
+      :host ::ng-deep .p-multiselect-list-container {
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      :host ::ng-deep .p-multiselect-list {
+        padding: 0.25rem;
+        list-style: none;
+        margin: 0;
+      }
+
+      /* Individual option */
+      :host ::ng-deep .p-multiselect-option {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 0.875rem;
+        font-size: 0.875rem;
+        color: #e2e8f0; /* slate-200 */
+        cursor: pointer;
+        border-radius: 0.25rem;
+        transition: background-color 0.15s ease;
+      }
+
+      :host ::ng-deep .p-multiselect-option:hover {
+        background-color: #334155; /* slate-700 */
+      }
+
+      :host ::ng-deep .p-multiselect-option.p-multiselect-option-selected,
+      :host ::ng-deep .p-multiselect-option.p-focus {
+        background-color: rgba(23, 161, 207, 0.1);
+        color: #17a1cf; /* primary */
+        font-weight: 500;
+      }
+
+      /* Checkbox in options */
+      :host ::ng-deep .p-multiselect-option .p-checkbox {
+        width: 1.125rem;
+        height: 1.125rem;
+        border: 2px solid #475569; /* slate-600 */
+        border-radius: 0.25rem;
+        background-color: #1e293b; /* slate-800 */
+        transition: all 0.15s ease;
+      }
+
+      :host ::ng-deep .p-multiselect-option:hover .p-checkbox {
+        border-color: #17a1cf; /* primary */
+      }
+
+      :host ::ng-deep .p-multiselect-option.p-multiselect-option-selected .p-checkbox {
+        background-color: #17a1cf; /* primary */
+        border-color: #17a1cf;
+      }
+
+      :host ::ng-deep .p-multiselect-option .p-checkbox-icon {
+        color: #1e293b; /* slate-800 - checkmark color */
+        font-size: 0.75rem;
+      }
+
+      /* Empty message */
+      :host ::ng-deep .p-multiselect-empty-message {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        font-size: 0.875rem;
+        color: #94a3b8; /* slate-400 */
       }
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MultiSelectChipsComponent {
-  @ViewChild('selectRef') selectRef!: MatSelect;
-
   // Inputs
   readonly label = input<string>('Select');
   readonly placeholder = input<string>('');
@@ -246,20 +445,9 @@ export class MultiSelectChipsComponent {
 
   // Internal state
   readonly internalValue = signal<string[]>([]);
-  readonly searchTerm = signal<string>('');
+  readonly inputId = signal<string>(`multi-select-${Math.random().toString(36).substr(2, 9)}`);
 
   // Computed
-  readonly filteredOptions = computed(() => {
-    const term = this.searchTerm().toLowerCase().trim();
-    const allOptions = this.options();
-
-    if (!term) {
-      return allOptions;
-    }
-
-    return allOptions.filter((option) => option.name.toLowerCase().includes(term));
-  });
-
   readonly selectedOptions = computed(() => {
     const selectedIds = this.internalValue();
     const allOptions = this.options();
@@ -273,28 +461,11 @@ export class MultiSelectChipsComponent {
     });
   }
 
-  onSearchInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.searchTerm.set(target.value);
-  }
-
-  onSearchKeydown(event: KeyboardEvent): void {
-    // Prevent select from handling these keys while typing
-    if (event.key === ' ') {
-      event.stopPropagation();
-    }
-  }
-
-  onSelectionChange(value: string[]): void {
-    this.internalValue.set(value);
-    this.valueChange.emit(value);
-  }
-
-  onOpenedChange(isOpen: boolean): void {
-    if (!isOpen) {
-      // Clear search when panel closes
-      this.searchTerm.set('');
-    }
+  onSelectionChange(value: string[] | null): void {
+    // PrimeNG can return null
+    const newValue = value ?? [];
+    this.internalValue.set(newValue);
+    this.valueChange.emit(newValue);
   }
 
   removeOption(id: string): void {
