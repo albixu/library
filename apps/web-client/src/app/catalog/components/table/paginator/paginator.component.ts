@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { NgSelectModule } from '@ng-select/ng-select';
 import { FormsModule } from '@angular/forms';
 
 /**
@@ -15,22 +14,22 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-paginator',
   standalone: true,
-  imports: [NgSelectModule, FormsModule],
+  imports: [FormsModule],
   template: `
     <nav class="paginator" aria-label="Pagination">
       <div class="paginator-page-size">
         <span class="paginator-label">Items per page:</span>
-        <ng-select
+        <select
           class="paginator-select"
-          [items]="pageSizeOptions()"
           [ngModel]="pageSize()"
           [disabled]="loading()"
-          [searchable]="false"
-          [clearable]="false"
           (ngModelChange)="onPageSizeChange($event)"
           aria-label="Select items per page"
         >
-        </ng-select>
+          @for (option of pageSizeOptions(); track option) {
+            <option [value]="option">{{ option }}</option>
+          }
+        </select>
       </div>
 
       <div class="paginator-range">
@@ -82,6 +81,42 @@ import { FormsModule } from '@angular/forms';
 
     .paginator-select {
       width: 5rem;
+      padding: 0.375rem 2rem 0.375rem 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #F1F5F9; /* slate-100 */
+      background-color: #1E293B; /* slate-800 */
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394A3B8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+      background-position: right 0.5rem center;
+      background-repeat: no-repeat;
+      background-size: 1.25rem;
+      border: 1px solid #334155; /* slate-700 */
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      appearance: none;
+
+      &:hover:not(:disabled) {
+        border-color: #17a1cf; /* primary color */
+        background-color: #334155; /* slate-700 */
+      }
+
+      &:focus-visible {
+        outline: 2px solid #17a1cf;
+        outline-offset: 2px;
+        border-color: #17a1cf;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      option {
+        background-color: #1E293B; /* slate-800 */
+        color: #F1F5F9; /* slate-100 */
+        padding: 0.5rem;
+      }
     }
 
     .paginator-range {

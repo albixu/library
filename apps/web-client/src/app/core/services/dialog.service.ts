@@ -1,5 +1,6 @@
-import { Injectable, inject, ComponentType } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Dialog, DialogRef, DialogConfig } from '@angular/cdk/dialog';
+import { ComponentType } from '@angular/cdk/portal';
 import { Observable } from 'rxjs';
 
 /**
@@ -36,10 +37,10 @@ export class DialogService {
    */
   open<T, D = unknown, R = unknown>(
     component: ComponentType<T>,
-    config?: DialogConfig<D>
+    config?: DialogConfig<D, DialogRef<R, T>>
   ): DialogRef<R, T> {
     // Default configuration with Tailwind-friendly classes
-    const defaultConfig: DialogConfig<D> = {
+    const defaultConfig: DialogConfig<D, DialogRef<R, T>> = {
       panelClass: 'dialog-panel',
       backdropClass: 'dialog-backdrop',
       hasBackdrop: true,

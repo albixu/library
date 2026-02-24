@@ -177,13 +177,15 @@ describe('PaginatorComponent', () => {
   });
 
   describe('Loading state', () => {
-    it('should disable page size select when loading', () => {
+    it('should disable page size select when loading', async () => {
       fixture.componentRef.setInput('totalCount', 100);
       fixture.componentRef.setInput('loading', true);
       fixture.detectChanges();
+      await fixture.whenStable();
 
-      const select = fixture.nativeElement.querySelector('ng-select');
-      expect(select.classList.contains('ng-select-disabled')).toBe(true);
+      const select = fixture.nativeElement.querySelector('select.paginator-select') as HTMLSelectElement;
+      expect(select).toBeTruthy(); // Verify element exists
+      expect(select.disabled).toBe(true);
     });
   });
 
