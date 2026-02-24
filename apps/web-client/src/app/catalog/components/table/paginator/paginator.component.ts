@@ -40,7 +40,14 @@ import { FormsModule } from '@angular/forms';
         @if (loading()) {
           <div class="spinner" role="status" aria-label="Loading more items">
             <svg class="spinner-icon" viewBox="0 0 24 24">
-              <circle class="spinner-circle" cx="12" cy="12" r="10" fill="none" stroke-width="3"></circle>
+              <circle
+                class="spinner-circle"
+                cx="12"
+                cy="12"
+                r="10"
+                fill="none"
+                stroke-width="3"
+              ></circle>
             </svg>
           </div>
         } @else if (hasNextPage()) {
@@ -66,7 +73,7 @@ import { FormsModule } from '@angular/forms';
       gap: 1rem;
       padding: 0.5rem 1rem;
       font-size: 0.875rem;
-      color: #94A3B8; /* slate-400 */
+      color: #94a3b8; /* slate-400 */
     }
 
     .paginator-page-size {
@@ -84,8 +91,8 @@ import { FormsModule } from '@angular/forms';
       padding: 0.375rem 2rem 0.375rem 0.75rem;
       font-size: 0.875rem;
       font-weight: 500;
-      color: #F1F5F9; /* slate-100 */
-      background-color: #1E293B; /* slate-800 */
+      color: #f1f5f9; /* slate-100 */
+      background-color: #1e293b; /* slate-800 */
       background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394A3B8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
       background-position: right 0.5rem center;
       background-repeat: no-repeat;
@@ -113,8 +120,8 @@ import { FormsModule } from '@angular/forms';
       }
 
       option {
-        background-color: #1E293B; /* slate-800 */
-        color: #F1F5F9; /* slate-100 */
+        background-color: #1e293b; /* slate-800 */
+        color: #f1f5f9; /* slate-100 */
         padding: 0.5rem;
       }
     }

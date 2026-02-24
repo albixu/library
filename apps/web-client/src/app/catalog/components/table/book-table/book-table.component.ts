@@ -58,7 +58,10 @@ import { Book } from '../../../../core/models/index.js';
                     <td class="type-category-column">
                       <div class="type-category-cell">
                         <span class="book-type">{{ book.type || 'Unknown' }}</span>
-                        <app-category-chips [categories]="getCategoryNames(book)" [maxVisible]="1" />
+                        <app-category-chips
+                          [categories]="getCategoryNames(book)"
+                          [maxVisible]="1"
+                        />
                       </div>
                     </td>
                     <td class="language-column text-center">
@@ -110,9 +113,9 @@ import { Book } from '../../../../core/models/index.js';
     }
 
     .book-table-container {
-      background-color: #0F172A; /* slate-900 - FROM FIGMA */
+      background-color: #0f172a; /* slate-900 - FROM FIGMA */
       border-radius: 0.75rem; /* rounded-xl */
-      border: 1px solid #1E293B; /* slate-800 - FROM FIGMA */
+      border: 1px solid #1e293b; /* slate-800 - FROM FIGMA */
       box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
       overflow: hidden;
     }
@@ -128,7 +131,7 @@ import { Book } from '../../../../core/models/index.js';
 
     // Row border separator - FROM FIGMA
     .book-table tbody tr {
-      border-bottom: 1px solid #1E293B; /* slate-800 - FROM FIGMA */
+      border-bottom: 1px solid #1e293b; /* slate-800 - FROM FIGMA */
     }
 
     .book-table tbody tr:last-child {
@@ -158,13 +161,13 @@ import { Book } from '../../../../core/models/index.js';
 
     .book-title {
       font-weight: 600; /* font-semibold */
-      color: #F1F5F9; /* slate-100 - white text for dark mode - FROM FIGMA */
+      color: #f1f5f9; /* slate-100 - white text for dark mode - FROM FIGMA */
       font-size: 0.875rem; /* text-sm */
     }
 
     .book-author {
       font-size: 0.75rem; /* text-xs */
-      color: #64748B; /* slate-500 - FROM FIGMA */
+      color: #64748b; /* slate-500 - FROM FIGMA */
     }
 
     .type-category-cell {
@@ -176,23 +179,23 @@ import { Book } from '../../../../core/models/index.js';
     .book-type {
       font-size: 0.75rem; /* text-xs */
       font-weight: 500; /* font-medium */
-      color: #CBD5E1; /* slate-300 - FROM FIGMA */
+      color: #cbd5e1; /* slate-300 - FROM FIGMA */
     }
 
     .format-text {
       font-size: 0.75rem; /* text-xs */
-      color: #94A3B8; /* slate-400 - FROM FIGMA */
+      color: #94a3b8; /* slate-400 - FROM FIGMA */
     }
 
     .isbn-text {
       font-size: 0.75rem; /* text-xs */
       font-family: 'Courier New', Courier, monospace; /* font-mono */
-      color: #94A3B8; /* slate-400 - FROM FIGMA */
+      color: #94a3b8; /* slate-400 - FROM FIGMA */
     }
 
     .description-text {
       font-size: 0.75rem; /* text-xs */
-      color: #64748B; /* slate-500 - FROM FIGMA */
+      color: #64748b; /* slate-500 - FROM FIGMA */
     }
 
     .text-center {
@@ -212,7 +215,7 @@ import { Book } from '../../../../core/models/index.js';
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: #F1F5F9; /* slate-100 - FROM FIGMA for action icons */
+      color: #f1f5f9; /* slate-100 - FROM FIGMA for action icons */
       transition: all 0.15s ease;
 
       &:hover {
@@ -239,7 +242,7 @@ import { Book } from '../../../../core/models/index.js';
       font-weight: 600; /* font-semibold */
       text-transform: uppercase;
       letter-spacing: 0.05em; /* tracking-wider */
-      color: #64748B; /* slate-500 - FROM FIGMA */
+      color: #64748b; /* slate-500 - FROM FIGMA */
       background-color: rgba(30, 41, 59, 0.5); /* slate-800/50 - FROM FIGMA */
       border-bottom: 1px solid #334155; /* slate-700 - FROM FIGMA */
       text-align: left;

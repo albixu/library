@@ -75,7 +75,7 @@ import { Subject, debounceTime } from 'rxjs';
       .filter-label {
         font-size: 0.75rem;
         font-weight: 500;
-        color: #94A3B8; /* slate-400 */
+        color: #94a3b8; /* slate-400 */
         text-transform: uppercase;
         letter-spacing: 0.05em;
       }
@@ -90,7 +90,7 @@ import { Subject, debounceTime } from 'rxjs';
         position: absolute;
         left: 0.75rem;
         font-size: 1.125rem;
-        color: #64748B; /* slate-500 */
+        color: #64748b; /* slate-500 */
         pointer-events: none;
       }
 
@@ -98,14 +98,14 @@ import { Subject, debounceTime } from 'rxjs';
         width: 100%;
         padding: 0.625rem 2.75rem 0.625rem 2.5rem;
         font-size: 0.875rem;
-        color: #F1F5F9; /* slate-100 */
-        background-color: #1E293B; /* slate-800 */
+        color: #f1f5f9; /* slate-100 */
+        background-color: #1e293b; /* slate-800 */
         border: 1px solid #334155; /* slate-700 */
         border-radius: 0.5rem;
         transition: all 0.15s ease;
 
         &::placeholder {
-          color: #64748B; /* slate-500 */
+          color: #64748b; /* slate-500 */
         }
 
         &:hover:not(:disabled) {
@@ -135,12 +135,12 @@ import { Subject, debounceTime } from 'rxjs';
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #64748B; /* slate-500 */
+        color: #64748b; /* slate-500 */
         transition: all 0.15s ease;
 
         &:hover {
           background-color: rgba(100, 116, 139, 0.1);
-          color: #F1F5F9; /* slate-100 */
+          color: #f1f5f9; /* slate-100 */
         }
 
         &:focus-visible {

@@ -9,12 +9,7 @@
 @use './styles/variables';
 
 // -----------------------------------------------------------------------------
-// 2. Angular Material Theme (must be BEFORE @tailwind)
-// -----------------------------------------------------------------------------
-@use './styles/material-theme';
-
-// -----------------------------------------------------------------------------
-// 0. Tailwind CSS Base Styles
+// 2. Tailwind CSS Base Styles
 // -----------------------------------------------------------------------------
 @tailwind base;
 @tailwind components;
@@ -241,77 +236,6 @@ a {
 
   &:active {
     color: var(--color-accent-active);
-  }
-}
-
-// =============================================================================
-// Material Component Overrides
-// =============================================================================
-
-// Apply consistent border-radius to Material components
-.mdc-button,
-.mat-mdc-button,
-.mat-mdc-raised-button,
-.mat-mdc-outlined-button,
-.mat-mdc-flat-button,
-.mat-mdc-icon-button {
-  border-radius: var(--radius-md) !important;
-}
-
-.mdc-card,
-.mat-mdc-card {
-  border-radius: var(--radius-md) !important;
-}
-
-.mdc-text-field,
-.mat-mdc-form-field {
-  .mdc-text-field__input {
-    border-radius: var(--radius-md);
-  }
-}
-
-.mat-mdc-dialog-container {
-  border-radius: var(--radius-lg) !important;
-}
-
-.mat-mdc-menu-panel {
-  border-radius: var(--radius-md) !important;
-}
-
-.mat-mdc-snack-bar-container {
-  border-radius: var(--radius-md) !important;
-}
-
-// Material table overrides to match Stitch design
-.mat-mdc-table {
-  background: transparent !important;
-
-  .mat-mdc-header-row {
-    background-color: var(--color-table-header-bg);
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .mat-mdc-header-cell {
-    color: var(--slate-500);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom: none;
-  }
-
-  .mat-mdc-row {
-    border-bottom: 1px solid var(--color-table-border);
-    transition: background-color 0.15s ease;
-
-    &:hover {
-      background-color: var(--color-table-row-hover);
-    }
-  }
-
-  .mat-mdc-cell {
-    color: var(--color-text-primary);
-    border-bottom: none;
   }
 }
 

@@ -137,7 +137,9 @@ describe('PaginatorComponent', () => {
       fixture.componentRef.setInput('loading', false);
       fixture.detectChanges();
 
-      const icon = fixture.nativeElement.querySelector('.load-more-button .material-symbols-outlined');
+      const icon = fixture.nativeElement.querySelector(
+        '.load-more-button .material-symbols-outlined'
+      );
       expect(icon).toBeTruthy();
       expect(icon.textContent.trim()).toBe('expand_more');
     });
@@ -183,7 +185,9 @@ describe('PaginatorComponent', () => {
       fixture.detectChanges();
       await fixture.whenStable();
 
-      const select = fixture.nativeElement.querySelector('select.paginator-select') as HTMLSelectElement;
+      const select = fixture.nativeElement.querySelector(
+        'select.paginator-select'
+      ) as HTMLSelectElement;
       expect(select).toBeTruthy(); // Verify element exists
       expect(select.disabled).toBe(true);
     });
