@@ -98,35 +98,97 @@ npm run db:migrate
 
 ## Carga de Datos Inicial
 
-### Consolidar archivos JSON
+El proceso de carga de datos se divide en dos fases independientes, cada una con su propio entorno Docker optimizado:
 
-Si tienes múltiples archivos JSON con datos de libros, puedes consolidarlos en un único archivo:
-
-```bash
-# Desde el contenedor
-docker exec -it library-api-dev npm run consolidate:books
-
-# Los archivos fuente deben estar en original_data/ (raíz del proyecto)
-# El script excluye libros que ya existen en la base de datos (por ISBN)
-# El resultado se guarda en docs/db/books.json
+```
+original_data/*.json
+        │
+        ▼ (Fase 1: Consolidación)
+docs/db/initial_data/books_XXXX.json
+        │
+        ▼ (Fase 2: Seeding)
+    Base de datos PostgreSQL
 ```
 
-### Sembrar la base de datos
+### Fase 1: Consolidar archivos JSON
 
-Para cargar los libros consolidados en la base de datos:
+Consolida múltiples archivos JSON de `original_data/` en ficheros particionados, traduciendo las descripciones al español.
+
+**Requisitos:**
+- Archivos JSON en `original_data/` (raíz del proyecto)
+- Ollama con modelo de traducción `qwen2.5:1.5b`
 
 ```bash
-# Ejecución manual
-docker exec -it library-api-dev npm run seed:database
+# 1. Iniciar entorno de consolidación
+docker-compose -f docker-compose.consolidate.yml up -d
 
-# Variables de entorno opcionales:
-# BATCH_SIZE=50      - Libros a procesar por lote
-# MAX_RETRIES=3      - Reintentos en caso de error de embedding
+# 2. Verificar que los servicios están corriendo
+docker-compose -f docker-compose.consolidate.yml ps
+
+# 3. Descargar modelo de traducción (solo la primera vez)
+docker exec library-consolidate-ollama ollama pull qwen2.5:1.5b
+
+# 4. Ejecutar script de consolidación
+docker exec library-consolidate-api npm run consolidate:books
+
+# 5. Detener servicios cuando termine
+docker-compose -f docker-compose.consolidate.yml down
 ```
 
-### Carga automática al iniciar
+**Resultado:** Ficheros `docs/db/initial_data/books_0001.json`, `books_0002.json`, etc. (máximo 1000 libros por fichero)
 
-Puedes configurar la carga automática de datos al iniciar el contenedor:
+**Variables de entorno opcionales:**
+- `BOOKS_PER_FILE=1000` - Libros por fichero de salida
+- `TRANSLATION_TIMEOUT_MS=180000` - Timeout para traducciones (3 min)
+
+### Fase 2: Sembrar la base de datos
+
+Carga los ficheros particionados en PostgreSQL, generando embeddings para búsqueda semántica.
+
+**Requisitos:**
+- Ficheros en `docs/db/initial_data/` (generados en Fase 1)
+- Ollama con modelo de embeddings `nomic-embed-text`
+- PostgreSQL con esquema migrado
+
+```bash
+# 1. Iniciar entorno de seeding
+docker-compose -f docker-compose.seed.yml up -d
+
+# 2. Verificar que los servicios están healthy
+docker-compose -f docker-compose.seed.yml ps
+
+# 3. Descargar modelo de embeddings (solo la primera vez)
+docker exec library-seed-ollama ollama pull nomic-embed-text
+
+# 4. Ejecutar migraciones de base de datos (si es necesario)
+docker exec library-seed-api npm run db:migrate
+
+# 5. Ejecutar script de seeding
+docker exec library-seed-api npm run seed:database
+
+# 6. Detener servicios cuando termine
+docker-compose -f docker-compose.seed.yml down
+```
+
+**Resultado:** Libros cargados en PostgreSQL con embeddings vectoriales
+
+**Variables de entorno opcionales:**
+- `BATCH_SIZE=50` - Libros a procesar por lote
+- `MAX_RETRIES=3` - Reintentos en caso de error de embedding
+
+### Verificar carga de datos
+
+```bash
+# Verificar número de libros en base de datos
+docker exec library-postgres psql -U library -d library -c "SELECT COUNT(*) FROM books;"
+
+# O usando la API (si está corriendo)
+curl http://localhost:3000/api/books?limit=1 | jq '.meta.total'
+```
+
+### Carga automática al iniciar (Desarrollo)
+
+Para entornos de desarrollo, puedes habilitar la carga automática:
 
 ```bash
 # En docker-compose.yml o .env
@@ -506,13 +568,15 @@ npm run dev
 
 ## Docker Compose Environments
 
-El proyecto incluye tres configuraciones de Docker Compose:
+El proyecto incluye cinco configuraciones de Docker Compose:
 
 | Archivo | Propósito | Uso |
 |---------|-----------|-----|
 | `docker-compose.yml` | Desarrollo | Hot reload, debug, desarrollo local |
 | `docker-compose.prod.yml` | Producción | Optimizado, seguro, listo para VPS |
 | `docker-compose.test.yml` | Testing | E2E tests, CI/CD, aislado |
+| `docker-compose.consolidate.yml` | Consolidación | Generar ficheros JSON particionados |
+| `docker-compose.seed.yml` | Seeding | Cargar datos en base de datos |
 
 ### Puertos por entorno
 
@@ -522,6 +586,8 @@ El proyecto incluye tres configuraciones de Docker Compose:
 | API | 3000 | 3000 | 3001 |
 | PostgreSQL | 5432 | (interno) | 5433 |
 | Ollama | 11434 | (interno) | 11435 |
+
+> **Nota:** Los entornos de consolidación y seeding no exponen puertos externos. Son tareas de un solo uso que reutilizan los volúmenes de datos existentes.
 
 ## Producción
 
