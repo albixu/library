@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { HeaderComponent } from './header.component.js';
 import { ThemeService } from '@core/services/theme.service';
 import { signal, computed } from '@angular/core';
@@ -33,7 +32,7 @@ describe('HeaderComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [HeaderComponent],
-      providers: [provideAnimationsAsync(), { provide: ThemeService, useValue: mockThemeService }],
+      providers: [{ provide: ThemeService, useValue: mockThemeService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HeaderComponent);
@@ -59,7 +58,7 @@ describe('HeaderComponent', () => {
 
   describe('Logo', () => {
     it('should display the auto_stories icon', () => {
-      const logoIcon = fixture.nativeElement.querySelector('.header__logo mat-icon');
+      const logoIcon = fixture.nativeElement.querySelector('.header__logo .material-symbols-outlined');
       expect(logoIcon).toBeTruthy();
       expect(logoIcon.textContent.trim()).toBe('auto_stories');
     });
@@ -71,10 +70,10 @@ describe('HeaderComponent', () => {
   });
 
   describe('Title', () => {
-    it('should display "Library" as the title', () => {
+    it('should display "BiblioManager" as the title', () => {
       const title = fixture.nativeElement.querySelector('.header__title');
       expect(title).toBeTruthy();
-      expect(title.textContent.trim()).toBe('Library');
+      expect(title.textContent.trim()).toBe('BiblioManager');
     });
   });
 
@@ -96,11 +95,30 @@ describe('HeaderComponent', () => {
       expect(themeToggle).toBeTruthy();
     });
 
-    it('should position theme toggle on the right side', () => {
-      const header = fixture.nativeElement.querySelector('header');
+    it('should position theme toggle inside actions container', () => {
+      const actions = fixture.nativeElement.querySelector('.header__actions');
+      expect(actions).toBeTruthy();
 
-      // Theme toggle should be the last element in the header (right side in flex)
-      expect(header.lastElementChild.tagName.toLowerCase()).toBe('app-theme-toggle');
+      const themeToggle = actions.querySelector('app-theme-toggle');
+      expect(themeToggle).toBeTruthy();
+    });
+  });
+
+  describe('Action Buttons', () => {
+    it('should have notifications and profile icon buttons with Material Symbols', () => {
+      const buttons = fixture.nativeElement.querySelectorAll('.icon-button');
+      expect(buttons.length).toBe(2);
+
+      const icons = fixture.nativeElement.querySelectorAll('.icon-button .material-symbols-outlined');
+      expect(icons.length).toBe(2);
+      expect(icons[0].textContent.trim()).toBe('notifications_none');
+      expect(icons[1].textContent.trim()).toBe('account_circle');
+    });
+
+    it('should have tooltip title attributes on action buttons', () => {
+      const buttons = fixture.nativeElement.querySelectorAll('.icon-button');
+      expect(buttons[0].getAttribute('title')).toBe('Notifications');
+      expect(buttons[1].getAttribute('title')).toBe('Profile');
     });
   });
 

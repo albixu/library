@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { ThemeToggleComponent } from './theme-toggle.component';
 import { ThemeService } from '@core/services/theme.service';
 import { signal, computed } from '@angular/core';
@@ -33,7 +32,7 @@ describe('ThemeToggleComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [ThemeToggleComponent],
-      providers: [provideAnimationsAsync(), { provide: ThemeService, useValue: mockThemeService }],
+      providers: [{ provide: ThemeService, useValue: mockThemeService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ThemeToggleComponent);
@@ -46,7 +45,7 @@ describe('ThemeToggleComponent', () => {
   });
 
   it('should display dark_mode icon when in light mode', () => {
-    const icon = fixture.nativeElement.querySelector('mat-icon');
+    const icon = fixture.nativeElement.querySelector('.material-symbols-outlined');
     expect(icon.textContent.trim()).toBe('dark_mode');
   });
 
@@ -64,7 +63,7 @@ describe('ThemeToggleComponent', () => {
 
   it('should update icon after toggle', async () => {
     // Initial state: light mode
-    let icon = fixture.nativeElement.querySelector('mat-icon');
+    let icon = fixture.nativeElement.querySelector('.material-symbols-outlined');
     expect(icon.textContent.trim()).toBe('dark_mode');
 
     // Toggle to dark mode
@@ -74,7 +73,7 @@ describe('ThemeToggleComponent', () => {
     await fixture.whenStable();
 
     // Should now show light_mode icon
-    icon = fixture.nativeElement.querySelector('mat-icon');
+    icon = fixture.nativeElement.querySelector('.material-symbols-outlined');
     expect(icon.textContent.trim()).toBe('light_mode');
   });
 

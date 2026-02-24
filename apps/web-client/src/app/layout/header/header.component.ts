@@ -1,6 +1,4 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { MatIcon } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 
 /**
@@ -16,19 +14,19 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [MatIcon, MatButtonModule, ThemeToggleComponent],
+  imports: [ThemeToggleComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="header">
       <div class="header__brand">
         <div class="header__logo">
-          <mat-icon>auto_stories</mat-icon>
+          <span class="material-symbols-outlined">auto_stories</span>
         </div>
         <span class="header__title">BiblioManager</span>
       </div>
       
       <div class="header__search">
-        <mat-icon class="search-icon">search</mat-icon>
+        <span class="material-symbols-outlined search-icon">search</span>
         <input 
           type="text" 
           class="search-input" 
@@ -38,12 +36,12 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
       </div>
 
       <div class="header__actions">
-        <button mat-icon-button aria-label="Notifications">
-          <mat-icon>notifications_none</mat-icon>
+        <button class="icon-button" aria-label="Notifications">
+          <span class="material-symbols-outlined">notifications_none</span>
         </button>
         <app-theme-toggle />
-        <button mat-icon-button aria-label="User profile">
-          <mat-icon>account_circle</mat-icon>
+        <button class="icon-button" aria-label="User profile">
+          <span class="material-symbols-outlined">account_circle</span>
         </button>
       </div>
     </header>
@@ -61,26 +59,24 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: var(--spacing-6);
+        gap: 1.5rem;
         height: 64px;
-        padding: 0 var(--spacing-6);
+        padding: 0 1.5rem;
         background-color: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border-bottom: 1px solid var(--color-border);
-        transition:
-          background-color var(--transition-normal),
-          border-color var(--transition-normal);
+        transition: background-color 250ms ease, border-color 250ms ease;
       }
 
-      [data-theme='dark'] .header {
+      :host-context([data-theme='dark']) .header {
         background-color: rgba(17, 29, 33, 0.8);
       }
 
       .header__brand {
         display: flex;
         align-items: center;
-        gap: var(--spacing-3);
+        gap: 0.75rem;
         flex-shrink: 0;
       }
 
@@ -91,14 +87,15 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         width: 36px;
         height: 36px;
         background-color: var(--color-accent);
-        border-radius: var(--radius-md);
+        border-radius: 0.5rem;
+      }
 
-        mat-icon {
-          color: white;
-          font-size: 20px;
-          width: 20px;
-          height: 20px;
-        }
+      .header__logo .material-symbols-outlined {
+        color: white;
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
       }
 
       .header__title {
@@ -123,6 +120,7 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         font-size: 20px;
         width: 20px;
         height: 20px;
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
       }
 
       .search-input {
@@ -130,40 +128,73 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         height: 40px;
         padding: 0 16px 0 44px;
         border: 1px solid var(--color-border);
-        border-radius: var(--radius-md);
+        border-radius: 0.5rem;
         background-color: var(--color-bg-input);
         color: var(--color-text-primary);
         font-size: 0.875rem;
-        transition: all 0.2s ease;
+        transition: all 200ms ease;
+      }
 
-        &::placeholder {
-          color: var(--color-text-muted);
-        }
+      .search-input::placeholder {
+        color: var(--color-text-muted);
+      }
 
-        &:hover {
-          border-color: var(--color-border-strong);
-        }
+      .search-input:hover {
+        border-color: var(--color-border-strong);
+      }
 
-        &:focus {
-          outline: none;
-          border-color: var(--color-accent);
-          box-shadow: 0 0 0 3px rgba(23, 161, 207, 0.1);
-        }
+      .search-input:focus {
+        outline: none;
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 3px rgba(23, 161, 207, 0.1);
       }
 
       .header__actions {
         display: flex;
         align-items: center;
-        gap: var(--spacing-2);
+        gap: 0.5rem;
         flex-shrink: 0;
       }
 
-      .header__actions button {
-        color: var(--color-text-secondary);
+      .icon-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border: none;
+        border-radius: 0.5rem;
+        background-color: transparent;
+        color: rgb(100 116 139); /* slate-500 */
+        cursor: pointer;
+        transition: all 150ms ease;
+      }
 
-        &:hover {
-          color: var(--color-text-primary);
-        }
+      :host-context([data-theme='dark']) .icon-button {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+
+      .icon-button:hover {
+        background-color: rgb(241 245 249); /* slate-100 */
+        color: rgb(15 23 42); /* slate-900 */
+      }
+
+      :host-context([data-theme='dark']) .icon-button:hover {
+        background-color: rgb(30 41 59); /* slate-800 */
+        color: rgb(241 245 249); /* slate-100 */
+      }
+
+      .icon-button:focus-visible {
+        outline: 2px solid #17a1cf;
+        outline-offset: 2px;
+      }
+
+      .icon-button .material-symbols-outlined {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
       }
     `,
   ],
