@@ -48,7 +48,7 @@ describe('LoadingOverlayComponent', () => {
       fixture.componentRef.setInput('visible', true);
       fixture.detectChanges();
 
-      const spinner = fixture.nativeElement.querySelector('mat-spinner');
+      const spinner = fixture.nativeElement.querySelector('.spinner');
       expect(spinner).toBeTruthy();
     });
 
@@ -65,6 +65,9 @@ describe('LoadingOverlayComponent', () => {
       fixture.detectChanges();
 
       expect(component.diameter()).toBe(64);
+      const spinner = fixture.nativeElement.querySelector('.spinner');
+      expect(spinner.style.width).toBe('64px');
+      expect(spinner.style.height).toBe('64px');
     });
   });
 

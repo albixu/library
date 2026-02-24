@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BookCardComponent } from './book-card.component';
 import { Book } from '../../../../core/models/index';
 
@@ -28,7 +27,7 @@ describe('BookCardComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BookCardComponent, NoopAnimationsModule],
+      imports: [BookCardComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BookCardComponent);
