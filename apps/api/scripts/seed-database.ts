@@ -509,11 +509,24 @@ async function seedDatabase(): Promise<SeedingSummary> {
   }
 }
 
-// Run if executed directly
-seedDatabase().catch((error: unknown) => {
-  console.error('Seeding failed:', error);
-  process.exit(1);
-});
+/**
+ * Determines if this module is being run directly (not imported)
+ * Uses argv[1] comparison since import.meta.url check is unreliable with tsx
+ */
+function isMainModule(): boolean {
+  // When run with tsx: process.argv[1] contains the script path
+  // When imported: process.argv[1] contains vitest/node path
+  const scriptPath = process.argv[1] ?? '';
+  return scriptPath.includes('seed-database');
+}
+
+// Run only if executed directly (not when imported for testing)
+if (isMainModule()) {
+  seedDatabase().catch((error: unknown) => {
+    console.error('Seeding failed:', error);
+    process.exit(1);
+  });
+}
 
 export { seedDatabase, readInitialDataFiles, toCreateBookInput, isValidSourceBook, transformSourceBook };
 export type { SourceBook, ConsolidatedBook, SeedingSummary, BookResult };
