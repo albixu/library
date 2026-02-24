@@ -7,10 +7,6 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 
@@ -44,24 +40,27 @@ import {
   selector: 'app-book-list-page',
   standalone: true,
   imports: [
-    MatSidenavModule,
-    MatButtonModule,
-    MatIconModule,
-    MatToolbarModule,
     FilterPanelComponent,
     BookTableComponent,
     BookCardComponent,
     PaginatorComponent,
   ],
   template: `
-    <mat-sidenav-container class="book-list-container">
+    <div class="book-list-container">
+      <!-- Mobile Backdrop -->
+      @if (isMobile() && isMobileDrawerOpen()) {
+        <div
+          class="backdrop"
+          (click)="toggleMobileDrawer()"
+          aria-label="Close filters"
+        ></div>
+      }
+
       <!-- Filter Sidebar / Drawer -->
-      <mat-sidenav
-        #drawer
-        [mode]="isMobile() ? 'over' : 'side'"
-        [opened]="isMobile() ? isMobileDrawerOpen() : true"
-        [fixedInViewport]="isMobile()"
-        fixedTopGap="0"
+      <aside
+        data-testid="filter-panel"
+        [class.open]="isMobile() ? isMobileDrawerOpen() : true"
+        [class.mobile]="isMobile()"
         role="complementary"
         aria-label="Book filters"
         class="filter-sidenav"
@@ -76,37 +75,40 @@ import {
           (filtersChange)="onFiltersChange($event)"
           (typeChange)="onTypeChange($event)"
         />
-      </mat-sidenav>
+      </aside>
 
       <!-- Main Content -->
-      <mat-sidenav-content role="main" class="main-content">
+      <main role="main" class="main-content">
         <!-- Mobile Header -->
         @if (isMobile()) {
-          <mat-toolbar class="mobile-toolbar">
+          <div class="mobile-toolbar">
             <button
-              mat-icon-button
+              type="button"
               data-testid="mobile-filter-toggle"
               aria-label="Toggle filters"
+              class="filter-toggle-btn"
               (click)="toggleMobileDrawer()"
             >
-              <mat-icon>filter_list</mat-icon>
+              <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
             </button>
             <span class="mobile-title">Book Catalog</span>
             @if (store.hasFilters()) {
               <span class="filter-badge">{{ activeFilterCount() }}</span>
             }
-          </mat-toolbar>
+          </div>
         }
 
         <div class="content-wrapper">
           <!-- Error state -->
           @if (store.error()) {
             <div class="error-state" role="alert">
-              <mat-icon class="error-icon">error_outline</mat-icon>
+              <span class="material-symbols-outlined error-icon" aria-hidden="true">
+                error_outline
+              </span>
               <h2 class="error-title">Unable to load books</h2>
               <p class="error-message">{{ store.error() }}</p>
-              <button mat-raised-button color="primary" (click)="onRetrySearch()">
-                <mat-icon>refresh</mat-icon>
+              <button type="button" class="btn btn-primary" (click)="onRetrySearch()">
+                <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
                 Retry
               </button>
             </div>
@@ -126,12 +128,12 @@ import {
                 </p>
               </div>
               <div class="results-actions">
-                <button mat-stroked-button>
-                  <mat-icon>download</mat-icon>
+                <button type="button" class="btn btn-secondary">
+                  <span class="material-symbols-outlined" aria-hidden="true">download</span>
                   Export
                 </button>
-                <button mat-raised-button color="primary">
-                  <mat-icon>add</mat-icon>
+                <button type="button" class="btn btn-primary">
+                  <span class="material-symbols-outlined" aria-hidden="true">add</span>
                   Add New Book
                 </button>
               </div>
@@ -182,178 +184,412 @@ import {
             }
           }
         </div>
-      </mat-sidenav-content>
-    </mat-sidenav-container>
+      </main>
+    </div>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-        height: 100%;
-        overflow: hidden;
+  styles: `
+    :host {
+      display: block;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .book-list-container {
+      display: flex;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Backdrop for mobile */
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      backdrop-filter: blur(2px);
+      animation: fadeIn 0.3s ease;
+
+      [data-theme='dark'] & {
+        background-color: rgba(15, 23, 42, 0.7); /* slate-900 */
       }
 
-      .book-list-container {
-        height: 100%;
-        overflow: hidden;
+      [data-theme='light'] & {
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* Filter Sidebar */
+    .filter-sidenav {
+      width: 280px;
+      height: 100%;
+      overflow-y: auto;
+      flex-shrink: 0;
+      transition: transform 0.3s ease;
+
+      [data-theme='dark'] & {
+        background-color: rgb(30 41 59); /* slate-800 */
+        border-right: 1px solid rgb(51 65 85); /* slate-700 */
       }
 
-      .filter-sidenav {
-        width: 280px;
-        background: var(--color-bg-surface);
-        border-right: 1px solid var(--color-border);
-        overflow-y: auto;
+      [data-theme='light'] & {
+        background-color: rgb(255 255 255); /* white */
+        border-right: 1px solid rgb(226 232 240); /* slate-200 */
       }
 
-      .main-content {
-        background: var(--color-bg-primary);
-        height: 100%;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .mobile-toolbar {
-        position: sticky;
+      /* Mobile: drawer */
+      &.mobile {
+        position: fixed;
         top: 0;
-        z-index: 10;
-        background: var(--color-bg-surface);
-        border-bottom: 1px solid var(--color-border);
-      }
+        left: 0;
+        z-index: 50;
+        transform: translateX(-100%);
+        max-width: 320px;
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
 
-      .mobile-title {
-        flex: 1;
-        font-weight: 500;
-        margin-left: 8px;
-      }
-
-      .filter-badge {
-        background: var(--color-accent);
-        color: white;
-        border-radius: 12px;
-        padding: 2px 8px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        margin-left: 8px;
-      }
-
-      .content-wrapper {
-        flex: 1;
-        padding: 24px;
-        max-width: 1400px;
-        margin: 0 auto;
-        width: 100%;
-        overflow-y: auto;
-      }
-
-      .results-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 24px;
-      }
-
-      .results-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--color-text-primary);
-        margin: 0;
-      }
-
-      .results-subtitle {
-        font-size: 0.875rem;
-        color: var(--color-text-secondary);
-        margin: 4px 0 0;
-      }
-
-      .results-actions {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-
-        button mat-icon {
-          font-size: 18px;
-          width: 18px;
-          height: 18px;
-          margin-right: 6px;
+        &.open {
+          transform: translateX(0);
         }
+      }
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+
+      [data-theme='dark'] & {
+        background-color: rgb(15 23 42); /* slate-900 */
+      }
+
+      [data-theme='light'] & {
+        background-color: rgb(248 250 252); /* slate-50 */
+      }
+    }
+
+    /* Mobile Toolbar */
+    .mobile-toolbar {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+
+      [data-theme='dark'] & {
+        background-color: rgb(30 41 59); /* slate-800 */
+        border-bottom: 1px solid rgb(51 65 85); /* slate-700 */
+      }
+
+      [data-theme='light'] & {
+        background-color: rgb(255 255 255); /* white */
+        border-bottom: 1px solid rgb(226 232 240); /* slate-200 */
+      }
+    }
+
+    .filter-toggle-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border: none;
+      border-radius: 0.5rem;
+      background: transparent;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      .material-symbols-outlined {
+        font-size: 1.5rem;
+      }
+
+      [data-theme='dark'] & {
+        color: rgb(203 213 225); /* slate-300 */
+
+        &:hover {
+          background-color: rgb(51 65 85); /* slate-700 */
+        }
+      }
+
+      [data-theme='light'] & {
+        color: rgb(71 85 105); /* slate-600 */
+
+        &:hover {
+          background-color: rgb(241 245 249); /* slate-100 */
+        }
+      }
+    }
+
+    .mobile-title {
+      flex: 1;
+      font-weight: 500;
+      margin-left: 0.5rem;
+
+      [data-theme='dark'] & {
+        color: rgb(241 245 249); /* slate-100 */
+      }
+
+      [data-theme='light'] & {
+        color: rgb(15 23 42); /* slate-900 */
+      }
+    }
+
+    .filter-badge {
+      background-color: #17a1cf;
+      color: white;
+      border-radius: 0.75rem;
+      padding: 0.125rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-left: 0.5rem;
+    }
+
+    /* Content Wrapper */
+    .content-wrapper {
+      flex: 1;
+      padding: 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+      overflow-y: auto;
+    }
+
+    /* Results Header */
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .results-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0;
+
+      [data-theme='dark'] & {
+        color: rgb(241 245 249); /* slate-100 */
+      }
+
+      [data-theme='light'] & {
+        color: rgb(15 23 42); /* slate-900 */
+      }
+    }
+
+    .results-subtitle {
+      font-size: 0.875rem;
+      margin: 0.25rem 0 0;
+
+      [data-theme='dark'] & {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+
+      [data-theme='light'] & {
+        color: rgb(100 116 139); /* slate-500 */
+      }
+    }
+
+    .results-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      .material-symbols-outlined {
+        font-size: 1.125rem;
+        margin-right: 0.375rem;
+      }
+    }
+
+    /* Cards Container */
+    .cards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+
+    /* Table with Paginator */
+    .table-with-paginator {
+      display: flex;
+      flex-direction: column;
+      border-radius: 0.75rem;
+      overflow: hidden;
+
+      [data-theme='dark'] & {
+        background-color: rgb(30 41 59); /* slate-800 */
+        border: 1px solid rgb(51 65 85); /* slate-700 */
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+      }
+
+      [data-theme='light'] & {
+        background-color: rgb(255 255 255); /* white */
+        border: 1px solid rgb(226 232 240); /* slate-200 */
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+      }
+    }
+
+    .table-with-paginator app-book-table ::ng-deep .book-table-container {
+      border-radius: 0;
+      border: none;
+      box-shadow: none;
+    }
+
+    .paginator-wrapper {
+      [data-theme='dark'] & {
+        border-top: 1px solid rgb(51 65 85); /* slate-700 */
+        background-color: rgb(15 23 42); /* slate-900 */
+      }
+
+      [data-theme='light'] & {
+        border-top: 1px solid rgb(226 232 240); /* slate-200 */
+        background-color: rgb(248 250 252); /* slate-50 */
+      }
+    }
+
+    /* Error State */
+    .error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      padding: 3rem 1.5rem;
+      text-align: center;
+    }
+
+    .error-icon {
+      font-size: 3rem;
+      color: #ef4444; /* red-500 */
+    }
+
+    .error-title {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 500;
+
+      [data-theme='dark'] & {
+        color: rgb(241 245 249); /* slate-100 */
+      }
+
+      [data-theme='light'] & {
+        color: rgb(15 23 42); /* slate-900 */
+      }
+    }
+
+    .error-message {
+      margin: 0;
+      font-size: 0.875rem;
+      max-width: 400px;
+
+      [data-theme='dark'] & {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+
+      [data-theme='light'] & {
+        color: rgb(100 116 139); /* slate-500 */
+      }
+    }
+
+    /* Button Styles */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 0.5rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      .material-symbols-outlined {
+        font-size: 1.125rem;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .btn-primary {
+      background-color: #17a1cf;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background-color: #1389b3;
+      }
+
+      &:focus-visible {
+        outline: 2px solid #17a1cf;
+        outline-offset: 2px;
+      }
+    }
+
+    .btn-secondary {
+      [data-theme='dark'] & {
+        background-color: transparent;
+        border: 1px solid rgb(51 65 85); /* slate-700 */
+        color: rgb(203 213 225); /* slate-300 */
+
+        &:hover:not(:disabled) {
+          background-color: rgb(51 65 85); /* slate-700 */
+        }
+      }
+
+      [data-theme='light'] & {
+        background-color: transparent;
+        border: 1px solid rgb(226 232 240); /* slate-200 */
+        color: rgb(71 85 105); /* slate-600 */
+
+        &:hover:not(:disabled) {
+          background-color: rgb(241 245 249); /* slate-100 */
+        }
+      }
+
+      &:focus-visible {
+        outline: 2px solid #17a1cf;
+        outline-offset: 2px;
+      }
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 768px) {
+      .content-wrapper {
+        padding: 1rem;
       }
 
       .cards-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 16px;
+        grid-template-columns: 1fr;
       }
 
-      .table-with-paginator {
-        display: flex;
+      .results-header {
         flex-direction: column;
-        border-radius: var(--radius-xl);
-        border: 1px solid var(--color-border);
-        box-shadow: var(--shadow-sm);
-        overflow: hidden;
-        background: var(--color-bg-surface);
+        align-items: flex-start;
+        gap: 1rem;
       }
 
-      .table-with-paginator app-book-table ::ng-deep .book-table-container {
-        border-radius: 0;
-        border: none;
-        box-shadow: none;
-      }
-
-      .paginator-wrapper {
-        border-top: 1px solid var(--color-border);
-        background: var(--color-table-header-bg);
-      }
-
-      .error-state {
-        display: flex;
+      .results-actions {
+        width: 100%;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 16px;
-        padding: 48px 24px;
-        text-align: center;
-      }
 
-      .error-icon {
-        font-size: 48px;
-        width: 48px;
-        height: 48px;
-        color: var(--color-error);
-      }
-
-      .error-title {
-        margin: 0;
-        font-size: 1.25rem;
-        font-weight: 500;
-        color: var(--color-text-primary);
-      }
-
-      .error-message {
-        margin: 0;
-        font-size: 0.875rem;
-        color: var(--color-text-secondary);
-        max-width: 400px;
-      }
-
-      /* Mobile adjustments */
-      @media (max-width: 768px) {
-        .filter-sidenav {
+        button {
           width: 100%;
-          max-width: 320px;
-        }
-
-        .content-wrapper {
-          padding: 16px;
-        }
-
-        .cards-container {
-          grid-template-columns: 1fr;
         }
       }
-    `,
-  ],
+    }
+  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BookListPageComponent implements OnInit {
