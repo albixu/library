@@ -137,9 +137,11 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
+  height: 100%;
 }
 
 body {
+  height: 100%;
   font-family: var(--font-family);
   font-size: 1rem;
   line-height: 1.5;

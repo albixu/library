@@ -31,18 +31,19 @@ import { FooterComponent } from '../footer/footer.component.js';
     `
       :host {
         display: block;
+        height: 100%;
       }
 
       .main-layout {
         display: flex;
         flex-direction: column;
-        min-height: 100vh;
+        height: 100%;
+        overflow: hidden;
       }
 
       .main-layout__content {
         flex: 1;
-        display: flex;
-        flex-direction: column;
+        overflow: hidden;
         background-color: var(--color-bg-primary);
         transition: background-color var(--transition-normal);
       }

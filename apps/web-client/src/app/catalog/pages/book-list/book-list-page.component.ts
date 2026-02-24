@@ -113,15 +113,18 @@ import {
           } @else {
             <!-- Results info -->
             <div class="results-header">
-              <h1 class="results-title">
-                @if (store.loading()) {
-                  Loading books...
-                } @else if (store.isEmpty()) {
-                  No books found
-                } @else {
-                  {{ store.pagination().totalCount }} books found
-                }
-              </h1>
+              <div>
+                <h2 class="results-title">Books Collection</h2>
+                <p class="results-subtitle">
+                  @if (store.loading()) {
+                    Loading books...
+                  } @else if (store.isEmpty()) {
+                    No books found
+                  } @else {
+                    {{ store.pagination().totalCount }} books found &middot; Manage and explore your digital library catalog
+                  }
+                </p>
+              </div>
             </div>
 
             <!-- Book display -->
@@ -132,27 +135,40 @@ import {
                   <app-book-card [book]="book" (sendToKindle)="onSendToKindle($event)" />
                 }
               </div>
+              @if (!store.isEmpty()) {
+                <app-paginator
+                  [totalCount]="store.pagination().totalCount"
+                  [currentCount]="store.books().length"
+                  [hasNextPage]="store.pagination().hasNextPage"
+                  [pageSize]="store.pagination().limit"
+                  [loading]="store.loading()"
+                  (loadMore)="onLoadMore()"
+                  (pageSizeChange)="onPageSizeChange($event)"
+                />
+              }
             } @else {
-              <!-- Desktop: Table view -->
-              <app-book-table
-                [books]="store.books()"
-                [loading]="store.loading()"
-                [emptyStateType]="emptyStateType()"
-                (sendToKindle)="onSendToKindle($event)"
-              />
-            }
-
-            <!-- Paginator -->
-            @if (!store.isEmpty()) {
-              <app-paginator
-                [totalCount]="store.pagination().totalCount"
-                [currentCount]="store.books().length"
-                [hasNextPage]="store.pagination().hasNextPage"
-                [pageSize]="store.pagination().limit"
-                [loading]="store.loading()"
-                (loadMore)="onLoadMore()"
-                (pageSizeChange)="onPageSizeChange($event)"
-              />
+              <!-- Desktop: Table view with paginator inside container -->
+              <div class="table-with-paginator">
+                <app-book-table
+                  [books]="store.books()"
+                  [loading]="store.loading()"
+                  [emptyStateType]="emptyStateType()"
+                  (sendToKindle)="onSendToKindle($event)"
+                />
+                @if (!store.isEmpty()) {
+                  <div class="paginator-wrapper">
+                    <app-paginator
+                      [totalCount]="store.pagination().totalCount"
+                      [currentCount]="store.books().length"
+                      [hasNextPage]="store.pagination().hasNextPage"
+                      [pageSize]="store.pagination().limit"
+                      [loading]="store.loading()"
+                      (loadMore)="onLoadMore()"
+                      (pageSizeChange)="onPageSizeChange($event)"
+                    />
+                  </div>
+                }
+              </div>
             }
           }
         </div>
@@ -177,8 +193,6 @@ import {
       }
 
       .main-content {
-        display: flex;
-        flex-direction: column;
         background: var(--color-bg-primary);
       }
 
@@ -209,7 +223,6 @@ import {
       .content-wrapper {
         flex: 1;
         padding: 24px;
-        overflow-y: auto;
         max-width: 1400px;
         margin: 0 auto;
         width: 100%;
@@ -222,30 +235,44 @@ import {
         margin-bottom: 24px;
       }
 
-      .results-header-text h2 {
+      .results-title {
         font-size: 1.5rem;
         font-weight: 700;
-        margin: 0;
         color: var(--color-text-primary);
+        margin: 0;
       }
 
-      .results-header-text p {
+      .results-subtitle {
         font-size: 0.875rem;
         color: var(--color-text-secondary);
         margin: 4px 0 0;
-      }
-
-      .results-title {
-        font-size: 1.25rem;
-        font-weight: 500;
-        color: var(--color-text-primary);
-        margin: 0;
       }
 
       .cards-container {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 16px;
+      }
+
+      .table-with-paginator {
+        display: flex;
+        flex-direction: column;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        background: var(--color-bg-surface);
+      }
+
+      .table-with-paginator app-book-table ::ng-deep .book-table-container {
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+      }
+
+      .paginator-wrapper {
+        border-top: 1px solid var(--color-border);
+        background: var(--color-table-header-bg);
       }
 
       .error-state {
