@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { MatTooltipModule } from '@angular/material/tooltip';
 
 export type LanguageCode = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt';
 
@@ -22,7 +21,7 @@ const DEFAULT_LANGUAGE: LanguageInfo = { flag: '🌐', name: 'Unknown' };
 @Component({
   selector: 'app-language-flag',
   standalone: true,
-  imports: [MatTooltipModule],
+  imports: [],
   template: `
     @if (languageCode()) {
       <span
@@ -48,18 +47,22 @@ const DEFAULT_LANGUAGE: LanguageInfo = { flag: '🌐', name: 'Unknown' };
     }
 
     .flag-emoji {
-      width: 1.5rem; /* w-6 - 24px to match Stitch */
-      height: 1.5rem; /* h-6 - 24px */
+      width: 1.5rem;
+      height: 1.5rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.125rem; /* slightly larger for better visibility */
+      font-size: 1.125rem;
       line-height: 1;
     }
 
     .language-name {
       font-size: 0.75rem;
-      color: var(--mat-sys-on-surface-variant);
+      color: rgb(100 116 139); /* slate-500 */
+    }
+
+    :host-context([data-theme='dark']) .language-name {
+      color: rgb(148 163 184); /* slate-400 */
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
