@@ -78,7 +78,7 @@ const DEFAULT_FILTERS: FilterState = {
       data-testid="filter-panel"
     >
       <div class="filter-panel__header">
-        <h2 class="filter-panel__title">Filters</h2>
+        <h2 class="filter-panel__title">Advanced Filters</h2>
         <button
           mat-button
           data-testid="clear-filters-button"

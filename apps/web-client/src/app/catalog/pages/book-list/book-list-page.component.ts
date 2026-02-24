@@ -113,15 +113,28 @@ import {
           } @else {
             <!-- Results info -->
             <div class="results-header">
-              <h1 class="results-title">
-                @if (store.loading()) {
-                  Loading books...
-                } @else if (store.isEmpty()) {
-                  No books found
-                } @else {
-                  {{ store.pagination().totalCount }} books found
-                }
-              </h1>
+              <div>
+                <h2 class="results-title">Books Collection</h2>
+                <p class="results-subtitle">
+                  @if (store.loading()) {
+                    Loading books...
+                  } @else if (store.isEmpty()) {
+                    No books found
+                  } @else {
+                    Manage and explore your digital library catalog
+                  }
+                </p>
+              </div>
+              <div class="results-actions">
+                <button mat-stroked-button>
+                  <mat-icon>download</mat-icon>
+                  Export
+                </button>
+                <button mat-raised-button color="primary">
+                  <mat-icon>add</mat-icon>
+                  Add New Book
+                </button>
+              </div>
             </div>
 
             <!-- Book display -->
@@ -132,27 +145,40 @@ import {
                   <app-book-card [book]="book" (sendToKindle)="onSendToKindle($event)" />
                 }
               </div>
+              @if (!store.isEmpty()) {
+                <app-paginator
+                  [totalCount]="store.pagination().totalCount"
+                  [currentCount]="store.books().length"
+                  [hasNextPage]="store.pagination().hasNextPage"
+                  [pageSize]="store.pagination().limit"
+                  [loading]="store.loading()"
+                  (loadMore)="onLoadMore()"
+                  (pageSizeChange)="onPageSizeChange($event)"
+                />
+              }
             } @else {
-              <!-- Desktop: Table view -->
-              <app-book-table
-                [books]="store.books()"
-                [loading]="store.loading()"
-                [emptyStateType]="emptyStateType()"
-                (sendToKindle)="onSendToKindle($event)"
-              />
-            }
-
-            <!-- Paginator -->
-            @if (!store.isEmpty()) {
-              <app-paginator
-                [totalCount]="store.pagination().totalCount"
-                [currentCount]="store.books().length"
-                [hasNextPage]="store.pagination().hasNextPage"
-                [pageSize]="store.pagination().limit"
-                [loading]="store.loading()"
-                (loadMore)="onLoadMore()"
-                (pageSizeChange)="onPageSizeChange($event)"
-              />
+              <!-- Desktop: Table view with paginator inside container -->
+              <div class="table-with-paginator">
+                <app-book-table
+                  [books]="store.books()"
+                  [loading]="store.loading()"
+                  [emptyStateType]="emptyStateType()"
+                  (sendToKindle)="onSendToKindle($event)"
+                />
+                @if (!store.isEmpty()) {
+                  <div class="paginator-wrapper">
+                    <app-paginator
+                      [totalCount]="store.pagination().totalCount"
+                      [currentCount]="store.books().length"
+                      [hasNextPage]="store.pagination().hasNextPage"
+                      [pageSize]="store.pagination().limit"
+                      [loading]="store.loading()"
+                      (loadMore)="onLoadMore()"
+                      (pageSizeChange)="onPageSizeChange($event)"
+                    />
+                  </div>
+                }
+              </div>
             }
           }
         </div>
@@ -172,22 +198,20 @@ import {
 
       .filter-sidenav {
         width: 320px;
-        background: var(--mat-sys-surface);
-        border-right: 1px solid var(--mat-sys-outline-variant);
+        background: var(--color-bg-surface);
+        border-right: 1px solid var(--color-border);
       }
 
       .main-content {
-        display: flex;
-        flex-direction: column;
-        background: var(--mat-sys-surface-container-lowest);
+        background: var(--color-bg-primary);
       }
 
       .mobile-toolbar {
         position: sticky;
         top: 0;
         z-index: 10;
-        background: var(--mat-sys-surface);
-        border-bottom: 1px solid var(--mat-sys-outline-variant);
+        background: var(--color-bg-surface);
+        border-bottom: 1px solid var(--color-border);
       }
 
       .mobile-title {
@@ -197,8 +221,8 @@ import {
       }
 
       .filter-badge {
-        background: var(--mat-sys-primary);
-        color: var(--mat-sys-on-primary);
+        background: var(--color-accent);
+        color: white;
         border-radius: 12px;
         padding: 2px 8px;
         font-size: 0.75rem;
@@ -209,24 +233,69 @@ import {
       .content-wrapper {
         flex: 1;
         padding: 24px;
-        overflow-y: auto;
+        max-width: 1400px;
+        margin: 0 auto;
+        width: 100%;
       }
 
       .results-header {
-        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
       }
 
       .results-title {
-        font-size: 1.25rem;
-        font-weight: 500;
-        color: var(--mat-sys-on-surface);
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--color-text-primary);
         margin: 0;
+      }
+
+      .results-subtitle {
+        font-size: 0.875rem;
+        color: var(--color-text-secondary);
+        margin: 4px 0 0;
+      }
+
+      .results-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        button mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          margin-right: 6px;
+        }
       }
 
       .cards-container {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 16px;
+      }
+
+      .table-with-paginator {
+        display: flex;
+        flex-direction: column;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        background: var(--color-bg-surface);
+      }
+
+      .table-with-paginator app-book-table ::ng-deep .book-table-container {
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+      }
+
+      .paginator-wrapper {
+        border-top: 1px solid var(--color-border);
+        background: var(--color-table-header-bg);
       }
 
       .error-state {
@@ -243,20 +312,20 @@ import {
         font-size: 48px;
         width: 48px;
         height: 48px;
-        color: var(--mat-sys-error);
+        color: var(--color-error);
       }
 
       .error-title {
         margin: 0;
         font-size: 1.25rem;
         font-weight: 500;
-        color: var(--mat-sys-on-surface);
+        color: var(--color-text-primary);
       }
 
       .error-message {
         margin: 0;
         font-size: 0.875rem;
-        color: var(--mat-sys-on-surface-variant);
+        color: var(--color-text-secondary);
         max-width: 400px;
       }
 
