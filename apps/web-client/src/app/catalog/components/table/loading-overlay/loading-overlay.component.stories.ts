@@ -56,10 +56,10 @@ The parent container must have \`position: relative\` for the overlay to positio
   decorators: [
     (story) => ({
       template: `
-        <div style="position: relative; height: 300px; background-color: var(--mat-sys-surface-container-low); border-radius: 8px;">
-          <div style="padding: 1rem;">
-            <p>Sample content behind the overlay</p>
-            <p>This demonstrates how the overlay covers content.</p>
+        <div style="position: relative; height: 300px; border-radius: 8px;" [attr.data-theme]="'dark'">
+          <div style="padding: 1rem; background-color: rgb(30 41 59); border-radius: 8px; height: 100%;">
+            <p style="color: rgb(241 245 249); margin: 0 0 0.5rem;">Sample content behind the overlay</p>
+            <p style="color: rgb(148 163 184); margin: 0;">This demonstrates how the overlay covers content.</p>
           </div>
           ${story().template || '<app-loading-overlay [visible]="visible" [message]="message" [diameter]="diameter" [transparent]="transparent" />'}
         </div>
