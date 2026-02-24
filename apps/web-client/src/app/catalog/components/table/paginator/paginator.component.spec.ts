@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { PaginatorComponent } from './paginator.component';
 
 describe('PaginatorComponent', () => {
@@ -8,7 +7,7 @@ describe('PaginatorComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PaginatorComponent, NoopAnimationsModule],
+      imports: [PaginatorComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PaginatorComponent);
@@ -125,10 +124,22 @@ describe('PaginatorComponent', () => {
       const loadMoreButton = fixture.nativeElement.querySelector(
         '[data-testid="load-more-button"]'
       );
-      const spinner = fixture.nativeElement.querySelector('mat-spinner');
+      const spinner = fixture.nativeElement.querySelector('.spinner');
 
       expect(loadMoreButton).toBeFalsy();
       expect(spinner).toBeTruthy();
+    });
+
+    it('should display Material Symbols icon in load more button', () => {
+      fixture.componentRef.setInput('totalCount', 100);
+      fixture.componentRef.setInput('currentCount', 25);
+      fixture.componentRef.setInput('hasNextPage', true);
+      fixture.componentRef.setInput('loading', false);
+      fixture.detectChanges();
+
+      const icon = fixture.nativeElement.querySelector('.load-more-button .material-symbols-outlined');
+      expect(icon).toBeTruthy();
+      expect(icon.textContent.trim()).toBe('expand_more');
     });
   });
 
@@ -171,8 +182,8 @@ describe('PaginatorComponent', () => {
       fixture.componentRef.setInput('loading', true);
       fixture.detectChanges();
 
-      const select = fixture.nativeElement.querySelector('mat-select');
-      expect(select.getAttribute('aria-disabled')).toBe('true');
+      const select = fixture.nativeElement.querySelector('ng-select');
+      expect(select.classList.contains('ng-select-disabled')).toBe(true);
     });
   });
 
