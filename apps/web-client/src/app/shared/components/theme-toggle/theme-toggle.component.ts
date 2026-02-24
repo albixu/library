@@ -72,7 +72,11 @@ import { ThemeService } from '@core/services/theme.service';
         font-size: 20px;
         width: 20px;
         height: 20px;
-        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+        font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 20;
         transition: transform 250ms ease;
       }
     `,

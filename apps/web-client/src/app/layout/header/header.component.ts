@@ -24,12 +24,12 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         </div>
         <span class="header__title">BiblioManager</span>
       </div>
-      
+
       <div class="header__search">
         <span class="material-symbols-outlined search-icon">search</span>
-        <input 
-          type="text" 
-          class="search-input" 
+        <input
+          type="text"
+          class="search-input"
           placeholder="Global search..."
           aria-label="Global search"
         />
@@ -66,7 +66,9 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border-bottom: 1px solid var(--color-border);
-        transition: background-color 250ms ease, border-color 250ms ease;
+        transition:
+          background-color 250ms ease,
+          border-color 250ms ease;
       }
 
       :host-context([data-theme='dark']) .header {
@@ -95,7 +97,11 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         font-size: 20px;
         width: 20px;
         height: 20px;
-        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+        font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 20;
       }
 
       .header__title {
@@ -120,7 +126,11 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         font-size: 20px;
         width: 20px;
         height: 20px;
-        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+        font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 20;
       }
 
       .search-input {
@@ -194,7 +204,11 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         font-size: 20px;
         width: 20px;
         height: 20px;
-        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+        font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 20;
       }
     `,
   ],

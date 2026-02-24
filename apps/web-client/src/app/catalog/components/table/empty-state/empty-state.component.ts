@@ -65,7 +65,11 @@ const STATE_CONFIGS: Record<EmptyStateType, StateConfig> = {
       height: 4rem;
       margin-bottom: 1rem;
       color: rgb(203 213 225); /* slate-300 */
-      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 48;
+      font-variation-settings:
+        'FILL' 0,
+        'wght' 300,
+        'GRAD' 0,
+        'opsz' 48;
     }
 
     :host-context([data-theme='dark']) .empty-state-icon {

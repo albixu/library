@@ -78,7 +78,9 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
                 id="kindle-email"
                 type="email"
                 class="input-field"
-                [class.input-error]="emailControl.hasError('email') || emailControl.hasError('required')"
+                [class.input-error]="
+                  emailControl.hasError('email') || emailControl.hasError('required')
+                "
                 [formControl]="emailControl"
                 placeholder="your-email@kindle.com"
                 aria-label="Kindle email address"

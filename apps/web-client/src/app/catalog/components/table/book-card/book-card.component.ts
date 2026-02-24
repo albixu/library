@@ -83,7 +83,9 @@ import { Book } from '../../../../core/models/index.js';
         border-radius: 50%;
         background: rgba(23, 161, 207, 0.3);
         transform: translate(-50%, -50%);
-        transition: width 0.6s ease, height 0.6s ease;
+        transition:
+          width 0.6s ease,
+          height 0.6s ease;
       }
 
       &:active::before {

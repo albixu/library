@@ -39,21 +39,12 @@ import {
 @Component({
   selector: 'app-book-list-page',
   standalone: true,
-  imports: [
-    FilterPanelComponent,
-    BookTableComponent,
-    BookCardComponent,
-    PaginatorComponent,
-  ],
+  imports: [FilterPanelComponent, BookTableComponent, BookCardComponent, PaginatorComponent],
   template: `
     <div class="book-list-container">
       <!-- Mobile Backdrop -->
       @if (isMobile() && isMobileDrawerOpen()) {
-        <div
-          class="backdrop"
-          (click)="toggleMobileDrawer()"
-          aria-label="Close filters"
-        ></div>
+        <div class="backdrop" (click)="toggleMobileDrawer()" aria-label="Close filters"></div>
       }
 
       <!-- Filter Sidebar / Drawer -->

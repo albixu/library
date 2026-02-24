@@ -58,7 +58,9 @@ describe('HeaderComponent', () => {
 
   describe('Logo', () => {
     it('should display the auto_stories icon', () => {
-      const logoIcon = fixture.nativeElement.querySelector('.header__logo .material-symbols-outlined');
+      const logoIcon = fixture.nativeElement.querySelector(
+        '.header__logo .material-symbols-outlined'
+      );
       expect(logoIcon).toBeTruthy();
       expect(logoIcon.textContent.trim()).toBe('auto_stories');
     });
@@ -109,7 +111,9 @@ describe('HeaderComponent', () => {
       const buttons = fixture.nativeElement.querySelectorAll('.icon-button');
       expect(buttons.length).toBe(2);
 
-      const icons = fixture.nativeElement.querySelectorAll('.icon-button .material-symbols-outlined');
+      const icons = fixture.nativeElement.querySelectorAll(
+        '.icon-button .material-symbols-outlined'
+      );
       expect(icons.length).toBe(2);
       expect(icons[0].textContent.trim()).toBe('notifications_none');
       expect(icons[1].textContent.trim()).toBe('account_circle');
