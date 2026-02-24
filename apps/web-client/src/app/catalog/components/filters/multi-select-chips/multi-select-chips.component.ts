@@ -434,7 +434,6 @@ export class MultiSelectChipsComponent {
   // Inputs
   readonly label = input<string>('Select');
   readonly placeholder = input<string>('');
-  readonly searchPlaceholder = input<string>('Search...');
   readonly options = input<SelectOption[]>([]);
   readonly value = input<string[]>([]);
   readonly disabled = input<boolean>(false);

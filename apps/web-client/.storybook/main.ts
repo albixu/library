@@ -9,6 +9,15 @@ const config: StorybookConfig = {
   ],
   framework: '@storybook/angular',
   staticDirs: ['../public'],
+  webpackFinal: async (config) => {
+    // Support ESM-style .js imports that resolve to .ts files
+    config.resolve = config.resolve || {};
+    config.resolve.extensionAlias = {
+      '.js': ['.ts', '.js'],
+      '.mjs': ['.mts', '.mjs'],
+    };
+    return config;
+  },
 };
 
 export default config;

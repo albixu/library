@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { SearchableSelectComponent, SelectOption } from './searchable-select.component.js';
+import { SearchableSelectComponent, SelectOption } from './searchable-select.component';
 
 const bookTypes: SelectOption[] = [
   { id: '1', name: 'Technical' },
@@ -50,10 +50,6 @@ A single-select dropdown component with built-in search/filter capability.
       control: 'text',
       description: 'Placeholder text when no value is selected',
     },
-    searchPlaceholder: {
-      control: 'text',
-      description: 'Placeholder for the search input inside the dropdown',
-    },
     options: {
       control: 'object',
       description: 'Array of options to display',
@@ -91,7 +87,6 @@ export const Default: Story = {
   args: {
     label: 'Book Type',
     placeholder: 'Select a type...',
-    searchPlaceholder: 'Search types...',
     options: bookTypes,
     showAllOption: true,
     disabled: false,
@@ -156,7 +151,6 @@ export const ManyOptions: Story = {
   args: {
     label: 'Category',
     placeholder: 'Select a category...',
-    searchPlaceholder: 'Search categories...',
     options: [
       { id: '1', name: 'Programming' },
       { id: '2', name: 'Web Development' },
