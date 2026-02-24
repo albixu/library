@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { signal } from '@angular/core';
 import { DialogRef } from '@angular/cdk/dialog';
 import { of } from 'rxjs';
@@ -111,7 +110,6 @@ describe('BookListPageComponent', () => {
     await TestBed.configureTestingModule({
       imports: [BookListPageComponent],
       providers: [
-        provideAnimationsAsync(),
         { provide: BookSearchStore, useValue: mockStore },
         { provide: DialogService, useValue: mockDialogService },
       ],
