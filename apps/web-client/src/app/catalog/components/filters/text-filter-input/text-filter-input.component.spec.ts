@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { TextFilterInputComponent } from './text-filter-input.component.js';
 
 describe('TextFilterInputComponent', () => {
@@ -9,7 +8,6 @@ describe('TextFilterInputComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TextFilterInputComponent],
-      providers: [provideAnimationsAsync()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TextFilterInputComponent);
@@ -32,7 +30,7 @@ describe('TextFilterInputComponent', () => {
       fixture.componentRef.setInput('label', 'Search by Title');
       fixture.detectChanges();
 
-      const label = fixture.nativeElement.querySelector('mat-label');
+      const label = fixture.nativeElement.querySelector('.text-filter-input__label');
       expect(label.textContent.trim()).toBe('Search by Title');
     });
 
@@ -40,14 +38,14 @@ describe('TextFilterInputComponent', () => {
       fixture.componentRef.setInput('icon', 'search');
       fixture.detectChanges();
 
-      const icon = fixture.nativeElement.querySelector('mat-icon');
+      const icon = fixture.nativeElement.querySelector('.material-symbols-outlined');
       expect(icon.textContent.trim()).toBe('search');
     });
 
     it('should use default icon when not provided', () => {
       fixture.detectChanges();
 
-      const icon = fixture.nativeElement.querySelector('mat-icon');
+      const icon = fixture.nativeElement.querySelector('.material-symbols-outlined');
       expect(icon.textContent.trim()).toBe('filter_list');
     });
 

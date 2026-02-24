@@ -12,9 +12,6 @@ import { TextFilterInputComponent } from '../text-filter-input/index.js';
 import { SearchableSelectComponent } from '../searchable-select/index.js';
 import { MultiSelectChipsComponent } from '../multi-select-chips/index.js';
 import { SemanticSearchComponent } from '../semantic-search/index.js';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatDividerModule } from '@angular/material/divider';
 import { SearchFilters, SelectOption } from '../../../../core/models/index.js';
 
 // Re-export for convenience
@@ -66,9 +63,6 @@ const DEFAULT_FILTERS: FilterState = {
     SearchableSelectComponent,
     MultiSelectChipsComponent,
     SemanticSearchComponent,
-    MatButtonModule,
-    MatIconModule,
-    MatDividerModule,
   ],
   template: `
     <div
@@ -80,19 +74,19 @@ const DEFAULT_FILTERS: FilterState = {
       <div class="filter-panel__header">
         <h2 class="filter-panel__title">Advanced Filters</h2>
         <button
-          mat-button
+          type="button"
           data-testid="clear-filters-button"
           class="clear-filters-btn"
           [disabled]="disabled() || !hasActiveFilters()"
           aria-label="Clear all filters"
           (click)="clearFilters()"
         >
-          <mat-icon>clear_all</mat-icon>
-          Clear filters
+          <span class="material-symbols-outlined">clear_all</span>
+          <span>Clear filters</span>
         </button>
       </div>
 
-      <mat-divider></mat-divider>
+      <div class="filter-panel__divider"></div>
 
       <div class="filter-panel__content">
         <!-- Text filters section -->
@@ -133,7 +127,7 @@ const DEFAULT_FILTERS: FilterState = {
           </div>
         </section>
 
-        <mat-divider></mat-divider>
+        <div class="filter-panel__divider"></div>
 
         <!-- Classification filters section -->
         <section class="filter-section">
@@ -177,7 +171,7 @@ const DEFAULT_FILTERS: FilterState = {
           </div>
         </section>
 
-        <mat-divider></mat-divider>
+        <div class="filter-panel__divider"></div>
 
         <!-- Semantic search section -->
         <section class="filter-section">
@@ -208,11 +202,11 @@ const DEFAULT_FILTERS: FilterState = {
       }
 
       .filter-panel {
-        padding: var(--spacing-6);
+        padding: 1.5rem;
         height: 100%;
         display: flex;
         flex-direction: column;
-        gap: var(--spacing-6);
+        gap: 1.5rem;
         overflow: hidden;
       }
 
@@ -229,38 +223,72 @@ const DEFAULT_FILTERS: FilterState = {
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--color-text-muted);
+        color: rgb(100 116 139);
       }
 
       .clear-filters-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.5rem 0.75rem;
         font-size: 0.75rem;
-        color: var(--color-text-secondary);
+        font-weight: 500;
+        color: rgb(148 163 184);
+        background: transparent;
+        border: none;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition:
+          background-color 150ms,
+          color 150ms;
+      }
 
-        mat-icon {
-          font-size: 16px;
-          width: 16px;
-          height: 16px;
-          margin-right: 4px;
-        }
+      .clear-filters-btn:hover:not(:disabled) {
+        background-color: rgb(51 65 85);
+        color: #17a1cf;
+      }
 
-        &:hover:not(:disabled) {
-          color: var(--color-accent);
-        }
+      .clear-filters-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .clear-filters-btn .material-symbols-outlined {
+        font-size: 1rem;
+      }
+
+      [data-theme='light'] .clear-filters-btn {
+        color: rgb(100 116 139);
+      }
+
+      [data-theme='light'] .clear-filters-btn:hover:not(:disabled) {
+        background-color: rgb(241 245 249);
+        color: #17a1cf;
+      }
+
+      .filter-panel__divider {
+        height: 1px;
+        background-color: rgb(51 65 85);
+        flex-shrink: 0;
+      }
+
+      [data-theme='light'] .filter-panel__divider {
+        background-color: rgb(226 232 240);
       }
 
       .filter-panel__content {
         display: flex;
         flex-direction: column;
-        gap: var(--spacing-6);
+        gap: 1.5rem;
         overflow-y: auto;
         flex: 1;
-        padding-right: var(--spacing-2);
+        padding-right: 0.5rem;
       }
 
       .filter-section {
         display: flex;
         flex-direction: column;
-        gap: var(--spacing-4);
+        gap: 1rem;
         flex-shrink: 0;
       }
 
@@ -270,13 +298,7 @@ const DEFAULT_FILTERS: FilterState = {
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--color-text-muted);
-      }
-
-      mat-divider {
-        margin: 0;
-        border-color: var(--color-border);
-        flex-shrink: 0;
+        color: rgb(100 116 139);
       }
     `,
   ],

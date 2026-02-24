@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 
 import { FilterPanelComponent, SearchFilters } from './filter-panel.component.js';
@@ -29,7 +28,7 @@ describe('FilterPanelComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FilterPanelComponent, NoopAnimationsModule],
+      imports: [FilterPanelComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(FilterPanelComponent);

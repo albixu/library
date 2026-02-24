@@ -11,10 +11,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { Subject, debounceTime } from 'rxjs';
 
 /**
@@ -30,32 +26,37 @@ import { Subject, debounceTime } from 'rxjs';
 @Component({
   selector: 'app-text-filter-input',
   standalone: true,
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule],
+  imports: [FormsModule],
   template: `
-    <mat-form-field appearance="outline" class="text-filter-input">
-      <mat-label>{{ label() }}</mat-label>
-      <mat-icon matPrefix>{{ icon() }}</mat-icon>
-      <input
-        matInput
-        type="text"
-        [placeholder]="placeholder()"
-        [value]="internalValue()"
-        [disabled]="disabled()"
-        [attr.aria-label]="label()"
-        (input)="onInput($event)"
-      />
-      @if (showClearButton()) {
-        <button
-          matSuffix
-          mat-icon-button
-          data-testid="clear-button"
-          aria-label="Clear filter"
-          (click)="onClear()"
-        >
-          <mat-icon>close</mat-icon>
-        </button>
-      }
-    </mat-form-field>
+    <div class="text-filter-input">
+      <label class="filter-label" [attr.for]="'filter-' + label()">
+        {{ label() }}
+      </label>
+      <div class="input-wrapper">
+        <span class="material-symbols-outlined input-icon">{{ icon() }}</span>
+        <input
+          [id]="'filter-' + label()"
+          type="text"
+          class="filter-input"
+          [placeholder]="placeholder()"
+          [value]="internalValue()"
+          [disabled]="disabled()"
+          [attr.aria-label]="label()"
+          (input)="onInput($event)"
+        />
+        @if (showClearButton()) {
+          <button
+            type="button"
+            class="clear-button"
+            data-testid="clear-button"
+            aria-label="Clear filter"
+            (click)="onClear()"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+      </div>
+    </div>
   `,
   styles: [
     `
@@ -65,60 +66,91 @@ import { Subject, debounceTime } from 'rxjs';
       }
 
       .text-filter-input {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
         width: 100%;
+      }
 
-        // Style the input to match Stitch design
-        ::ng-deep {
-          .mdc-text-field--outlined {
-            background-color: var(--color-bg-input);
-            border-radius: var(--radius-md);
+      .filter-label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #94A3B8; /* slate-400 */
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
 
-            .mdc-notched-outline__leading,
-            .mdc-notched-outline__notch,
-            .mdc-notched-outline__trailing {
-              border-color: var(--color-border);
-            }
+      .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
 
-            &:hover .mdc-notched-outline__leading,
-            &:hover .mdc-notched-outline__notch,
-            &:hover .mdc-notched-outline__trailing {
-              border-color: var(--color-border-strong);
-            }
+      .input-icon {
+        position: absolute;
+        left: 0.75rem;
+        font-size: 1.125rem;
+        color: #64748B; /* slate-500 */
+        pointer-events: none;
+      }
 
-            &.mdc-text-field--focused .mdc-notched-outline__leading,
-            &.mdc-text-field--focused .mdc-notched-outline__notch,
-            &.mdc-text-field--focused .mdc-notched-outline__trailing {
-              border-color: var(--color-accent);
-            }
-          }
+      .filter-input {
+        width: 100%;
+        padding: 0.625rem 2.75rem 0.625rem 2.5rem;
+        font-size: 0.875rem;
+        color: #F1F5F9; /* slate-100 */
+        background-color: #1E293B; /* slate-800 */
+        border: 1px solid #334155; /* slate-700 */
+        border-radius: 0.5rem;
+        transition: all 0.15s ease;
 
-          .mat-mdc-form-field-subscript-wrapper {
-            display: none;
-          }
+        &::placeholder {
+          color: #64748B; /* slate-500 */
+        }
 
-          input.mat-mdc-input-element {
-            font-size: 0.875rem;
-            color: var(--color-text-primary);
+        &:hover:not(:disabled) {
+          border-color: #475569; /* slate-600 */
+        }
 
-            &::placeholder {
-              color: var(--color-text-muted);
-            }
-          }
+        &:focus {
+          outline: none;
+          border-color: #17a1cf; /* primary */
+          box-shadow: 0 0 0 3px rgba(23, 161, 207, 0.1);
+        }
 
-          .mat-mdc-floating-label {
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: var(--color-text-secondary);
-          }
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
       }
 
-      mat-icon[matPrefix] {
-        margin-right: 8px;
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
-        color: var(--color-text-muted);
+      .clear-button {
+        position: absolute;
+        right: 0.5rem;
+        padding: 0.25rem;
+        background: transparent;
+        border: none;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748B; /* slate-500 */
+        transition: all 0.15s ease;
+
+        &:hover {
+          background-color: rgba(100, 116, 139, 0.1);
+          color: #F1F5F9; /* slate-100 */
+        }
+
+        &:focus-visible {
+          outline: 2px solid #3b82f6;
+          outline-offset: 2px;
+        }
+
+        .material-symbols-outlined {
+          font-size: 1.125rem;
+        }
       }
     `,
   ],
