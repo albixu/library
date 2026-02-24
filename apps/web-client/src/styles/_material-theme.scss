@@ -96,10 +96,5 @@ $dark-theme: mat.m2-define-dark-theme(
 // Include core styles (only once)
 @include mat.core();
 
-// Apply light theme by default
-@include mat.all-component-themes($light-theme);
-
-// Apply dark theme when .dark-mode class is present on html/body
-.dark-mode {
-  @include mat.all-component-colors($dark-theme);
-}
+// Apply DARK theme by default - app is always in dark mode per Figma design
+@include mat.all-component-themes($dark-theme);
