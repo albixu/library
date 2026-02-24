@@ -141,11 +141,16 @@ import { Book } from '../../../../core/models/index.js';
     }
 
     .book-table-container {
-      background-color: var(--color-bg-surface);
-      border-radius: var(--radius-xl);
-      border: 1px solid var(--color-border);
-      box-shadow: var(--shadow-sm);
+      background-color: rgb(255 255 255); /* white in light mode */
+      border-radius: 0.75rem; /* rounded-xl */
+      border: 1px solid rgb(226 232 240); /* slate-200 */
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
       overflow: hidden;
+    }
+
+    :host-context(.dark) .book-table-container {
+      background-color: rgb(15 23 42); /* slate-900 in dark mode */
+      border-color: rgb(30 41 59); /* slate-800 */
     }
 
     .table-scroll {
@@ -157,18 +162,35 @@ import { Book } from '../../../../core/models/index.js';
       border-collapse: collapse;
     }
 
+    // Row border separator
+    .book-table tbody tr {
+      border-bottom: 1px solid rgb(241 245 249); /* slate-100 in light mode */
+    }
+
+    :host-context(.dark) .book-table tbody tr {
+      border-bottom-color: rgb(30 41 59); /* slate-800 in dark mode */
+    }
+
+    .book-table tbody tr:last-child {
+      border-bottom: none;
+    }
+
     .book-row {
       cursor: pointer;
       transition: background-color 0.15s ease;
 
       &:hover {
-        background-color: var(--color-table-row-hover);
+        background-color: rgb(248 250 252); /* slate-50 in light mode */
       }
 
       &:focus-visible {
         outline: 2px solid var(--color-accent);
         outline-offset: -2px;
       }
+    }
+
+    :host-context(.dark) .book-row:hover {
+      background-color: rgb(30 41 59 / 0.4); /* slate-800/40 in dark mode */
     }
 
     .title-cell {
@@ -179,13 +201,14 @@ import { Book } from '../../../../core/models/index.js';
     }
 
     .book-title {
-      font-weight: 600;
+      font-weight: 600; /* font-semibold */
       color: var(--color-text-primary);
+      font-size: 0.875rem; /* text-sm - mismo tamaño que en Stitch */
     }
 
     .book-author {
-      font-size: 0.75rem;
-      color: var(--color-text-secondary);
+      font-size: 0.75rem; /* text-xs */
+      color: rgb(100 116 139); /* slate-500 */
     }
 
     .type-category-cell {
@@ -195,25 +218,33 @@ import { Book } from '../../../../core/models/index.js';
     }
 
     .book-type {
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: var(--color-text-primary);
+      font-size: 0.75rem; /* text-xs */
+      font-weight: 500; /* font-medium */
+      color: rgb(51 65 85); /* slate-700 in light, slate-300 in dark */
+    }
+
+    :host-context(.dark) .book-type {
+      color: rgb(203 213 225); /* slate-300 */
     }
 
     .format-text {
-      font-size: 0.75rem;
-      color: var(--color-text-secondary);
+      font-size: 0.75rem; /* text-xs */
+      color: rgb(71 85 105); /* slate-600 in light, slate-400 in dark */
+    }
+
+    :host-context(.dark) .format-text {
+      color: rgb(148 163 184); /* slate-400 */
     }
 
     .isbn-text {
-      font-size: 0.75rem;
-      font-family: var(--font-family-mono);
-      color: var(--color-text-secondary);
+      font-size: 0.75rem; /* text-xs */
+      font-family: 'Courier New', Courier, monospace; /* font-mono */
+      color: rgb(148 163 184); /* slate-400 */
     }
 
     .description-text {
-      font-size: 0.75rem;
-      color: var(--color-text-secondary);
+      font-size: 0.75rem; /* text-xs */
+      color: rgb(100 116 139); /* slate-500 - más apagado que antes */
     }
 
     .text-center {
@@ -225,29 +256,34 @@ import { Book } from '../../../../core/models/index.js';
     }
 
     .action-button {
-      color: var(--color-text-secondary);
+      color: rgb(100 116 139); /* slate-500 */
       transition: color 0.15s ease;
 
       &:hover {
-        color: var(--color-accent);
+        color: #17a1cf; /* primary/cyan color */
       }
     }
 
     // Header cells styling
     th.mat-mdc-header-cell {
-      padding: 1rem 1.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
+      padding: 1rem 1.5rem; /* px-6 py-4 */
+      font-size: 0.75rem; /* text-xs */
+      font-weight: 600; /* font-semibold */
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--color-text-secondary);
-      background-color: var(--color-table-header-bg);
-      border-bottom: 1px solid var(--color-border);
+      letter-spacing: 0.05em; /* tracking-wider */
+      color: rgb(100 116 139); /* slate-500 */
+      background-color: rgb(248 250 252); /* slate-50 in light mode */
+      border-bottom: 1px solid rgb(226 232 240); /* slate-200 */
+    }
+
+    :host-context(.dark) th.mat-mdc-header-cell {
+      background-color: rgb(30 41 59 / 0.5); /* slate-800/50 in dark mode */
+      border-bottom-color: rgb(51 65 85); /* slate-700 */
     }
 
     // Body cells styling
     td.mat-mdc-cell {
-      padding: 1rem 1.5rem;
+      padding: 1rem 1.5rem; /* px-6 py-4 - matching Stitch exactly */
       vertical-align: middle;
     }
 

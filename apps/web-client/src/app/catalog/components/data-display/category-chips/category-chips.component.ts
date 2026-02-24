@@ -36,11 +36,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       display: inline-flex;
       align-items: center;
       padding: 0.125rem 0.5rem;
-      font-size: 0.75rem;
+      font-size: 0.625rem; /* text-[10px] - 10px */
       font-weight: 500;
+      text-transform: uppercase; /* UPPERCASE como en Stitch */
       border-radius: 9999px;
       background-color: var(--mat-sys-surface-container);
-      color: var(--mat-sys-on-surface);
+      color: rgb(100 116 139); /* slate-500 - más apagado */
       white-space: nowrap;
     }
 

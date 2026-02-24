@@ -18,10 +18,10 @@ import { BookLevelName } from '../../../../core/models/index.js';
     .level-badge {
       display: inline-flex;
       align-items: center;
-      padding: 0.125rem 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      border-radius: 9999px;
+      padding: 0.25rem 0.625rem; /* px-2.5 py-1 - matching Stitch exactly */
+      font-size: 0.625rem; /* text-[10px] - 10px */
+      font-weight: 700; /* font-bold */
+      border-radius: 9999px; /* rounded-full */
       white-space: nowrap;
     }
 
