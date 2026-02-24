@@ -37,15 +37,17 @@ import { FooterComponent } from '../footer/footer.component.js';
       .main-layout {
         display: flex;
         flex-direction: column;
-        height: 100%;
+        height: 100vh;
         overflow: hidden;
       }
 
       .main-layout__content {
         flex: 1;
-        overflow: hidden;
+        display: flex;
+        flex-direction: column;
         background-color: var(--color-bg-primary);
         transition: background-color var(--transition-normal);
+        overflow: hidden;
       }
     `,
   ],

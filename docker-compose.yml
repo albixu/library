@@ -49,7 +49,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
-      - DATABASE_URL=postgresql://library:library@postgres:5432/library
+      - DATABASE_URL=postgresql://library:${POSTGRES_PASSWORD}@postgres:5432/library
       - OLLAMA_BASE_URL=http://ollama:11434
       # Monorepo root for consolidate-books script (in Docker, /app is the root)
       - MONOREPO_ROOT=/app
@@ -109,7 +109,7 @@ services:
     environment:
       - POSTGRES_DB=library
       - POSTGRES_USER=library
-      - POSTGRES_PASSWORD=library
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Note: Schema is managed by Drizzle migrations (run via npm run db:migrate)
@@ -144,9 +144,9 @@ networks:
 # ----- Volumes -----
 volumes:
   postgres_data:
-    name: library-postgres-data
+    name: library-postgres-data-prod
   ollama_data:
-    name: library-ollama-data
+    name: library-ollama-data-prod
   api_node_modules:
     name: library-api-node-modules
   web_client_node_modules:

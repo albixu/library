@@ -78,7 +78,7 @@ const DEFAULT_FILTERS: FilterState = {
       data-testid="filter-panel"
     >
       <div class="filter-panel__header">
-        <h2 class="filter-panel__title">Filters</h2>
+        <h2 class="filter-panel__title">Advanced Filters</h2>
         <button
           mat-button
           data-testid="clear-filters-button"
@@ -204,6 +204,7 @@ const DEFAULT_FILTERS: FilterState = {
       :host {
         display: block;
         width: 100%;
+        height: 100%;
       }
 
       .filter-panel {
@@ -211,13 +212,15 @@ const DEFAULT_FILTERS: FilterState = {
         height: 100%;
         display: flex;
         flex-direction: column;
-        gap: var(--spacing-8);
+        gap: var(--spacing-6);
+        overflow: hidden;
       }
 
       .filter-panel__header {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-shrink: 0;
       }
 
       .filter-panel__title {
@@ -251,12 +254,14 @@ const DEFAULT_FILTERS: FilterState = {
         gap: var(--spacing-6);
         overflow-y: auto;
         flex: 1;
+        padding-right: var(--spacing-2);
       }
 
       .filter-section {
         display: flex;
         flex-direction: column;
         gap: var(--spacing-4);
+        flex-shrink: 0;
       }
 
       .filter-section__title {
@@ -271,6 +276,7 @@ const DEFAULT_FILTERS: FilterState = {
       mat-divider {
         margin: 0;
         border-color: var(--color-border);
+        flex-shrink: 0;
       }
     `,
   ],

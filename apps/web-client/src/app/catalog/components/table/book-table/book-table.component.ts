@@ -32,6 +32,14 @@ import { Book } from '../../../../core/models/index.js';
         <div class="book-table-container">
           <div class="table-scroll">
             <table mat-table [dataSource]="books()" aria-label="Books" class="book-table">
+              <!-- ISBN Column -->
+              <ng-container matColumnDef="isbn">
+                <th mat-header-cell *matHeaderCellDef>ISBN</th>
+                <td mat-cell *matCellDef="let book">
+                  <span class="isbn-text">{{ book.isbn || '-' }}</span>
+                </td>
+              </ng-container>
+
               <!-- Title Column -->
               <ng-container matColumnDef="title">
                 <th mat-header-cell *matHeaderCellDef>Book Details</th>
@@ -43,8 +51,8 @@ import { Book } from '../../../../core/models/index.js';
                 </td>
               </ng-container>
 
-              <!-- Authors Column -->
-              <ng-container matColumnDef="authors">
+              <!-- Type/Category Column -->
+              <ng-container matColumnDef="typeCategory">
                 <th mat-header-cell *matHeaderCellDef>Type / Category</th>
                 <td mat-cell *matCellDef="let book">
                   <div class="type-category-cell">
@@ -54,8 +62,8 @@ import { Book } from '../../../../core/models/index.js';
                 </td>
               </ng-container>
 
-              <!-- Categories Column -->
-              <ng-container matColumnDef="categories">
+              <!-- Language Column -->
+              <ng-container matColumnDef="language">
                 <th mat-header-cell *matHeaderCellDef class="text-center">Lang</th>
                 <td mat-cell *matCellDef="let book" class="text-center">
                   <app-language-flag [languageCode]="book.language" />
@@ -78,8 +86,8 @@ import { Book } from '../../../../core/models/index.js';
                 </td>
               </ng-container>
 
-              <!-- Language Column -->
-              <ng-container matColumnDef="language">
+              <!-- Description Column -->
+              <ng-container matColumnDef="description">
                 <th mat-header-cell *matHeaderCellDef>Description</th>
                 <td mat-cell *matCellDef="let book">
                   @if (book.description) {
@@ -133,10 +141,10 @@ import { Book } from '../../../../core/models/index.js';
     }
 
     .book-table-container {
-      background-color: var(--color-bg-surface);
-      border-radius: var(--radius-xl);
-      border: 1px solid var(--color-border);
-      box-shadow: var(--shadow-sm);
+      background-color: #0F172A; /* slate-900 - FROM FIGMA */
+      border-radius: 0.75rem; /* rounded-xl */
+      border: 1px solid #1E293B; /* slate-800 - FROM FIGMA */
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
       overflow: hidden;
     }
 
@@ -149,12 +157,21 @@ import { Book } from '../../../../core/models/index.js';
       border-collapse: collapse;
     }
 
+    // Row border separator - FROM FIGMA
+    .book-table tbody tr {
+      border-bottom: 1px solid #1E293B; /* slate-800 - FROM FIGMA */
+    }
+
+    .book-table tbody tr:last-child {
+      border-bottom: none;
+    }
+
     .book-row {
       cursor: pointer;
       transition: background-color 0.15s ease;
 
       &:hover {
-        background-color: var(--color-table-row-hover);
+        background-color: rgba(30, 41, 59, 0.4); /* slate-800/40 - FROM FIGMA */
       }
 
       &:focus-visible {
@@ -171,13 +188,14 @@ import { Book } from '../../../../core/models/index.js';
     }
 
     .book-title {
-      font-weight: 600;
-      color: var(--color-text-primary);
+      font-weight: 600; /* font-semibold */
+      color: #F1F5F9; /* slate-100 - white text for dark mode - FROM FIGMA */
+      font-size: 0.875rem; /* text-sm */
     }
 
     .book-author {
-      font-size: 0.75rem;
-      color: var(--color-text-secondary);
+      font-size: 0.75rem; /* text-xs */
+      color: #64748B; /* slate-500 - FROM FIGMA */
     }
 
     .type-category-cell {
@@ -187,19 +205,25 @@ import { Book } from '../../../../core/models/index.js';
     }
 
     .book-type {
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: var(--color-text-primary);
+      font-size: 0.75rem; /* text-xs */
+      font-weight: 500; /* font-medium */
+      color: #CBD5E1; /* slate-300 - FROM FIGMA */
     }
 
     .format-text {
-      font-size: 0.75rem;
-      color: var(--color-text-secondary);
+      font-size: 0.75rem; /* text-xs */
+      color: #94A3B8; /* slate-400 - FROM FIGMA */
+    }
+
+    .isbn-text {
+      font-size: 0.75rem; /* text-xs */
+      font-family: 'Courier New', Courier, monospace; /* font-mono */
+      color: #94A3B8; /* slate-400 - FROM FIGMA */
     }
 
     .description-text {
-      font-size: 0.75rem;
-      color: var(--color-text-secondary);
+      font-size: 0.75rem; /* text-xs */
+      color: #64748B; /* slate-500 - FROM FIGMA */
     }
 
     .text-center {
@@ -211,29 +235,29 @@ import { Book } from '../../../../core/models/index.js';
     }
 
     .action-button {
-      color: var(--color-text-secondary);
+      color: #F1F5F9; /* slate-100 - FROM FIGMA for action icons */
       transition: color 0.15s ease;
 
       &:hover {
-        color: var(--color-accent);
+        color: #17a1cf; /* primary/cyan color */
       }
     }
 
-    // Header cells styling
+    // Header cells styling - FROM FIGMA
     th.mat-mdc-header-cell {
-      padding: 1rem 1.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
+      padding: 1rem 1.5rem; /* px-6 py-4 */
+      font-size: 0.75rem; /* text-xs - 12px */
+      font-weight: 600; /* font-semibold */
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--color-text-secondary);
-      background-color: var(--color-table-header-bg);
-      border-bottom: 1px solid var(--color-border);
+      letter-spacing: 0.05em; /* tracking-wider */
+      color: #64748B; /* slate-500 - FROM FIGMA */
+      background-color: rgba(30, 41, 59, 0.5); /* slate-800/50 - FROM FIGMA */
+      border-bottom: 1px solid #334155; /* slate-700 - FROM FIGMA */
     }
 
     // Body cells styling
     td.mat-mdc-cell {
-      padding: 1rem 1.5rem;
+      padding: 1rem 1.5rem; /* px-6 py-4 */
       vertical-align: middle;
     }
 
@@ -241,7 +265,11 @@ import { Book } from '../../../../core/models/index.js';
       width: 80px;
     }
 
-    td.mat-column-categories {
+    td.mat-column-isbn {
+      width: 140px;
+    }
+
+    td.mat-column-language {
       width: 80px;
     }
 
@@ -253,8 +281,8 @@ import { Book } from '../../../../core/models/index.js';
       width: 100px;
     }
 
-    td.mat-column-language {
-      max-width: 200px;
+    td.mat-column-description {
+      max-width: 250px;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -268,12 +296,13 @@ export class BookTableComponent {
   readonly sendToKindle = output<Book>();
 
   readonly displayedColumns = [
+    'isbn',
     'title',
-    'authors',
-    'categories',
+    'typeCategory',
+    'language',
     'level',
     'format',
-    'language',
+    'description',
     'actions',
   ];
 

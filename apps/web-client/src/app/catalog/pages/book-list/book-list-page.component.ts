@@ -121,9 +121,19 @@ import {
                   } @else if (store.isEmpty()) {
                     No books found
                   } @else {
-                    {{ store.pagination().totalCount }} books found &middot; Manage and explore your digital library catalog
+                    Manage and explore your digital library catalog
                   }
                 </p>
+              </div>
+              <div class="results-actions">
+                <button mat-stroked-button>
+                  <mat-icon>download</mat-icon>
+                  Export
+                </button>
+                <button mat-raised-button color="primary">
+                  <mat-icon>add</mat-icon>
+                  Add New Book
+                </button>
               </div>
             </div>
 
@@ -180,20 +190,27 @@ import {
       :host {
         display: block;
         height: 100%;
+        overflow: hidden;
       }
 
       .book-list-container {
         height: 100%;
+        overflow: hidden;
       }
 
       .filter-sidenav {
-        width: 320px;
+        width: 280px;
         background: var(--color-bg-surface);
         border-right: 1px solid var(--color-border);
+        overflow-y: auto;
       }
 
       .main-content {
         background: var(--color-bg-primary);
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
       }
 
       .mobile-toolbar {
@@ -226,6 +243,7 @@ import {
         max-width: 1400px;
         margin: 0 auto;
         width: 100%;
+        overflow-y: auto;
       }
 
       .results-header {
@@ -246,6 +264,19 @@ import {
         font-size: 0.875rem;
         color: var(--color-text-secondary);
         margin: 4px 0 0;
+      }
+
+      .results-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        button mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          margin-right: 6px;
+        }
       }
 
       .cards-container {

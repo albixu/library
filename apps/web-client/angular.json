@@ -64,7 +64,8 @@
               "buildTarget": "web-client:build:production"
             },
             "development": {
-              "buildTarget": "web-client:build:development"
+              "buildTarget": "web-client:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

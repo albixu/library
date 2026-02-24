@@ -43,11 +43,17 @@ const DEFAULT_LANGUAGE: LanguageInfo = { flag: '🌐', name: 'Unknown' };
     .language-flag {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 0.25rem;
     }
 
     .flag-emoji {
-      font-size: 1rem;
+      width: 1.5rem; /* w-6 - 24px to match Stitch */
+      height: 1.5rem; /* h-6 - 24px */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.125rem; /* slightly larger for better visibility */
       line-height: 1;
     }
 

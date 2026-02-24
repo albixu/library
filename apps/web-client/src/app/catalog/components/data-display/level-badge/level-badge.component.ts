@@ -18,84 +18,45 @@ import { BookLevelName } from '../../../../core/models/index.js';
     .level-badge {
       display: inline-flex;
       align-items: center;
-      padding: 0.25rem 0.625rem;
-      font-size: 0.625rem;
-      font-weight: 700;
-      border-radius: 9999px;
+      padding: 0.25rem 0.625rem; /* px-2.5 py-1 */
+      font-size: 0.625rem; /* text-[10px] - 10px */
+      font-weight: 700; /* font-bold */
+      border-radius: 9999px; /* rounded-full */
       white-space: nowrap;
-      text-transform: capitalize;
     }
 
-    /* Light mode colors */
+    /* Dark mode colors - FROM FIGMA - Always applied */
     .level-beginner {
-      background-color: var(--level-beginner-bg, #dcfce7);
-      color: var(--level-beginner-text, #15803d);
+      background-color: #14532D; /* green-900 - FROM FIGMA */
+      background-color: rgba(20, 83, 45, 0.3); /* green-900/30 */
+      color: #4ADE80; /* green-400 - FROM FIGMA */
     }
 
     .level-intermediate {
-      background-color: var(--level-intermediate-bg, #fef3c7);
-      color: var(--level-intermediate-text, #b45309);
+      background-color: #78350F; /* amber-900 - FROM FIGMA */
+      background-color: rgba(120, 53, 15, 0.3); /* amber-900/30 */
+      color: #FBBF24; /* amber-400 - FROM FIGMA */
     }
 
     .level-advanced {
-      background-color: var(--level-advanced-bg, #fee2e2);
-      color: var(--level-advanced-text, #b91c1c);
-    }
-
-    .level-expert {
-      background-color: var(--level-expert-bg, #f3e8ff);
-      color: var(--level-expert-text, #7e22ce);
+      background-color: #7F1D1D; /* red-900 - FROM FIGMA */
+      background-color: rgba(127, 29, 29, 0.3); /* red-900/30 */
+      color: #F87171; /* red-400 - FROM FIGMA */
     }
 
     .level-beginner-intermediate {
-      background-color: rgb(236 253 245); /* teal-50 */
-      color: rgb(17 94 89); /* teal-700 */
+      background-color: rgba(19, 78, 74, 0.3); /* teal-900/30 */
+      color: #2DD4BF; /* teal-400 */
     }
 
     .level-intermediate-advanced {
-      background-color: rgb(255 237 213); /* orange-100 */
-      color: rgb(194 65 12); /* orange-700 */
+      background-color: rgba(124, 45, 18, 0.3); /* orange-900/30 */
+      color: #FB923C; /* orange-400 */
     }
 
     .level-unknown {
-      background-color: rgb(243 244 246); /* gray-100 */
-      color: rgb(55 65 81); /* gray-700 */
-    }
-
-    /* Dark mode colors via data-theme attribute on html */
-    :host-context([data-theme='dark']) .level-beginner {
-      background-color: var(--level-beginner-bg);
-      color: var(--level-beginner-text);
-    }
-
-    :host-context([data-theme='dark']) .level-intermediate {
-      background-color: var(--level-intermediate-bg);
-      color: var(--level-intermediate-text);
-    }
-
-    :host-context([data-theme='dark']) .level-advanced {
-      background-color: var(--level-advanced-bg);
-      color: var(--level-advanced-text);
-    }
-
-    :host-context([data-theme='dark']) .level-expert {
-      background-color: var(--level-expert-bg);
-      color: var(--level-expert-text);
-    }
-
-    :host-context([data-theme='dark']) .level-beginner-intermediate {
-      background-color: rgb(19 78 74 / 0.3);
-      color: rgb(45 212 191);
-    }
-
-    :host-context([data-theme='dark']) .level-intermediate-advanced {
-      background-color: rgb(124 45 18 / 0.3);
-      color: rgb(251 146 60);
-    }
-
-    :host-context([data-theme='dark']) .level-unknown {
-      background-color: rgb(31 41 55 / 0.3);
-      color: rgb(156 163 175);
+      background-color: rgba(31, 41, 55, 0.3); /* gray-800/30 */
+      color: #9CA3AF; /* gray-400 */
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
