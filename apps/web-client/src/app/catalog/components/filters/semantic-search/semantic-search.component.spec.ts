@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { SemanticSearchComponent } from './semantic-search.component.js';
 
 describe('SemanticSearchComponent', () => {
@@ -9,7 +8,6 @@ describe('SemanticSearchComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SemanticSearchComponent],
-      providers: [provideAnimationsAsync()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SemanticSearchComponent);
@@ -32,7 +30,7 @@ describe('SemanticSearchComponent', () => {
       fixture.componentRef.setInput('label', 'Semantic Search');
       fixture.detectChanges();
 
-      const label = fixture.nativeElement.querySelector('mat-label');
+      const label = fixture.nativeElement.querySelector('.semantic-search__label');
       expect(label.textContent.trim()).toBe('Semantic Search');
     });
 
@@ -60,7 +58,7 @@ describe('SemanticSearchComponent', () => {
       );
       fixture.detectChanges();
 
-      const hint = fixture.nativeElement.querySelector('mat-hint');
+      const hint = fixture.nativeElement.querySelector('.semantic-search__hint');
       expect(hint.textContent.trim()).toContain('Use natural language');
     });
   });
