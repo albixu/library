@@ -40,12 +40,19 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: var(--spacing-3) var(--spacing-4);
-        background-color: var(--color-bg-surface);
+        height: 64px;
+        padding: 0 var(--spacing-6);
+        background-color: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border-bottom: 1px solid var(--color-border);
         transition:
           background-color var(--transition-normal),
           border-color var(--transition-normal);
+      }
+
+      [data-theme='dark'] .header {
+        background-color: rgba(17, 29, 33, 0.8);
       }
 
       .header__brand {
@@ -58,16 +65,16 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         background-color: var(--color-accent);
         border-radius: var(--radius-md);
 
         mat-icon {
           color: white;
-          font-size: 24px;
-          width: 24px;
-          height: 24px;
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
         }
       }
 

@@ -14,7 +14,7 @@
 @use './styles/material-theme';
 
 // =============================================================================
-// Color Tokens (Theme-aware)
+// Color Tokens (Theme-aware) - Tailwind Slate Palette
 // =============================================================================
 
 :root {
@@ -22,45 +22,104 @@
   --font-family: 'Inter', sans-serif;
   --font-family-mono: 'Fira Code', 'Consolas', monospace;
 
+  // Slate color palette (Tailwind)
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+
+  // Primary accent color
+  --primary: #17a1cf;
+  --primary-hover: #1493c0;
+  --primary-active: #1082ab;
+
   // Light mode colors (default)
-  --color-bg-primary: #f8fafc;
+  --color-bg-primary: #f6f7f8;
   --color-bg-surface: #ffffff;
   --color-bg-elevated: #ffffff;
-  --color-accent: #17a1cf;
-  --color-accent-hover: #1493c0;
-  --color-accent-active: #1082ab;
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #64748b;
-  --color-text-muted: #94a3b8;
-  --color-border: #e2e8f0;
-  --color-border-strong: #cbd5e1;
+  --color-bg-input: var(--slate-50);
+  --color-accent: var(--primary);
+  --color-accent-hover: var(--primary-hover);
+  --color-accent-active: var(--primary-active);
+  --color-text-primary: var(--slate-900);
+  --color-text-secondary: var(--slate-500);
+  --color-text-muted: var(--slate-400);
+  --color-border: var(--slate-200);
+  --color-border-strong: var(--slate-300);
+
+  // Table specific
+  --color-table-header-bg: var(--slate-50);
+  --color-table-row-hover: var(--slate-50);
+  --color-table-border: var(--slate-100);
 
   // Semantic colors
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   --color-info: #3b82f6;
+
+  // Level badge colors (light mode)
+  --level-beginner-bg: #dcfce7;
+  --level-beginner-text: #15803d;
+  --level-intermediate-bg: #fef3c7;
+  --level-intermediate-text: #b45309;
+  --level-advanced-bg: #fee2e2;
+  --level-advanced-text: #b91c1c;
+  --level-expert-bg: #f3e8ff;
+  --level-expert-text: #7e22ce;
+
+  // Scrollbar
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: var(--slate-300);
+  --scrollbar-thumb-hover: var(--primary);
 }
 
-// Dark mode colors
+// Dark mode colors (matching Stitch/Figma design)
 [data-theme='dark'] {
-  --color-bg-primary: #0f172a;
-  --color-bg-surface: #1e293b;
-  --color-bg-elevated: #334155;
-  --color-accent: #17a1cf;
+  --color-bg-primary: #111d21;
+  --color-bg-surface: var(--slate-900);
+  --color-bg-elevated: var(--slate-800);
+  --color-bg-input: var(--slate-900);
+  --color-accent: var(--primary);
   --color-accent-hover: #3bb8db;
   --color-accent-active: #5ec5e1;
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
-  --color-border: #334155;
-  --color-border-strong: #475569;
+  --color-text-primary: var(--slate-100);
+  --color-text-secondary: var(--slate-400);
+  --color-text-muted: var(--slate-500);
+  --color-border: var(--slate-800);
+  --color-border-strong: var(--slate-700);
+
+  // Table specific (dark mode)
+  --color-table-header-bg: rgba(30, 41, 59, 0.5); // slate-800 with 50% opacity
+  --color-table-row-hover: rgba(30, 41, 59, 0.4); // slate-800 with 40% opacity
+  --color-table-border: var(--slate-800);
 
   // Semantic colors (adjusted for dark mode)
   --color-success: #4ade80;
   --color-warning: #fbbf24;
   --color-error: #f87171;
   --color-info: #60a5fa;
+
+  // Level badge colors (dark mode - 30% opacity backgrounds)
+  --level-beginner-bg: rgba(20, 83, 45, 0.3);
+  --level-beginner-text: #4ade80;
+  --level-intermediate-bg: rgba(120, 53, 15, 0.3);
+  --level-intermediate-text: #fbbf24;
+  --level-advanced-bg: rgba(127, 29, 29, 0.3);
+  --level-advanced-text: #f87171;
+  --level-expert-bg: rgba(88, 28, 135, 0.3);
+  --level-expert-text: #c084fc;
+
+  // Scrollbar (dark mode)
+  --scrollbar-thumb: #345965;
+  --scrollbar-thumb-hover: var(--primary);
 }
 
 // =============================================================================
@@ -89,6 +148,34 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: var(--transition-colors);
+}
+
+// =============================================================================
+// Custom Scrollbar (matching Stitch design)
+// =============================================================================
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+// Firefox scrollbar
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 // =============================================================================
@@ -184,6 +271,39 @@ a {
 
 .mat-mdc-snack-bar-container {
   border-radius: var(--radius-md) !important;
+}
+
+// Material table overrides to match Stitch design
+.mat-mdc-table {
+  background: transparent !important;
+
+  .mat-mdc-header-row {
+    background-color: var(--color-table-header-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .mat-mdc-header-cell {
+    color: var(--slate-500);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: none;
+  }
+
+  .mat-mdc-row {
+    border-bottom: 1px solid var(--color-table-border);
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: var(--color-table-row-hover);
+    }
+  }
+
+  .mat-mdc-cell {
+    color: var(--color-text-primary);
+    border-bottom: none;
+  }
 }
 
 // =============================================================================

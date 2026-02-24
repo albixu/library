@@ -66,11 +66,59 @@ import { Subject, debounceTime } from 'rxjs';
 
       .text-filter-input {
         width: 100%;
+
+        // Style the input to match Stitch design
+        ::ng-deep {
+          .mdc-text-field--outlined {
+            background-color: var(--color-bg-input);
+            border-radius: var(--radius-md);
+
+            .mdc-notched-outline__leading,
+            .mdc-notched-outline__notch,
+            .mdc-notched-outline__trailing {
+              border-color: var(--color-border);
+            }
+
+            &:hover .mdc-notched-outline__leading,
+            &:hover .mdc-notched-outline__notch,
+            &:hover .mdc-notched-outline__trailing {
+              border-color: var(--color-border-strong);
+            }
+
+            &.mdc-text-field--focused .mdc-notched-outline__leading,
+            &.mdc-text-field--focused .mdc-notched-outline__notch,
+            &.mdc-text-field--focused .mdc-notched-outline__trailing {
+              border-color: var(--color-accent);
+            }
+          }
+
+          .mat-mdc-form-field-subscript-wrapper {
+            display: none;
+          }
+
+          input.mat-mdc-input-element {
+            font-size: 0.875rem;
+            color: var(--color-text-primary);
+
+            &::placeholder {
+              color: var(--color-text-muted);
+            }
+          }
+
+          .mat-mdc-floating-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+          }
+        }
       }
 
       mat-icon[matPrefix] {
         margin-right: 8px;
-        color: var(--mat-form-field-label-text-color);
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        color: var(--color-text-muted);
       }
     `,
   ],

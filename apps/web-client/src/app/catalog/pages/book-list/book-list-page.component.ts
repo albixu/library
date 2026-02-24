@@ -172,22 +172,22 @@ import {
 
       .filter-sidenav {
         width: 320px;
-        background: var(--mat-sys-surface);
-        border-right: 1px solid var(--mat-sys-outline-variant);
+        background: var(--color-bg-surface);
+        border-right: 1px solid var(--color-border);
       }
 
       .main-content {
         display: flex;
         flex-direction: column;
-        background: var(--mat-sys-surface-container-lowest);
+        background: var(--color-bg-primary);
       }
 
       .mobile-toolbar {
         position: sticky;
         top: 0;
         z-index: 10;
-        background: var(--mat-sys-surface);
-        border-bottom: 1px solid var(--mat-sys-outline-variant);
+        background: var(--color-bg-surface);
+        border-bottom: 1px solid var(--color-border);
       }
 
       .mobile-title {
@@ -197,8 +197,8 @@ import {
       }
 
       .filter-badge {
-        background: var(--mat-sys-primary);
-        color: var(--mat-sys-on-primary);
+        background: var(--color-accent);
+        color: white;
         border-radius: 12px;
         padding: 2px 8px;
         font-size: 0.75rem;
@@ -210,16 +210,35 @@ import {
         flex: 1;
         padding: 24px;
         overflow-y: auto;
+        max-width: 1400px;
+        margin: 0 auto;
+        width: 100%;
       }
 
       .results-header {
-        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+      }
+
+      .results-header-text h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--color-text-primary);
+      }
+
+      .results-header-text p {
+        font-size: 0.875rem;
+        color: var(--color-text-secondary);
+        margin: 4px 0 0;
       }
 
       .results-title {
         font-size: 1.25rem;
         font-weight: 500;
-        color: var(--mat-sys-on-surface);
+        color: var(--color-text-primary);
         margin: 0;
       }
 
@@ -243,20 +262,20 @@ import {
         font-size: 48px;
         width: 48px;
         height: 48px;
-        color: var(--mat-sys-error);
+        color: var(--color-error);
       }
 
       .error-title {
         margin: 0;
         font-size: 1.25rem;
         font-weight: 500;
-        color: var(--mat-sys-on-surface);
+        color: var(--color-text-primary);
       }
 
       .error-message {
         margin: 0;
         font-size: 0.875rem;
-        color: var(--mat-sys-on-surface-variant);
+        color: var(--color-text-secondary);
         max-width: 400px;
       }
 

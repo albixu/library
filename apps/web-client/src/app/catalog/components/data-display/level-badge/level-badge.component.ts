@@ -18,27 +18,33 @@ import { BookLevelName } from '../../../../core/models/index.js';
     .level-badge {
       display: inline-flex;
       align-items: center;
-      padding: 0.125rem 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
+      padding: 0.25rem 0.625rem;
+      font-size: 0.625rem;
+      font-weight: 700;
       border-radius: 9999px;
       white-space: nowrap;
+      text-transform: capitalize;
     }
 
-    /* Light mode colors - using CSS custom properties for theme support */
+    /* Light mode colors */
     .level-beginner {
-      background-color: rgb(220 252 231); /* green-100 */
-      color: rgb(21 128 61); /* green-700 */
+      background-color: var(--level-beginner-bg, #dcfce7);
+      color: var(--level-beginner-text, #15803d);
     }
 
     .level-intermediate {
-      background-color: rgb(254 243 199); /* amber-100 */
-      color: rgb(180 83 9); /* amber-700 */
+      background-color: var(--level-intermediate-bg, #fef3c7);
+      color: var(--level-intermediate-text, #b45309);
     }
 
     .level-advanced {
-      background-color: rgb(254 226 226); /* red-100 */
-      color: rgb(185 28 28); /* red-700 */
+      background-color: var(--level-advanced-bg, #fee2e2);
+      color: var(--level-advanced-text, #b91c1c);
+    }
+
+    .level-expert {
+      background-color: var(--level-expert-bg, #f3e8ff);
+      color: var(--level-expert-text, #7e22ce);
     }
 
     .level-beginner-intermediate {
@@ -56,71 +62,37 @@ import { BookLevelName } from '../../../../core/models/index.js';
       color: rgb(55 65 81); /* gray-700 */
     }
 
-    /* Dark mode colors */
-    @media (prefers-color-scheme: dark) {
-      .level-beginner {
-        background-color: rgb(20 83 45 / 0.3); /* green-900/30 */
-        color: rgb(74 222 128); /* green-400 */
-      }
-
-      .level-intermediate {
-        background-color: rgb(120 53 15 / 0.3); /* amber-900/30 */
-        color: rgb(251 191 36); /* amber-400 */
-      }
-
-      .level-advanced {
-        background-color: rgb(127 29 29 / 0.3); /* red-900/30 */
-        color: rgb(248 113 113); /* red-400 */
-      }
-
-      .level-beginner-intermediate {
-        background-color: rgb(19 78 74 / 0.3); /* teal-900/30 */
-        color: rgb(45 212 191); /* teal-400 */
-      }
-
-      .level-intermediate-advanced {
-        background-color: rgb(124 45 18 / 0.3); /* orange-900/30 */
-        color: rgb(251 146 60); /* orange-400 */
-      }
-
-      .level-unknown {
-        background-color: rgb(31 41 55 / 0.3); /* gray-800/30 */
-        color: rgb(156 163 175); /* gray-400 */
-      }
-    }
-
-    /* Support for Angular Material theme dark mode via class */
-    :host-context(.dark) .level-beginner,
+    /* Dark mode colors via data-theme attribute on html */
     :host-context([data-theme='dark']) .level-beginner {
-      background-color: rgb(20 83 45 / 0.3);
-      color: rgb(74 222 128);
+      background-color: var(--level-beginner-bg);
+      color: var(--level-beginner-text);
     }
 
-    :host-context(.dark) .level-intermediate,
     :host-context([data-theme='dark']) .level-intermediate {
-      background-color: rgb(120 53 15 / 0.3);
-      color: rgb(251 191 36);
+      background-color: var(--level-intermediate-bg);
+      color: var(--level-intermediate-text);
     }
 
-    :host-context(.dark) .level-advanced,
     :host-context([data-theme='dark']) .level-advanced {
-      background-color: rgb(127 29 29 / 0.3);
-      color: rgb(248 113 113);
+      background-color: var(--level-advanced-bg);
+      color: var(--level-advanced-text);
     }
 
-    :host-context(.dark) .level-beginner-intermediate,
+    :host-context([data-theme='dark']) .level-expert {
+      background-color: var(--level-expert-bg);
+      color: var(--level-expert-text);
+    }
+
     :host-context([data-theme='dark']) .level-beginner-intermediate {
       background-color: rgb(19 78 74 / 0.3);
       color: rgb(45 212 191);
     }
 
-    :host-context(.dark) .level-intermediate-advanced,
     :host-context([data-theme='dark']) .level-intermediate-advanced {
       background-color: rgb(124 45 18 / 0.3);
       color: rgb(251 146 60);
     }
 
-    :host-context(.dark) .level-unknown,
     :host-context([data-theme='dark']) .level-unknown {
       background-color: rgb(31 41 55 / 0.3);
       color: rgb(156 163 175);
