@@ -57,7 +57,7 @@ import { Book } from '../../../../core/models/index.js';
                     </td>
                     <td class="type-category-column">
                       <div class="type-category-cell">
-                        <span class="book-type">{{ book.type?.name || 'Unknown' }}</span>
+                        <span class="book-type">{{ book.type || 'Unknown' }}</span>
                         <app-category-chips [categories]="getCategoryNames(book)" [maxVisible]="1" />
                       </div>
                     </td>

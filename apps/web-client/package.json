@@ -30,7 +30,9 @@
     "@angular/material": "^21.1.5",
     "@angular/platform-browser": "^21.1.0",
     "@angular/router": "^21.1.0",
-    "@ng-select/ng-select": "^14.0.0",
+    "@spartan-ng/ui-core": "^0.0.1-alpha.374",
+    "@spartan-ng/ui-menu-brain": "^0.0.1-alpha.374",
+    "@spartan-ng/ui-select-brain": "^0.0.1-alpha.374",
     "ngx-spinner": "^18.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
