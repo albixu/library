@@ -18,45 +18,77 @@ import { BookLevelName } from '../../../../core/models/index.js';
     .level-badge {
       display: inline-flex;
       align-items: center;
-      padding: 0.25rem 0.625rem; /* px-2.5 py-1 */
-      font-size: 0.625rem; /* text-[10px] - 10px */
-      font-weight: 700; /* font-bold */
-      border-radius: 9999px; /* rounded-full */
+      padding: 0.25rem 0.625rem;
+      font-size: 0.625rem;
+      font-weight: 700;
+      border-radius: 9999px;
       white-space: nowrap;
     }
 
-    /* Dark mode colors - FROM FIGMA - Always applied */
-    .level-beginner {
-      background-color: #14532D; /* green-900 - FROM FIGMA */
-      background-color: rgba(20, 83, 45, 0.3); /* green-900/30 */
-      color: #4ADE80; /* green-400 - FROM FIGMA */
+    /* Light mode colors */
+    :host-context(:not([data-theme='dark'])) {
+      .level-beginner {
+        background-color: #dcfce7;
+        color: #15803d;
+      }
+
+      .level-intermediate {
+        background-color: #fef3c7;
+        color: #b45309;
+      }
+
+      .level-advanced {
+        background-color: #fee2e2;
+        color: #b91c1c;
+      }
+
+      .level-beginner-intermediate {
+        background-color: #ccfbf1;
+        color: #0f766e;
+      }
+
+      .level-intermediate-advanced {
+        background-color: #fed7aa;
+        color: #c2410c;
+      }
+
+      .level-unknown {
+        background-color: #f3f4f6;
+        color: #6b7280;
+      }
     }
 
-    .level-intermediate {
-      background-color: #78350F; /* amber-900 - FROM FIGMA */
-      background-color: rgba(120, 53, 15, 0.3); /* amber-900/30 */
-      color: #FBBF24; /* amber-400 - FROM FIGMA */
-    }
+    /* Dark mode colors (from Figma design) */
+    :host-context([data-theme='dark']) {
+      .level-beginner {
+        background-color: rgba(20, 83, 45, 0.3);
+        color: #4ade80;
+      }
 
-    .level-advanced {
-      background-color: #7F1D1D; /* red-900 - FROM FIGMA */
-      background-color: rgba(127, 29, 29, 0.3); /* red-900/30 */
-      color: #F87171; /* red-400 - FROM FIGMA */
-    }
+      .level-intermediate {
+        background-color: rgba(120, 53, 15, 0.3);
+        color: #fbbf24;
+      }
 
-    .level-beginner-intermediate {
-      background-color: rgba(19, 78, 74, 0.3); /* teal-900/30 */
-      color: #2DD4BF; /* teal-400 */
-    }
+      .level-advanced {
+        background-color: rgba(127, 29, 29, 0.3);
+        color: #f87171;
+      }
 
-    .level-intermediate-advanced {
-      background-color: rgba(124, 45, 18, 0.3); /* orange-900/30 */
-      color: #FB923C; /* orange-400 */
-    }
+      .level-beginner-intermediate {
+        background-color: rgba(19, 78, 74, 0.3);
+        color: #2dd4bf;
+      }
 
-    .level-unknown {
-      background-color: rgba(31, 41, 55, 0.3); /* gray-800/30 */
-      color: #9CA3AF; /* gray-400 */
+      .level-intermediate-advanced {
+        background-color: rgba(124, 45, 18, 0.3);
+        color: #fb923c;
+      }
+
+      .level-unknown {
+        background-color: rgba(31, 41, 55, 0.3);
+        color: #9ca3af;
+      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

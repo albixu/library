@@ -1,13 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
 
 // Import the canonical BookFormat type from core models
 import { BookFormat } from '../../../../core/models/index.js';
 
 export type IconSize = 'small' | 'medium' | 'large';
 
-// Map lowercase format values to icons (API returns lowercase)
+// Map lowercase format values to Material Symbols icons
 const FORMAT_ICONS: Record<string, string> = {
   pdf: 'picture_as_pdf',
   epub: 'book',
@@ -25,7 +23,7 @@ const DEFAULT_ICON = 'insert_drive_file';
 @Component({
   selector: 'app-format-icon',
   standalone: true,
-  imports: [MatIconModule, MatTooltipModule],
+  imports: [],
   template: `
     @if (format()) {
       <span
@@ -34,7 +32,7 @@ const DEFAULT_ICON = 'insert_drive_file';
         [title]="format()"
         [attr.aria-label]="'Format: ' + format()"
       >
-        <mat-icon aria-hidden="true">{{ iconName() }}</mat-icon>
+        <span class="material-symbols-outlined" aria-hidden="true">{{ iconName() }}</span>
       </span>
     }
   `,
@@ -43,31 +41,33 @@ const DEFAULT_ICON = 'insert_drive_file';
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: var(--mat-sys-on-surface-variant);
+      color: rgb(100 116 139); /* slate-500 */
     }
 
-    .size-small {
-      mat-icon {
-        font-size: 1rem;
-        width: 1rem;
-        height: 1rem;
-      }
+    :host-context([data-theme='dark']) .format-icon {
+      color: rgb(148 163 184); /* slate-400 */
     }
 
-    .size-medium {
-      mat-icon {
-        font-size: 1.25rem;
-        width: 1.25rem;
-        height: 1.25rem;
-      }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     }
 
-    .size-large {
-      mat-icon {
-        font-size: 1.5rem;
-        width: 1.5rem;
-        height: 1.5rem;
-      }
+    .size-small .material-symbols-outlined {
+      font-size: 1rem;
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .size-medium .material-symbols-outlined {
+      font-size: 1.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .size-large .material-symbols-outlined {
+      font-size: 1.5rem;
+      width: 1.5rem;
+      height: 1.5rem;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

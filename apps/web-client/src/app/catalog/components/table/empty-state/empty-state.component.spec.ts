@@ -30,7 +30,7 @@ describe('EmptyStateComponent', () => {
       fixture.componentRef.setInput('type', 'empty');
       fixture.detectChanges();
 
-      const icon = fixture.nativeElement.querySelector('mat-icon');
+      const icon = fixture.nativeElement.querySelector('.material-symbols-outlined');
       expect(icon.textContent.trim()).toBe('inbox');
     });
 
@@ -56,7 +56,7 @@ describe('EmptyStateComponent', () => {
       fixture.componentRef.setInput('type', 'no-results');
       fixture.detectChanges();
 
-      const icon = fixture.nativeElement.querySelector('mat-icon');
+      const icon = fixture.nativeElement.querySelector('.material-symbols-outlined');
       expect(icon.textContent.trim()).toBe('search_off');
     });
 
@@ -82,7 +82,7 @@ describe('EmptyStateComponent', () => {
       fixture.componentRef.setInput('type', 'initial');
       fixture.detectChanges();
 
-      const icon = fixture.nativeElement.querySelector('mat-icon');
+      const icon = fixture.nativeElement.querySelector('.material-symbols-outlined');
       expect(icon.textContent.trim()).toBe('auto_stories');
     });
 
@@ -100,7 +100,7 @@ describe('EmptyStateComponent', () => {
       fixture.componentRef.setInput('type', 'error');
       fixture.detectChanges();
 
-      const icon = fixture.nativeElement.querySelector('mat-icon');
+      const icon = fixture.nativeElement.querySelector('.material-symbols-outlined');
       expect(icon.textContent.trim()).toBe('error_outline');
     });
 
@@ -137,7 +137,7 @@ describe('EmptyStateComponent', () => {
       fixture.componentRef.setInput('icon', 'favorite');
       fixture.detectChanges();
 
-      const icon = fixture.nativeElement.querySelector('mat-icon');
+      const icon = fixture.nativeElement.querySelector('.material-symbols-outlined');
       expect(icon.textContent.trim()).toBe('favorite');
     });
   });

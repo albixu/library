@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-category-chips',
   standalone: true,
-  imports: [MatTooltipModule],
+  imports: [],
   template: `
     @if (categories().length > 0) {
       <div class="category-chips-container" role="list" aria-label="Categories">
@@ -16,7 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
             class="overflow-indicator"
             [title]="overflowTooltip()"
             role="listitem"
-            aria-label="{{ overflowCount() }} more categories"
+            [attr.aria-label]="overflowCount() + ' more categories'"
           >
             +{{ overflowCount() }}
           </span>
@@ -36,13 +35,18 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       display: inline-flex;
       align-items: center;
       padding: 0.125rem 0.5rem;
-      font-size: 0.625rem; /* text-[10px] - 10px */
+      font-size: 0.625rem;
       font-weight: 500;
-      text-transform: uppercase; /* UPPERCASE como en Stitch */
+      text-transform: uppercase;
       border-radius: 9999px;
-      background-color: var(--mat-sys-surface-container);
-      color: rgb(100 116 139); /* slate-500 - más apagado */
       white-space: nowrap;
+      background-color: rgb(241 245 249); /* slate-100 */
+      color: rgb(100 116 139); /* slate-500 */
+    }
+
+    :host-context([data-theme='dark']) .category-chip {
+      background-color: rgb(30 41 59); /* slate-800 */
+      color: rgb(148 163 184); /* slate-400 */
     }
 
     .overflow-indicator {
@@ -53,9 +57,14 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       font-size: 0.75rem;
       font-weight: 600;
       border-radius: 9999px;
-      background-color: var(--mat-sys-surface-container-high);
-      color: var(--mat-sys-on-surface-variant);
       cursor: help;
+      background-color: rgb(226 232 240); /* slate-200 */
+      color: rgb(71 85 105); /* slate-600 */
+    }
+
+    :host-context([data-theme='dark']) .overflow-indicator {
+      background-color: rgb(51 65 85); /* slate-700 */
+      color: rgb(203 213 225); /* slate-300 */
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
