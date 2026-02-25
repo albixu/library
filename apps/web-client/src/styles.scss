@@ -442,15 +442,17 @@ a {
 
   // Base input styles (shared by text, textarea, select)
   .input-base {
-    @apply w-full px-4 py-2.5 rounded-lg;
+    @apply w-full px-3 rounded-lg;
     @apply text-sm text-slate-100 dark:text-slate-100;
-    @apply bg-slate-800 dark:bg-slate-800;
-    @apply border border-slate-700 dark:border-slate-700;
+    @apply bg-slate-900 dark:bg-slate-900;
+    @apply border border-slate-800 dark:border-slate-800;
     @apply transition-all duration-150 ease-in-out;
     @apply placeholder:text-slate-500;
+    height: 41px;
+    border-radius: 0.5rem;
 
     &:hover:not(:disabled) {
-      @apply border-slate-600 dark:border-slate-600;
+      @apply border-slate-700 dark:border-slate-700;
     }
 
     &:focus {
@@ -482,7 +484,11 @@ a {
   // Textarea variant
   .textarea-base {
     @apply input-base resize-vertical;
-    min-height: 72px;
+    height: auto;
+    min-height: 80px;
+    max-height: 120px;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
   }
 
   // Select variant (with custom arrow)

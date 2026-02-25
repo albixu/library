@@ -89,20 +89,20 @@ export type { SelectOption };
         align-items: center;
         position: relative;
         width: 100%;
-        min-height: 2.75rem;
-        padding: 0.625rem 2.5rem 0.625rem 0.875rem;
+        height: 41px;
+        min-height: 41px;
+        padding: 0 2.5rem 0 0.75rem;
         font-size: 0.875rem;
         color: #f1f5f9; /* slate-100 */
-        background-color: #1e293b; /* slate-800 */
-        border: 1px solid #334155; /* slate-700 */
-        border-radius: 0.375rem;
+        background-color: #0f172a; /* slate-900 */
+        border: 1px solid #1e293b; /* slate-800 */
+        border-radius: 0.5rem;
         cursor: pointer;
         transition: all 0.15s ease;
       }
 
       :host ::ng-deep .p-select:hover:not(.p-disabled) {
-        border-color: #17a1cf; /* primary */
-        background-color: #334155; /* slate-700 */
+        border-color: #1e293b; /* slate-800 slightly lighter */
       }
 
       :host ::ng-deep .p-select:focus-visible,

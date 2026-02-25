@@ -229,9 +229,10 @@ import {
 
     /* Filter Sidebar */
     .filter-sidenav {
-      width: 280px;
+      width: 320px;
       height: 100%;
       overflow-y: auto;
+      overflow-x: hidden;
       flex-shrink: 0;
       transition: transform 0.3s ease;
 
