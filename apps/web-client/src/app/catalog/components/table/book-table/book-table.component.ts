@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, viewChild } from '@angular/core';
 import { CategoryChipsComponent } from '../../data-display/category-chips/category-chips.component.js';
 import { LevelBadgeComponent } from '../../data-display/level-badge/level-badge.component.js';
 import { LanguageFlagComponent } from '../../data-display/language-flag/language-flag.component.js';
-import { TruncatedTextComponent } from '../../data-display/truncated-text/truncated-text.component.js';
 import { EmptyStateComponent } from '../empty-state/empty-state.component.js';
 import { LoadingOverlayComponent } from '../loading-overlay/loading-overlay.component.js';
+import { BookDescriptionDialogComponent } from '../../dialogs/book-description-dialog/book-description-dialog.component.js';
 import { Book } from '../../../../core/models/index.js';
 
 @Component({
@@ -14,9 +14,9 @@ import { Book } from '../../../../core/models/index.js';
     CategoryChipsComponent,
     LevelBadgeComponent,
     LanguageFlagComponent,
-    TruncatedTextComponent,
     EmptyStateComponent,
     LoadingOverlayComponent,
+    BookDescriptionDialogComponent,
   ],
   template: `
     <div class="book-table-wrapper">
@@ -73,13 +73,17 @@ import { Book } from '../../../../core/models/index.js';
                     <td class="format-column">
                       <span class="format-text">{{ book.format || '-' }}</span>
                     </td>
-                    <td class="description-column">
+                    <td class="description-column text-center">
                       @if (book.description) {
-                        <app-truncated-text
-                          [text]="book.description"
-                          [maxLines]="1"
-                          class="description-text"
-                        />
+                        <button
+                          class="description-button"
+                          type="button"
+                          aria-label="Ver descripción"
+                          title="Ver descripción"
+                          (click)="onShowDescription($event, book)"
+                        >
+                          <span class="material-symbols-outlined">info</span>
+                        </button>
                       } @else {
                         <span class="description-text">-</span>
                       }
@@ -104,6 +108,8 @@ import { Book } from '../../../../core/models/index.js';
       } @else if (!loading()) {
         <app-empty-state [type]="emptyStateType()" />
       }
+
+      <app-book-description-dialog />
     </div>
   `,
   styles: `
@@ -275,7 +281,36 @@ import { Book } from '../../../../core/models/index.js';
     }
 
     .description-column {
-      max-width: 250px;
+      width: 80px;
+    }
+
+    .description-button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-secondary);
+      transition: all 0.15s ease;
+
+      &:hover {
+        background-color: var(--color-bg-elevated);
+        color: var(--color-accent);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+      }
+
+      .material-symbols-outlined {
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -288,6 +323,8 @@ export class BookTableComponent {
   readonly rowClick = output<Book>();
   readonly sendToKindle = output<Book>();
 
+  readonly descriptionDialog = viewChild.required(BookDescriptionDialogComponent);
+
   onRowClick(book: Book): void {
     this.rowClick.emit(book);
   }
@@ -295,6 +332,11 @@ export class BookTableComponent {
   onSendToKindle(event: Event, book: Book): void {
     event.stopPropagation();
     this.sendToKindle.emit(book);
+  }
+
+  onShowDescription(event: Event, book: Book): void {
+    event.stopPropagation();
+    this.descriptionDialog().open(book.title, book.description);
   }
 
   // Helper methods to extract names from Author/Category objects
