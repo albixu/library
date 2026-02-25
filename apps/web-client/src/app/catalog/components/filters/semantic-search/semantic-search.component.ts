@@ -75,6 +75,7 @@ import { Subject, debounceTime } from 'rxjs';
         width: 100%;
         height: 105px;
         padding: 0.75rem;
+        padding-right: 2.5rem; /* Space for clear button */
         font-size: 0.875rem;
         line-height: 1.5;
         color: #f1f5f9; /* slate-100 */
@@ -103,6 +104,40 @@ import { Subject, debounceTime } from 'rxjs';
         opacity: 0.5;
         cursor: not-allowed;
         background-color: #0f172a;
+      }
+
+      /* Clear button - positioned absolutely inside textarea wrapper */
+      .btn-clear {
+        position: absolute;
+        right: 0.5rem;
+        top: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        color: #64748b; /* slate-500 */
+        background-color: transparent;
+        border: none;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        z-index: 2;
+      }
+
+      .btn-clear:hover {
+        color: #f1f5f9; /* slate-100 */
+        background-color: rgba(51, 65, 85, 0.5); /* slate-700 with opacity */
+      }
+
+      .btn-clear:active {
+        background-color: rgba(51, 65, 85, 0.7);
+      }
+
+      .btn-clear:focus-visible {
+        outline: 2px solid #17a1cf; /* primary */
+        outline-offset: 2px;
       }
 
       .clear-top-right {
