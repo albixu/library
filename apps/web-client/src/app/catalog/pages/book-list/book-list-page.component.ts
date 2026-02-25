@@ -231,16 +231,8 @@ import {
       overflow-x: hidden;
       flex-shrink: 0;
       transition: transform 0.3s ease;
-
-      [data-theme='dark'] & {
-        background-color: rgb(30 41 59); /* slate-800 */
-        border-right: 1px solid rgb(51 65 85); /* slate-700 */
-      }
-
-      [data-theme='light'] & {
-        background-color: rgb(255 255 255); /* white */
-        border-right: 1px solid rgb(226 232 240); /* slate-200 */
-      }
+      background-color: rgb(255 255 255) !important; /* white - default for light mode */
+      border-right: 1px solid rgb(226 232 240); /* slate-200 */
 
       /* Mobile: drawer */
       &.mobile {
@@ -258,6 +250,12 @@ import {
       }
     }
 
+    /* Dark mode override */
+    :host-context([data-theme='dark']) .filter-sidenav {
+      background-color: #111d21 !important; /* background-dark from Stitch design */
+      border-right: 1px solid rgb(51 65 85); /* slate-700 */
+    }
+
     /* Main Content */
     .main-content {
       flex: 1;
@@ -265,14 +263,12 @@ import {
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      background-color: rgb(248 250 252); /* slate-50 - default for light mode */
+    }
 
-      [data-theme='dark'] & {
-        background-color: rgb(15 23 42); /* slate-900 */
-      }
-
-      [data-theme='light'] & {
-        background-color: rgb(248 250 252); /* slate-50 */
-      }
+    /* Dark mode override */
+    :host-context([data-theme='dark']) .main-content {
+      background-color: rgb(15 23 42); /* slate-900 */
     }
 
     /* Mobile Toolbar */

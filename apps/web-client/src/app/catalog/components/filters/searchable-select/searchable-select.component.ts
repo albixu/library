@@ -1,4 +1,4 @@
-import { Component, input, output, signal, effect, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, signal, effect, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Select } from 'primeng/select';
 import { SelectOption } from '../../../../core/models/index.js';
@@ -34,7 +34,7 @@ export type { SelectOption };
         [filter]="true"
         [filterBy]="'name'"
         [placeholder]="placeholder()"
-        [showClear]="showAllOption()"
+        [showClear]="hasValue()"
         [inputId]="inputId()"
         [ariaLabel]="label()"
         optionLabel="name"
@@ -83,6 +83,10 @@ export type { SelectOption };
         margin-bottom: 0.5rem;
       }
 
+      [data-theme='light'] .searchable-select-label {
+        color: #64748b; /* slate-600 */
+      }
+
       /* PrimeNG Select base styles (unstyled mode) */
       :host ::ng-deep .p-select {
         display: flex;
@@ -101,8 +105,18 @@ export type { SelectOption };
         transition: all 0.15s ease;
       }
 
+      [data-theme='light'] :host ::ng-deep .p-select {
+        color: #0f172a; /* slate-900 */
+        background-color: #f8fafc; /* slate-50 */
+        border-color: #e2e8f0; /* slate-200 */
+      }
+
       :host ::ng-deep .p-select:hover:not(.p-disabled) {
         border-color: #1e293b; /* slate-800 slightly lighter */
+      }
+
+      [data-theme='light'] :host ::ng-deep .p-select:hover:not(.p-disabled) {
+        border-color: #cbd5e1; /* slate-300 */
       }
 
       :host ::ng-deep .p-select:focus-visible,
@@ -182,10 +196,21 @@ export type { SelectOption };
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        color: inherit; /* Inherit from .p-select */
       }
 
+      /* Placeholder state */
       :host ::ng-deep .p-select-label.p-placeholder {
-        color: #64748b; /* slate-500 */
+        color: #64748b; /* slate-500 - dark mode */
+      }
+
+      [data-theme='light'] :host ::ng-deep .p-select-label.p-placeholder {
+        color: #94a3b8; /* slate-400 - light mode */
+      }
+
+      /* Selected value (not placeholder) - explicit color for light mode */
+      [data-theme='light'] :host ::ng-deep .p-select-label:not(.p-placeholder) {
+        color: #0f172a !important; /* slate-900 - ensure visibility */
       }
 
       /* Clear icon */
@@ -211,10 +236,22 @@ export type { SelectOption };
         overflow: hidden;
       }
 
+      [data-theme='light'] :host ::ng-deep .p-select-overlay {
+        background-color: #ffffff;
+        border-color: #e2e8f0; /* slate-200 */
+        box-shadow:
+          0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -4px rgba(0, 0, 0, 0.1);
+      }
+
       /* Filter input container */
       :host ::ng-deep .p-select-filter-container {
         padding: 0.75rem;
         border-bottom: 1px solid #334155; /* slate-700 */
+      }
+
+      [data-theme='light'] :host ::ng-deep .p-select-filter-container {
+        border-bottom-color: #e2e8f0; /* slate-200 */
       }
 
       /* Filter input */
@@ -228,6 +265,12 @@ export type { SelectOption };
         border-radius: 0.375rem;
         outline: none;
         transition: all 0.15s ease;
+      }
+
+      [data-theme='light'] :host ::ng-deep .p-select-filter {
+        color: #0f172a; /* slate-900 */
+        background-color: #f8fafc; /* slate-50 */
+        border-color: #e2e8f0; /* slate-200 */
       }
 
       :host ::ng-deep .p-select-filter:focus {
@@ -266,8 +309,16 @@ export type { SelectOption };
         transition: background-color 0.15s ease;
       }
 
+      [data-theme='light'] :host ::ng-deep .p-select-option {
+        color: #0f172a; /* slate-900 */
+      }
+
       :host ::ng-deep .p-select-option:hover {
         background-color: #334155; /* slate-700 */
+      }
+
+      [data-theme='light'] :host ::ng-deep .p-select-option:hover {
+        background-color: #f1f5f9; /* slate-100 */
       }
 
       :host ::ng-deep .p-select-option.p-select-option-selected,
@@ -306,6 +357,12 @@ export class SearchableSelectComponent {
   // Internal state
   readonly internalValue = signal<string>('');
   readonly inputId = signal<string>(`searchable-select-${Math.random().toString(36).substr(2, 9)}`);
+
+  // Computed - show clear button only when there's a value
+  readonly hasValue = computed(() => {
+    const value = this.internalValue();
+    return value !== '' && value !== null && value !== undefined;
+  });
 
   constructor() {
     // Sync external value to internal

@@ -219,7 +219,7 @@ const DEFAULT_FILTERS: FilterState = {
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: rgb(100 116 139);
+        color: rgb(148 163 184);
       }
 
       .clear-filters-btn {
@@ -294,7 +294,7 @@ const DEFAULT_FILTERS: FilterState = {
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: rgb(100 116 139);
+        color: rgb(148 163 184);
       }
     `,
   ],
