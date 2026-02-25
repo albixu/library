@@ -59,28 +59,44 @@ import { FormsModule } from '@angular/forms';
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 1rem;
-      padding: 0.5rem 1rem;
+      gap: 1.5rem;
+      padding: 0.75rem 1.5rem;
       font-size: 0.875rem;
-      color: var(--slate-400);
+      background-color: rgba(30, 41, 59, 0.5);
+      border-top: 1px solid var(--slate-700);
     }
 
     .paginator-page-size {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
     }
 
     .paginator-label {
       white-space: nowrap;
+      color: var(--slate-300);
+      font-weight: 500;
     }
 
     .paginator-select-width {
       width: 5rem;
+      background-color: var(--slate-900) !important;
+      border: 1px solid var(--slate-800) !important;
+      color: var(--slate-200) !important;
+      padding: 0.5rem 2rem 0.5rem 0.75rem !important;
+      font-size: 0.875rem;
+      border-radius: 0.5rem;
+    }
+
+    .paginator-select-width:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
     }
 
     .paginator-range {
       white-space: nowrap;
+      color: var(--slate-300);
+      font-weight: 500;
     }
 
     .paginator-controls {
