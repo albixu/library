@@ -81,6 +81,8 @@ import { Subject, debounceTime } from 'rxjs';
 
       /* Override input-base to ensure correct background and dimensions */
       .input-wrapper .input-base {
+        flex: 1; /* Take all available space in flex container */
+        width: 100%; /* Ensure full width */
         height: 41px;
         min-height: 41px;
         background-color: #0f172a !important; /* slate-900 - same as semantic search */
