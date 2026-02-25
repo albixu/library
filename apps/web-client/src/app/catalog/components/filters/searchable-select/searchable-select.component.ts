@@ -41,6 +41,7 @@ export type { SelectOption };
         optionValue="name"
         emptyMessage="No se encontraron resultados"
         emptyFilterMessage="No se encontraron resultados"
+        appendTo="body"
         (ngModelChange)="onSelectionChange($event)"
       >
         <ng-template pTemplate="dropdownicon">
@@ -224,8 +225,10 @@ export type { SelectOption };
         color: #f1f5f9; /* slate-100 */
       }
 
-      /* Overlay panel */
+      /* Overlay panel - appendTo="body" requires fixed positioning */
       :host ::ng-deep .p-select-overlay {
+        position: fixed !important;
+        z-index: 1100;
         background-color: #1e293b; /* slate-800 */
         border: 1px solid #334155; /* slate-700 */
         border-radius: 0.375rem;
