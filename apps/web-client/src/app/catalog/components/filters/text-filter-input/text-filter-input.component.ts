@@ -78,8 +78,10 @@ import { Subject, debounceTime } from 'rxjs';
         align-items: center;
       }
 
-      /* Override input-base to ensure correct background */
+      /* Override input-base to ensure correct background and dimensions */
       .input-wrapper .input-base {
+        height: 41px;
+        min-height: 41px;
         background-color: #0f172a !important; /* slate-900 - same as semantic search */
         border: 1px solid #1e293b !important; /* slate-800 */
       }
