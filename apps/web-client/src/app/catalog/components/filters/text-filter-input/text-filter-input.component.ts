@@ -76,6 +76,7 @@ import { Subject, debounceTime } from 'rxjs';
         position: relative;
         display: flex;
         align-items: center;
+        width: 100%; /* Ensure wrapper takes full width */
       }
 
       /* Override input-base to ensure correct background and dimensions */
@@ -110,7 +111,7 @@ import { Subject, debounceTime } from 'rxjs';
       }
 
       .input-with-icons {
-        padding: 0 2.75rem 0 0.75rem; /* Match searchable-select padding */
+        padding: 0 2.75rem 0 0.75rem !important; /* Override global .input-base px-3 from Tailwind */
       }
     `,
   ],
