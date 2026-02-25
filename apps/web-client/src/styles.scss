@@ -365,3 +365,221 @@ a {
   }
 }
 
+// =============================================================================
+// Component Utilities (Extracted Common Patterns)
+// =============================================================================
+
+@layer components {
+  // ---------------------------------------------------------------------------
+  // Button Utilities
+  // ---------------------------------------------------------------------------
+
+  // Base button styles (shared by all button variants)
+  .btn-base {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply px-4 py-2 rounded-lg font-medium text-sm;
+    @apply transition-all duration-150 ease-in-out;
+    @apply cursor-pointer border-none;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+
+    &:disabled {
+      @apply opacity-50 cursor-not-allowed;
+    }
+  }
+
+  // Primary button (filled with primary color)
+  .btn-primary {
+    @apply btn-base;
+    @apply bg-primary text-white;
+    @apply hover:bg-primary-hover active:bg-primary-active;
+  }
+
+  // Secondary button (outlined)
+  .btn-secondary {
+    @apply btn-base;
+    @apply border border-slate-200 dark:border-slate-700;
+    @apply bg-transparent text-slate-700 dark:text-slate-200;
+    @apply hover:bg-slate-50 dark:hover:bg-slate-800;
+  }
+
+  // Icon button (square, transparent, for icons only)
+  .btn-icon {
+    @apply inline-flex items-center justify-center;
+    @apply w-10 h-10 p-0 rounded-lg;
+    @apply bg-transparent border-none;
+    @apply text-slate-500 dark:text-slate-400;
+    @apply hover:bg-slate-100 hover:text-slate-900;
+    @apply dark:hover:bg-slate-800 dark:hover:text-slate-100;
+    @apply transition-all duration-150 ease-in-out;
+    @apply cursor-pointer;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+
+    .material-symbols-outlined {
+      @apply text-xl;
+    }
+  }
+
+  // Clear button (small, for inputs, positioned absolute)
+  .btn-clear {
+    @apply absolute right-2 top-1/2 -translate-y-1/2;
+    @apply flex items-center justify-center;
+    @apply w-8 h-8 p-1 rounded;
+    @apply bg-transparent border-none;
+    @apply text-slate-500 dark:text-slate-500;
+    @apply hover:bg-slate-100 hover:text-slate-900;
+    @apply dark:hover:bg-slate-700 dark:hover:text-slate-100;
+    @apply transition-all duration-150 ease-in-out;
+    @apply cursor-pointer;
+
+    .material-symbols-outlined {
+      @apply text-lg;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Input Utilities
+  // ---------------------------------------------------------------------------
+
+  // Base input styles (shared by text, textarea, select)
+  .input-base {
+    @apply w-full px-4 py-2.5 rounded-lg;
+    @apply text-sm text-slate-100 dark:text-slate-100;
+    @apply bg-slate-800 dark:bg-slate-800;
+    @apply border border-slate-700 dark:border-slate-700;
+    @apply transition-all duration-150 ease-in-out;
+    @apply placeholder:text-slate-500;
+
+    &:hover:not(:disabled) {
+      @apply border-slate-600 dark:border-slate-600;
+    }
+
+    &:focus {
+      @apply outline-none border-primary;
+      @apply ring-2 ring-primary/10;
+    }
+
+    &:disabled {
+      @apply opacity-50 cursor-not-allowed;
+      @apply bg-slate-900 dark:bg-slate-900;
+    }
+  }
+
+  // Light mode variant for inputs
+  [data-theme='light'] .input-base {
+    @apply text-slate-900 bg-white;
+    @apply border-slate-200;
+    @apply placeholder:text-slate-400;
+
+    &:hover:not(:disabled) {
+      @apply border-slate-300;
+    }
+
+    &:disabled {
+      @apply bg-slate-50;
+    }
+  }
+
+  // Textarea variant
+  .textarea-base {
+    @apply input-base resize-vertical;
+    min-height: 72px;
+  }
+
+  // Select variant (with custom arrow)
+  .select-base {
+    @apply input-base appearance-none cursor-pointer;
+    @apply pr-10 bg-no-repeat;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394A3B8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-size: 1.25rem;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Label Utilities
+  // ---------------------------------------------------------------------------
+
+  // Base label (common label styles)
+  .label-base {
+    @apply block text-xs font-medium text-slate-400;
+    @apply mb-2;
+  }
+
+  // Filter label (uppercase variant)
+  .label-filter {
+    @apply label-base uppercase tracking-wider font-semibold;
+  }
+
+  // Light mode variant for labels
+  [data-theme='light'] .label-base,
+  [data-theme='light'] .label-filter {
+    @apply text-slate-600;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Card Utilities
+  // ---------------------------------------------------------------------------
+
+  .card-base {
+    @apply bg-white dark:bg-slate-800;
+    @apply rounded-lg border border-slate-200 dark:border-slate-700;
+    @apply shadow-sm;
+  }
+
+  .card-elevated {
+    @apply card-base shadow-lg;
+  }
+
+  .card-hover {
+    @apply card-base;
+    @apply hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600;
+    @apply transition-all duration-150 ease-in-out;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Divider Utilities
+  // ---------------------------------------------------------------------------
+
+  .divider-horizontal {
+    @apply h-px w-full;
+    @apply bg-slate-200 dark:bg-slate-700;
+  }
+
+  .divider-vertical {
+    @apply w-px h-full;
+    @apply bg-slate-200 dark:bg-slate-700;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Icon Utilities
+  // ---------------------------------------------------------------------------
+
+  // Material Symbols standardization
+  .icon-sm {
+    font-size: 1rem; // 16px
+  }
+
+  .icon-base {
+    font-size: 1.25rem; // 20px
+  }
+
+  .icon-md {
+    font-size: 1.5rem; // 24px
+  }
+
+  .icon-lg {
+    font-size: 2rem; // 32px
+  }
+
+  // ---------------------------------------------------------------------------
+  // Loading Spinner Utility
+  // ---------------------------------------------------------------------------
+
+  .spinner {
+    @apply inline-block w-6 h-6;
+    @apply animate-spin;
+    border: 3px solid rgba(23, 161, 207, 0.2);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+  }
+}
+
