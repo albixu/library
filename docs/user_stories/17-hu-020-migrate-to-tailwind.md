@@ -81,10 +81,10 @@ Esta historia implementa la decisión técnica documentada en `docs/design_docs/
 
 ### AC-7: Tests Actualizados
 
-- [ ] Todos los tests unitarios pasan (80%+ cobertura)
-- [ ] Selectores CSS actualizados (`.mat-*` → clases custom)
-- [ ] Tests E2E actualizados y pasan
-- [ ] No hay tests skipped relacionados con la migración
+- [x] Todos los tests unitarios pasan (80%+ cobertura) - ✅ 473/474 passing (1 skipped intencional)
+- [x] Selectores CSS actualizados (`.mat-*` → clases custom)
+- [x] Tests E2E actualizados y pasan - ✅ 43/43 passing
+- [x] No hay tests skipped relacionados con la migración
 
 ### AC-8: Storybook Actualizado
 
@@ -592,6 +592,65 @@ Cada PR debe incluir:
 - Comparación con diseño de Stitch
 - Lista de cambios realizados
 - Impacto en bundle size (si aplica)
+
+---
+
+## Progreso de Implementación
+
+### ✅ Completado (Feb 25, 2026)
+
+#### Tests Unitarios - Migración a Vitest
+- **Commits**: `1140ea0`, `0474905`
+- **Archivos modificados**: 12 test files
+- **Resultado**: 473/474 tests passing (1 skipped intencional)
+
+**Cambios realizados:**
+- Migrar tests de `fakeAsync/tick` → `async/await` (compatibilidad con Vitest)
+- Actualizar selectores CSS para Tailwind:
+  - `.icon-button` → `.btn-icon`
+  - `.text-filter-input__label` → `.label-filter`
+  - `.semantic-search__label` → `.label-filter`
+  - `mat-error` → `.error-message`
+  - `select.paginator-select` → `select.select-base`
+- **Bug Fix Crítico**: `send-to-kindle-dialog.component.ts`
+  - Problema: `computed()` signals no reaccionaban a cambios en `FormControl`
+  - Solución: Usar `toSignal(this.emailControl.valueChanges)` y `toSignal(this.emailControl.statusChanges)`
+  - Impacto: Componente ahora completamente reactivo con Angular signals
+
+**Refactorización:**
+- Agregar funciones helper en tests para reducir duplicación
+- Eliminar 80+ líneas de código duplicado en tests
+- Agregar test coverage para error handling en Kindle service
+
+#### Tests E2E - Actualización para Tailwind
+- **Commit**: `0474905`
+- **Archivos modificados**: 5 files (3 test specs, 1 config, 1 component)
+- **Resultado**: 43/43 tests passing ✅
+
+**Cambios realizados:**
+- **Configuración Playwright**:
+  - Configurar uso de navegadores del sistema (Chromium/Firefox desde Alpine Linux)
+  - Agregar `colorScheme: 'dark'` por defecto (match con app default)
+  - Configurar `executablePath` para Docker environment
+
+- **Actualización de Selectores CSS**:
+  - `mat-icon` → `.material-symbols-outlined`
+  - `mat-sidenav` → `[data-testid="filter-sidenav"]`
+  - `.mat-mdc-row` → `.book-row`
+  - `.paginator-count` → `.paginator-range`
+
+- **Fixes de Data Attributes**:
+  - Eliminar `data-testid` duplicado en `filter-panel`
+  - Renombrar sidenav container: `data-testid="filter-panel"` → `"filter-sidenav"`
+
+- **Actualización de Expectations**:
+  - Título de app: `"Library"` → `"BiblioManager"`
+  - Tema por defecto: actualizado para match con nuevo comportamiento
+  - Tests de tema: agregar waits apropiados para cambios de estado
+
+- **Robustez de Tests**:
+  - Test "load more": agregar timeout handling (evitar flaky tests)
+  - Tests de theme toggle: agregar verificaciones de estado intermedias
 
 ---
 
