@@ -78,32 +78,32 @@ import { Subject, debounceTime } from 'rxjs';
         padding-right: 2.5rem; /* Space for clear button */
         font-size: 0.875rem;
         line-height: 1.5;
-        color: #f1f5f9; /* slate-100 */
-        background-color: #0f172a; /* slate-900 - Stitch exact color */
-        border: 1px solid #1e293b; /* slate-800 - Stitch exact color */
+        color: var(--color-text-primary);
+        background-color: var(--color-bg-input);
+        border: 1px solid var(--color-border);
         border-radius: 0.5rem;
         transition: all 0.15s ease-in-out;
         resize: none;
       }
 
       .textarea-semantic::placeholder {
-        color: #64748b; /* slate-500 */
+        color: var(--color-text-muted);
       }
 
       .textarea-semantic:hover:not(:disabled) {
-        border-color: #334155; /* slate-700 */
+        border-color: var(--color-border-strong);
       }
 
       .textarea-semantic:focus {
         outline: none;
-        border-color: #17a1cf; /* primary */
+        border-color: var(--color-accent);
         box-shadow: 0 0 0 3px rgba(23, 161, 207, 0.1);
       }
 
       .textarea-semantic:disabled {
         opacity: 0.5;
         cursor: not-allowed;
-        background-color: #0f172a;
+        background-color: var(--color-bg-input);
       }
 
       /* Clear button - positioned absolutely inside textarea wrapper */
@@ -117,7 +117,7 @@ import { Subject, debounceTime } from 'rxjs';
         width: 2rem;
         height: 2rem;
         padding: 0;
-        color: #64748b; /* slate-500 */
+        color: var(--color-text-muted);
         background-color: transparent;
         border: none;
         border-radius: 0.25rem;
@@ -127,16 +127,17 @@ import { Subject, debounceTime } from 'rxjs';
       }
 
       .btn-clear:hover {
-        color: #f1f5f9; /* slate-100 */
-        background-color: rgba(51, 65, 85, 0.5); /* slate-700 with opacity */
+        color: var(--color-text-primary);
+        background-color: var(--color-bg-elevated);
       }
 
       .btn-clear:active {
-        background-color: rgba(51, 65, 85, 0.7);
+        background-color: var(--color-bg-elevated);
+        opacity: 0.8;
       }
 
       .btn-clear:focus-visible {
-        outline: 2px solid #17a1cf; /* primary */
+        outline: 2px solid var(--color-accent);
         outline-offset: 2px;
       }
 

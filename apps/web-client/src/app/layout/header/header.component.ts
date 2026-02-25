@@ -159,21 +159,22 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         padding-left: 44px;
         padding-right: 2.5rem; /* Space for clear button */
         width: 256px;
-        background-color: rgba(
-          30,
-          41,
-          59,
-          0.5
-        ) !important; /* slate-800/50 - same as table header */
-        border-color: rgba(30, 41, 59, 0.5) !important;
+        background-color: var(--color-bg-input) !important;
+        border-color: var(--color-border) !important;
+        color: var(--color-text-primary);
+      }
+
+      .search-input-padding::placeholder {
+        color: var(--color-text-muted);
       }
 
       .search-input-padding:hover {
-        background-color: rgba(30, 41, 59, 0.6) !important;
+        border-color: var(--color-border-strong) !important;
       }
 
       .search-input-padding:focus {
-        background-color: rgba(30, 41, 59, 0.7) !important;
+        background-color: var(--color-bg-input) !important;
+        border-color: var(--color-accent) !important;
       }
 
       /* Clear button - positioned absolutely inside search wrapper */
@@ -188,7 +189,7 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         width: 2rem;
         height: 2rem;
         padding: 0;
-        color: #64748b; /* slate-500 */
+        color: var(--color-text-muted);
         background-color: transparent;
         border: none;
         border-radius: 0.25rem;
@@ -198,16 +199,17 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
       }
 
       .btn-clear:hover {
-        color: #f1f5f9; /* slate-100 */
-        background-color: rgba(51, 65, 85, 0.5); /* slate-700 with opacity */
+        color: var(--color-text-primary);
+        background-color: var(--color-bg-elevated);
       }
 
       .btn-clear:active {
-        background-color: rgba(51, 65, 85, 0.7);
+        background-color: var(--color-bg-elevated);
+        opacity: 0.8;
       }
 
       .btn-clear:focus-visible {
-        outline: 2px solid #17a1cf; /* primary */
+        outline: 2px solid var(--color-accent);
         outline-offset: 2px;
       }
 

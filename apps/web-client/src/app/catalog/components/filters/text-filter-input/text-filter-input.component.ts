@@ -82,24 +82,29 @@ import { Subject, debounceTime } from 'rxjs';
         width: 100%;
         height: 41px;
         min-height: 41px;
-        background-color: #0f172a !important; /* slate-900 - same as semantic search */
-        border: 1px solid #1e293b !important; /* slate-800 */
+        background-color: var(--color-bg-input) !important;
+        border: 1px solid var(--color-border) !important;
+        color: var(--color-text-primary);
       }
 
       .input-wrapper .input-base:hover:not(:disabled) {
-        border-color: #1e293b !important; /* slate-800 */
+        border-color: var(--color-border-strong) !important;
       }
 
       .input-wrapper .input-base:focus {
-        background-color: #0f172a !important;
-        border-color: #17a1cf !important; /* primary */
+        background-color: var(--color-bg-input) !important;
+        border-color: var(--color-accent) !important;
         outline: none !important;
         box-shadow: none !important; /* Remove ring shadow */
       }
 
       .input-wrapper .input-base:disabled {
-        background-color: #0f172a !important;
+        background-color: var(--color-bg-input) !important;
         opacity: 0.5;
+      }
+
+      .input-wrapper .input-base::placeholder {
+        color: var(--color-text-muted);
       }
 
       .input-icon {
@@ -108,7 +113,7 @@ import { Subject, debounceTime } from 'rxjs';
         top: 50%;
         transform: translateY(-50%);
         font-size: 1.125rem; /* 18px icon size */
-        color: var(--slate-500);
+        color: var(--color-text-muted);
         pointer-events: none;
         z-index: 1;
       }
@@ -133,15 +138,15 @@ import { Subject, debounceTime } from 'rxjs';
         border-radius: 0.375rem; /* 6px */
         background-color: transparent;
         border: none;
-        color: var(--slate-500);
+        color: var(--color-text-muted);
         cursor: pointer;
         transition: all 150ms ease-in-out;
         z-index: 2;
       }
 
       .btn-clear:hover {
-        background-color: var(--slate-700);
-        color: var(--slate-100);
+        background-color: var(--color-bg-elevated);
+        color: var(--color-text-primary);
       }
 
       .btn-clear .material-symbols-outlined {
