@@ -62,8 +62,8 @@ describe('LevelBadgeComponent', () => {
       { level: 'Beginner', expectedClass: 'level-beginner' },
       { level: 'Intermediate', expectedClass: 'level-intermediate' },
       { level: 'Advanced', expectedClass: 'level-advanced' },
-      { level: 'Beginner to Intermediate', expectedClass: 'level-beginner-intermediate' },
-      { level: 'Intermediate to Advanced', expectedClass: 'level-intermediate-advanced' },
+      { level: 'Beginner to intermediate', expectedClass: 'level-beginner-intermediate' },
+      { level: 'Intermediate to advanced', expectedClass: 'level-intermediate-advanced' },
     ];
 
     levelTests.forEach(({ level, expectedClass }) => {
@@ -100,16 +100,16 @@ describe('LevelBadgeComponent', () => {
       expect(badge.classList.contains('level-advanced')).toBe(true);
     });
 
-    it('should have level-beginner-intermediate with teal styling', () => {
-      fixture.componentRef.setInput('level', 'Beginner to Intermediate');
+    it('should have level-beginner-intermediate with blue styling', () => {
+      fixture.componentRef.setInput('level', 'Beginner to intermediate');
       fixture.detectChanges();
 
       const badge = fixture.nativeElement.querySelector('.level-badge');
       expect(badge.classList.contains('level-beginner-intermediate')).toBe(true);
     });
 
-    it('should have level-intermediate-advanced with orange styling', () => {
-      fixture.componentRef.setInput('level', 'Intermediate to Advanced');
+    it('should have level-intermediate-advanced with purple styling', () => {
+      fixture.componentRef.setInput('level', 'Intermediate to advanced');
       fixture.detectChanges();
 
       const badge = fixture.nativeElement.querySelector('.level-badge');
@@ -123,15 +123,15 @@ describe('LevelBadgeComponent', () => {
       fixture.detectChanges();
 
       const badge = fixture.nativeElement.querySelector('.level-badge');
-      expect(badge.getAttribute('aria-label')).toBe('Book level: Advanced');
+      expect(badge.getAttribute('aria-label')).toBe('Nivel del libro: Advanced');
     });
 
     it('should have appropriate aria-label for compound levels', () => {
-      fixture.componentRef.setInput('level', 'Beginner to Intermediate');
+      fixture.componentRef.setInput('level', 'Beginner to intermediate');
       fixture.detectChanges();
 
       const badge = fixture.nativeElement.querySelector('.level-badge');
-      expect(badge.getAttribute('aria-label')).toBe('Book level: Beginner to Intermediate');
+      expect(badge.getAttribute('aria-label')).toBe('Nivel del libro: Beginner to intermediate');
     });
   });
 

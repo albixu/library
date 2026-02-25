@@ -100,15 +100,12 @@ export class LevelBadgeComponent {
     const lvl = this.level();
     if (!lvl) return '';
 
-    // Map levels to CSS classes - compound levels use the higher level's style
-    // Support both uppercase and lowercase variants for compound levels
+    // Map levels to CSS classes
     const classMap: Record<BookLevelName, string> = {
       Beginner: 'level-badge level-beginner',
       Intermediate: 'level-badge level-intermediate',
       Advanced: 'level-badge level-advanced',
-      'Beginner to Intermediate': 'level-badge level-beginner-intermediate',
       'Beginner to intermediate': 'level-badge level-beginner-intermediate',
-      'Intermediate to Advanced': 'level-badge level-intermediate-advanced',
       'Intermediate to advanced': 'level-badge level-intermediate-advanced',
     };
 

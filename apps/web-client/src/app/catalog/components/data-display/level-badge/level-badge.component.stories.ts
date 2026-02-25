@@ -17,8 +17,8 @@ Displays a book's difficulty level as a colored badge.
 | Beginner | Green (bg-green-100, text-green-700) | Green (bg-green-900/30, text-green-400) |
 | Intermediate | Amber (bg-amber-100, text-amber-700) | Amber (bg-amber-900/30, text-amber-400) |
 | Advanced | Red (bg-red-100, text-red-700) | Red (bg-red-900/30, text-red-400) |
-| Beginner to Intermediate | Teal (bg-teal-50, text-teal-700) | Teal (bg-teal-900/30, text-teal-400) |
-| Intermediate to Advanced | Orange (bg-orange-100, text-orange-700) | Orange (bg-orange-900/30, text-orange-400) |
+| Beginner to intermediate | Blue (bg-blue-100, text-blue-700) | Blue (bg-blue-900/30, text-blue-400) |
+| Intermediate to advanced | Purple (bg-purple-100, text-purple-700) | Purple (bg-purple-900/30, text-purple-400) |
 
 ## Usage
 \`\`\`html
@@ -37,8 +37,8 @@ Displays a book's difficulty level as a colored badge.
         'Beginner',
         'Intermediate',
         'Advanced',
-        'Beginner to Intermediate',
-        'Intermediate to Advanced',
+        'Beginner to intermediate',
+        'Intermediate to advanced',
       ],
     },
   },
@@ -88,12 +88,12 @@ export const Advanced: Story = {
 
 export const BeginnerToIntermediate: Story = {
   args: {
-    level: 'Beginner to Intermediate',
+    level: 'Beginner to intermediate',
   },
   parameters: {
     docs: {
       description: {
-        story: 'Teal badge for beginner to intermediate transition content.',
+        story: 'Blue badge for beginner to intermediate transition content.',
       },
     },
   },
@@ -101,12 +101,12 @@ export const BeginnerToIntermediate: Story = {
 
 export const IntermediateToAdvanced: Story = {
   args: {
-    level: 'Intermediate to Advanced',
+    level: 'Intermediate to advanced',
   },
   parameters: {
     docs: {
       description: {
-        story: 'Orange badge for intermediate to advanced transition content.',
+        story: 'Purple badge for intermediate to advanced transition content.',
       },
     },
   },
@@ -119,8 +119,8 @@ export const AllLevels: Story = {
         <app-level-badge [level]="'Beginner'" />
         <app-level-badge [level]="'Intermediate'" />
         <app-level-badge [level]="'Advanced'" />
-        <app-level-badge [level]="'Beginner to Intermediate'" />
-        <app-level-badge [level]="'Intermediate to Advanced'" />
+        <app-level-badge [level]="'Beginner to intermediate'" />
+        <app-level-badge [level]="'Intermediate to advanced'" />
       </div>
     `,
   }),

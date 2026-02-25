@@ -24,8 +24,8 @@ const bookLevels: SelectOption[] = [
   { id: 'Beginner', name: 'Beginner' },
   { id: 'Intermediate', name: 'Intermediate' },
   { id: 'Advanced', name: 'Advanced' },
-  { id: 'Beginner to Intermediate', name: 'Beginner to Intermediate' },
-  { id: 'Intermediate to Advanced', name: 'Intermediate to Advanced' },
+  { id: 'Beginner to intermediate', name: 'Beginner to intermediate' },
+  { id: 'Intermediate to advanced', name: 'Intermediate to advanced' },
 ];
 
 const meta: Meta<FilterPanelComponent> = {
