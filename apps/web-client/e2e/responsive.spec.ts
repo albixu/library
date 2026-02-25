@@ -25,9 +25,10 @@ test.describe('Responsive Layout - Desktop', () => {
     const filterPanel = page.getByTestId('filter-panel');
     await expect(filterPanel).toBeVisible();
 
-    // Sidebar should be open by default on desktop
-    const sidenav = page.locator('mat-sidenav');
+    // Sidebar should be open by default on desktop (now using aside.filter-sidenav, not mat-sidenav)
+    const sidenav = page.getByTestId('filter-sidenav');
     await expect(sidenav).toBeVisible();
+    await expect(sidenav).toHaveClass(/open/); // Should have 'open' class
   });
 
   test('should show books in table view', async ({ page }) => {
@@ -78,16 +79,13 @@ test.describe('Responsive Layout - Mobile', () => {
     await page.goto(BOOKS_URL);
     await waitForPageLoad(page);
 
-    // On mobile, filter panel should be in drawer (hidden initially)
-    const sidenav = page.locator('mat-sidenav');
-    const isVisible = await sidenav.evaluate((el) => {
-      const style = window.getComputedStyle(el);
-      return style.visibility !== 'hidden' && style.display !== 'none';
-    });
-
-    // The sidenav content might be in DOM but not visually displayed
-    // We check if it's not in the open state
-    await expect(sidenav).toHaveAttribute('style', /transform/);
+    // On mobile, filter panel should NOT have 'open' class initially (hidden)
+    const sidenav = page.getByTestId('filter-sidenav');
+    await expect(sidenav).toBeVisible(); // Element exists in DOM
+    
+    // But should NOT have 'open' class (visually hidden via CSS transform)
+    const classes = await sidenav.getAttribute('class');
+    expect(classes).not.toContain('open');
   });
 
   test('should open filter drawer when toggle is clicked', async ({ page }) => {

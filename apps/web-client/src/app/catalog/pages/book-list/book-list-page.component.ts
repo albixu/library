@@ -58,7 +58,7 @@ import {
 
       <!-- Filter Sidebar / Drawer -->
       <aside
-        data-testid="filter-panel"
+        data-testid="filter-sidenav"
         [class.open]="isMobile() ? isMobileDrawerOpen() : true"
         [class.mobile]="isMobile()"
         role="complementary"
