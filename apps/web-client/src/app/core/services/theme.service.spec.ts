@@ -197,6 +197,7 @@ describe('ThemeService', () => {
       localStorageSpy.getItem.mockReturnValue('dark');
 
       service = createService();
+      TestBed.flushEffects();
 
       expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
     });
@@ -204,10 +205,12 @@ describe('ThemeService', () => {
     it('should update data-theme attribute when theme changes', () => {
       localStorageSpy.getItem.mockReturnValue('light');
       service = createService();
+      TestBed.flushEffects();
 
       expect(document.documentElement.getAttribute('data-theme')).toBe('light');
 
       service.setTheme('dark');
+      TestBed.flushEffects();
 
       expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
     });
@@ -215,8 +218,10 @@ describe('ThemeService', () => {
     it('should persist theme to localStorage when theme changes', () => {
       localStorageSpy.getItem.mockReturnValue('light');
       service = createService();
+      TestBed.flushEffects();
 
       service.setTheme('dark');
+      TestBed.flushEffects();
 
       expect(localStorageSpy.setItem).toHaveBeenCalledWith('library-theme', 'dark');
     });

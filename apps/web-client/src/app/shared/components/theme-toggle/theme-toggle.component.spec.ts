@@ -1,18 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { ThemeToggleComponent } from './theme-toggle.component';
 import { ThemeService } from '@core/services/theme.service';
-import { signal, computed } from '@angular/core';
+import { signal } from '@angular/core';
 
 describe('ThemeToggleComponent', () => {
   let component: ThemeToggleComponent;
   let fixture: ComponentFixture<ThemeToggleComponent>;
   let mockThemeService: {
     theme: ReturnType<typeof signal<'light' | 'dark'>>;
-    isDark: ReturnType<typeof computed<boolean>>;
-    themeIcon: ReturnType<typeof computed<string>>;
-    toggleLabel: ReturnType<typeof computed<string>>;
-    toggleTheme: ReturnType<typeof vi.fn>;
+    setTheme: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -21,19 +17,14 @@ describe('ThemeToggleComponent', () => {
 
     mockThemeService = {
       theme: themeSignal,
-      isDark: computed(() => themeSignal() === 'dark'),
-      themeIcon: computed(() => (themeSignal() === 'dark' ? 'light_mode' : 'dark_mode')),
-      toggleLabel: computed(() =>
-        themeSignal() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-      ),
-      toggleTheme: vi.fn(() => {
-        themeSignal.update((current) => (current === 'light' ? 'dark' : 'light'));
+      setTheme: vi.fn((theme: 'light' | 'dark') => {
+        themeSignal.set(theme);
       }),
     };
 
     await TestBed.configureTestingModule({
       imports: [ThemeToggleComponent],
-      providers: [provideAnimationsAsync(), { provide: ThemeService, useValue: mockThemeService }],
+      providers: [{ provide: ThemeService, useValue: mockThemeService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ThemeToggleComponent);
@@ -45,51 +36,79 @@ describe('ThemeToggleComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should display dark_mode icon when in light mode', () => {
-    const icon = fixture.nativeElement.querySelector('mat-icon');
-    expect(icon.textContent.trim()).toBe('dark_mode');
+  it('should render two buttons (light and dark)', () => {
+    const buttons = fixture.nativeElement.querySelectorAll('.theme-switch__button');
+    expect(buttons.length).toBe(2);
   });
 
-  it('should have correct aria-label for accessibility', () => {
-    const button = fixture.nativeElement.querySelector('button');
-    expect(button.getAttribute('aria-label')).toBe('Switch to dark mode');
+  it('should display light_mode and dark_mode icons', () => {
+    const icons = fixture.nativeElement.querySelectorAll('.material-symbols-outlined');
+    expect(icons.length).toBe(2);
+    expect(icons[0].textContent.trim()).toBe('light_mode');
+    expect(icons[1].textContent.trim()).toBe('dark_mode');
   });
 
-  it('should call toggleTheme when button is clicked', () => {
-    const button = fixture.nativeElement.querySelector('button');
-    button.click();
-
-    expect(mockThemeService.toggleTheme).toHaveBeenCalled();
+  it('should have correct aria-labels for accessibility', () => {
+    const buttons = fixture.nativeElement.querySelectorAll('.theme-switch__button');
+    expect(buttons[0].getAttribute('aria-label')).toBe('Light mode');
+    expect(buttons[1].getAttribute('aria-label')).toBe('Dark mode');
   });
 
-  it('should update icon after toggle', async () => {
-    // Initial state: light mode
-    let icon = fixture.nativeElement.querySelector('mat-icon');
-    expect(icon.textContent.trim()).toBe('dark_mode');
+  it('should mark light button as active when theme is light', () => {
+    const buttons = fixture.nativeElement.querySelectorAll('.theme-switch__button');
+    expect(buttons[0].classList.contains('theme-switch__button--active')).toBe(true);
+    expect(buttons[1].classList.contains('theme-switch__button--active')).toBe(false);
+  });
 
-    // Toggle to dark mode
-    const button = fixture.nativeElement.querySelector('button');
-    button.click();
+  it('should mark dark button as active when theme is dark', async () => {
+    mockThemeService.theme.set('dark');
     fixture.detectChanges();
     await fixture.whenStable();
 
-    // Should now show light_mode icon
-    icon = fixture.nativeElement.querySelector('mat-icon');
-    expect(icon.textContent.trim()).toBe('light_mode');
+    const buttons = fixture.nativeElement.querySelectorAll('.theme-switch__button');
+    expect(buttons[0].classList.contains('theme-switch__button--active')).toBe(false);
+    expect(buttons[1].classList.contains('theme-switch__button--active')).toBe(true);
   });
 
-  it('should update aria-label after toggle', async () => {
-    const button = fixture.nativeElement.querySelector('button');
+  it('should call setTheme with "light" when light button is clicked', () => {
+    const buttons = fixture.nativeElement.querySelectorAll('.theme-switch__button');
+    buttons[0].click();
 
-    // Initial state
-    expect(button.getAttribute('aria-label')).toBe('Switch to dark mode');
+    expect(mockThemeService.setTheme).toHaveBeenCalledWith('light');
+  });
 
-    // Toggle
-    button.click();
+  it('should call setTheme with "dark" when dark button is clicked', () => {
+    const buttons = fixture.nativeElement.querySelectorAll('.theme-switch__button');
+    buttons[1].click();
+
+    expect(mockThemeService.setTheme).toHaveBeenCalledWith('dark');
+  });
+
+  it('should update active state when switching themes', async () => {
+    const buttons = fixture.nativeElement.querySelectorAll('.theme-switch__button');
+
+    // Initially light mode is active
+    expect(buttons[0].classList.contains('theme-switch__button--active')).toBe(true);
+
+    // Click dark mode button
+    buttons[1].click();
     fixture.detectChanges();
     await fixture.whenStable();
 
-    // After toggle
-    expect(button.getAttribute('aria-label')).toBe('Switch to light mode');
+    // Now dark mode should be active
+    expect(buttons[0].classList.contains('theme-switch__button--active')).toBe(false);
+    expect(buttons[1].classList.contains('theme-switch__button--active')).toBe(true);
+  });
+
+  it('should have correct aria-pressed attributes', () => {
+    const buttons = fixture.nativeElement.querySelectorAll('.theme-switch__button');
+    expect(buttons[0].getAttribute('aria-pressed')).toBe('true');
+    expect(buttons[1].getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('should have role="group" with aria-label on container', () => {
+    const container = fixture.nativeElement.querySelector('.theme-switch');
+    expect(container.getAttribute('role')).toBe('group');
+    expect(container.getAttribute('aria-label')).toBe('Theme selection');
   });
 });

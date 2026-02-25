@@ -1,18 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { HeaderComponent } from './header.component.js';
 import { ThemeService } from '@core/services/theme.service';
-import { signal, computed } from '@angular/core';
+import { signal } from '@angular/core';
 
 describe('HeaderComponent', () => {
   let component: HeaderComponent;
   let fixture: ComponentFixture<HeaderComponent>;
   let mockThemeService: {
     theme: ReturnType<typeof signal<'light' | 'dark'>>;
-    isDark: ReturnType<typeof computed<boolean>>;
-    themeIcon: ReturnType<typeof computed<string>>;
-    toggleLabel: ReturnType<typeof computed<string>>;
-    toggleTheme: ReturnType<typeof vi.fn>;
+    setTheme: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -21,19 +17,14 @@ describe('HeaderComponent', () => {
 
     mockThemeService = {
       theme: themeSignal,
-      isDark: computed(() => themeSignal() === 'dark'),
-      themeIcon: computed(() => (themeSignal() === 'dark' ? 'light_mode' : 'dark_mode')),
-      toggleLabel: computed(() =>
-        themeSignal() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-      ),
-      toggleTheme: vi.fn(() => {
-        themeSignal.update((current) => (current === 'light' ? 'dark' : 'light'));
+      setTheme: vi.fn((theme: 'light' | 'dark') => {
+        themeSignal.set(theme);
       }),
     };
 
     await TestBed.configureTestingModule({
       imports: [HeaderComponent],
-      providers: [provideAnimationsAsync(), { provide: ThemeService, useValue: mockThemeService }],
+      providers: [{ provide: ThemeService, useValue: mockThemeService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HeaderComponent);
@@ -59,7 +50,9 @@ describe('HeaderComponent', () => {
 
   describe('Logo', () => {
     it('should display the auto_stories icon', () => {
-      const logoIcon = fixture.nativeElement.querySelector('.header__logo mat-icon');
+      const logoIcon = fixture.nativeElement.querySelector(
+        '.header__logo .material-symbols-outlined'
+      );
       expect(logoIcon).toBeTruthy();
       expect(logoIcon.textContent.trim()).toBe('auto_stories');
     });
@@ -71,10 +64,10 @@ describe('HeaderComponent', () => {
   });
 
   describe('Title', () => {
-    it('should display "Library" as the title', () => {
+    it('should display "BiblioManager" as the title', () => {
       const title = fixture.nativeElement.querySelector('.header__title');
       expect(title).toBeTruthy();
-      expect(title.textContent.trim()).toBe('Library');
+      expect(title.textContent.trim()).toBe('BiblioManager');
     });
   });
 
@@ -96,11 +89,35 @@ describe('HeaderComponent', () => {
       expect(themeToggle).toBeTruthy();
     });
 
-    it('should position theme toggle on the right side', () => {
-      const header = fixture.nativeElement.querySelector('header');
+    it('should position theme toggle inside actions container', () => {
+      const actions = fixture.nativeElement.querySelector('.header__actions');
+      expect(actions).toBeTruthy();
 
-      // Theme toggle should be the last element in the header (right side in flex)
-      expect(header.lastElementChild.tagName.toLowerCase()).toBe('app-theme-toggle');
+      const themeToggle = actions.querySelector('app-theme-toggle');
+      expect(themeToggle).toBeTruthy();
+    });
+  });
+
+  describe('Action Buttons', () => {
+    it('should have notifications button with Material Symbol icon', () => {
+      const button = fixture.nativeElement.querySelector('.header__icon-button');
+      expect(button).toBeTruthy();
+      expect(button.getAttribute('aria-label')).toBe('Notifications');
+
+      const icon = button.querySelector('.material-symbols-outlined');
+      expect(icon).toBeTruthy();
+      expect(icon.textContent.trim()).toBe('notifications');
+    });
+
+    it('should have avatar with account_circle icon', () => {
+      const avatar = fixture.nativeElement.querySelector('.header__avatar');
+      expect(avatar).toBeTruthy();
+      expect(avatar.getAttribute('role')).toBe('img');
+      expect(avatar.getAttribute('aria-label')).toBe('User profile');
+
+      const icon = avatar.querySelector('.material-symbols-outlined');
+      expect(icon).toBeTruthy();
+      expect(icon.textContent.trim()).toBe('account_circle');
     });
   });
 
@@ -115,6 +132,73 @@ describe('HeaderComponent', () => {
       // The header should be properly structured for screen readers
       const brand = fixture.nativeElement.querySelector('.header__brand');
       expect(brand).toBeTruthy();
+    });
+  });
+
+  describe('Global Search', () => {
+    it('should render the global search input', () => {
+      const searchInput = fixture.nativeElement.querySelector('.header__search input');
+      expect(searchInput).toBeTruthy();
+      expect(searchInput.getAttribute('placeholder')).toBe('Global search...');
+    });
+
+    it('should have search icon positioned inside the input', () => {
+      const searchIcon = fixture.nativeElement.querySelector('.search-icon');
+      expect(searchIcon).toBeTruthy();
+      expect(searchIcon.textContent.trim()).toBe('search');
+    });
+
+    it('should update searchValue signal when typing', () => {
+      const searchInput = fixture.nativeElement.querySelector('.header__search input');
+      
+      searchInput.value = 'test query';
+      searchInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      expect(component.searchValue()).toBe('test query');
+    });
+
+    it('should show clear button when search has value', () => {
+      component.searchValue.set('test');
+      fixture.detectChanges();
+
+      const clearButton = fixture.nativeElement.querySelector('[data-testid="clear-search-button"]');
+      expect(clearButton).toBeTruthy();
+    });
+
+    it('should hide clear button when search is empty', () => {
+      component.searchValue.set('');
+      fixture.detectChanges();
+
+      const clearButton = fixture.nativeElement.querySelector('[data-testid="clear-search-button"]');
+      expect(clearButton).toBeFalsy();
+    });
+
+    it('should clear search value when clear button is clicked', () => {
+      component.searchValue.set('test query');
+      fixture.detectChanges();
+
+      const clearButton = fixture.nativeElement.querySelector('[data-testid="clear-search-button"]');
+      clearButton.click();
+      fixture.detectChanges();
+
+      expect(component.searchValue()).toBe('');
+      
+      const searchInput = fixture.nativeElement.querySelector('.header__search input');
+      expect(searchInput.value).toBe('');
+    });
+
+    it('should have proper aria-label on search input', () => {
+      const searchInput = fixture.nativeElement.querySelector('.header__search input');
+      expect(searchInput.getAttribute('aria-label')).toBe('Global search');
+    });
+
+    it('should have proper aria-label on clear button', () => {
+      component.searchValue.set('test');
+      fixture.detectChanges();
+
+      const clearButton = fixture.nativeElement.querySelector('[data-testid="clear-search-button"]');
+      expect(clearButton.getAttribute('aria-label')).toBe('Clear search');
     });
   });
 });

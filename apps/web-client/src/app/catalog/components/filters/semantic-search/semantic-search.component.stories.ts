@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { SemanticSearchComponent } from './semantic-search.component.js';
+import { SemanticSearchComponent } from './semantic-search.component';
 
 const meta: Meta<SemanticSearchComponent> = {
   title: 'Catalog/Filters/SemanticSearch',

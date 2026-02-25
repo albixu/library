@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BookTableComponent } from './book-table.component';
 import { Book } from '../../../../core/models/index';
 
@@ -48,7 +47,7 @@ describe('BookTableComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BookTableComponent, NoopAnimationsModule],
+      imports: [BookTableComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BookTableComponent);
@@ -79,7 +78,7 @@ describe('BookTableComponent', () => {
       fixture.componentRef.setInput('books', mockBooks);
       fixture.detectChanges();
 
-      const headerRow = fixture.nativeElement.querySelector('tr.mat-mdc-header-row');
+      const headerRow = fixture.nativeElement.querySelector('thead tr');
       expect(headerRow).toBeTruthy();
     });
 
@@ -87,33 +86,25 @@ describe('BookTableComponent', () => {
       fixture.componentRef.setInput('books', mockBooks);
       fixture.detectChanges();
 
-      const rows = fixture.nativeElement.querySelectorAll('tr.mat-mdc-row');
+      const rows = fixture.nativeElement.querySelectorAll('tbody tr.book-row');
       expect(rows.length).toBe(2);
     });
   });
 
   describe('Column display', () => {
-    it('should display title column', () => {
+    it('should display all header columns', () => {
       fixture.componentRef.setInput('books', mockBooks);
       fixture.detectChanges();
 
-      const titleHeader = fixture.nativeElement.querySelector('th.mat-column-title');
-      expect(titleHeader).toBeTruthy();
-    });
-
-    it('should display authors column', () => {
-      fixture.componentRef.setInput('books', mockBooks);
-      fixture.detectChanges();
-
-      const authorsHeader = fixture.nativeElement.querySelector('th.mat-column-authors');
-      expect(authorsHeader).toBeTruthy();
+      const headers = fixture.nativeElement.querySelectorAll('th');
+      expect(headers.length).toBe(8); // ISBN, Book Details, Type/Category, Lang, Level, Format, Description, Actions
     });
 
     it('should display book title in cell', () => {
       fixture.componentRef.setInput('books', mockBooks);
       fixture.detectChanges();
 
-      const titleCell = fixture.nativeElement.querySelector('td.mat-column-title');
+      const titleCell = fixture.nativeElement.querySelector('.book-title');
       expect(titleCell.textContent).toContain('Clean Code');
     });
 
@@ -121,8 +112,26 @@ describe('BookTableComponent', () => {
       fixture.componentRef.setInput('books', mockBooks);
       fixture.detectChanges();
 
-      const authorsCells = fixture.nativeElement.querySelectorAll('td.mat-column-authors');
-      expect(authorsCells[1].textContent).toContain('David Thomas');
+      const authorCells = fixture.nativeElement.querySelectorAll('.book-author');
+      expect(authorCells[0].textContent).toContain('Robert C. Martin');
+      expect(authorCells[1].textContent).toContain('David Thomas, Andrew Hunt');
+    });
+
+    it('should display ISBN in cell', () => {
+      fixture.componentRef.setInput('books', mockBooks);
+      fixture.detectChanges();
+
+      const isbnCell = fixture.nativeElement.querySelector('.isbn-text');
+      expect(isbnCell.textContent).toContain('978-0132350884');
+    });
+
+    it('should display format in cell', () => {
+      fixture.componentRef.setInput('books', mockBooks);
+      fixture.detectChanges();
+
+      const formatCells = fixture.nativeElement.querySelectorAll('.format-text');
+      expect(formatCells[0].textContent).toBe('pdf');
+      expect(formatCells[1].textContent).toBe('epub');
     });
   });
 
@@ -133,14 +142,6 @@ describe('BookTableComponent', () => {
 
       const levelBadges = fixture.nativeElement.querySelectorAll('app-level-badge');
       expect(levelBadges.length).toBe(2);
-    });
-
-    it('should render format icon for each book', () => {
-      fixture.componentRef.setInput('books', mockBooks);
-      fixture.detectChanges();
-
-      const formatIcons = fixture.nativeElement.querySelectorAll('app-format-icon');
-      expect(formatIcons.length).toBe(2);
     });
 
     it('should render language flag for each book', () => {
@@ -158,6 +159,14 @@ describe('BookTableComponent', () => {
       const categoryChips = fixture.nativeElement.querySelectorAll('app-category-chips');
       expect(categoryChips.length).toBe(2);
     });
+
+    it('should render truncated text for descriptions', () => {
+      fixture.componentRef.setInput('books', mockBooks);
+      fixture.detectChanges();
+
+      const truncatedTexts = fixture.nativeElement.querySelectorAll('app-truncated-text');
+      expect(truncatedTexts.length).toBe(2);
+    });
   });
 
   describe('Actions', () => {
@@ -167,6 +176,15 @@ describe('BookTableComponent', () => {
 
       const kindleButtons = fixture.nativeElement.querySelectorAll('[aria-label="Send to Kindle"]');
       expect(kindleButtons.length).toBe(2);
+    });
+
+    it('should render Material Symbols icon in action button', () => {
+      fixture.componentRef.setInput('books', mockBooks);
+      fixture.detectChanges();
+
+      const icon = fixture.nativeElement.querySelector('.action-button .material-symbols-outlined');
+      expect(icon).toBeTruthy();
+      expect(icon.textContent.trim()).toBe('send_to_mobile');
     });
 
     it('should emit sendToKindle event when kindle button is clicked', () => {
@@ -189,10 +207,27 @@ describe('BookTableComponent', () => {
       fixture.componentRef.setInput('books', mockBooks);
       fixture.detectChanges();
 
-      const row = fixture.nativeElement.querySelector('tr.mat-mdc-row');
+      const row = fixture.nativeElement.querySelector('tbody tr.book-row');
       row.click();
 
       expect(rowClickSpy).toHaveBeenCalledWith(mockBooks[0]);
+    });
+
+    it('should stop propagation when action button is clicked', () => {
+      const kindleSpy = vi.fn();
+      const rowClickSpy = vi.fn();
+      component.sendToKindle.subscribe(kindleSpy);
+      component.rowClick.subscribe(rowClickSpy);
+
+      fixture.componentRef.setInput('books', mockBooks);
+      fixture.detectChanges();
+
+      const kindleButton = fixture.nativeElement.querySelector('[aria-label="Send to Kindle"]');
+      kindleButton.click();
+
+      // Should only emit sendToKindle, not rowClick
+      expect(kindleSpy).toHaveBeenCalledWith(mockBooks[0]);
+      expect(rowClickSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -234,12 +269,26 @@ describe('BookTableComponent', () => {
       expect(table.getAttribute('aria-label')).toBe('Books');
     });
 
-    it('should have clickable rows with proper role', () => {
+    it('should have clickable rows with proper tabindex', () => {
       fixture.componentRef.setInput('books', mockBooks);
       fixture.detectChanges();
 
-      const row = fixture.nativeElement.querySelector('tr.mat-mdc-row');
+      const row = fixture.nativeElement.querySelector('tbody tr.book-row');
       expect(row.getAttribute('tabindex')).toBe('0');
+    });
+
+    it('should have keyboard navigation support on rows', () => {
+      const rowClickSpy = vi.fn();
+      component.rowClick.subscribe(rowClickSpy);
+
+      fixture.componentRef.setInput('books', mockBooks);
+      fixture.detectChanges();
+
+      const row = fixture.nativeElement.querySelector('tbody tr.book-row');
+      const enterEvent = new KeyboardEvent('keydown', { key: 'Enter' });
+      row.dispatchEvent(enterEvent);
+
+      expect(rowClickSpy).toHaveBeenCalledWith(mockBooks[0]);
     });
   });
 });

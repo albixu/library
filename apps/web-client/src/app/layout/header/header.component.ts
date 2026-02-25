@@ -1,6 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { MatIcon } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
+import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
 import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 
 /**
@@ -10,41 +8,56 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
  * - Sticky positioning at top
  * - Logo with auto_stories icon in cyan container
  * - "BiblioManager" title with bold styling
- * - Global search bar in the center
+ * - Global search bar in the center with clear button
  * - Notifications, theme toggle, and profile icons on the right
  */
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [MatIcon, MatButtonModule, ThemeToggleComponent],
+  imports: [ThemeToggleComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="header">
       <div class="header__brand">
         <div class="header__logo">
-          <mat-icon>auto_stories</mat-icon>
+          <span class="material-symbols-outlined">auto_stories</span>
         </div>
         <span class="header__title">BiblioManager</span>
       </div>
-      
-      <div class="header__search">
-        <mat-icon class="search-icon">search</mat-icon>
-        <input 
-          type="text" 
-          class="search-input" 
-          placeholder="Global search..."
-          aria-label="Global search"
-        />
-      </div>
 
-      <div class="header__actions">
-        <button mat-icon-button aria-label="Notifications">
-          <mat-icon>notifications_none</mat-icon>
-        </button>
-        <app-theme-toggle />
-        <button mat-icon-button aria-label="User profile">
-          <mat-icon>account_circle</mat-icon>
-        </button>
+      <div class="header__right">
+        <div class="header__search">
+          <span class="material-symbols-outlined search-icon">search</span>
+          <input
+            type="text"
+            class="input-base search-input-padding"
+            placeholder="Global search..."
+            aria-label="Global search"
+            [value]="searchValue()"
+            (input)="onSearchInput($event)"
+          />
+          @if (showClearButton()) {
+            <button
+              type="button"
+              class="btn-clear"
+              data-testid="clear-search-button"
+              aria-label="Clear search"
+              (click)="onClearSearch()"
+            >
+              <span class="material-symbols-outlined icon-sm">close</span>
+            </button>
+          }
+        </div>
+
+        <div class="header__actions">
+          <button class="header__icon-button" aria-label="Notifications">
+            <span class="material-symbols-outlined">notifications</span>
+          </button>
+          <app-theme-toggle />
+          <div class="header__avatar" role="img" aria-label="User profile">
+            <span class="material-symbols-outlined">account_circle</span>
+          </div>
+        </div>
       </div>
     </header>
   `,
@@ -61,26 +74,26 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: var(--spacing-6);
+        gap: 1.5rem;
         height: 64px;
-        padding: 0 var(--spacing-6);
+        padding: 0 1.5rem;
         background-color: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border-bottom: 1px solid var(--color-border);
         transition:
-          background-color var(--transition-normal),
-          border-color var(--transition-normal);
+          background-color 250ms ease,
+          border-color 250ms ease;
       }
 
-      [data-theme='dark'] .header {
+      :host-context([data-theme='dark']) .header {
         background-color: rgba(17, 29, 33, 0.8);
       }
 
       .header__brand {
         display: flex;
         align-items: center;
-        gap: var(--spacing-3);
+        gap: 0.75rem;
         flex-shrink: 0;
       }
 
@@ -91,14 +104,19 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         width: 36px;
         height: 36px;
         background-color: var(--color-accent);
-        border-radius: var(--radius-md);
+        border-radius: 0.5rem;
+      }
 
-        mat-icon {
-          color: white;
-          font-size: 20px;
-          width: 20px;
-          height: 20px;
-        }
+      .header__logo .material-symbols-outlined {
+        color: white;
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 20;
       }
 
       .header__title {
@@ -108,10 +126,15 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         color: var(--color-text-primary);
       }
 
+      .header__right {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-shrink: 0;
+      }
+
       .header__search {
         position: relative;
-        flex: 1;
-        max-width: 600px;
         display: flex;
         align-items: center;
       }
@@ -123,49 +146,162 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         font-size: 20px;
         width: 20px;
         height: 20px;
+        pointer-events: none;
+        z-index: 1;
+        font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 20;
       }
 
-      .search-input {
-        width: 100%;
-        height: 40px;
-        padding: 0 16px 0 44px;
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-md);
-        background-color: var(--color-bg-input);
+      .search-input-padding {
+        padding-left: 44px;
+        padding-right: 2.5rem; /* Space for clear button */
+        width: 256px;
+        background-color: var(--color-bg-input) !important;
+        border-color: var(--color-border) !important;
         color: var(--color-text-primary);
-        font-size: 0.875rem;
-        transition: all 0.2s ease;
+      }
 
-        &::placeholder {
-          color: var(--color-text-muted);
-        }
+      .search-input-padding::placeholder {
+        color: var(--color-text-muted);
+      }
 
-        &:hover {
-          border-color: var(--color-border-strong);
-        }
+      .search-input-padding:hover {
+        border-color: var(--color-border-strong) !important;
+      }
 
-        &:focus {
-          outline: none;
-          border-color: var(--color-accent);
-          box-shadow: 0 0 0 3px rgba(23, 161, 207, 0.1);
-        }
+      .search-input-padding:focus {
+        background-color: var(--color-bg-input) !important;
+        border-color: var(--color-accent) !important;
+      }
+
+      /* Clear button - positioned absolutely inside search wrapper */
+      .btn-clear {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        color: var(--color-text-muted);
+        background-color: transparent;
+        border: none;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        z-index: 2;
+      }
+
+      .btn-clear:hover {
+        color: var(--color-text-primary);
+        background-color: var(--color-bg-elevated);
+      }
+
+      .btn-clear:active {
+        background-color: var(--color-bg-elevated);
+        opacity: 0.8;
+      }
+
+      .btn-clear:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
       }
 
       .header__actions {
         display: flex;
         align-items: center;
-        gap: var(--spacing-2);
+        gap: 1rem;
         flex-shrink: 0;
+        padding-left: 1.5rem;
+        border-left: 1px solid var(--color-border);
       }
 
-      .header__actions button {
-        color: var(--color-text-secondary);
+      .header__icon-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem;
+        border: none;
+        background: transparent;
+        color: rgb(100 116 139); /* slate-500 */
+        cursor: pointer;
+        transition: color 150ms ease;
+      }
 
-        &:hover {
-          color: var(--color-text-primary);
-        }
+      :host-context([data-theme='dark']) .header__icon-button {
+        color: rgb(100 116 139); /* slate-500 */
+      }
+
+      .header__icon-button:hover {
+        color: #17a1cf; /* primary */
+      }
+
+      .header__icon-button .material-symbols-outlined {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 20;
+      }
+
+      .header__avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 9999px;
+        background-color: rgb(226 232 240); /* slate-200 */
+        overflow: hidden;
+        cursor: pointer;
+      }
+
+      :host-context([data-theme='dark']) .header__avatar {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
+
+      .header__avatar .material-symbols-outlined {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+        color: rgb(71 85 105); /* slate-600 */
+        font-variation-settings:
+          'FILL' 1,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24;
+      }
+
+      :host-context([data-theme='dark']) .header__avatar .material-symbols-outlined {
+        color: rgb(148 163 184); /* slate-400 */
       }
     `,
   ],
 })
-export class HeaderComponent {}
+export class HeaderComponent {
+  // Internal state for search input
+  readonly searchValue = signal<string>('');
+
+  // Computed property to show/hide clear button
+  readonly showClearButton = computed(() => this.searchValue().length > 0);
+
+  onSearchInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.searchValue.set(target.value);
+    // TODO: Implement global search logic
+  }
+
+  onClearSearch(): void {
+    this.searchValue.set('');
+    // TODO: Clear global search results
+  }
+}

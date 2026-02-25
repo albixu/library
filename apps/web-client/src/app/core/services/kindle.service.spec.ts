@@ -1,4 +1,4 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { KindleService, SendToKindleResult } from './kindle.service.js';
 import { Book } from '../models/index.js';
@@ -37,50 +37,59 @@ describe('KindleService', () => {
   });
 
   describe('sendToKindle', () => {
-    it('should return success result with valid email', fakeAsync(() => {
+    it('should return success result with valid email', async () => {
       let result: SendToKindleResult | undefined;
 
       service.sendToKindle(mockBook, 'test@kindle.com').subscribe((r) => {
         result = r;
       });
 
-      tick(1000); // Mock delay
+      await vi.waitFor(
+        () => {
+          expect(result).toBeDefined();
+          expect(result?.success).toBe(true);
+          expect(result?.message).toContain('Clean Code');
+          expect(result?.message).toContain('test@kindle.com');
+        },
+        { timeout: 2000 }
+      );
+    });
 
-      expect(result).toBeDefined();
-      expect(result?.success).toBe(true);
-      expect(result?.message).toContain('Clean Code');
-      expect(result?.message).toContain('test@kindle.com');
-    }));
-
-    it('should return error result with invalid email', fakeAsync(() => {
+    it('should return error result with invalid email', async () => {
       let result: SendToKindleResult | undefined;
 
       service.sendToKindle(mockBook, 'invalid-email').subscribe((r) => {
         result = r;
       });
 
-      tick(1000);
+      await vi.waitFor(
+        () => {
+          expect(result).toBeDefined();
+          expect(result?.success).toBe(false);
+          expect(result?.message).toContain('Invalid email');
+        },
+        { timeout: 2000 }
+      );
+    });
 
-      expect(result).toBeDefined();
-      expect(result?.success).toBe(false);
-      expect(result?.message).toContain('Invalid email');
-    }));
-
-    it('should return error result with empty email', fakeAsync(() => {
+    it('should return error result with empty email', async () => {
       let result: SendToKindleResult | undefined;
 
       service.sendToKindle(mockBook, '').subscribe((r) => {
         result = r;
       });
 
-      tick(1000);
+      await vi.waitFor(
+        () => {
+          expect(result).toBeDefined();
+          expect(result?.success).toBe(false);
+          expect(result?.message).toContain('Invalid email');
+        },
+        { timeout: 2000 }
+      );
+    });
 
-      expect(result).toBeDefined();
-      expect(result?.success).toBe(false);
-      expect(result?.message).toContain('Invalid email');
-    }));
-
-    it('should return error result for unavailable book', fakeAsync(() => {
+    it('should return error result for unavailable book', async () => {
       const unavailableBook = { ...mockBook, available: false };
       let result: SendToKindleResult | undefined;
 
@@ -88,12 +97,15 @@ describe('KindleService', () => {
         result = r;
       });
 
-      tick(1000);
-
-      expect(result).toBeDefined();
-      expect(result?.success).toBe(false);
-      expect(result?.message).toContain('not available');
-    }));
+      await vi.waitFor(
+        () => {
+          expect(result).toBeDefined();
+          expect(result?.success).toBe(false);
+          expect(result?.message).toContain('not available');
+        },
+        { timeout: 2000 }
+      );
+    });
   });
 
   describe('validateKindleEmail', () => {

@@ -15,29 +15,41 @@ export default defineConfig({
     baseURL: 'http://localhost:4200',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    // Force dark mode by default (matches app default)
+    colorScheme: 'dark',
   },
 
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use system Chromium in Docker (Alpine Linux)
+        launchOptions: {
+          executablePath: process.env['CHROME_BIN'] || '/usr/bin/chromium-browser',
+        },
+      },
     },
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: {
+        ...devices['Desktop Firefox'],
+        // Use system Firefox in Docker (Alpine Linux)
+        launchOptions: {
+          executablePath: process.env['FIREFOX_BIN'] || '/usr/bin/firefox',
+        },
+      },
     },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-    // Mobile viewports
+    // Skip webkit (Safari) - not available in Alpine Linux
+    // Mobile viewports using chromium
     {
       name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
+      use: {
+        ...devices['Pixel 5'],
+        launchOptions: {
+          executablePath: process.env['CHROME_BIN'] || '/usr/bin/chromium-browser',
+        },
+      },
     },
   ],
 

@@ -1,5 +1,5 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { TestBed } from '@angular/core/testing';
+import { of, throwError, delay } from 'rxjs';
 
 import { BookSearchStore } from './book-search.store.js';
 import { BookService } from './book.service.js';
@@ -122,51 +122,48 @@ describe('BookSearchStore', () => {
   });
 
   describe('searchBooks', () => {
-    it('should set loading to true when searching', fakeAsync(() => {
-      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
+    it('should set loading to true when searching', async () => {
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse).pipe(delay(10)));
 
       store.searchBooks();
       expect(store.loading()).toBe(true);
 
-      tick();
-      expect(store.loading()).toBe(false);
-    }));
+      await vi.waitFor(() => expect(store.loading()).toBe(false), { timeout: 100 });
+    });
 
-    it('should update books with search results', fakeAsync(() => {
+    it('should update books with search results', async () => {
       bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
 
       store.searchBooks();
-      tick();
+      await vi.waitFor(() => expect(store.books()).toEqual([mockBook]));
+    });
 
-      expect(store.books()).toEqual([mockBook]);
-    }));
-
-    it('should update pagination with search results', fakeAsync(() => {
+    it('should update pagination with search results', async () => {
       bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
 
       store.searchBooks();
-      tick();
+      await vi.waitFor(() =>
+        expect(store.pagination()).toEqual({
+          limit: 50,
+          hasNextPage: true,
+          nextCursor: 'abc123',
+          totalCount: 100,
+        })
+      );
+    });
 
-      expect(store.pagination()).toEqual({
-        limit: 50,
-        hasNextPage: true,
-        nextCursor: 'abc123',
-        totalCount: 100,
-      });
-    }));
-
-    it('should call BookService with current filters', fakeAsync(() => {
+    it('should call BookService with current filters', async () => {
       bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
 
       const filters: SearchFilters = { title: 'Clean' };
       store.setFilters(filters);
       store.searchBooks();
-      tick();
+      await vi.waitFor(() =>
+        expect(bookServiceMock.searchBooks).toHaveBeenCalledWith(filters, { limit: 50 })
+      );
+    });
 
-      expect(bookServiceMock.searchBooks).toHaveBeenCalledWith(filters, { limit: 50 });
-    }));
-
-    it('should set error when search fails', fakeAsync(() => {
+    it('should set error when search fails', async () => {
       const errorResponse: BookSearchResponse = {
         success: false,
         data: null,
@@ -175,35 +172,30 @@ describe('BookSearchStore', () => {
       bookServiceMock.searchBooks.mockReturnValue(of(errorResponse));
 
       store.searchBooks();
-      tick();
+      await vi.waitFor(() => {
+        expect(store.error()).toBe('Search failed');
+        expect(store.books()).toEqual([]);
+      });
+    });
 
-      expect(store.error()).toBe('Search failed');
-      expect(store.books()).toEqual([]);
-    }));
-
-    it('should set error when http request fails', fakeAsync(() => {
+    it('should set error when http request fails', async () => {
       bookServiceMock.searchBooks.mockReturnValue(throwError(() => new Error('Network error')));
 
       store.searchBooks();
-      tick();
+      await vi.waitFor(() => expect(store.error()).toBe('Network error'));
+    });
 
-      expect(store.error()).toBe('Network error');
-    }));
-
-    it('should clear error on successful search', fakeAsync(() => {
+    it('should clear error on successful search', async () => {
       // First, set an error
       bookServiceMock.searchBooks.mockReturnValue(throwError(() => new Error('Network error')));
       store.searchBooks();
-      tick();
-      expect(store.error()).toBe('Network error');
+      await vi.waitFor(() => expect(store.error()).toBe('Network error'));
 
       // Then, successful search should clear error
       bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
       store.searchBooks();
-      tick();
-
-      expect(store.error()).toBeNull();
-    }));
+      await vi.waitFor(() => expect(store.error()).toBeNull());
+    });
   });
 
   describe('setFilters', () => {
@@ -215,27 +207,26 @@ describe('BookSearchStore', () => {
       expect(store.filters()).toEqual(filters);
     });
 
-    it('should reset pagination cursor when filters change', fakeAsync(() => {
+    it('should reset pagination cursor when filters change', async () => {
       bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
 
       // First search to get a cursor
       store.searchBooks();
-      tick();
-      expect(store.pagination().nextCursor).toBe('abc123');
+      await vi.waitFor(() => expect(store.pagination().nextCursor).toBe('abc123'));
 
       // Update filters - should trigger a new search and reset cursor
       store.setFilters({ title: 'New Title' });
 
       expect(store.pagination().nextCursor).toBeNull();
-    }));
+    });
   });
 
   describe('loadNextPage', () => {
-    it('should load next page with cursor', fakeAsync(() => {
+    it('should load next page with cursor', async () => {
       // First search
       bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
       store.searchBooks();
-      tick();
+      await vi.waitFor(() => expect(store.pagination().nextCursor).toBe('abc123'));
 
       // Load next page
       const nextPageResponse: BookSearchResponse = {
@@ -249,16 +240,19 @@ describe('BookSearchStore', () => {
       bookServiceMock.searchBooks.mockReturnValue(of(nextPageResponse));
 
       store.loadNextPage();
-      tick();
+      await vi.waitFor(() =>
+        expect(bookServiceMock.searchBooks).toHaveBeenCalledWith(
+          {},
+          { limit: 50, cursor: 'abc123' }
+        )
+      );
+    });
 
-      expect(bookServiceMock.searchBooks).toHaveBeenCalledWith({}, { limit: 50, cursor: 'abc123' });
-    }));
-
-    it('should append books when loading next page', fakeAsync(() => {
+    it('should append books when loading next page', async () => {
       // First search
       bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
       store.searchBooks();
-      tick();
+      await vi.waitFor(() => expect(store.books().length).toBe(1));
 
       // Load next page
       const nextPageResponse: BookSearchResponse = {
@@ -272,14 +266,14 @@ describe('BookSearchStore', () => {
       bookServiceMock.searchBooks.mockReturnValue(of(nextPageResponse));
 
       store.loadNextPage();
-      tick();
+      await vi.waitFor(() => {
+        expect(store.books().length).toBe(2);
+        expect(store.books()[0].title).toBe('Clean Code');
+        expect(store.books()[1].title).toBe('Clean Architecture');
+      });
+    });
 
-      expect(store.books().length).toBe(2);
-      expect(store.books()[0].title).toBe('Clean Code');
-      expect(store.books()[1].title).toBe('Clean Architecture');
-    }));
-
-    it('should not load next page if hasNextPage is false', fakeAsync(() => {
+    it('should not load next page if hasNextPage is false', async () => {
       const noMorePagesResponse: BookSearchResponse = {
         success: true,
         data: {
@@ -291,151 +285,155 @@ describe('BookSearchStore', () => {
       bookServiceMock.searchBooks.mockReturnValue(of(noMorePagesResponse));
 
       store.searchBooks();
-      tick();
+      await vi.waitFor(() => expect(store.books().length).toBe(1));
       bookServiceMock.searchBooks.mockClear();
 
       store.loadNextPage();
-      tick();
-
-      expect(bookServiceMock.searchBooks).not.toHaveBeenCalled();
-    }));
+      await vi.waitFor(() => expect(bookServiceMock.searchBooks).not.toHaveBeenCalled(), {
+        timeout: 100,
+      });
+    });
   });
 
   describe('setPageSize', () => {
-    it('should update limit in pagination', () => {
-      store.setPageSize(25);
+    it('should update limit in pagination', async () => {
+      // Mock response with the new page size
+      const responseWithNewLimit: BookSearchResponse = {
+        success: true,
+        data: {
+          items: [mockBook],
+          pagination: {
+            limit: 25,
+            hasNextPage: true,
+            nextCursor: 'abc123',
+            totalCount: 100,
+          },
+        },
+        error: null,
+      };
+      bookServiceMock.searchBooks.mockReturnValue(of(responseWithNewLimit));
 
-      expect(store.pagination().limit).toBe(25);
+      store.setPageSize(25);
+      await vi.waitFor(() => expect(store.pagination().limit).toBe(25));
     });
 
-    it('should trigger new search with new page size', fakeAsync(() => {
+    it('should trigger new search with new page size', async () => {
       bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
 
       store.setPageSize(25);
-      tick();
-
-      expect(bookServiceMock.searchBooks).toHaveBeenCalledWith({}, { limit: 25 });
-    }));
+      await vi.waitFor(() =>
+        expect(bookServiceMock.searchBooks).toHaveBeenCalledWith({}, { limit: 25 })
+      );
+    });
   });
 
   describe('loadTypes', () => {
-    it('should set typesLoading to true while loading', fakeAsync(() => {
-      bookServiceMock.getBookTypes.mockReturnValue(of(mockTypesResponse));
+    it('should set typesLoading to true while loading', async () => {
+      bookServiceMock.getBookTypes.mockReturnValue(of(mockTypesResponse).pipe(delay(10)));
 
       store.loadTypes();
       expect(store.typesLoading()).toBe(true);
 
-      tick();
-      expect(store.typesLoading()).toBe(false);
-    }));
+      await vi.waitFor(() => expect(store.typesLoading()).toBe(false), { timeout: 100 });
+    });
 
-    it('should update types with response data', fakeAsync(() => {
+    it('should update types with response data', async () => {
       bookServiceMock.getBookTypes.mockReturnValue(of(mockTypesResponse));
 
       store.loadTypes();
-      tick();
-
-      expect(store.types()).toEqual([
-        { id: '1', name: 'technical' },
-        { id: '2', name: 'fiction' },
-      ]);
-    }));
+      await vi.waitFor(() =>
+        expect(store.types()).toEqual([
+          { id: '1', name: 'technical' },
+          { id: '2', name: 'fiction' },
+        ])
+      );
+    });
   });
 
   describe('loadCategories', () => {
-    it('should set categoriesLoading to true while loading', fakeAsync(() => {
-      bookServiceMock.getCategories.mockReturnValue(of(mockCategoriesResponse));
+    it('should set categoriesLoading to true while loading', async () => {
+      bookServiceMock.getCategories.mockReturnValue(of(mockCategoriesResponse).pipe(delay(10)));
 
       store.loadCategories('technical');
       expect(store.categoriesLoading()).toBe(true);
 
-      tick();
-      expect(store.categoriesLoading()).toBe(false);
-    }));
+      await vi.waitFor(() => expect(store.categoriesLoading()).toBe(false), { timeout: 100 });
+    });
 
-    it('should call BookService.getCategories with type', fakeAsync(() => {
+    it('should call BookService.getCategories with type', async () => {
       bookServiceMock.getCategories.mockReturnValue(of(mockCategoriesResponse));
 
       store.loadCategories('technical');
-      tick();
+      await vi.waitFor(() =>
+        expect(bookServiceMock.getCategories).toHaveBeenCalledWith('technical')
+      );
+    });
 
-      expect(bookServiceMock.getCategories).toHaveBeenCalledWith('technical');
-    }));
-
-    it('should update categories with response data', fakeAsync(() => {
+    it('should update categories with response data', async () => {
       bookServiceMock.getCategories.mockReturnValue(of(mockCategoriesResponse));
 
       store.loadCategories('technical');
-      tick();
+      await vi.waitFor(() => {
+        expect(store.categories().length).toBe(2);
+        expect(store.categories()[0].name).toBe('programming');
+      });
+    });
 
-      expect(store.categories().length).toBe(2);
-      expect(store.categories()[0].name).toBe('programming');
-    }));
-
-    it('should clear categories when called without type', fakeAsync(() => {
+    it('should clear categories when called without type', async () => {
       bookServiceMock.getCategories.mockReturnValue(of(mockCategoriesResponse));
 
       // First load some categories
       store.loadCategories('technical');
-      tick();
-      expect(store.categories().length).toBe(2);
+      await vi.waitFor(() => expect(store.categories().length).toBe(2));
 
       // Clear categories
       store.loadCategories('');
-      tick();
-
-      expect(store.categories()).toEqual([]);
-    }));
+      await vi.waitFor(() => expect(store.categories()).toEqual([]));
+    });
   });
 
   describe('loadLevels', () => {
-    it('should set levelsLoading to true while loading', fakeAsync(() => {
-      bookServiceMock.getLevels.mockReturnValue(of(mockLevelsResponse));
+    it('should set levelsLoading to true while loading', async () => {
+      bookServiceMock.getLevels.mockReturnValue(of(mockLevelsResponse).pipe(delay(10)));
 
       store.loadLevels('technical');
       expect(store.levelsLoading()).toBe(true);
 
-      tick();
-      expect(store.levelsLoading()).toBe(false);
-    }));
+      await vi.waitFor(() => expect(store.levelsLoading()).toBe(false), { timeout: 100 });
+    });
 
-    it('should call BookService.getLevels with type', fakeAsync(() => {
+    it('should call BookService.getLevels with type', async () => {
       bookServiceMock.getLevels.mockReturnValue(of(mockLevelsResponse));
 
       store.loadLevels('technical');
-      tick();
+      await vi.waitFor(() => expect(bookServiceMock.getLevels).toHaveBeenCalledWith('technical'));
+    });
 
-      expect(bookServiceMock.getLevels).toHaveBeenCalledWith('technical');
-    }));
-
-    it('should update levels with response data', fakeAsync(() => {
+    it('should update levels with response data', async () => {
       bookServiceMock.getLevels.mockReturnValue(of(mockLevelsResponse));
 
       store.loadLevels('technical');
-      tick();
+      await vi.waitFor(() => {
+        expect(store.levels().length).toBe(2);
+        expect(store.levels()[0].name).toBe('Beginner');
+      });
+    });
 
-      expect(store.levels().length).toBe(2);
-      expect(store.levels()[0].name).toBe('Beginner');
-    }));
-
-    it('should clear levels when called without type', fakeAsync(() => {
+    it('should clear levels when called without type', async () => {
       bookServiceMock.getLevels.mockReturnValue(of(mockLevelsResponse));
 
       // First load some levels
       store.loadLevels('technical');
-      tick();
-      expect(store.levels().length).toBe(2);
+      await vi.waitFor(() => expect(store.levels().length).toBe(2));
 
       // Clear levels
       store.loadLevels('');
-      tick();
-
-      expect(store.levels()).toEqual([]);
-    }));
+      await vi.waitFor(() => expect(store.levels()).toEqual([]));
+    });
   });
 
   describe('reset', () => {
-    it('should reset all state to initial values', fakeAsync(() => {
+    it('should reset all state to initial values', async () => {
       // First, populate some state
       bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
       bookServiceMock.getBookTypes.mockReturnValue(of(mockTypesResponse));
@@ -443,7 +441,7 @@ describe('BookSearchStore', () => {
       store.setFilters({ title: 'Clean' });
       store.searchBooks();
       store.loadTypes();
-      tick();
+      await vi.waitFor(() => expect(store.books().length).toBe(1));
 
       // Now reset
       store.reset();
@@ -457,7 +455,7 @@ describe('BookSearchStore', () => {
         nextCursor: null,
         totalCount: 0,
       });
-    }));
+    });
   });
 
   describe('computed properties', () => {
@@ -465,14 +463,12 @@ describe('BookSearchStore', () => {
       expect(store.isEmpty()).toBe(true);
     });
 
-    it('isEmpty should return false when there are books', fakeAsync(() => {
+    it('isEmpty should return false when there are books', async () => {
       bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
 
       store.searchBooks();
-      tick();
-
-      expect(store.isEmpty()).toBe(false);
-    }));
+      await vi.waitFor(() => expect(store.isEmpty()).toBe(false));
+    });
 
     it('hasFilters should return false initially', () => {
       expect(store.hasFilters()).toBe(false);

@@ -60,7 +60,7 @@ describe('FormatIconComponent', () => {
         fixture.componentRef.setInput('format', format);
         fixture.detectChanges();
 
-        const icon = fixture.nativeElement.querySelector('mat-icon');
+        const icon = fixture.nativeElement.querySelector('.material-symbols-outlined');
         expect(icon.textContent.trim()).toBe(expectedIcon);
       });
     });
@@ -69,7 +69,7 @@ describe('FormatIconComponent', () => {
       fixture.componentRef.setInput('format', 'unknown' as BookFormat);
       fixture.detectChanges();
 
-      const icon = fixture.nativeElement.querySelector('mat-icon');
+      const icon = fixture.nativeElement.querySelector('.material-symbols-outlined');
       expect(icon.textContent.trim()).toBe('insert_drive_file');
     });
   });
@@ -107,7 +107,7 @@ describe('FormatIconComponent', () => {
       fixture.componentRef.setInput('format', 'pdf');
       fixture.detectChanges();
 
-      const icon = fixture.nativeElement.querySelector('mat-icon');
+      const icon = fixture.nativeElement.querySelector('.material-symbols-outlined');
       expect(icon.getAttribute('aria-hidden')).toBe('true');
     });
   });

@@ -11,10 +11,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { Subject, debounceTime } from 'rxjs';
 
 /**
@@ -32,40 +28,33 @@ import { Subject, debounceTime } from 'rxjs';
 @Component({
   selector: 'app-semantic-search',
   standalone: true,
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule],
+  imports: [FormsModule],
   template: `
-    <mat-form-field appearance="outline" class="semantic-search">
-      <mat-label>{{ label() }}</mat-label>
-      <textarea
-        matInput
-        [placeholder]="placeholder()"
-        [value]="internalValue()"
-        [disabled]="disabled()"
-        [attr.aria-label]="label()"
-        [rows]="rows()"
-        [attr.maxlength]="maxLength() || null"
-        (input)="onInput($event)"
-      ></textarea>
-      @if (showClearButton()) {
-        <button
-          matSuffix
-          mat-icon-button
-          data-testid="clear-button"
-          aria-label="Clear search"
-          (click)="onClear()"
-        >
-          <mat-icon>close</mat-icon>
-        </button>
-      }
-      @if (hint()) {
-        <mat-hint>{{ hint() }}</mat-hint>
-      }
-      @if (maxLength() > 0) {
-        <mat-hint align="end" data-testid="char-count">
-          {{ internalValue().length }} / {{ maxLength() }}
-        </mat-hint>
-      }
-    </mat-form-field>
+    <div class="semantic-search" [class.semantic-search--disabled]="disabled()">
+      <div class="semantic-search__wrapper">
+        <textarea
+          id="semantic-search-textarea"
+          class="textarea-semantic"
+          [placeholder]="placeholder()"
+          [value]="internalValue()"
+          [disabled]="disabled()"
+          aria-label="Semantic search"
+          [attr.maxlength]="maxLength() || null"
+          (input)="onInput($event)"
+        ></textarea>
+        @if (showClearButton()) {
+          <button
+            type="button"
+            class="btn-clear clear-top-right"
+            data-testid="clear-button"
+            aria-label="Clear search"
+            (click)="onClear()"
+          >
+            <span class="material-symbols-outlined icon-sm">close</span>
+          </button>
+        }
+      </div>
+    </div>
   `,
   styles: [
     `
@@ -78,13 +67,87 @@ import { Subject, debounceTime } from 'rxjs';
         width: 100%;
       }
 
-      textarea {
-        resize: vertical;
-        min-height: 60px;
+      .semantic-search__wrapper {
+        position: relative;
       }
 
-      button[matSuffix] {
-        margin-top: -40px;
+      .textarea-semantic {
+        width: 100%;
+        height: 105px;
+        padding: 0.75rem;
+        padding-right: 2.5rem; /* Space for clear button */
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: var(--color-text-primary);
+        background-color: var(--color-bg-input);
+        border: 1px solid var(--color-border);
+        border-radius: 0.5rem;
+        transition: all 0.15s ease-in-out;
+        resize: none;
+      }
+
+      .textarea-semantic::placeholder {
+        color: var(--color-text-muted);
+      }
+
+      .textarea-semantic:hover:not(:disabled) {
+        border-color: var(--color-border-strong);
+      }
+
+      .textarea-semantic:focus {
+        outline: none;
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 3px rgba(23, 161, 207, 0.1);
+      }
+
+      .textarea-semantic:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: var(--color-bg-input);
+      }
+
+      /* Clear button - positioned absolutely inside textarea wrapper */
+      .btn-clear {
+        position: absolute;
+        right: 0.5rem;
+        top: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        color: var(--color-text-muted);
+        background-color: transparent;
+        border: none;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        z-index: 2;
+      }
+
+      .btn-clear:hover {
+        color: var(--color-text-primary);
+        background-color: var(--color-bg-elevated);
+      }
+
+      .btn-clear:active {
+        background-color: var(--color-bg-elevated);
+        opacity: 0.8;
+      }
+
+      .btn-clear:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+      }
+
+      .clear-top-right {
+        top: 0.5rem;
+        transform: none;
+      }
+
+      .semantic-search--disabled .textarea-semantic {
+        opacity: 0.5;
       }
     `,
   ],

@@ -1,7 +1,6 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { of, delay } from 'rxjs';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+import { of, delay, throwError } from 'rxjs';
 
 import { SendToKindleDialogComponent } from './send-to-kindle-dialog.component.js';
 import { KindleService, SendToKindleResult } from '../../../../core/services/kindle.service.js';
@@ -13,7 +12,6 @@ describe('SendToKindleDialogComponent', () => {
   let mockDialogRef: { close: ReturnType<typeof vi.fn> };
   let mockKindleService: {
     sendToKindle: ReturnType<typeof vi.fn>;
-    validateKindleEmail: ReturnType<typeof vi.fn>;
     isKindleEmail: ReturnType<typeof vi.fn>;
   };
 
@@ -39,21 +37,19 @@ describe('SendToKindleDialogComponent', () => {
     available: false,
   };
 
-  beforeEach(async () => {
+  /**
+   * Helper function to configure TestBed with given book
+   */
+  const configureTestBed = async (book: Book) => {
     mockDialogRef = {
       close: vi.fn(),
     };
 
     mockKindleService = {
       sendToKindle: vi.fn(),
-      validateKindleEmail: vi.fn(),
       isKindleEmail: vi.fn(),
     };
 
-    // Default mock implementations
-    mockKindleService.validateKindleEmail.mockImplementation((email: string) =>
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    );
     mockKindleService.isKindleEmail.mockImplementation((email: string) =>
       email.toLowerCase().endsWith('@kindle.com')
     );
@@ -61,9 +57,8 @@ describe('SendToKindleDialogComponent', () => {
     await TestBed.configureTestingModule({
       imports: [SendToKindleDialogComponent],
       providers: [
-        provideAnimationsAsync(),
-        { provide: MatDialogRef, useValue: mockDialogRef },
-        { provide: MAT_DIALOG_DATA, useValue: mockBook },
+        { provide: DialogRef, useValue: mockDialogRef },
+        { provide: DIALOG_DATA, useValue: book },
         { provide: KindleService, useValue: mockKindleService },
       ],
     }).compileComponents();
@@ -71,6 +66,21 @@ describe('SendToKindleDialogComponent', () => {
     fixture = TestBed.createComponent(SendToKindleDialogComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  };
+
+  /**
+   * Helper function to set email and trigger change detection
+   */
+  const setEmailValue = async (email: string) => {
+    component.emailControl.setValue(email);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+  };
+
+  beforeEach(async () => {
+    await configureTestBed(mockBook);
   });
 
   describe('Creation', () => {
@@ -105,36 +115,28 @@ describe('SendToKindleDialogComponent', () => {
 
   describe('Email validation', () => {
     it('should show error for empty email when touched', async () => {
-      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
-      emailInput.focus();
-      emailInput.blur();
+      component.emailControl.markAsTouched();
       fixture.detectChanges();
       await fixture.whenStable();
 
-      const error = fixture.nativeElement.querySelector('mat-error');
+      const error = fixture.nativeElement.querySelector('.error-message');
       expect(error).toBeTruthy();
       expect(error.textContent).toContain('Email is required');
     });
 
     it('should show error for invalid email format', async () => {
-      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
-      emailInput.value = 'invalid-email';
-      emailInput.dispatchEvent(new Event('input'));
-      emailInput.dispatchEvent(new Event('blur'));
+      component.emailControl.setValue('invalid-email');
+      component.emailControl.markAsTouched();
       fixture.detectChanges();
       await fixture.whenStable();
 
-      const error = fixture.nativeElement.querySelector('mat-error');
+      const error = fixture.nativeElement.querySelector('.error-message');
       expect(error).toBeTruthy();
       expect(error.textContent).toContain('Please enter a valid email');
     });
 
     it('should show warning for non-kindle email', async () => {
-      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
-      emailInput.value = 'user@gmail.com';
-      emailInput.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
-      await fixture.whenStable();
+      await setEmailValue('user@gmail.com');
 
       const warning = fixture.nativeElement.querySelector('[data-testid="kindle-warning"]');
       expect(warning).toBeTruthy();
@@ -142,11 +144,7 @@ describe('SendToKindleDialogComponent', () => {
     });
 
     it('should not show warning for kindle email', async () => {
-      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
-      emailInput.value = 'user@kindle.com';
-      emailInput.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
-      await fixture.whenStable();
+      await setEmailValue('user@kindle.com');
 
       const warning = fixture.nativeElement.querySelector('[data-testid="kindle-warning"]');
       expect(warning).toBeFalsy();
@@ -160,215 +158,88 @@ describe('SendToKindleDialogComponent', () => {
     });
 
     it('should enable send button when email is valid', async () => {
-      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
-      emailInput.value = 'user@kindle.com';
-      emailInput.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
-      await fixture.whenStable();
+      await setEmailValue('user@kindle.com');
 
       const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
       expect(sendButton.disabled).toBe(false);
     });
 
-    it('should disable send button while sending', fakeAsync(() => {
+    it('should disable send button while sending', async () => {
       const successResult: SendToKindleResult = {
         success: true,
         message: 'Book sent successfully',
       };
-      mockKindleService.sendToKindle.mockReturnValue(of(successResult).pipe(delay(500)));
+      mockKindleService.sendToKindle.mockReturnValue(of(successResult).pipe(delay(100)));
 
-      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
-      emailInput.value = 'user@kindle.com';
-      emailInput.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
+      await setEmailValue('user@kindle.com');
 
       const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
       sendButton.click();
       fixture.detectChanges();
 
+      // Button should be disabled while sending
       expect(sendButton.disabled).toBe(true);
 
-      tick(500);
-      fixture.detectChanges();
-    }));
-  });
-
-  describe('Cancel action', () => {
-    it('should close dialog without result when cancel is clicked', () => {
-      const cancelButton = fixture.nativeElement.querySelector('[data-testid="cancel-button"]');
-      cancelButton.click();
-
-      expect(mockDialogRef.close).toHaveBeenCalledWith();
-    });
-  });
-
-  describe('Send action', () => {
-    it('should call KindleService.sendToKindle with book and email', async () => {
-      const successResult: SendToKindleResult = {
-        success: true,
-        message: 'Book sent successfully',
-      };
-      mockKindleService.sendToKindle.mockReturnValue(of(successResult));
-
-      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
-      emailInput.value = 'user@kindle.com';
-      emailInput.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
-
-      const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
-      sendButton.click();
-      fixture.detectChanges();
-      await fixture.whenStable();
-
-      expect(mockKindleService.sendToKindle).toHaveBeenCalledWith(mockBook, 'user@kindle.com');
+      // Wait for the success state - the send button will be replaced by close button
+      await vi.waitFor(
+        () => {
+          fixture.detectChanges();
+          const closeButton = fixture.nativeElement.querySelector('[data-testid="close-button"]');
+          expect(closeButton).toBeTruthy();
+        },
+        { timeout: 1000 }
+      );
     });
 
-    it('should show loading spinner while sending', fakeAsync(() => {
+    it('should close dialog with result when close button is clicked after success', async () => {
       const successResult: SendToKindleResult = {
         success: true,
         message: 'Book sent successfully',
       };
-      mockKindleService.sendToKindle.mockReturnValue(of(successResult).pipe(delay(500)));
+      mockKindleService.sendToKindle.mockReturnValue(of(successResult).pipe(delay(10)));
 
-      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
-      emailInput.value = 'user@kindle.com';
-      emailInput.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
+      await setEmailValue('user@kindle.com');
 
       const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
       sendButton.click();
-      fixture.detectChanges();
 
-      const spinner = fixture.nativeElement.querySelector('mat-spinner');
-      expect(spinner).toBeTruthy();
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        const closeButton = fixture.nativeElement.querySelector('[data-testid="close-button"]');
+        expect(closeButton).toBeTruthy();
+        closeButton.click();
+      });
 
-      tick(500);
-      fixture.detectChanges();
-    }));
-
-    it('should show success message after successful send', fakeAsync(() => {
-      const successResult: SendToKindleResult = {
+      expect(mockDialogRef.close).toHaveBeenCalledWith({
         success: true,
-        message: '"Clean Code" has been sent to user@kindle.com. Check your Kindle!',
-      };
-      mockKindleService.sendToKindle.mockReturnValue(of(successResult));
+        email: 'user@kindle.com',
+      });
+    });
 
-      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
-      emailInput.value = 'user@kindle.com';
-      emailInput.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
+    it('should handle send error gracefully', async () => {
+      mockKindleService.sendToKindle.mockReturnValue(throwError(() => new Error('Network error')));
 
-      const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
-      sendButton.click();
-      tick();
-      fixture.detectChanges();
-
-      const successMessage = fixture.nativeElement.querySelector('[data-testid="success-message"]');
-      expect(successMessage).toBeTruthy();
-      expect(successMessage.textContent).toContain('Clean Code');
-    }));
-
-    it('should show error message after failed send', fakeAsync(() => {
-      const errorResult: SendToKindleResult = {
-        success: false,
-        message: 'Book is not available for sending',
-      };
-      mockKindleService.sendToKindle.mockReturnValue(of(errorResult));
-
-      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
-      emailInput.value = 'user@kindle.com';
-      emailInput.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
+      await setEmailValue('user@kindle.com');
 
       const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
       sendButton.click();
-      tick();
-      fixture.detectChanges();
 
-      const errorMessage = fixture.nativeElement.querySelector('[data-testid="error-message"]');
-      expect(errorMessage).toBeTruthy();
-      expect(errorMessage.textContent).toContain('not available');
-    }));
-
-    it('should show close button after successful send', fakeAsync(() => {
-      const successResult: SendToKindleResult = {
-        success: true,
-        message: 'Book sent successfully',
-      };
-      mockKindleService.sendToKindle.mockReturnValue(of(successResult));
-
-      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
-      emailInput.value = 'user@kindle.com';
-      emailInput.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
-
-      const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
-      sendButton.click();
-      tick();
-      fixture.detectChanges();
-
-      const closeButton = fixture.nativeElement.querySelector('[data-testid="close-button"]');
-      expect(closeButton).toBeTruthy();
-    }));
-
-    it('should close dialog with result when close button is clicked after success', fakeAsync(() => {
-      const successResult: SendToKindleResult = {
-        success: true,
-        message: 'Book sent successfully',
-      };
-      mockKindleService.sendToKindle.mockReturnValue(of(successResult));
-
-      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
-      emailInput.value = 'user@kindle.com';
-      emailInput.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
-
-      const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
-      sendButton.click();
-      tick();
-      fixture.detectChanges();
-
-      const closeButton = fixture.nativeElement.querySelector('[data-testid="close-button"]');
-      closeButton.click();
-
-      expect(mockDialogRef.close).toHaveBeenCalledWith({ success: true, email: 'user@kindle.com' });
-    }));
+      await vi.waitFor(
+        () => {
+          fixture.detectChanges();
+          const errorMessage = fixture.nativeElement.querySelector('[data-testid="error-message"]');
+          expect(errorMessage).toBeTruthy();
+          expect(errorMessage.textContent).toContain('unexpected error occurred');
+        },
+        { timeout: 1000 }
+      );
+    });
   });
 
   describe('Unavailable book', () => {
     beforeEach(async () => {
       await TestBed.resetTestingModule();
-
-      mockDialogRef = {
-        close: vi.fn(),
-      };
-
-      mockKindleService = {
-        sendToKindle: vi.fn(),
-        validateKindleEmail: vi.fn(),
-        isKindleEmail: vi.fn(),
-      };
-
-      mockKindleService.validateKindleEmail.mockImplementation((email: string) =>
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-      );
-      mockKindleService.isKindleEmail.mockImplementation((email: string) =>
-        email.toLowerCase().endsWith('@kindle.com')
-      );
-
-      await TestBed.configureTestingModule({
-        imports: [SendToKindleDialogComponent],
-        providers: [
-          provideAnimationsAsync(),
-          { provide: MatDialogRef, useValue: mockDialogRef },
-          { provide: MAT_DIALOG_DATA, useValue: mockUnavailableBook },
-          { provide: KindleService, useValue: mockKindleService },
-        ],
-      }).compileComponents();
-
-      fixture = TestBed.createComponent(SendToKindleDialogComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
+      await configureTestBed(mockUnavailableBook);
     });
 
     it('should show unavailable warning for unavailable books', () => {

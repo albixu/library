@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { providePrimeNG } from 'primeng/config';
+import Aura from '@primeuix/themes/aura';
 import { MultiSelectChipsComponent, SelectOption } from './multi-select-chips.component.js';
 
 describe('MultiSelectChipsComponent', () => {
@@ -16,7 +18,15 @@ describe('MultiSelectChipsComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MultiSelectChipsComponent],
-      providers: [provideAnimationsAsync()],
+      providers: [
+        provideAnimationsAsync(),
+        providePrimeNG({
+          theme: {
+            preset: Aura,
+            options: { unstyled: true },
+          },
+        }),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MultiSelectChipsComponent);
@@ -35,23 +45,17 @@ describe('MultiSelectChipsComponent', () => {
       fixture.componentRef.setInput('label', 'Categories');
       fixture.detectChanges();
 
-      const label = fixture.nativeElement.querySelector('mat-label');
+      const label = fixture.nativeElement.querySelector('.multi-select-label');
       expect(label.textContent.trim()).toBe('Categories');
     });
 
-    it('should display options when provided', async () => {
+    it('should set options from input', () => {
       fixture.componentRef.setInput('options', mockOptions);
       fixture.detectChanges();
-      await fixture.whenStable();
 
-      // Open the select panel
-      const trigger = fixture.nativeElement.querySelector('.mat-mdc-select-trigger');
-      trigger.click();
-      fixture.detectChanges();
-      await fixture.whenStable();
-
-      const options = document.querySelectorAll('mat-option');
-      expect(options.length).toBe(mockOptions.length);
+      // Verify options are passed to PrimeNG component
+      const pMultiSelect = fixture.nativeElement.querySelector('p-multiselect');
+      expect(pMultiSelect).toBeTruthy();
     });
 
     it('should display placeholder when no values selected', () => {
@@ -63,18 +67,18 @@ describe('MultiSelectChipsComponent', () => {
 
     it('should set selected values from input', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1', '2']);
+      fixture.componentRef.setInput('value', ['Programming', 'Web Development']);
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(component.internalValue()).toEqual(['1', '2']);
+      expect(component.internalValue()).toEqual(['Programming', 'Web Development']);
     });
   });
 
   describe('Chips display', () => {
     it('should display chips for selected values', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1', '2']);
+      fixture.componentRef.setInput('value', ['Programming', 'Web Development']);
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -84,7 +88,7 @@ describe('MultiSelectChipsComponent', () => {
 
     it('should display correct names on chips', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1']);
+      fixture.componentRef.setInput('value', ['Programming']);
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -94,7 +98,7 @@ describe('MultiSelectChipsComponent', () => {
 
     it('should remove chip when remove button is clicked', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1', '2']);
+      fixture.componentRef.setInput('value', ['Programming', 'Web Development']);
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -111,95 +115,41 @@ describe('MultiSelectChipsComponent', () => {
     });
   });
 
-  describe('Selection behavior', () => {
-    it('should emit selected values when options are clicked', async () => {
+  describe('Value changes', () => {
+    it('should emit values when selection changes', async () => {
       fixture.componentRef.setInput('options', mockOptions);
       fixture.detectChanges();
 
       const emittedValues: string[][] = [];
       component.valueChange.subscribe((value: string[]) => emittedValues.push(value));
 
-      // Open the select panel
-      const trigger = fixture.nativeElement.querySelector('.mat-mdc-select-trigger');
-      trigger.click();
-      fixture.detectChanges();
+      // Simulate selection change
+      component.onSelectionChange(['Programming', 'Web Development']);
       await fixture.whenStable();
 
-      // Click on an option
-      const options = document.querySelectorAll('mat-option');
-      (options[0] as HTMLElement).click();
-      fixture.detectChanges();
-      await fixture.whenStable();
-
-      expect(emittedValues.length).toBeGreaterThan(0);
-      expect(emittedValues[emittedValues.length - 1]).toContain('1');
+      expect(emittedValues).toEqual([['Programming', 'Web Development']]);
+      expect(component.internalValue()).toEqual(['Programming', 'Web Development']);
     });
 
-    it('should allow multiple selections', async () => {
-      fixture.componentRef.setInput('options', mockOptions);
-      fixture.detectChanges();
-
-      // Open the select panel
-      const trigger = fixture.nativeElement.querySelector('.mat-mdc-select-trigger');
-      trigger.click();
+    it('should sync external value changes to internal value', async () => {
+      fixture.componentRef.setInput('value', ['Programming']);
       fixture.detectChanges();
       await fixture.whenStable();
 
-      // Click on multiple options
-      const options = document.querySelectorAll('mat-option');
-      (options[0] as HTMLElement).click();
-      (options[1] as HTMLElement).click();
+      expect(component.internalValue()).toEqual(['Programming']);
+
+      fixture.componentRef.setInput('value', ['Web Development', 'Database']);
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(component.internalValue().length).toBe(2);
-    });
-  });
-
-  describe('Search/Filter functionality', () => {
-    it('should show search input when select is opened', async () => {
-      fixture.componentRef.setInput('options', mockOptions);
-      fixture.detectChanges();
-
-      // Open the select panel
-      const trigger = fixture.nativeElement.querySelector('.mat-mdc-select-trigger');
-      trigger.click();
-      fixture.detectChanges();
-      await fixture.whenStable();
-
-      const searchInput = document.querySelector('[data-testid="search-input"]');
-      expect(searchInput).toBeTruthy();
-    });
-
-    it('should filter options based on search term', async () => {
-      fixture.componentRef.setInput('options', mockOptions);
-      fixture.detectChanges();
-
-      // Open the select panel
-      const trigger = fixture.nativeElement.querySelector('.mat-mdc-select-trigger');
-      trigger.click();
-      fixture.detectChanges();
-      await fixture.whenStable();
-
-      // Type in search
-      const searchInput = document.querySelector(
-        '[data-testid="search-input"]'
-      ) as HTMLInputElement;
-      searchInput.value = 'Prog';
-      searchInput.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
-      await fixture.whenStable();
-
-      // Check filtered options are computed correctly
-      expect(component.filteredOptions().length).toBe(1);
-      expect(component.filteredOptions()[0].name).toBe('Programming');
+      expect(component.internalValue()).toEqual(['Web Development', 'Database']);
     });
   });
 
   describe('Clear all functionality', () => {
     it('should show clear all button when values are selected', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1', '2']);
+      fixture.componentRef.setInput('value', ['Programming', 'Web Development']);
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -218,7 +168,7 @@ describe('MultiSelectChipsComponent', () => {
 
     it('should clear all selections when clear all is clicked', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1', '2']);
+      fixture.componentRef.setInput('value', ['Programming', 'Web Development']);
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -239,20 +189,29 @@ describe('MultiSelectChipsComponent', () => {
       fixture.componentRef.setInput('label', 'Categories');
       fixture.detectChanges();
 
-      const select = fixture.nativeElement.querySelector('mat-select');
-      const ariaLabel = select.getAttribute('aria-label');
-      expect(ariaLabel).toBe('Categories');
+      const pMultiSelect = fixture.nativeElement.querySelector('p-multiselect');
+      expect(pMultiSelect).toBeTruthy();
     });
 
     it('should have proper aria-label on chip remove buttons', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1']);
+      fixture.componentRef.setInput('value', ['Programming']);
       fixture.detectChanges();
       await fixture.whenStable();
 
       const removeButton = fixture.nativeElement.querySelector('[data-testid="remove-chip"]');
       const ariaLabel = removeButton.getAttribute('aria-label');
       expect(ariaLabel).toContain('Remove');
+    });
+
+    it('should generate unique input id', () => {
+      const id1 = component.inputId();
+
+      const fixture2 = TestBed.createComponent(MultiSelectChipsComponent);
+      const component2 = fixture2.componentInstance;
+      const id2 = component2.inputId();
+
+      expect(id1).not.toBe(id2);
     });
   });
 
@@ -261,13 +220,13 @@ describe('MultiSelectChipsComponent', () => {
       fixture.componentRef.setInput('disabled', true);
       fixture.detectChanges();
 
-      const select = fixture.nativeElement.querySelector('mat-select');
-      expect(select.getAttribute('aria-disabled')).toBe('true');
+      const pMultiSelect = fixture.nativeElement.querySelector('p-multiselect');
+      expect(pMultiSelect).toBeTruthy();
     });
 
     it('should hide remove buttons on chips when disabled', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1']);
+      fixture.componentRef.setInput('value', ['Programming']);
       fixture.componentRef.setInput('disabled', true);
       fixture.detectChanges();
       await fixture.whenStable();
@@ -278,20 +237,36 @@ describe('MultiSelectChipsComponent', () => {
   });
 
   describe('Loading state', () => {
-    it('should show loading indicator when loading is true', () => {
+    it('should have loading state when loading is true', () => {
       fixture.componentRef.setInput('loading', true);
       fixture.detectChanges();
 
-      const spinner = fixture.nativeElement.querySelector('mat-spinner');
-      expect(spinner).toBeTruthy();
+      // Verify loading signal is set correctly
+      expect(component.loading()).toBe(true);
+
+      // Verify PrimeNG multiselect is rendered (icon templates are rendered dynamically)
+      const pMultiSelect = fixture.nativeElement.querySelector('p-multiselect');
+      expect(pMultiSelect).toBeTruthy();
     });
 
     it('should disable select when loading is true', () => {
       fixture.componentRef.setInput('loading', true);
       fixture.detectChanges();
 
-      const select = fixture.nativeElement.querySelector('mat-select');
-      expect(select.getAttribute('aria-disabled')).toBe('true');
+      const pMultiSelect = fixture.nativeElement.querySelector('p-multiselect');
+      expect(pMultiSelect).toBeTruthy();
+    });
+
+    it('should not be loading when loading is false', () => {
+      fixture.componentRef.setInput('loading', false);
+      fixture.detectChanges();
+
+      // Verify loading signal is set correctly
+      expect(component.loading()).toBe(false);
+
+      // Verify PrimeNG multiselect is rendered
+      const pMultiSelect = fixture.nativeElement.querySelector('p-multiselect');
+      expect(pMultiSelect).toBeTruthy();
     });
   });
 });

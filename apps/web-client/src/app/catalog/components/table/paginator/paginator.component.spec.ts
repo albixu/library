@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { PaginatorComponent } from './paginator.component';
 
 describe('PaginatorComponent', () => {
@@ -8,7 +7,7 @@ describe('PaginatorComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PaginatorComponent, NoopAnimationsModule],
+      imports: [PaginatorComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PaginatorComponent);
@@ -20,9 +19,8 @@ describe('PaginatorComponent', () => {
       expect(component).toBeTruthy();
     });
 
-    it('should have default pageSize of 25', () => {
-      fixture.detectChanges();
-      expect(component.pageSize()).toBe(25);
+    it('should have fixed PAGE_SIZE of 25', () => {
+      expect(PaginatorComponent.PAGE_SIZE).toBe(25);
     });
 
     it('should have default totalCount of 0', () => {
@@ -46,36 +44,23 @@ describe('PaginatorComponent', () => {
     });
   });
 
-  describe('Page size options', () => {
-    it('should have default page size options of [25, 50, 100]', () => {
-      fixture.detectChanges();
-      expect(component.pageSizeOptions()).toEqual([25, 50, 100]);
-    });
-
-    it('should use custom page size options when provided', () => {
-      fixture.componentRef.setInput('pageSizeOptions', [10, 20, 50]);
-      fixture.detectChanges();
-      expect(component.pageSizeOptions()).toEqual([10, 20, 50]);
-    });
-  });
-
   describe('Display', () => {
-    it('should display current count of total count', () => {
+    it('should display current count of total count with Stitch format', () => {
       fixture.componentRef.setInput('totalCount', 100);
       fixture.componentRef.setInput('currentCount', 25);
       fixture.detectChanges();
 
       const rangeLabel = fixture.nativeElement.textContent;
-      expect(rangeLabel).toContain('25 of 100');
+      expect(rangeLabel).toContain('Showing 25 of 100 items');
     });
 
-    it('should display 0 of 0 when no items', () => {
+    it('should display 0 of 0 items when no items', () => {
       fixture.componentRef.setInput('totalCount', 0);
       fixture.componentRef.setInput('currentCount', 0);
       fixture.detectChanges();
 
       const rangeLabel = fixture.nativeElement.textContent;
-      expect(rangeLabel).toContain('0 of 0');
+      expect(rangeLabel).toContain('Showing 0 of 0 items');
     });
 
     it('should display all items loaded correctly', () => {
@@ -84,7 +69,7 @@ describe('PaginatorComponent', () => {
       fixture.detectChanges();
 
       const rangeLabel = fixture.nativeElement.textContent;
-      expect(rangeLabel).toContain('45 of 45');
+      expect(rangeLabel).toContain('Showing 45 of 45 items');
     });
   });
 
@@ -125,10 +110,24 @@ describe('PaginatorComponent', () => {
       const loadMoreButton = fixture.nativeElement.querySelector(
         '[data-testid="load-more-button"]'
       );
-      const spinner = fixture.nativeElement.querySelector('mat-spinner');
+      const spinner = fixture.nativeElement.querySelector('.spinner');
 
       expect(loadMoreButton).toBeFalsy();
       expect(spinner).toBeTruthy();
+    });
+
+    it('should display Material Symbols icon in load more button', () => {
+      fixture.componentRef.setInput('totalCount', 100);
+      fixture.componentRef.setInput('currentCount', 25);
+      fixture.componentRef.setInput('hasNextPage', true);
+      fixture.componentRef.setInput('loading', false);
+      fixture.detectChanges();
+
+      const icon = fixture.nativeElement.querySelector(
+        '[data-testid="load-more-button"] .material-symbols-outlined'
+      );
+      expect(icon).toBeTruthy();
+      expect(icon.textContent.trim()).toBe('expand_more');
     });
   });
 
@@ -149,30 +148,6 @@ describe('PaginatorComponent', () => {
       loadMoreButton.click();
 
       expect(loadMoreSpy).toHaveBeenCalled();
-    });
-
-    it('should emit pageSizeChange event when page size changes', () => {
-      const pageSizeChangeSpy = vi.fn();
-      component.pageSizeChange.subscribe(pageSizeChangeSpy);
-
-      fixture.componentRef.setInput('totalCount', 100);
-      fixture.componentRef.setInput('currentCount', 25);
-      fixture.detectChanges();
-
-      component.onPageSizeChange(50);
-
-      expect(pageSizeChangeSpy).toHaveBeenCalledWith(50);
-    });
-  });
-
-  describe('Loading state', () => {
-    it('should disable page size select when loading', () => {
-      fixture.componentRef.setInput('totalCount', 100);
-      fixture.componentRef.setInput('loading', true);
-      fixture.detectChanges();
-
-      const select = fixture.nativeElement.querySelector('mat-select');
-      expect(select.getAttribute('aria-disabled')).toBe('true');
     });
   });
 

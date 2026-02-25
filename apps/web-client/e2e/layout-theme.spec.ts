@@ -21,16 +21,16 @@ test.describe('Layout - Header', () => {
     const header = page.locator('app-header header');
     await expect(header).toBeVisible();
 
-    // Check logo icon
-    const logoIcon = header.locator('.header__logo mat-icon');
+    // Check logo icon (now using material-symbols-outlined, not mat-icon)
+    const logoIcon = header.locator('.header__logo .material-symbols-outlined');
     await expect(logoIcon).toBeVisible();
     await expect(logoIcon).toHaveText('auto_stories');
   });
 
-  test('should display "Library" title', async ({ page }) => {
+  test('should display "BiblioManager" title', async ({ page }) => {
     const title = page.locator('.header__title');
     await expect(title).toBeVisible();
-    await expect(title).toHaveText('Library');
+    await expect(title).toHaveText('BiblioManager');
   });
 
   test('should have theme toggle button', async ({ page }) => {
@@ -119,6 +119,10 @@ test.describe('Theme Toggle', () => {
   test('should persist theme choice in localStorage', async ({ page }) => {
     const themeToggle = page.locator('app-theme-toggle button');
     await themeToggle.click(); // Switch to light
+    
+    // Wait for theme to change
+    const html = page.locator('html');
+    await expect(html).toHaveAttribute('data-theme', 'light');
 
     // Check localStorage
     const storedTheme = await page.evaluate(() => localStorage.getItem('library-theme'));
@@ -129,19 +133,26 @@ test.describe('Theme Toggle', () => {
     // Set theme to light
     const themeToggle = page.locator('app-theme-toggle button');
     await themeToggle.click();
+    
+    // Wait for theme to change and be persisted
+    const html = page.locator('html');
+    await expect(html).toHaveAttribute('data-theme', 'light');
+    
+    // Verify localStorage before reload
+    const storedBeforeReload = await page.evaluate(() => localStorage.getItem('library-theme'));
+    expect(storedBeforeReload).toBe('light');
 
     // Reload page
     await page.reload();
     await waitForPageLoad(page);
 
-    // Theme should still be light
-    const html = page.locator('html');
+    // Theme should still be light after reload
     await expect(html).toHaveAttribute('data-theme', 'light');
   });
 
   test('should show correct icon for dark theme', async ({ page }) => {
     // In dark mode, should show sun icon (to switch to light)
-    const themeIcon = page.locator('app-theme-toggle mat-icon');
+    const themeIcon = page.locator('app-theme-toggle .material-symbols-outlined');
     await expect(themeIcon).toHaveText('light_mode');
   });
 
@@ -150,7 +161,7 @@ test.describe('Theme Toggle', () => {
     await themeToggle.click(); // Switch to light
 
     // In light mode, should show moon icon (to switch to dark)
-    const themeIcon = page.locator('app-theme-toggle mat-icon');
+    const themeIcon = page.locator('app-theme-toggle .material-symbols-outlined');
     await expect(themeIcon).toHaveText('dark_mode');
   });
 

@@ -1,11 +1,11 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { DialogRef } from '@angular/cdk/dialog';
 import { of } from 'rxjs';
 
 import { BookListPageComponent } from './book-list-page.component.js';
 import { BookSearchStore } from '../../../core/services/book-search.store.js';
+import { DialogService } from '../../../core/services/dialog.service.js';
 import {
   Book,
   PaginationInfo,
@@ -19,7 +19,7 @@ describe('BookListPageComponent', () => {
   let component: BookListPageComponent;
   let fixture: ComponentFixture<BookListPageComponent>;
   let mockStore: Partial<BookSearchStore>;
-  let mockDialog: { open: ReturnType<typeof vi.fn> };
+  let mockDialogService: { open: ReturnType<typeof vi.fn> };
 
   const mockBooks: Book[] = [
     {
@@ -94,25 +94,23 @@ describe('BookListPageComponent', () => {
       searchBooks: vi.fn(),
       loadNextPage: vi.fn(),
       setFilters: vi.fn(),
-      setPageSize: vi.fn(),
       loadTypes: vi.fn(),
       loadCategories: vi.fn(),
       loadLevels: vi.fn(),
       reset: vi.fn(),
     };
 
-    mockDialog = {
+    mockDialogService = {
       open: vi.fn().mockReturnValue({
-        afterClosed: () => of(undefined),
-      } as unknown as MatDialogRef<unknown>),
+        closed: of(undefined),
+      } as unknown as DialogRef<unknown>),
     };
 
     await TestBed.configureTestingModule({
       imports: [BookListPageComponent],
       providers: [
-        provideAnimationsAsync(),
         { provide: BookSearchStore, useValue: mockStore },
-        { provide: MatDialog, useValue: mockDialog },
+        { provide: DialogService, useValue: mockDialogService },
       ],
     }).compileComponents();
 
@@ -155,7 +153,7 @@ describe('BookListPageComponent', () => {
   });
 
   describe('Filter interactions', () => {
-    it('should update store filters when filter panel emits changes', fakeAsync(() => {
+    it('should update store filters when filter panel emits changes', async () => {
       const newFilters: SearchFilters = {
         isbn: '',
         title: 'Clean',
@@ -167,11 +165,12 @@ describe('BookListPageComponent', () => {
       };
 
       component.onFiltersChange(newFilters);
-      tick();
 
-      expect(mockStore.setFilters).toHaveBeenCalledWith(newFilters);
-      expect(mockStore.searchBooks).toHaveBeenCalled();
-    }));
+      await vi.waitFor(() => {
+        expect(mockStore.setFilters).toHaveBeenCalledWith(newFilters);
+        expect(mockStore.searchBooks).toHaveBeenCalled();
+      });
+    });
 
     it('should load categories when type changes', () => {
       component.onTypeChange('technical');
@@ -194,12 +193,6 @@ describe('BookListPageComponent', () => {
 
       expect(mockStore.loadNextPage).toHaveBeenCalled();
     });
-
-    it('should change page size when paginator emits pageSizeChange', () => {
-      component.onPageSizeChange(25);
-
-      expect(mockStore.setPageSize).toHaveBeenCalledWith(25);
-    });
   });
 
   describe('Send to Kindle', () => {
@@ -207,14 +200,14 @@ describe('BookListPageComponent', () => {
       const book = mockBooks[0];
       component.onSendToKindle(book);
 
-      expect(mockDialog.open).toHaveBeenCalled();
+      expect(mockDialogService.open).toHaveBeenCalled();
     });
 
     it('should pass book data to dialog', () => {
       const book = mockBooks[0];
       component.onSendToKindle(book);
 
-      expect(mockDialog.open).toHaveBeenCalledWith(
+      expect(mockDialogService.open).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
           data: book,

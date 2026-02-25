@@ -1,10 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { applicationConfig, moduleMetadata } from '@storybook/angular';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { moduleMetadata } from '@storybook/angular';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 
-import { SendToKindleDialogComponent } from './send-to-kindle-dialog.component.js';
-import { KindleService } from '../../../../core/services/kindle.service.js';
+import { SendToKindleDialogComponent } from './send-to-kindle-dialog.component';
+import { KindleService } from '../../../../core/services/kindle.service';
 import { Book } from '../../../../core/models/index.js';
 
 // Mock books for stories
@@ -50,11 +49,8 @@ const meta: Meta<SendToKindleDialogComponent> = {
   component: SendToKindleDialogComponent,
   tags: ['autodocs'],
   decorators: [
-    applicationConfig({
-      providers: [provideAnimationsAsync()],
-    }),
     moduleMetadata({
-      providers: [KindleService, { provide: MatDialogRef, useValue: mockDialogRef }],
+      providers: [KindleService, { provide: DialogRef, useValue: mockDialogRef }],
     }),
   ],
   parameters: {
@@ -72,20 +68,20 @@ A modal dialog for sending books to a Kindle device.
 
 ## Usage
 \`\`\`typescript
-import { MatDialog } from '@angular/material/dialog';
+import { DialogService } from '@core/services';
 import { SendToKindleDialogComponent } from './send-to-kindle-dialog.component';
 
 @Component({...})
 export class MyComponent {
-  private dialog = inject(MatDialog);
+  private dialogService = inject(DialogService);
 
   sendToKindle(book: Book) {
-    const dialogRef = this.dialog.open(SendToKindleDialogComponent, {
+    const dialogRef = this.dialogService.open(SendToKindleDialogComponent, {
       data: book,
       width: '400px'
     });
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.closed.subscribe(result => {
       if (result?.success) {
         console.log('Book sent to:', result.email);
       }
@@ -115,7 +111,7 @@ type Story = StoryObj<SendToKindleDialogComponent>;
 export const Default: Story = {
   decorators: [
     moduleMetadata({
-      providers: [{ provide: MAT_DIALOG_DATA, useValue: availableBook }],
+      providers: [{ provide: DIALOG_DATA, useValue: availableBook }],
     }),
   ],
 };
@@ -126,7 +122,7 @@ export const Default: Story = {
 export const UnavailableBook: Story = {
   decorators: [
     moduleMetadata({
-      providers: [{ provide: MAT_DIALOG_DATA, useValue: unavailableBook }],
+      providers: [{ provide: DIALOG_DATA, useValue: unavailableBook }],
     }),
   ],
   parameters: {
@@ -145,7 +141,7 @@ export const UnavailableBook: Story = {
 export const LongTitle: Story = {
   decorators: [
     moduleMetadata({
-      providers: [{ provide: MAT_DIALOG_DATA, useValue: longTitleBook }],
+      providers: [{ provide: DIALOG_DATA, useValue: longTitleBook }],
     }),
   ],
   parameters: {
@@ -163,7 +159,7 @@ export const LongTitle: Story = {
 export const DarkTheme: Story = {
   decorators: [
     moduleMetadata({
-      providers: [{ provide: MAT_DIALOG_DATA, useValue: availableBook }],
+      providers: [{ provide: DIALOG_DATA, useValue: availableBook }],
     }),
   ],
   parameters: {
