@@ -145,6 +145,21 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
       .search-input-padding {
         padding-left: 44px;
         width: 256px;
+        background-color: rgba(
+          30,
+          41,
+          59,
+          0.5
+        ) !important; /* slate-800/50 - same as table header */
+        border-color: rgba(30, 41, 59, 0.5) !important;
+      }
+
+      .search-input-padding:hover {
+        background-color: rgba(30, 41, 59, 0.6) !important;
+      }
+
+      .search-input-padding:focus {
+        background-color: rgba(30, 41, 59, 0.7) !important;
       }
 
       .header__actions {
