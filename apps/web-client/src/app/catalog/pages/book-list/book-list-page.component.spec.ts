@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { DialogRef } from '@angular/cdk/dialog';
 import { of } from 'rxjs';
@@ -154,7 +154,7 @@ describe('BookListPageComponent', () => {
   });
 
   describe('Filter interactions', () => {
-    it('should update store filters when filter panel emits changes', fakeAsync(() => {
+    it('should update store filters when filter panel emits changes', async () => {
       const newFilters: SearchFilters = {
         isbn: '',
         title: 'Clean',
@@ -166,11 +166,12 @@ describe('BookListPageComponent', () => {
       };
 
       component.onFiltersChange(newFilters);
-      tick();
 
-      expect(mockStore.setFilters).toHaveBeenCalledWith(newFilters);
-      expect(mockStore.searchBooks).toHaveBeenCalled();
-    }));
+      await vi.waitFor(() => {
+        expect(mockStore.setFilters).toHaveBeenCalledWith(newFilters);
+        expect(mockStore.searchBooks).toHaveBeenCalled();
+      });
+    });
 
     it('should load categories when type changes', () => {
       component.onTypeChange('technical');

@@ -108,21 +108,19 @@ describe('HeaderComponent', () => {
 
   describe('Action Buttons', () => {
     it('should have notifications and profile icon buttons with Material Symbols', () => {
-      const buttons = fixture.nativeElement.querySelectorAll('.icon-button');
+      const buttons = fixture.nativeElement.querySelectorAll('.btn-icon');
       expect(buttons.length).toBe(2);
 
-      const icons = fixture.nativeElement.querySelectorAll(
-        '.icon-button .material-symbols-outlined'
-      );
+      const icons = fixture.nativeElement.querySelectorAll('.btn-icon .material-symbols-outlined');
       expect(icons.length).toBe(2);
       expect(icons[0].textContent.trim()).toBe('notifications_none');
       expect(icons[1].textContent.trim()).toBe('account_circle');
     });
 
     it('should have tooltip title attributes on action buttons', () => {
-      const buttons = fixture.nativeElement.querySelectorAll('.icon-button');
-      expect(buttons[0].getAttribute('title')).toBe('Notifications');
-      expect(buttons[1].getAttribute('title')).toBe('Profile');
+      const buttons = fixture.nativeElement.querySelectorAll('.btn-icon');
+      expect(buttons[0].getAttribute('aria-label')).toBe('Notifications');
+      expect(buttons[1].getAttribute('aria-label')).toBe('User profile');
     });
   });
 

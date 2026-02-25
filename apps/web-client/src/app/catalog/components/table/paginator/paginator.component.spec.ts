@@ -138,7 +138,7 @@ describe('PaginatorComponent', () => {
       fixture.detectChanges();
 
       const icon = fixture.nativeElement.querySelector(
-        '.load-more-button .material-symbols-outlined'
+        '[data-testid="load-more-button"] .material-symbols-outlined'
       );
       expect(icon).toBeTruthy();
       expect(icon.textContent.trim()).toBe('expand_more');
@@ -185,9 +185,7 @@ describe('PaginatorComponent', () => {
       fixture.detectChanges();
       await fixture.whenStable();
 
-      const select = fixture.nativeElement.querySelector(
-        'select.paginator-select'
-      ) as HTMLSelectElement;
+      const select = fixture.nativeElement.querySelector('select.select-base') as HTMLSelectElement;
       expect(select).toBeTruthy(); // Verify element exists
       expect(select.disabled).toBe(true);
     });

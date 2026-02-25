@@ -194,7 +194,7 @@ describe('BookService', () => {
 
       await firstValueFrom(service.getBookTypes());
 
-      expect(apiServiceMock.get).toHaveBeenCalledWith('/book-types', undefined);
+      expect(apiServiceMock.get).toHaveBeenCalledWith('/book-types');
     });
 
     it('should return BookTypeListResponse', async () => {

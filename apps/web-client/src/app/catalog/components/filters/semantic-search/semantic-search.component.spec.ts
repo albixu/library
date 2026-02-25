@@ -30,7 +30,7 @@ describe('SemanticSearchComponent', () => {
       fixture.componentRef.setInput('label', 'Semantic Search');
       fixture.detectChanges();
 
-      const label = fixture.nativeElement.querySelector('.semantic-search__label');
+      const label = fixture.nativeElement.querySelector('.label-filter');
       expect(label.textContent.trim()).toBe('Semantic Search');
     });
 

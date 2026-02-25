@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { Book } from '../../../../core/models/index.js';
 import { KindleService, SendToKindleResult } from '../../../../core/services/kindle.service.js';
@@ -503,18 +504,28 @@ export class SendToKindleDialogComponent {
   // Form control
   readonly emailControl = new FormControl('', [Validators.required, Validators.email]);
 
+  // Convert FormControl to signal for reactive computed properties
+  private readonly emailValue = toSignal(this.emailControl.valueChanges, {
+    initialValue: '',
+  });
+  private readonly emailStatus = toSignal(this.emailControl.statusChanges, {
+    initialValue: this.emailControl.status,
+  });
+
   // State
   readonly state = signal<DialogState>('input');
   readonly result = signal<SendToKindleResult | null>(null);
 
-  // Computed
+  // Computed properties
+  private readonly isEmailValid = computed(() => this.emailStatus() === 'VALID');
+
   readonly showKindleWarning = computed(() => {
-    const email = this.emailControl.value ?? '';
-    return email.length > 0 && this.emailControl.valid && !this.kindleService.isKindleEmail(email);
+    const email = this.emailValue() ?? '';
+    return email.length > 0 && this.isEmailValid() && !this.kindleService.isKindleEmail(email);
   });
 
   readonly canSend = computed(() => {
-    return this.emailControl.valid && this.state() === 'input' && this.book.available;
+    return this.isEmailValid() && this.state() === 'input' && this.book.available;
   });
 
   onCancel(): void {
@@ -530,7 +541,7 @@ export class SendToKindleDialogComponent {
     this.state.set('sending');
 
     this.kindleService.sendToKindle(this.book, email).subscribe({
-      next: (result) => {
+      next: (result: SendToKindleResult) => {
         this.result.set(result);
         this.state.set(result.success ? 'success' : 'error');
       },

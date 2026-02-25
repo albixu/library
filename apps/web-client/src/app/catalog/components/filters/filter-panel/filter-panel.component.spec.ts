@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { FilterPanelComponent, SearchFilters } from './filter-panel.component.js';
@@ -158,152 +158,158 @@ describe('FilterPanelComponent', () => {
   });
 
   describe('Filter Change Events', () => {
-    it('should emit filtersChange when ISBN changes', fakeAsync(() => {
+    it('should emit filtersChange when ISBN changes', async () => {
       fixture.detectChanges();
       const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onIsbnChange('978-0-13-468599-1');
-      tick();
+      await fixture.whenStable();
 
       expect(emitSpy).toHaveBeenCalledWith(expect.objectContaining({ isbn: '978-0-13-468599-1' }));
-    }));
+    });
 
-    it('should emit filtersChange when title changes', fakeAsync(() => {
+    it('should emit filtersChange when title changes', async () => {
       fixture.detectChanges();
       const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onTitleChange('Clean Code');
-      tick();
+      await fixture.whenStable();
 
       expect(emitSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Clean Code' }));
-    }));
+    });
 
-    it('should emit filtersChange when author changes', fakeAsync(() => {
+    it('should emit filtersChange when author changes', async () => {
       fixture.detectChanges();
       const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onAuthorChange('Robert C. Martin');
-      tick();
+      await fixture.whenStable();
 
       expect(emitSpy).toHaveBeenCalledWith(expect.objectContaining({ author: 'Robert C. Martin' }));
-    }));
+    });
 
-    it('should emit filtersChange when type changes', fakeAsync(() => {
+    it('should emit filtersChange when type changes', async () => {
       fixture.detectChanges();
       const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onTypeChange('technical');
-      tick();
+      await fixture.whenStable();
 
       expect(emitSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'technical' }));
-    }));
+    });
 
-    it('should emit typeChange when type changes', fakeAsync(() => {
+    it('should emit typeChange when type changes', async () => {
       fixture.detectChanges();
       const emitSpy = vi.spyOn(component.typeChange, 'emit');
 
       component.onTypeChange('technical');
-      tick();
+      await fixture.whenStable();
 
       expect(emitSpy).toHaveBeenCalledWith('technical');
-    }));
+    });
 
-    it('should emit filtersChange when categories change', fakeAsync(() => {
+    it('should emit filtersChange when categories change', async () => {
       fixture.detectChanges();
       const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onCategoriesChange(['programming', 'databases']);
-      tick();
+      await fixture.whenStable();
 
       expect(emitSpy).toHaveBeenCalledWith(
         expect.objectContaining({ categories: ['programming', 'databases'] })
       );
-    }));
+    });
 
-    it('should emit filtersChange when levels change', fakeAsync(() => {
+    it('should emit filtersChange when levels change', async () => {
       fixture.detectChanges();
       const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onLevelsChange(['Beginner', 'Intermediate']);
-      tick();
+      await fixture.whenStable();
 
       expect(emitSpy).toHaveBeenCalledWith(
         expect.objectContaining({ levels: ['Beginner', 'Intermediate'] })
       );
-    }));
+    });
 
-    it('should emit filtersChange when semantic search changes', fakeAsync(() => {
+    it('should emit filtersChange when semantic search changes', async () => {
       fixture.detectChanges();
       const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       component.onSemanticSearchChange('books about design patterns');
-      tick();
+      await fixture.whenStable();
 
       expect(emitSpy).toHaveBeenCalledWith(
         expect.objectContaining({ text: 'books about design patterns' })
       );
-    }));
+    });
   });
 
   describe('Type Change - Clear Dependent Filters', () => {
-    it('should clear categories when type changes', fakeAsync(() => {
+    it('should clear categories when type changes', async () => {
       fixture.detectChanges();
       const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       // First set some categories
       component.onCategoriesChange(['programming']);
-      tick();
+      await fixture.whenStable();
       emitSpy.mockClear();
 
       // Now change the type
       component.onTypeChange('fiction');
-      tick();
+      await fixture.whenStable();
 
-      // Should emit with empty categories
-      expect(emitSpy).toHaveBeenCalledWith(expect.objectContaining({ categories: [], levels: [] }));
-    }));
+      // Should emit with only the type (categories/levels are omitted when empty)
+      expect(emitSpy).toHaveBeenCalledWith({ type: 'fiction' });
+      // Verify that categories and levels are cleared in the state
+      expect(component.currentFilters().categories).toEqual([]);
+      expect(component.currentFilters().levels).toEqual([]);
+    });
 
-    it('should clear levels when type changes', fakeAsync(() => {
+    it('should clear levels when type changes', async () => {
       fixture.detectChanges();
       const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       // First set some levels
       component.onLevelsChange(['Beginner']);
-      tick();
+      await fixture.whenStable();
       emitSpy.mockClear();
 
       // Now change the type
       component.onTypeChange('fiction');
-      tick();
+      await fixture.whenStable();
 
-      // Should emit with empty levels
-      expect(emitSpy).toHaveBeenCalledWith(expect.objectContaining({ categories: [], levels: [] }));
-    }));
+      // Should emit with only the type (categories/levels are omitted when empty)
+      expect(emitSpy).toHaveBeenCalledWith({ type: 'fiction' });
+      // Verify that categories and levels are cleared in the state
+      expect(component.currentFilters().categories).toEqual([]);
+      expect(component.currentFilters().levels).toEqual([]);
+    });
 
-    it('should not clear categories and levels when type is set to same value', fakeAsync(() => {
+    it('should not clear categories and levels when type is set to same value', async () => {
       fixture.detectChanges();
 
       // Set type first
       component.onTypeChange('technical');
-      tick();
+      await fixture.whenStable();
 
       // Set categories and levels
       component.onCategoriesChange(['programming']);
       component.onLevelsChange(['Beginner']);
-      tick();
+      await fixture.whenStable();
 
       // Set type to same value
       component.onTypeChange('technical');
-      tick();
+      await fixture.whenStable();
 
       // Categories and levels should not be cleared
       expect(component.currentFilters().categories).toEqual(['programming']);
       expect(component.currentFilters().levels).toEqual(['Beginner']);
-    }));
+    });
   });
 
   describe('Clear Filters Button', () => {
-    it('should reset all filters when clear button is clicked', fakeAsync(() => {
+    it('should reset all filters when clear button is clicked', async () => {
       fixture.detectChanges();
 
       // Set various filters
@@ -314,35 +320,28 @@ describe('FilterPanelComponent', () => {
       component.onCategoriesChange(['programming']);
       component.onLevelsChange(['Beginner']);
       component.onSemanticSearchChange('design patterns');
-      tick();
+      await fixture.whenStable();
 
       const emitSpy = vi.spyOn(component.filtersChange, 'emit');
 
       // Click clear button
       component.clearFilters();
-      tick();
+      await fixture.whenStable();
 
-      expect(emitSpy).toHaveBeenCalledWith({
-        isbn: '',
-        title: '',
-        author: '',
-        type: '',
-        categories: [],
-        levels: [],
-        text: '',
-      });
-    }));
+      // Component only emits non-empty values, so empty filters = {}
+      expect(emitSpy).toHaveBeenCalledWith({});
+    });
 
-    it('should reset currentFilters signal to default values', fakeAsync(() => {
+    it('should reset currentFilters signal to default values', async () => {
       fixture.detectChanges();
 
       // Set various filters
       component.onTitleChange('Clean Code');
       component.onTypeChange('technical');
-      tick();
+      await fixture.whenStable();
 
       component.clearFilters();
-      tick();
+      await fixture.whenStable();
 
       expect(component.currentFilters()).toEqual({
         isbn: '',
@@ -353,19 +352,19 @@ describe('FilterPanelComponent', () => {
         levels: [],
         text: '',
       });
-    }));
+    });
 
-    it('should emit typeChange with empty string when clearing filters', fakeAsync(() => {
+    it('should emit typeChange with empty string when clearing filters', async () => {
       fixture.detectChanges();
       component.onTypeChange('technical');
-      tick();
+      await fixture.whenStable();
 
       const emitSpy = vi.spyOn(component.typeChange, 'emit');
       component.clearFilters();
-      tick();
+      await fixture.whenStable();
 
       expect(emitSpy).toHaveBeenCalledWith('');
-    }));
+    });
   });
 
   describe('hasActiveFilters Computed', () => {
@@ -374,54 +373,54 @@ describe('FilterPanelComponent', () => {
       expect(component.hasActiveFilters()).toBe(false);
     });
 
-    it('should return true when isbn is set', fakeAsync(() => {
+    it('should return true when isbn is set', async () => {
       fixture.detectChanges();
       component.onIsbnChange('978-0-13-468599-1');
-      tick();
+      await fixture.whenStable();
       expect(component.hasActiveFilters()).toBe(true);
-    }));
+    });
 
-    it('should return true when title is set', fakeAsync(() => {
+    it('should return true when title is set', async () => {
       fixture.detectChanges();
       component.onTitleChange('Clean Code');
-      tick();
+      await fixture.whenStable();
       expect(component.hasActiveFilters()).toBe(true);
-    }));
+    });
 
-    it('should return true when author is set', fakeAsync(() => {
+    it('should return true when author is set', async () => {
       fixture.detectChanges();
       component.onAuthorChange('Robert Martin');
-      tick();
+      await fixture.whenStable();
       expect(component.hasActiveFilters()).toBe(true);
-    }));
+    });
 
-    it('should return true when type is set', fakeAsync(() => {
+    it('should return true when type is set', async () => {
       fixture.detectChanges();
       component.onTypeChange('technical');
-      tick();
+      await fixture.whenStable();
       expect(component.hasActiveFilters()).toBe(true);
-    }));
+    });
 
-    it('should return true when categories are set', fakeAsync(() => {
+    it('should return true when categories are set', async () => {
       fixture.detectChanges();
       component.onCategoriesChange(['programming']);
-      tick();
+      await fixture.whenStable();
       expect(component.hasActiveFilters()).toBe(true);
-    }));
+    });
 
-    it('should return true when levels are set', fakeAsync(() => {
+    it('should return true when levels are set', async () => {
       fixture.detectChanges();
       component.onLevelsChange(['Beginner']);
-      tick();
+      await fixture.whenStable();
       expect(component.hasActiveFilters()).toBe(true);
-    }));
+    });
 
-    it('should return true when semantic search is set', fakeAsync(() => {
+    it('should return true when semantic search is set', async () => {
       fixture.detectChanges();
       component.onSemanticSearchChange('design patterns');
-      tick();
+      await fixture.whenStable();
       expect(component.hasActiveFilters()).toBe(true);
-    }));
+    });
   });
 
   describe('Disabled State', () => {
@@ -444,7 +443,7 @@ describe('FilterPanelComponent', () => {
   });
 
   describe('External Value Sync', () => {
-    it('should sync filters when value input changes', fakeAsync(() => {
+    it('should sync filters when value input changes', async () => {
       const externalFilters: SearchFilters = {
         isbn: '978-0-13-468599-1',
         title: 'Clean Code',
@@ -457,10 +456,10 @@ describe('FilterPanelComponent', () => {
 
       fixture.componentRef.setInput('value', externalFilters);
       fixture.detectChanges();
-      tick();
+      await fixture.whenStable();
 
       expect(component.currentFilters()).toEqual(externalFilters);
-    }));
+    });
   });
 
   describe('Accessibility', () => {
