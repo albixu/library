@@ -113,9 +113,9 @@ import { Book } from '../../../../core/models/index.js';
     }
 
     .book-table-container {
-      background-color: #0f172a; /* slate-900 - FROM FIGMA */
+      background-color: var(--color-bg-surface);
       border-radius: 0.75rem; /* rounded-xl */
-      border: 1px solid #1e293b; /* slate-800 - FROM FIGMA */
+      border: 1px solid var(--color-border);
       box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
       overflow: hidden;
     }
@@ -129,9 +129,9 @@ import { Book } from '../../../../core/models/index.js';
       border-collapse: collapse;
     }
 
-    // Row border separator - FROM FIGMA
+    // Row border separator
     .book-table tbody tr {
-      border-bottom: 1px solid #1e293b; /* slate-800 - FROM FIGMA */
+      border-bottom: 1px solid var(--color-table-border);
     }
 
     .book-table tbody tr:last-child {
@@ -143,7 +143,7 @@ import { Book } from '../../../../core/models/index.js';
       transition: background-color 0.15s ease;
 
       &:hover {
-        background-color: rgba(30, 41, 59, 0.4); /* slate-800/40 - FROM FIGMA */
+        background-color: var(--color-table-row-hover);
       }
 
       &:focus-visible {
@@ -161,13 +161,13 @@ import { Book } from '../../../../core/models/index.js';
 
     .book-title {
       font-weight: 600; /* font-semibold */
-      color: #f1f5f9; /* slate-100 - white text for dark mode - FROM FIGMA */
+      color: var(--color-text-primary);
       font-size: 0.875rem; /* text-sm */
     }
 
     .book-author {
       font-size: 0.75rem; /* text-xs */
-      color: #64748b; /* slate-500 - FROM FIGMA */
+      color: var(--color-text-secondary);
     }
 
     .type-category-cell {
@@ -179,23 +179,23 @@ import { Book } from '../../../../core/models/index.js';
     .book-type {
       font-size: 0.75rem; /* text-xs */
       font-weight: 500; /* font-medium */
-      color: #cbd5e1; /* slate-300 - FROM FIGMA */
+      color: var(--color-text-secondary);
     }
 
     .format-text {
       font-size: 0.75rem; /* text-xs */
-      color: #94a3b8; /* slate-400 - FROM FIGMA */
+      color: var(--color-text-muted);
     }
 
     .isbn-text {
       font-size: 0.75rem; /* text-xs */
       font-family: 'Courier New', Courier, monospace; /* font-mono */
-      color: #94a3b8; /* slate-400 - FROM FIGMA */
+      color: var(--color-text-muted);
     }
 
     .description-text {
       font-size: 0.75rem; /* text-xs */
-      color: #64748b; /* slate-500 - FROM FIGMA */
+      color: var(--color-text-secondary);
     }
 
     .text-center {
@@ -215,16 +215,16 @@ import { Book } from '../../../../core/models/index.js';
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: #f1f5f9; /* slate-100 - FROM FIGMA for action icons */
+      color: var(--color-text-secondary);
       transition: all 0.15s ease;
 
       &:hover {
-        background-color: rgba(30, 41, 59, 0.5);
-        color: #17a1cf; /* primary/cyan color */
+        background-color: var(--color-bg-elevated);
+        color: var(--color-accent);
       }
 
       &:focus-visible {
-        outline: 2px solid #3b82f6;
+        outline: 2px solid var(--color-accent);
         outline-offset: 2px;
       }
 
@@ -235,16 +235,16 @@ import { Book } from '../../../../core/models/index.js';
       }
     }
 
-    // Header cells styling - FROM FIGMA
+    // Header cells styling
     th {
       padding: 1rem 1.5rem; /* px-6 py-4 */
       font-size: 0.75rem; /* text-xs - 12px */
       font-weight: 600; /* font-semibold */
       text-transform: uppercase;
       letter-spacing: 0.05em; /* tracking-wider */
-      color: #64748b; /* slate-500 - FROM FIGMA */
-      background-color: rgba(30, 41, 59, 0.5); /* slate-800/50 - FROM FIGMA */
-      border-bottom: 1px solid #334155; /* slate-700 - FROM FIGMA */
+      color: var(--color-text-secondary);
+      background-color: var(--color-table-header-bg);
+      border-bottom: 1px solid var(--color-border-strong);
       text-align: left;
     }
 
