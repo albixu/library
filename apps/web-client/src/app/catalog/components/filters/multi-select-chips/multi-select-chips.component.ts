@@ -78,7 +78,7 @@ export type { SelectOption };
           [disabled]="disabled() || loading()"
           [filter]="true"
           [filterBy]="'name'"
-          [placeholder]="placeholder()"
+          [placeholder]="displayPlaceholder()"
           [inputId]="inputId()"
           [ariaLabel]="label()"
           optionLabel="name"
@@ -87,6 +87,7 @@ export type { SelectOption };
           emptyFilterMessage="No results found"
           display="chip"
           [showToggleAll]="false"
+          [appendTo]="'body'"
           (ngModelChange)="onSelectionChange($event)"
         >
           <ng-template pTemplate="dropdownicon">
@@ -236,8 +237,14 @@ export type { SelectOption };
         cursor: not-allowed;
       }
 
-      /* Hide PrimeNG's built-in chip display (we use custom chips above) */
+      /* PrimeNG's label container - show when no selections */
       :host ::ng-deep .p-multiselect-label-container {
+        flex: 1;
+        overflow: hidden;
+      }
+
+      /* Hide chips when we have custom display above */
+      :host ::ng-deep .p-multiselect-label-container .p-multiselect-chip {
         display: none;
       }
 
@@ -314,6 +321,8 @@ export type { SelectOption };
 
       /* Overlay panel */
       :host ::ng-deep .p-multiselect-overlay {
+        position: fixed !important;
+        z-index: 1000;
         background-color: #1e293b; /* slate-800 */
         border: 1px solid #334155; /* slate-700 */
         border-radius: 0.375rem;
@@ -322,29 +331,38 @@ export type { SelectOption };
           0 4px 6px -4px rgba(0, 0, 0, 0.2);
         margin-top: 0.25rem;
         overflow: hidden;
+        pointer-events: auto;
       }
 
       /* Filter input container */
       :host ::ng-deep .p-multiselect-filter-container {
+        position: relative;
         padding: 0.75rem;
         border-bottom: 1px solid #334155; /* slate-700 */
+        background-color: #1e293b; /* slate-800 */
       }
 
-      /* Filter input */
+      /* Filter input wrapper */
       :host ::ng-deep .p-multiselect-filter {
         width: 100%;
-        padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+        padding: 0.5rem 0.75rem;
+        padding-left: 2.25rem;
         font-size: 0.875rem;
         color: #f1f5f9; /* slate-100 */
-        background-color: #334155; /* slate-700 */
-        border: 1px solid #475569; /* slate-600 */
+        background-color: #0f172a; /* slate-900 */
+        border: 1px solid #334155; /* slate-700 */
         border-radius: 0.375rem;
         outline: none;
         transition: all 0.15s ease;
       }
 
+      :host ::ng-deep .p-multiselect-filter::placeholder {
+        color: #64748b; /* slate-500 */
+      }
+
       :host ::ng-deep .p-multiselect-filter:focus {
         border-color: #17a1cf; /* primary */
+        background-color: #1e293b; /* slate-800 */
         box-shadow: 0 0 0 3px rgba(23, 161, 207, 0.1);
       }
 
@@ -354,13 +372,16 @@ export type { SelectOption };
         left: 1.5rem;
         top: 50%;
         transform: translateY(-50%);
-        color: #94a3b8; /* slate-400 */
+        color: #64748b; /* slate-500 */
+        font-size: 1rem;
+        pointer-events: none;
       }
 
       /* Options list */
       :host ::ng-deep .p-multiselect-list-container {
         max-height: 300px;
         overflow-y: auto;
+        background-color: #1e293b; /* slate-800 */
       }
 
       :host ::ng-deep .p-multiselect-list {
@@ -379,18 +400,26 @@ export type { SelectOption };
         color: #e2e8f0; /* slate-200 */
         cursor: pointer;
         border-radius: 0.25rem;
-        transition: background-color 0.15s ease;
+        transition: all 0.15s ease;
+        user-select: none;
       }
 
       :host ::ng-deep .p-multiselect-option:hover {
         background-color: #334155; /* slate-700 */
       }
 
-      :host ::ng-deep .p-multiselect-option.p-multiselect-option-selected,
-      :host ::ng-deep .p-multiselect-option.p-focus {
-        background-color: rgba(23, 161, 207, 0.1);
+      :host ::ng-deep .p-multiselect-option.p-multiselect-option-selected {
+        background-color: rgba(23, 161, 207, 0.15);
         color: #17a1cf; /* primary */
         font-weight: 500;
+      }
+
+      :host ::ng-deep .p-multiselect-option.p-focus {
+        background-color: #334155; /* slate-700 */
+      }
+
+      :host ::ng-deep .p-multiselect-option.p-multiselect-option-selected.p-focus {
+        background-color: rgba(23, 161, 207, 0.25);
       }
 
       /* Checkbox in options */
@@ -451,6 +480,14 @@ export class MultiSelectChipsComponent {
     const selectedNames = this.internalValue();
     const allOptions = this.options();
     return allOptions.filter((opt) => selectedNames.includes(opt.name));
+  });
+
+  readonly displayPlaceholder = computed(() => {
+    const count = this.selectedOptions().length;
+    if (count === 0) {
+      return this.placeholder() || 'Select options...';
+    }
+    return `${count} selected`;
   });
 
   constructor() {
