@@ -74,15 +74,12 @@ import { Subject, debounceTime } from 'rxjs';
 
       .input-wrapper {
         position: relative;
-        display: flex;
-        align-items: center;
-        width: 100%; /* Ensure wrapper takes full width */
+        width: 100%;
       }
 
       /* Override input-base to ensure correct background and dimensions */
       .input-wrapper .input-base {
-        flex: 1; /* Take all available space in flex container */
-        width: 100%; /* Ensure full width */
+        width: 100%;
         height: 41px;
         min-height: 41px;
         background-color: #0f172a !important; /* slate-900 - same as semantic search */
@@ -113,7 +110,8 @@ import { Subject, debounceTime } from 'rxjs';
       }
 
       .input-with-icons {
-        padding: 0 2.75rem 0 2.5rem !important; /* Left padding increased to 40px to accommodate icon */
+        padding-left: 2.5rem !important; /* 40px for left icon */
+        padding-right: 2.5rem !important; /* 40px for clear button on right */
       }
     `,
   ],
