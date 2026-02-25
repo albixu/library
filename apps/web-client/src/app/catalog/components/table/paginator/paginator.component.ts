@@ -17,10 +17,11 @@ import { FormsModule } from '@angular/forms';
   imports: [FormsModule],
   template: `
     <nav class="paginator" aria-label="Pagination">
+      <!-- Left side: Page size selector -->
       <div class="paginator-page-size">
         <span class="paginator-label">Items per page:</span>
         <select
-          class="select-base paginator-select-width"
+          class="paginator-select"
           [ngModel]="pageSize()"
           [disabled]="loading()"
           (ngModelChange)="onPageSizeChange($event)"
@@ -32,25 +33,29 @@ import { FormsModule } from '@angular/forms';
         </select>
       </div>
 
-      <div class="paginator-range">
-        {{ rangeLabel() }}
-      </div>
-
+      <!-- Center: Load more button -->
       <div class="paginator-controls">
         @if (loading()) {
-          <div class="spinner" role="status" aria-label="Loading more items"></div>
+          <div class="spinner" role="status" aria-label="Loading more items">
+            <span class="spinner-icon"></span>
+          </div>
         } @else if (hasNextPage()) {
           <button
-            class="btn-secondary"
+            class="btn-load-more"
             type="button"
             data-testid="load-more-button"
             aria-label="Load more items"
             (click)="onLoadMore()"
           >
-            <span class="material-symbols-outlined">expand_more</span>
+            <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
             Load more
           </button>
         }
+      </div>
+
+      <!-- Right side: Items count info -->
+      <div class="paginator-info">
+        {{ rangeLabel() }}
       </div>
     </nav>
   `,
@@ -58,52 +63,157 @@ import { FormsModule } from '@angular/forms';
     .paginator {
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      gap: 1.5rem;
-      padding: 0.75rem 1.5rem;
+      justify-content: space-between;
+      gap: var(--spacing-6);
+      padding: var(--spacing-3) var(--spacing-6);
       font-size: 0.875rem;
-      background-color: rgba(30, 41, 59, 0.5);
-      border-top: 1px solid var(--slate-700);
+      background-color: var(--color-table-header-bg);
+      border-top: 1px solid var(--color-border);
     }
 
+    /* Left: Page size selector */
     .paginator-page-size {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: var(--spacing-3);
+      flex-shrink: 0;
     }
 
     .paginator-label {
       white-space: nowrap;
-      color: var(--slate-300);
+      color: var(--color-text-secondary);
       font-weight: 500;
     }
 
-    .paginator-select-width {
+    .paginator-select {
       width: 5rem;
-      background-color: var(--slate-900) !important;
-      border: 1px solid var(--slate-800) !important;
-      color: var(--slate-200) !important;
-      padding: 0.5rem 2rem 0.5rem 0.75rem !important;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-color: var(--color-bg-input) !important;
+      border: 1px solid var(--color-border) !important;
+      color: var(--color-text-primary) !important;
+      padding: var(--spacing-2) 2.5rem var(--spacing-2) var(--spacing-3) !important;
       font-size: 0.875rem;
-      border-radius: 0.5rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition-colors);
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394A3B8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 1.25rem;
     }
 
-    .paginator-select-width:focus {
-      outline: 2px solid var(--primary);
+    .paginator-select:hover:not(:disabled) {
+      border-color: var(--color-accent) !important;
+    }
+
+    .paginator-select:focus {
+      outline: 2px solid var(--color-accent);
       outline-offset: 2px;
+      border-color: var(--color-accent) !important;
     }
 
-    .paginator-range {
-      white-space: nowrap;
-      color: var(--slate-300);
-      font-weight: 500;
+    .paginator-select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
+    /* Center: Load more button */
     .paginator-controls {
       display: flex;
       align-items: center;
-      min-width: 120px;
       justify-content: center;
+      flex: 1;
+    }
+
+    .btn-load-more {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-2);
+      padding: var(--spacing-2) var(--spacing-4);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      background-color: transparent;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition-colors), var(--transition-transform);
+      white-space: nowrap;
+    }
+
+    .btn-load-more:hover {
+      background-color: var(--color-bg-elevated);
+      border-color: var(--color-accent);
+      color: var(--color-text-primary);
+    }
+
+    .btn-load-more:active {
+      transform: translateY(1px);
+    }
+
+    .btn-load-more:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+
+    .btn-load-more .material-symbols-outlined {
+      font-size: 1.25rem;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .spinner-icon {
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2px solid var(--color-border);
+      border-top-color: var(--color-accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Right: Items count info */
+    .paginator-info {
+      white-space: nowrap;
+      color: var(--color-text-secondary);
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+      .paginator {
+        flex-direction: column;
+        gap: var(--spacing-4);
+        padding: var(--spacing-4);
+      }
+
+      .paginator-page-size,
+      .paginator-info {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .paginator-controls {
+        width: 100%;
+      }
+
+      .btn-load-more {
+        width: 100%;
+        justify-content: center;
+      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -127,10 +237,10 @@ export class PaginatorComponent {
     const current = this.currentCount();
 
     if (total === 0) {
-      return '0 of 0';
+      return 'Showing 0 of 0 items';
     }
 
-    return `${current} of ${total}`;
+    return `Showing ${current} of ${total} items`;
   });
 
   onLoadMore(): void {

@@ -59,22 +59,22 @@ describe('PaginatorComponent', () => {
   });
 
   describe('Display', () => {
-    it('should display current count of total count', () => {
+    it('should display current count of total count with Stitch format', () => {
       fixture.componentRef.setInput('totalCount', 100);
       fixture.componentRef.setInput('currentCount', 25);
       fixture.detectChanges();
 
       const rangeLabel = fixture.nativeElement.textContent;
-      expect(rangeLabel).toContain('25 of 100');
+      expect(rangeLabel).toContain('Showing 25 of 100 items');
     });
 
-    it('should display 0 of 0 when no items', () => {
+    it('should display 0 of 0 items when no items', () => {
       fixture.componentRef.setInput('totalCount', 0);
       fixture.componentRef.setInput('currentCount', 0);
       fixture.detectChanges();
 
       const rangeLabel = fixture.nativeElement.textContent;
-      expect(rangeLabel).toContain('0 of 0');
+      expect(rangeLabel).toContain('Showing 0 of 0 items');
     });
 
     it('should display all items loaded correctly', () => {
@@ -83,7 +83,7 @@ describe('PaginatorComponent', () => {
       fixture.detectChanges();
 
       const rangeLabel = fixture.nativeElement.textContent;
-      expect(rangeLabel).toContain('45 of 45');
+      expect(rangeLabel).toContain('Showing 45 of 45 items');
     });
   });
 
