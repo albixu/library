@@ -78,6 +78,26 @@ import { Subject, debounceTime } from 'rxjs';
         align-items: center;
       }
 
+      /* Override input-base to ensure correct background */
+      .input-wrapper .input-base {
+        background-color: #0f172a !important; /* slate-900 - same as semantic search */
+        border: 1px solid #1e293b !important; /* slate-800 */
+      }
+
+      .input-wrapper .input-base:hover:not(:disabled) {
+        border-color: #1e293b !important; /* slate-800 */
+      }
+
+      .input-wrapper .input-base:focus {
+        background-color: #0f172a !important;
+        border-color: #17a1cf !important; /* primary */
+      }
+
+      .input-wrapper .input-base:disabled {
+        background-color: #0f172a !important;
+        opacity: 0.5;
+      }
+
       .input-icon {
         position: absolute;
         left: 0.75rem;
