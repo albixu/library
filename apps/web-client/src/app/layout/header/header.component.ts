@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
 import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 
 /**
@@ -8,7 +8,7 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
  * - Sticky positioning at top
  * - Logo with auto_stories icon in cyan container
  * - "BiblioManager" title with bold styling
- * - Global search bar in the center
+ * - Global search bar in the center with clear button
  * - Notifications, theme toggle, and profile icons on the right
  */
 @Component({
@@ -33,7 +33,20 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
             class="input-base search-input-padding"
             placeholder="Global search..."
             aria-label="Global search"
+            [value]="searchValue()"
+            (input)="onSearchInput($event)"
           />
+          @if (showClearButton()) {
+            <button
+              type="button"
+              class="btn-clear"
+              data-testid="clear-search-button"
+              aria-label="Clear search"
+              (click)="onClearSearch()"
+            >
+              <span class="material-symbols-outlined icon-sm">close</span>
+            </button>
+          }
         </div>
 
         <div class="header__actions">
@@ -144,6 +157,7 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 
       .search-input-padding {
         padding-left: 44px;
+        padding-right: 2.5rem; /* Space for clear button */
         width: 256px;
         background-color: rgba(
           30,
@@ -160,6 +174,41 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 
       .search-input-padding:focus {
         background-color: rgba(30, 41, 59, 0.7) !important;
+      }
+
+      /* Clear button - positioned absolutely inside search wrapper */
+      .btn-clear {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        color: #64748b; /* slate-500 */
+        background-color: transparent;
+        border: none;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        z-index: 2;
+      }
+
+      .btn-clear:hover {
+        color: #f1f5f9; /* slate-100 */
+        background-color: rgba(51, 65, 85, 0.5); /* slate-700 with opacity */
+      }
+
+      .btn-clear:active {
+        background-color: rgba(51, 65, 85, 0.7);
+      }
+
+      .btn-clear:focus-visible {
+        outline: 2px solid #17a1cf; /* primary */
+        outline-offset: 2px;
       }
 
       .header__actions {
@@ -236,4 +285,21 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
     `,
   ],
 })
-export class HeaderComponent {}
+export class HeaderComponent {
+  // Internal state for search input
+  readonly searchValue = signal<string>('');
+
+  // Computed property to show/hide clear button
+  readonly showClearButton = computed(() => this.searchValue().length > 0);
+
+  onSearchInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.searchValue.set(target.value);
+    // TODO: Implement global search logic
+  }
+
+  onClearSearch(): void {
+    this.searchValue.set('');
+    // TODO: Clear global search results
+  }
+}

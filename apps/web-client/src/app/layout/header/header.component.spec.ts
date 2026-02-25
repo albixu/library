@@ -134,4 +134,71 @@ describe('HeaderComponent', () => {
       expect(brand).toBeTruthy();
     });
   });
+
+  describe('Global Search', () => {
+    it('should render the global search input', () => {
+      const searchInput = fixture.nativeElement.querySelector('.header__search input');
+      expect(searchInput).toBeTruthy();
+      expect(searchInput.getAttribute('placeholder')).toBe('Global search...');
+    });
+
+    it('should have search icon positioned inside the input', () => {
+      const searchIcon = fixture.nativeElement.querySelector('.search-icon');
+      expect(searchIcon).toBeTruthy();
+      expect(searchIcon.textContent.trim()).toBe('search');
+    });
+
+    it('should update searchValue signal when typing', () => {
+      const searchInput = fixture.nativeElement.querySelector('.header__search input');
+      
+      searchInput.value = 'test query';
+      searchInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      expect(component.searchValue()).toBe('test query');
+    });
+
+    it('should show clear button when search has value', () => {
+      component.searchValue.set('test');
+      fixture.detectChanges();
+
+      const clearButton = fixture.nativeElement.querySelector('[data-testid="clear-search-button"]');
+      expect(clearButton).toBeTruthy();
+    });
+
+    it('should hide clear button when search is empty', () => {
+      component.searchValue.set('');
+      fixture.detectChanges();
+
+      const clearButton = fixture.nativeElement.querySelector('[data-testid="clear-search-button"]');
+      expect(clearButton).toBeFalsy();
+    });
+
+    it('should clear search value when clear button is clicked', () => {
+      component.searchValue.set('test query');
+      fixture.detectChanges();
+
+      const clearButton = fixture.nativeElement.querySelector('[data-testid="clear-search-button"]');
+      clearButton.click();
+      fixture.detectChanges();
+
+      expect(component.searchValue()).toBe('');
+      
+      const searchInput = fixture.nativeElement.querySelector('.header__search input');
+      expect(searchInput.value).toBe('');
+    });
+
+    it('should have proper aria-label on search input', () => {
+      const searchInput = fixture.nativeElement.querySelector('.header__search input');
+      expect(searchInput.getAttribute('aria-label')).toBe('Global search');
+    });
+
+    it('should have proper aria-label on clear button', () => {
+      component.searchValue.set('test');
+      fixture.detectChanges();
+
+      const clearButton = fixture.nativeElement.querySelector('[data-testid="clear-search-button"]');
+      expect(clearButton.getAttribute('aria-label')).toBe('Clear search');
+    });
+  });
 });
