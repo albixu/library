@@ -209,8 +209,8 @@ export type { SelectOption };
         align-items: center;
         position: relative;
         width: 100%;
-        min-height: 2.75rem;
-        padding: 0.625rem 2.5rem 0.625rem 0.875rem;
+        height: 2.75rem;
+        padding: 0 2.5rem 0 0.875rem;
         font-size: 0.875rem;
         color: #f1f5f9; /* slate-100 */
         background-color: #1e293b; /* slate-800 */
@@ -235,17 +235,34 @@ export type { SelectOption };
       :host ::ng-deep .p-multiselect.p-disabled {
         opacity: 0.5;
         cursor: not-allowed;
+        background-color: #1e293b; /* slate-800 */
       }
 
       /* PrimeNG's label container - show when no selections */
       :host ::ng-deep .p-multiselect-label-container {
         flex: 1;
         overflow: hidden;
+        display: flex;
+        align-items: center;
+        padding-left: 0.875rem;
       }
 
       /* Hide chips when we have custom display above */
       :host ::ng-deep .p-multiselect-label-container .p-multiselect-chip {
         display: none;
+      }
+
+      /* Label styling (placeholder or count) */
+      :host ::ng-deep .p-multiselect-label {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #f1f5f9; /* slate-100 */
+      }
+
+      :host ::ng-deep .p-multiselect-label.p-placeholder {
+        color: #64748b; /* slate-500 */
       }
 
       /* Dropdown trigger icon container */
@@ -305,18 +322,6 @@ export type { SelectOption };
           stroke-dasharray: 100, 200;
           stroke-dashoffset: -125;
         }
-      }
-
-      /* Label when nothing selected */
-      :host ::ng-deep .p-multiselect-label {
-        flex: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      :host ::ng-deep .p-multiselect-label.p-placeholder {
-        color: #64748b; /* slate-500 */
       }
 
       /* Overlay panel */
@@ -425,19 +430,44 @@ export type { SelectOption };
 
       /* Checkbox in options */
       :host ::ng-deep .p-multiselect-option .p-checkbox {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         width: 1.125rem;
         height: 1.125rem;
         border: 2px solid #475569; /* slate-600 */
         border-radius: 0.25rem;
         background-color: #1e293b; /* slate-800 */
         transition: all 0.15s ease;
+        position: relative;
       }
 
-      :host ::ng-deep .p-multiselect-option:hover .p-checkbox {
+      /* Hide native checkbox input */
+      :host ::ng-deep .p-multiselect-option .p-checkbox input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+      }
+
+      /* Checkbox box element */
+      :host ::ng-deep .p-multiselect-option .p-checkbox-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        border: 2px solid #475569; /* slate-600 */
+        border-radius: 0.25rem;
+        background-color: #1e293b; /* slate-800 */
+        transition: all 0.15s ease;
+      }
+
+      :host ::ng-deep .p-multiselect-option:hover .p-checkbox-box {
         border-color: #17a1cf; /* primary */
       }
 
-      :host ::ng-deep .p-multiselect-option.p-multiselect-option-selected .p-checkbox {
+      :host ::ng-deep .p-multiselect-option.p-multiselect-option-selected .p-checkbox-box {
         background-color: #17a1cf; /* primary */
         border-color: #17a1cf;
       }
@@ -445,6 +475,9 @@ export type { SelectOption };
       :host ::ng-deep .p-multiselect-option .p-checkbox-icon {
         color: #1e293b; /* slate-800 - checkmark color */
         font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       /* Empty message */
