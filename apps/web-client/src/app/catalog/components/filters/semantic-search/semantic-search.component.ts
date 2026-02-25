@@ -31,9 +31,10 @@ import { Subject, debounceTime } from 'rxjs';
   imports: [FormsModule],
   template: `
     <div class="semantic-search" [class.semantic-search--disabled]="disabled()">
-      <label class="semantic-search__label">{{ label() }}</label>
+      <label class="semantic-search__label" for="semantic-search-textarea">{{ label() }}</label>
       <div class="semantic-search__wrapper">
         <textarea
+          id="semantic-search-textarea"
           class="semantic-search__textarea"
           [placeholder]="placeholder()"
           [value]="internalValue()"

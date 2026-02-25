@@ -44,7 +44,16 @@ import {
     <div class="book-list-container">
       <!-- Mobile Backdrop -->
       @if (isMobile() && isMobileDrawerOpen()) {
-        <div class="backdrop" (click)="toggleMobileDrawer()" aria-label="Close filters"></div>
+        <div
+          class="backdrop"
+          role="button"
+          tabindex="0"
+          aria-label="Close filters"
+          (click)="toggleMobileDrawer()"
+          (keydown.escape)="toggleMobileDrawer()"
+          (keydown.enter)="toggleMobileDrawer()"
+          (keydown.space)="toggleMobileDrawer(); $event.preventDefault()"
+        ></div>
       }
 
       <!-- Filter Sidebar / Drawer -->
