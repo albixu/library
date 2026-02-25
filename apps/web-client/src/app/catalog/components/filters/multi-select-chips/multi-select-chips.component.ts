@@ -87,7 +87,6 @@ export type { SelectOption };
           emptyFilterMessage="No results found"
           display="chip"
           [showToggleAll]="false"
-          [appendTo]="'body'"
           (ngModelChange)="onSelectionChange($event)"
         >
           <ng-template pTemplate="dropdownicon">
@@ -192,6 +191,7 @@ export type { SelectOption };
 
       /* Select field */
       .multi-select-field {
+        position: relative;
         width: 100%;
       }
 
@@ -321,8 +321,9 @@ export type { SelectOption };
 
       /* Overlay panel */
       :host ::ng-deep .p-multiselect-overlay {
-        position: fixed !important;
-        z-index: 1000;
+        position: absolute !important;
+        z-index: 1100;
+        width: 100%;
         background-color: #1e293b; /* slate-800 */
         border: 1px solid #334155; /* slate-700 */
         border-radius: 0.375rem;
