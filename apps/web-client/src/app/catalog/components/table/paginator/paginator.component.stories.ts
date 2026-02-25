@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { applicationConfig } from '@storybook/angular';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { PaginatorComponent } from './paginator.component.js';
+import { PaginatorComponent } from './paginator.component';
 
 const meta: Meta<PaginatorComponent> = {
   title: 'Catalog/Table/Paginator',

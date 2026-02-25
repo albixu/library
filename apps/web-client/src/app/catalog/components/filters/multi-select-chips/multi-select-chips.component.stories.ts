@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { MultiSelectChipsComponent, SelectOption } from './multi-select-chips.component.js';
+import { MultiSelectChipsComponent, SelectOption } from './multi-select-chips.component';
 
 const categories: SelectOption[] = [
   { id: '1', name: 'Programming' },
@@ -60,10 +60,6 @@ A multi-select dropdown component that displays selected items as removable chip
       control: 'text',
       description: 'Placeholder text when no values are selected',
     },
-    searchPlaceholder: {
-      control: 'text',
-      description: 'Placeholder for the search input inside the dropdown',
-    },
     options: {
       control: 'object',
       description: 'Array of options to display',
@@ -97,7 +93,6 @@ export const Default: Story = {
   args: {
     label: 'Categories',
     placeholder: 'Select categories...',
-    searchPlaceholder: 'Search categories...',
     options: categories,
     value: [],
     disabled: false,
@@ -124,7 +119,6 @@ export const LevelsFilter: Story = {
   args: {
     label: 'Levels',
     placeholder: 'Select levels...',
-    searchPlaceholder: 'Search levels...',
     options: levels,
     value: ['2', '3'],
   },
@@ -175,7 +169,6 @@ export const ManyOptions: Story = {
   args: {
     label: 'Categories',
     placeholder: 'Select categories...',
-    searchPlaceholder: 'Search categories...',
     options: [
       { id: '1', name: 'Programming' },
       { id: '2', name: 'Web Development' },

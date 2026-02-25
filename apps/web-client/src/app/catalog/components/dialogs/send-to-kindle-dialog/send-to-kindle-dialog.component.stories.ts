@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 
-import { SendToKindleDialogComponent } from './send-to-kindle-dialog.component.js';
-import { KindleService } from '../../../../core/services/kindle.service.js';
+import { SendToKindleDialogComponent } from './send-to-kindle-dialog.component';
+import { KindleService } from '../../../../core/services/kindle.service';
 import { Book } from '../../../../core/models/index.js';
 
 // Mock books for stories

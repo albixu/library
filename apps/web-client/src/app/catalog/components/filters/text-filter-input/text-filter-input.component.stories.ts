@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { TextFilterInputComponent } from './text-filter-input.component.js';
+import { TextFilterInputComponent } from './text-filter-input.component';
 
 const meta: Meta<TextFilterInputComponent> = {
   title: 'Catalog/Filters/TextFilterInput',

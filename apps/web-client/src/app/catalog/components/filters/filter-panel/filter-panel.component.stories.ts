@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { FilterPanelComponent, SearchFilters } from './filter-panel.component.js';
-import { SelectOption } from '../searchable-select/searchable-select.component.js';
+import { FilterPanelComponent, SearchFilters } from './filter-panel.component';
+import { SelectOption } from '../searchable-select/searchable-select.component';
 
 const bookTypes: SelectOption[] = [
   { id: 'technical', name: 'Technical' },
