@@ -102,7 +102,7 @@ import { Subject, debounceTime } from 'rxjs';
 
       .input-icon {
         position: absolute;
-        left: 0.75rem;
+        left: 0.5rem; /* Reduced from 0.75rem to match searchable-select spacing */
         font-size: 1.125rem;
         color: var(--slate-500);
         pointer-events: none;
@@ -110,8 +110,7 @@ import { Subject, debounceTime } from 'rxjs';
       }
 
       .input-with-icons {
-        padding-left: 2.5rem;
-        padding-right: 2.75rem;
+        padding: 0 2.75rem 0 0.75rem; /* Match searchable-select padding */
       }
     `,
   ],
