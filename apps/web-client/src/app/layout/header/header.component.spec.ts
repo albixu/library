@@ -99,16 +99,6 @@ describe('HeaderComponent', () => {
   });
 
   describe('Action Buttons', () => {
-    it('should have notifications button with Material Symbol icon', () => {
-      const button = fixture.nativeElement.querySelector('.header__icon-button');
-      expect(button).toBeTruthy();
-      expect(button.getAttribute('aria-label')).toBe('Notificaciones');
-
-      const icon = button.querySelector('.material-symbols-outlined');
-      expect(icon).toBeTruthy();
-      expect(icon.textContent.trim()).toBe('notifications');
-    });
-
     it('should have avatar with account_circle icon', () => {
       const avatar = fixture.nativeElement.querySelector('.header__avatar');
       expect(avatar).toBeTruthy();

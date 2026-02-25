@@ -8,7 +8,7 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
  * - Sticky positioning at top
  * - Logo with auto_stories icon in cyan container
  * - "BiblioManager" title with bold styling
- * - Notifications, theme toggle, and profile icons on the right
+ * - Theme toggle and profile icons on the right
  */
 @Component({
   selector: 'app-header',
@@ -25,9 +25,6 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
       </div>
 
       <div class="header__actions">
-        <button class="header__icon-button" aria-label="Notificaciones">
-          <span class="material-symbols-outlined">notifications</span>
-        </button>
         <app-theme-toggle />
         <div class="header__avatar" role="img" aria-label="Perfil de usuario">
           <span class="material-symbols-outlined">account_circle</span>
@@ -107,37 +104,6 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         flex-shrink: 0;
         padding-left: 1.5rem;
         border-left: 1px solid var(--color-border);
-      }
-
-      .header__icon-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.5rem;
-        border: none;
-        background: transparent;
-        color: rgb(100 116 139); /* slate-500 */
-        cursor: pointer;
-        transition: color 150ms ease;
-      }
-
-      :host-context([data-theme='dark']) .header__icon-button {
-        color: rgb(100 116 139); /* slate-500 */
-      }
-
-      .header__icon-button:hover {
-        color: #17a1cf; /* primary */
-      }
-
-      .header__icon-button .material-symbols-outlined {
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
-        font-variation-settings:
-          'FILL' 0,
-          'wght' 400,
-          'GRAD' 0,
-          'opsz' 20;
       }
 
       .header__avatar {
