@@ -102,7 +102,9 @@ import { Subject, debounceTime } from 'rxjs';
 
       .input-icon {
         position: absolute;
-        left: 0.75rem; /* Icon position from left edge */
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
         font-size: 1.125rem; /* 18px icon size */
         color: var(--slate-500);
         pointer-events: none;
@@ -112,6 +114,36 @@ import { Subject, debounceTime } from 'rxjs';
       .input-with-icons {
         padding-left: 2.5rem !important; /* 40px for left icon */
         padding-right: 2.5rem !important; /* 40px for clear button on right */
+      }
+
+      /* Clear button - needs to override global .btn-clear due to encapsulation */
+      .btn-clear {
+        position: absolute;
+        right: 0.5rem; /* 8px from right */
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem; /* 32px */
+        height: 2rem; /* 32px */
+        padding: 0.25rem;
+        border-radius: 0.375rem; /* 6px */
+        background-color: transparent;
+        border: none;
+        color: var(--slate-500);
+        cursor: pointer;
+        transition: all 150ms ease-in-out;
+        z-index: 2;
+      }
+
+      .btn-clear:hover {
+        background-color: var(--slate-700);
+        color: var(--slate-100);
+      }
+
+      .btn-clear .material-symbols-outlined {
+        font-size: 1.125rem; /* 18px */
       }
     `,
   ],
