@@ -26,14 +26,6 @@ describe('SemanticSearchComponent', () => {
   });
 
   describe('Inputs', () => {
-    it('should display the provided label', () => {
-      fixture.componentRef.setInput('label', 'Semantic Search');
-      fixture.detectChanges();
-
-      const label = fixture.nativeElement.querySelector('.label-filter');
-      expect(label.textContent.trim()).toBe('Semantic Search');
-    });
-
     it('should display the provided placeholder', () => {
       fixture.componentRef.setInput('placeholder', 'Describe what you are looking for...');
       fixture.detectChanges();
@@ -49,17 +41,6 @@ describe('SemanticSearchComponent', () => {
 
       const textarea = fixture.nativeElement.querySelector('textarea');
       expect(textarea.value).toBe('Initial search text');
-    });
-
-    it('should display hint text when provided', () => {
-      fixture.componentRef.setInput(
-        'hint',
-        'Use natural language to describe what you want to find'
-      );
-      fixture.detectChanges();
-
-      const hint = fixture.nativeElement.querySelector('.semantic-search__hint');
-      expect(hint.textContent.trim()).toContain('Use natural language');
     });
   });
 
@@ -150,43 +131,36 @@ describe('SemanticSearchComponent', () => {
     });
   });
 
-  describe('Character count', () => {
-    it('should show character count when maxLength is set', () => {
-      fixture.componentRef.setInput('maxLength', 500);
-      fixture.detectChanges();
-
-      const charCount = fixture.nativeElement.querySelector('[data-testid="char-count"]');
-      expect(charCount).toBeTruthy();
-    });
-
-    it('should update character count as user types', async () => {
+  describe('Character limit', () => {
+    it('should enforce maxLength via HTML attribute when set', async () => {
+      // Character count is not visible in UI (Stitch design)
+      // but maxLength is enforced via HTML attribute
       fixture.componentRef.setInput('maxLength', 500);
       fixture.componentRef.setInput('value', 'Hello');
       fixture.detectChanges();
       await fixture.whenStable();
 
-      const charCount = fixture.nativeElement.querySelector('[data-testid="char-count"]');
-      expect(charCount.textContent).toContain('5');
-      expect(charCount.textContent).toContain('500');
+      const textarea = fixture.nativeElement.querySelector('textarea');
+      expect(textarea.getAttribute('maxlength')).toBe('500');
+      expect(textarea.value).toBe('Hello');
     });
 
-    it('should not show character count when maxLength is not set', () => {
+    it('should not set maxlength attribute when maxLength is not set', () => {
       fixture.componentRef.setInput('maxLength', 0);
       fixture.detectChanges();
 
-      const charCount = fixture.nativeElement.querySelector('[data-testid="char-count"]');
-      expect(charCount).toBeFalsy();
+      const textarea = fixture.nativeElement.querySelector('textarea');
+      expect(textarea.getAttribute('maxlength')).toBeNull();
     });
   });
 
   describe('Accessibility', () => {
     it('should have proper aria-label on textarea', () => {
-      fixture.componentRef.setInput('label', 'Semantic Search');
       fixture.detectChanges();
 
       const textarea = fixture.nativeElement.querySelector('textarea');
       const ariaLabel = textarea.getAttribute('aria-label');
-      expect(ariaLabel).toBe('Semantic Search');
+      expect(ariaLabel).toBe('Semantic search');
     });
 
     it('should have proper aria-label on clear button', async () => {
@@ -217,23 +191,6 @@ describe('SemanticSearchComponent', () => {
 
       const clearButton = fixture.nativeElement.querySelector('[data-testid="clear-button"]');
       expect(clearButton).toBeFalsy();
-    });
-  });
-
-  describe('Rows configuration', () => {
-    it('should set textarea rows from input', () => {
-      fixture.componentRef.setInput('rows', 5);
-      fixture.detectChanges();
-
-      const textarea = fixture.nativeElement.querySelector('textarea');
-      expect(textarea.getAttribute('rows')).toBe('5');
-    });
-
-    it('should use default rows of 3', () => {
-      fixture.detectChanges();
-
-      const textarea = fixture.nativeElement.querySelector('textarea');
-      expect(textarea.getAttribute('rows')).toBe('3');
     });
   });
 });

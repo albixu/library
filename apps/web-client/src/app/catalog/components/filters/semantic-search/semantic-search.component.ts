@@ -31,16 +31,14 @@ import { Subject, debounceTime } from 'rxjs';
   imports: [FormsModule],
   template: `
     <div class="semantic-search" [class.semantic-search--disabled]="disabled()">
-      <label class="label-filter" for="semantic-search-textarea">{{ label() }}</label>
       <div class="semantic-search__wrapper">
         <textarea
           id="semantic-search-textarea"
-          class="textarea-base"
+          class="textarea-semantic"
           [placeholder]="placeholder()"
           [value]="internalValue()"
           [disabled]="disabled()"
-          [attr.aria-label]="label()"
-          [rows]="rows()"
+          aria-label="Semantic search"
           [attr.maxlength]="maxLength() || null"
           (input)="onInput($event)"
         ></textarea>
@@ -54,16 +52,6 @@ import { Subject, debounceTime } from 'rxjs';
           >
             <span class="material-symbols-outlined icon-sm">close</span>
           </button>
-        }
-      </div>
-      <div class="semantic-search__hints">
-        @if (hint()) {
-          <span class="semantic-search__hint">{{ hint() }}</span>
-        }
-        @if (maxLength() > 0) {
-          <span class="semantic-search__char-count" data-testid="char-count">
-            {{ internalValue().length }} / {{ maxLength() }}
-          </span>
         }
       </div>
     </div>
@@ -83,31 +71,46 @@ import { Subject, debounceTime } from 'rxjs';
         position: relative;
       }
 
+      .textarea-semantic {
+        width: 100%;
+        height: 105px;
+        padding: 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: #f1f5f9; /* slate-100 */
+        background-color: #0f172a; /* slate-900 - Stitch exact color */
+        border: 1px solid #1e293b; /* slate-800 - Stitch exact color */
+        border-radius: 0.5rem;
+        transition: all 0.15s ease-in-out;
+        resize: none;
+      }
+
+      .textarea-semantic::placeholder {
+        color: #64748b; /* slate-500 */
+      }
+
+      .textarea-semantic:hover:not(:disabled) {
+        border-color: #334155; /* slate-700 */
+      }
+
+      .textarea-semantic:focus {
+        outline: none;
+        border-color: #17a1cf; /* primary */
+        box-shadow: 0 0 0 3px rgba(23, 161, 207, 0.1);
+      }
+
+      .textarea-semantic:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: #0f172a;
+      }
+
       .clear-top-right {
         top: 0.5rem;
         transform: none;
       }
 
-      .semantic-search__hints {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 0.375rem;
-        font-size: 0.75rem;
-        color: var(--slate-400);
-        min-height: 1rem;
-      }
-
-      .semantic-search__hint {
-        flex: 1;
-      }
-
-      .semantic-search__char-count {
-        flex-shrink: 0;
-        margin-left: 0.5rem;
-      }
-
-      .semantic-search--disabled .label-filter {
+      .semantic-search--disabled .textarea-semantic {
         opacity: 0.5;
       }
     `,

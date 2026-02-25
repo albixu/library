@@ -179,13 +179,9 @@ const DEFAULT_FILTERS: FilterState = {
 
           <div data-testid="semantic-search-filter">
             <app-semantic-search
-              label="What are you looking for?"
               placeholder="Describe the books you want to find..."
-              hint="Use natural language for better results"
               [value]="currentFilters().text"
               [disabled]="disabled()"
-              [rows]="3"
-              [maxLength]="500"
               (valueChange)="onSemanticSearchChange($event)"
             />
           </div>
