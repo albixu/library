@@ -25,70 +25,70 @@ import { BookLevelName } from '../../../../core/models/index.js';
       white-space: nowrap;
     }
 
-    /* Light mode colors - from Stitch design */
-    :host-context(:not([data-theme='dark'])) {
-      .level-beginner {
-        background-color: #dcfce7; /* green-100 */
-        color: #15803d; /* green-700 */
-      }
-
-      .level-intermediate {
-        background-color: #fef3c7; /* amber-100 */
-        color: #b45309; /* amber-700 */
-      }
-
-      .level-advanced {
-        background-color: #fee2e2; /* red-100 */
-        color: #b91c1c; /* red-700 */
-      }
-
-      .level-beginner-intermediate {
-        background-color: #dbeafe; /* blue-100 */
-        color: #1e40af; /* blue-700 */
-      }
-
-      .level-intermediate-advanced {
-        background-color: #fed7aa; /* orange-100 */
-        color: #c2410c; /* orange-700 */
-      }
-
-      .level-unknown {
-        background-color: #f3f4f6; /* gray-100 */
-        color: #6b7280; /* gray-500 */
-      }
+    /* Beginner - Green */
+    .level-beginner {
+      background-color: #dcfce7; /* green-100 */
+      color: #15803d; /* green-700 */
     }
 
-    /* Dark mode colors - from Stitch design */
-    :host-context([data-theme='dark']) {
-      .level-beginner {
-        background-color: rgba(34, 197, 94, 0.15); /* green-900/30 equivalent */
-        color: #4ade80; /* green-400 */
-      }
+    [data-theme='dark'] .level-beginner {
+      background-color: rgba(34, 197, 94, 0.15);
+      color: #4ade80; /* green-400 */
+    }
 
-      .level-intermediate {
-        background-color: rgba(251, 191, 36, 0.15); /* amber-900/30 equivalent */
-        color: #fbbf24; /* amber-400 */
-      }
+    /* Intermediate - Amber */
+    .level-intermediate {
+      background-color: #fef3c7; /* amber-100 */
+      color: #b45309; /* amber-700 */
+    }
 
-      .level-advanced {
-        background-color: rgba(239, 68, 68, 0.15); /* red-900/30 equivalent */
-        color: #f87171; /* red-400 */
-      }
+    [data-theme='dark'] .level-intermediate {
+      background-color: rgba(251, 191, 36, 0.15);
+      color: #fbbf24; /* amber-400 */
+    }
 
-      .level-beginner-intermediate {
-        background-color: rgba(59, 130, 246, 0.15); /* blue-900/30 equivalent */
-        color: #60a5fa; /* blue-400 */
-      }
+    /* Advanced - Red */
+    .level-advanced {
+      background-color: #fee2e2; /* red-100 */
+      color: #b91c1c; /* red-700 */
+    }
 
-      .level-intermediate-advanced {
-        background-color: rgba(249, 115, 22, 0.15); /* orange-900/30 equivalent */
-        color: #fb923c; /* orange-400 */
-      }
+    [data-theme='dark'] .level-advanced {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #f87171; /* red-400 */
+    }
 
-      .level-unknown {
-        background-color: rgba(31, 41, 55, 0.3);
-        color: #9ca3af; /* gray-400 */
-      }
+    /* Beginner to Intermediate - Blue */
+    .level-beginner-intermediate {
+      background-color: #dbeafe; /* blue-100 */
+      color: #1e40af; /* blue-700 */
+    }
+
+    [data-theme='dark'] .level-beginner-intermediate {
+      background-color: rgba(59, 130, 246, 0.15);
+      color: #60a5fa; /* blue-400 */
+    }
+
+    /* Intermediate to Advanced - Orange */
+    .level-intermediate-advanced {
+      background-color: #fed7aa; /* orange-100 */
+      color: #c2410c; /* orange-700 */
+    }
+
+    [data-theme='dark'] .level-intermediate-advanced {
+      background-color: rgba(249, 115, 22, 0.15);
+      color: #fb923c; /* orange-400 */
+    }
+
+    /* Unknown - Gray */
+    .level-unknown {
+      background-color: #f3f4f6; /* gray-100 */
+      color: #6b7280; /* gray-500 */
+    }
+
+    [data-theme='dark'] .level-unknown {
+      background-color: rgba(31, 41, 55, 0.3);
+      color: #9ca3af; /* gray-400 */
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
