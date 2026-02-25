@@ -21,7 +21,7 @@ import { Book } from '../../../../core/models/index.js';
       class="book-card"
       [class.selected]="selected()"
       role="article"
-      [attr.aria-label]="'Book: ' + book().title"
+      [attr.aria-label]="'Libro: ' + book().title"
       tabindex="0"
       (click)="onSelect()"
       (keydown.enter)="onSelect()"
@@ -34,7 +34,7 @@ import { Book } from '../../../../core/models/index.js';
         </div>
         <button
           type="button"
-          aria-label="Send to Kindle"
+          aria-label="Enviar a Kindle"
           class="book-card-action"
           (click)="onSendToKindle($event)"
         >

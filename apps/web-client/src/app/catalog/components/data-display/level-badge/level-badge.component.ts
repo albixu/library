@@ -9,7 +9,7 @@ import { BookLevelName } from '../../../../core/models/index.js';
   imports: [],
   template: `
     @if (level()) {
-      <span class="level-badge" [class]="levelClass()" [attr.aria-label]="'Book level: ' + level()">
+      <span class="level-badge" [class]="levelClass()" [attr.aria-label]="'Nivel del libro: ' + level()">
         {{ level() }}
       </span>
     }
@@ -25,70 +25,70 @@ import { BookLevelName } from '../../../../core/models/index.js';
       white-space: nowrap;
     }
 
-    /* Light mode colors */
-    :host-context(:not([data-theme='dark'])) {
-      .level-beginner {
-        background-color: #dcfce7;
-        color: #15803d;
-      }
-
-      .level-intermediate {
-        background-color: #fef3c7;
-        color: #b45309;
-      }
-
-      .level-advanced {
-        background-color: #fee2e2;
-        color: #b91c1c;
-      }
-
-      .level-beginner-intermediate {
-        background-color: #ccfbf1;
-        color: #0f766e;
-      }
-
-      .level-intermediate-advanced {
-        background-color: #fed7aa;
-        color: #c2410c;
-      }
-
-      .level-unknown {
-        background-color: #f3f4f6;
-        color: #6b7280;
-      }
+    /* Beginner - Green */
+    .level-beginner {
+      background-color: #dcfce7; /* green-100 */
+      color: #15803d; /* green-700 */
     }
 
-    /* Dark mode colors (from Figma design) */
-    :host-context([data-theme='dark']) {
-      .level-beginner {
-        background-color: rgba(20, 83, 45, 0.3);
-        color: #4ade80;
-      }
+    [data-theme='dark'] .level-beginner {
+      background-color: rgba(34, 197, 94, 0.15);
+      color: #4ade80; /* green-400 */
+    }
 
-      .level-intermediate {
-        background-color: rgba(120, 53, 15, 0.3);
-        color: #fbbf24;
-      }
+    /* Intermediate - Amber */
+    .level-intermediate {
+      background-color: #fef3c7; /* amber-100 */
+      color: #b45309; /* amber-700 */
+    }
 
-      .level-advanced {
-        background-color: rgba(127, 29, 29, 0.3);
-        color: #f87171;
-      }
+    [data-theme='dark'] .level-intermediate {
+      background-color: rgba(251, 191, 36, 0.15);
+      color: #fbbf24; /* amber-400 */
+    }
 
-      .level-beginner-intermediate {
-        background-color: rgba(19, 78, 74, 0.3);
-        color: #2dd4bf;
-      }
+    /* Advanced - Red */
+    .level-advanced {
+      background-color: #fee2e2; /* red-100 */
+      color: #b91c1c; /* red-700 */
+    }
 
-      .level-intermediate-advanced {
-        background-color: rgba(124, 45, 18, 0.3);
-        color: #fb923c;
-      }
+    [data-theme='dark'] .level-advanced {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #f87171; /* red-400 */
+    }
 
-      .level-unknown {
-        background-color: rgba(31, 41, 55, 0.3);
-        color: #9ca3af;
-      }
+    /* Beginner to Intermediate - Blue */
+    .level-beginner-intermediate {
+      background-color: #dbeafe; /* blue-100 */
+      color: #1e40af; /* blue-700 */
+    }
+
+    [data-theme='dark'] .level-beginner-intermediate {
+      background-color: rgba(59, 130, 246, 0.15);
+      color: #60a5fa; /* blue-400 */
+    }
+
+    /* Intermediate to Advanced - Purple */
+    .level-intermediate-advanced {
+      background-color: #f3e8ff; /* purple-100 */
+      color: #7e22ce; /* purple-700 */
+    }
+
+    [data-theme='dark'] .level-intermediate-advanced {
+      background-color: rgba(168, 85, 247, 0.15);
+      color: #c084fc; /* purple-400 */
+    }
+
+    /* Unknown - Gray */
+    .level-unknown {
+      background-color: #f3f4f6; /* gray-100 */
+      color: #6b7280; /* gray-500 */
+    }
+
+    [data-theme='dark'] .level-unknown {
+      background-color: rgba(31, 41, 55, 0.3);
+      color: #9ca3af; /* gray-400 */
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -100,13 +100,13 @@ export class LevelBadgeComponent {
     const lvl = this.level();
     if (!lvl) return '';
 
-    // Map levels to CSS classes - compound levels use the higher level's style
+    // Map levels to CSS classes
     const classMap: Record<BookLevelName, string> = {
       Beginner: 'level-badge level-beginner',
       Intermediate: 'level-badge level-intermediate',
       Advanced: 'level-badge level-advanced',
-      'Beginner to Intermediate': 'level-badge level-beginner-intermediate',
-      'Intermediate to Advanced': 'level-badge level-intermediate-advanced',
+      'Beginner to intermediate': 'level-badge level-beginner-intermediate',
+      'Intermediate to advanced': 'level-badge level-intermediate-advanced',
     };
 
     return classMap[lvl] || 'level-badge level-unknown';

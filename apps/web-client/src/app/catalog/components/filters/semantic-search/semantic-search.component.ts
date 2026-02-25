@@ -38,7 +38,7 @@ import { Subject, debounceTime } from 'rxjs';
           [placeholder]="placeholder()"
           [value]="internalValue()"
           [disabled]="disabled()"
-          aria-label="Semantic search"
+          aria-label="Búsqueda semántica"
           [attr.maxlength]="maxLength() || null"
           (input)="onInput($event)"
         ></textarea>
@@ -47,7 +47,7 @@ import { Subject, debounceTime } from 'rxjs';
             type="button"
             class="btn-clear clear-top-right"
             data-testid="clear-button"
-            aria-label="Clear search"
+            aria-label="Limpiar búsqueda"
             (click)="onClear()"
           >
             <span class="material-symbols-outlined icon-sm">close</span>
@@ -158,8 +158,8 @@ export class SemanticSearchComponent {
   private readonly inputSubject = new Subject<string>();
 
   // Inputs
-  readonly label = input<string>('Semantic Search');
-  readonly placeholder = input<string>('Describe what you are looking for...');
+  readonly label = input<string>('Búsqueda Semántica');
+  readonly placeholder = input<string>('Describe lo que estás buscando...');
   readonly hint = input<string>('');
   readonly value = input<string>('');
   readonly debounceMs = input<number>(300);

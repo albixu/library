@@ -49,7 +49,7 @@ import { Subject, debounceTime } from 'rxjs';
             type="button"
             class="btn-clear"
             data-testid="clear-button"
-            aria-label="Clear filter"
+            aria-label="Limpiar filtro"
             (click)="onClear()"
           >
             <span class="material-symbols-outlined icon-sm">close</span>
@@ -161,7 +161,7 @@ export class TextFilterInputComponent {
   private readonly inputSubject = new Subject<string>();
 
   // Inputs
-  readonly label = input<string>('Filter');
+  readonly label = input<string>('Filtro');
   readonly icon = input<string>('filter_list');
   readonly placeholder = input<string>('');
   readonly value = input<string>('');

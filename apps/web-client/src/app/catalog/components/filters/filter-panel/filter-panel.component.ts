@@ -68,21 +68,21 @@ const DEFAULT_FILTERS: FilterState = {
     <div
       class="filter-panel"
       role="region"
-      aria-label="Book search filters"
+      aria-label="Filtros de búsqueda de libros"
       data-testid="filter-panel"
     >
       <div class="filter-panel__header">
-        <h2 class="filter-panel__title">Advanced Filters</h2>
+        <h2 class="filter-panel__title">Filtros Avanzados</h2>
         <button
           type="button"
           data-testid="clear-filters-button"
           class="clear-filters-btn"
           [disabled]="disabled() || !hasActiveFilters()"
-          aria-label="Clear all filters"
+          aria-label="Limpiar todos los filtros"
           (click)="clearFilters()"
         >
           <span class="material-symbols-outlined">clear_all</span>
-          <span>Clear filters</span>
+          <span>Limpiar filtros</span>
         </button>
       </div>
 
@@ -91,13 +91,13 @@ const DEFAULT_FILTERS: FilterState = {
       <div class="filter-panel__content">
         <!-- Text filters section -->
         <section class="filter-section">
-          <h3 class="filter-section__title">Search by text</h3>
+          <h3 class="filter-section__title">Buscar por texto</h3>
 
           <div data-testid="isbn-filter">
             <app-text-filter-input
               label="ISBN"
               icon="qr_code"
-              placeholder="e.g., 978-0-13-468599-1"
+              placeholder="ej., 978-0-13-468599-1"
               [value]="currentFilters().isbn"
               [disabled]="disabled()"
               (valueChange)="onIsbnChange($event)"
@@ -106,9 +106,9 @@ const DEFAULT_FILTERS: FilterState = {
 
           <div data-testid="title-filter">
             <app-text-filter-input
-              label="Title"
+              label="Título"
               icon="book"
-              placeholder="Search by title..."
+              placeholder="Buscar por título..."
               [value]="currentFilters().title"
               [disabled]="disabled()"
               (valueChange)="onTitleChange($event)"
@@ -117,9 +117,9 @@ const DEFAULT_FILTERS: FilterState = {
 
           <div data-testid="author-filter">
             <app-text-filter-input
-              label="Author"
+              label="Autor"
               icon="person"
-              placeholder="Search by author..."
+              placeholder="Buscar por autor..."
               [value]="currentFilters().author"
               [disabled]="disabled()"
               (valueChange)="onAuthorChange($event)"
@@ -131,12 +131,12 @@ const DEFAULT_FILTERS: FilterState = {
 
         <!-- Classification filters section -->
         <section class="filter-section">
-          <h3 class="filter-section__title">Classification</h3>
+          <h3 class="filter-section__title">Clasificación</h3>
 
           <div data-testid="type-filter">
             <app-searchable-select
-              label="Type"
-              placeholder="Select a type..."
+              label="Tipo"
+              placeholder="Seleccionar un tipo..."
               [options]="types()"
               [value]="currentFilters().type"
               [disabled]="disabled()"
@@ -148,8 +148,8 @@ const DEFAULT_FILTERS: FilterState = {
 
           <div data-testid="categories-filter">
             <app-multi-select-chips
-              label="Categories"
-              placeholder="Select categories..."
+              label="Categorías"
+              placeholder="Seleccionar categorías..."
               [options]="categories()"
               [value]="currentFilters().categories"
               [disabled]="disabled() || !currentFilters().type"
@@ -160,8 +160,8 @@ const DEFAULT_FILTERS: FilterState = {
 
           <div data-testid="levels-filter">
             <app-multi-select-chips
-              label="Levels"
-              placeholder="Select levels..."
+              label="Niveles"
+              placeholder="Seleccionar niveles..."
               [options]="levels()"
               [value]="currentFilters().levels"
               [disabled]="disabled() || !currentFilters().type"
@@ -175,11 +175,11 @@ const DEFAULT_FILTERS: FilterState = {
 
         <!-- Semantic search section -->
         <section class="filter-section">
-          <h3 class="filter-section__title">Semantic search</h3>
+          <h3 class="filter-section__title">Búsqueda semántica</h3>
 
           <div data-testid="semantic-search-filter">
             <app-semantic-search
-              placeholder="Describe the books you want to find..."
+              placeholder="Describe los libros que quieres encontrar..."
               [value]="currentFilters().text"
               [disabled]="disabled()"
               (valueChange)="onSemanticSearchChange($event)"

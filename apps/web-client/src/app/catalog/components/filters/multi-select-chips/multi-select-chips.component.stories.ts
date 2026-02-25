@@ -14,8 +14,8 @@ const levels: SelectOption[] = [
   { id: '1', name: 'Beginner' },
   { id: '2', name: 'Intermediate' },
   { id: '3', name: 'Advanced' },
-  { id: '4', name: 'Beginner to Intermediate' },
-  { id: '5', name: 'Intermediate to Advanced' },
+  { id: '4', name: 'Beginner to intermediate' },
+  { id: '5', name: 'Intermediate to advanced' },
 ];
 
 const meta: Meta<MultiSelectChipsComponent> = {

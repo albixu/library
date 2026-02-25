@@ -255,7 +255,7 @@ export const BeginnerToIntermediateLevel: Story = {
         { id: '9', name: 'JavaScript' },
         { id: '10', name: 'Web Development' },
       ],
-      level: 'Beginner to Intermediate',
+      level: 'Beginner to intermediate',
       format: 'epub',
       language: 'en',
       originalDescription:

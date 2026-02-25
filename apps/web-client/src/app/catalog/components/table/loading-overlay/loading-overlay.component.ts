@@ -98,5 +98,5 @@ export class LoadingOverlayComponent {
   readonly diameter = input<number>(48);
   readonly transparent = input<boolean>(false);
 
-  readonly ariaLabel = computed(() => this.message() || 'Loading');
+  readonly ariaLabel = computed(() => this.message() || 'Cargando');
 }

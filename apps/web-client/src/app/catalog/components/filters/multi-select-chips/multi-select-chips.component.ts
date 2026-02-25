@@ -44,7 +44,7 @@ export type { SelectOption };
                   type="button"
                   class="chip-remove"
                   data-testid="remove-chip"
-                  [attr.aria-label]="'Remove ' + option.name"
+                  [attr.aria-label]="'Eliminar ' + option.name"
                   (click)="removeOption(option.name)"
                 >
                   <span class="material-symbols-outlined">close</span>
@@ -57,10 +57,10 @@ export type { SelectOption };
               type="button"
               class="clear-all-btn"
               data-testid="clear-all"
-              aria-label="Clear all selections"
+              aria-label="Limpiar todas las selecciones"
               (click)="clearAll()"
             >
-              Clear all
+              Limpiar todo
             </button>
           }
         </div>
@@ -83,10 +83,11 @@ export type { SelectOption };
           [ariaLabel]="label()"
           optionLabel="name"
           optionValue="name"
-          emptyMessage="No results found"
-          emptyFilterMessage="No results found"
+          emptyMessage="No se encontraron resultados"
+          emptyFilterMessage="No se encontraron resultados"
           display="chip"
           [showToggleAll]="false"
+          appendTo="body"
           (ngModelChange)="onSelectionChange($event)"
         >
           <ng-template pTemplate="dropdownicon">
@@ -241,9 +242,13 @@ export type { SelectOption };
 
       :host ::ng-deep .p-multiselect:focus-visible,
       :host ::ng-deep .p-multiselect.p-focus {
-        outline: 2px solid #17a1cf;
-        outline-offset: 2px;
-        border-color: #17a1cf;
+        outline: none;
+        border-color: #1e293b; /* slate-800 - same as hover */
+      }
+
+      [data-theme='light'] :host ::ng-deep .p-multiselect:focus-visible,
+      [data-theme='light'] :host ::ng-deep .p-multiselect.p-focus {
+        border-color: #cbd5e1; /* slate-300 - same as hover */
       }
 
       :host ::ng-deep .p-multiselect.p-disabled {
@@ -352,11 +357,10 @@ export type { SelectOption };
         }
       }
 
-      /* Overlay panel */
+      /* Overlay panel - appendTo="body" requires fixed positioning */
       :host ::ng-deep .p-multiselect-overlay {
-        position: absolute !important;
+        position: fixed !important;
         z-index: 1100;
-        width: 100%;
         background-color: #1e293b; /* slate-800 */
         border: 1px solid #334155; /* slate-700 */
         border-radius: 0.375rem;
@@ -565,7 +569,7 @@ export type { SelectOption };
 })
 export class MultiSelectChipsComponent {
   // Inputs
-  readonly label = input<string>('Select');
+  readonly label = input<string>('Seleccionar');
   readonly placeholder = input<string>('');
   readonly options = input<SelectOption[]>([]);
   readonly value = input<string[]>([]);
@@ -589,9 +593,9 @@ export class MultiSelectChipsComponent {
   readonly displayPlaceholder = computed(() => {
     const count = this.selectedOptions().length;
     if (count === 0) {
-      return this.placeholder() || 'Select options...';
+      return this.placeholder() || 'Seleccionar opciones...';
     }
-    return `${count} selected`;
+    return `${count} seleccionado${count > 1 ? 's' : ''}`;
   });
 
   constructor() {

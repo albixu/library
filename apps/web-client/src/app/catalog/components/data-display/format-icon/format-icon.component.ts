@@ -30,7 +30,7 @@ const DEFAULT_ICON = 'insert_drive_file';
         class="format-icon"
         [class]="sizeClass()"
         [title]="format()"
-        [attr.aria-label]="'Format: ' + format()"
+        [attr.aria-label]="'Formato: ' + format()"
       >
         <span class="material-symbols-outlined" aria-hidden="true">{{ iconName() }}</span>
       </span>

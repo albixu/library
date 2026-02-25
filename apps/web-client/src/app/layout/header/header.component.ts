@@ -1,15 +1,14 @@
-import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 
 /**
- * HeaderComponent - Application header with logo, search, and actions
+ * HeaderComponent - Application header with logo and actions
  *
  * Features:
  * - Sticky positioning at top
  * - Logo with auto_stories icon in cyan container
  * - "BiblioManager" title with bold styling
- * - Global search bar in the center with clear button
- * - Notifications, theme toggle, and profile icons on the right
+ * - Theme toggle and profile icons on the right
  */
 @Component({
   selector: 'app-header',
@@ -25,38 +24,10 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         <span class="header__title">BiblioManager</span>
       </div>
 
-      <div class="header__right">
-        <div class="header__search">
-          <span class="material-symbols-outlined search-icon">search</span>
-          <input
-            type="text"
-            class="input-base search-input-padding"
-            placeholder="Global search..."
-            aria-label="Global search"
-            [value]="searchValue()"
-            (input)="onSearchInput($event)"
-          />
-          @if (showClearButton()) {
-            <button
-              type="button"
-              class="btn-clear"
-              data-testid="clear-search-button"
-              aria-label="Clear search"
-              (click)="onClearSearch()"
-            >
-              <span class="material-symbols-outlined icon-sm">close</span>
-            </button>
-          }
-        </div>
-
-        <div class="header__actions">
-          <button class="header__icon-button" aria-label="Notifications">
-            <span class="material-symbols-outlined">notifications</span>
-          </button>
-          <app-theme-toggle />
-          <div class="header__avatar" role="img" aria-label="User profile">
-            <span class="material-symbols-outlined">account_circle</span>
-          </div>
+      <div class="header__actions">
+        <app-theme-toggle />
+        <div class="header__avatar" role="img" aria-label="Perfil de usuario">
+          <span class="material-symbols-outlined">account_circle</span>
         </div>
       </div>
     </header>
@@ -126,131 +97,11 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         color: var(--color-text-primary);
       }
 
-      .header__right {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        flex-shrink: 0;
-      }
-
-      .header__search {
-        position: relative;
-        display: flex;
-        align-items: center;
-      }
-
-      .search-icon {
-        position: absolute;
-        left: 12px;
-        color: var(--color-text-muted);
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
-        pointer-events: none;
-        z-index: 1;
-        font-variation-settings:
-          'FILL' 0,
-          'wght' 400,
-          'GRAD' 0,
-          'opsz' 20;
-      }
-
-      .search-input-padding {
-        padding-left: 44px;
-        padding-right: 2.5rem; /* Space for clear button */
-        width: 256px;
-        background-color: var(--color-bg-input) !important;
-        border-color: var(--color-border) !important;
-        color: var(--color-text-primary);
-      }
-
-      .search-input-padding::placeholder {
-        color: var(--color-text-muted);
-      }
-
-      .search-input-padding:hover {
-        border-color: var(--color-border-strong) !important;
-      }
-
-      .search-input-padding:focus {
-        background-color: var(--color-bg-input) !important;
-        border-color: var(--color-accent) !important;
-      }
-
-      /* Clear button - positioned absolutely inside search wrapper */
-      .btn-clear {
-        position: absolute;
-        right: 0.5rem;
-        top: 50%;
-        transform: translateY(-50%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 2rem;
-        height: 2rem;
-        padding: 0;
-        color: var(--color-text-muted);
-        background-color: transparent;
-        border: none;
-        border-radius: 0.25rem;
-        cursor: pointer;
-        transition: all 0.15s ease-in-out;
-        z-index: 2;
-      }
-
-      .btn-clear:hover {
-        color: var(--color-text-primary);
-        background-color: var(--color-bg-elevated);
-      }
-
-      .btn-clear:active {
-        background-color: var(--color-bg-elevated);
-        opacity: 0.8;
-      }
-
-      .btn-clear:focus-visible {
-        outline: 2px solid var(--color-accent);
-        outline-offset: 2px;
-      }
-
       .header__actions {
         display: flex;
         align-items: center;
         gap: 1rem;
         flex-shrink: 0;
-        padding-left: 1.5rem;
-        border-left: 1px solid var(--color-border);
-      }
-
-      .header__icon-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.5rem;
-        border: none;
-        background: transparent;
-        color: rgb(100 116 139); /* slate-500 */
-        cursor: pointer;
-        transition: color 150ms ease;
-      }
-
-      :host-context([data-theme='dark']) .header__icon-button {
-        color: rgb(100 116 139); /* slate-500 */
-      }
-
-      .header__icon-button:hover {
-        color: #17a1cf; /* primary */
-      }
-
-      .header__icon-button .material-symbols-outlined {
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
-        font-variation-settings:
-          'FILL' 0,
-          'wght' 400,
-          'GRAD' 0,
-          'opsz' 20;
       }
 
       .header__avatar {
@@ -287,21 +138,4 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
     `,
   ],
 })
-export class HeaderComponent {
-  // Internal state for search input
-  readonly searchValue = signal<string>('');
-
-  // Computed property to show/hide clear button
-  readonly showClearButton = computed(() => this.searchValue().length > 0);
-
-  onSearchInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.searchValue.set(target.value);
-    // TODO: Implement global search logic
-  }
-
-  onClearSearch(): void {
-    this.searchValue.set('');
-    // TODO: Clear global search results
-  }
-}
+export class HeaderComponent {}

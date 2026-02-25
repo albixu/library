@@ -6,7 +6,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   imports: [],
   template: `
     @if (categories().length > 0) {
-      <div class="category-chips-container" role="list" aria-label="Categories">
+      <div class="category-chips-container" role="list" aria-label="Categorías">
         @for (category of visibleCategories(); track category) {
           <span class="category-chip" role="listitem">{{ category }}</span>
         }
@@ -15,7 +15,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
             class="overflow-indicator"
             [title]="overflowTooltip()"
             role="listitem"
-            [attr.aria-label]="overflowCount() + ' more categories'"
+            [attr.aria-label]="overflowCount() + ' categorías más'"
           >
             +{{ overflowCount() }}
           </span>
