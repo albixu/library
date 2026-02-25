@@ -82,7 +82,7 @@ import { Book } from '../../../../core/models/index.js';
                           title="Ver descripción"
                           (click)="onShowDescription($event, book)"
                         >
-                          <span class="material-symbols-outlined">info</span>
+                          <span class="material-symbols-outlined">menu_book</span>
                         </button>
                       } @else {
                         <span class="description-text">-</span>
