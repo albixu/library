@@ -102,8 +102,6 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         align-items: center;
         gap: 1rem;
         flex-shrink: 0;
-        padding-left: 1.5rem;
-        border-left: 1px solid var(--color-border);
       }
 
       .header__avatar {
