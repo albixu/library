@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { Dialog } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 
@@ -17,7 +17,7 @@ import { ButtonModule } from 'primeng/button';
   imports: [Dialog, ButtonModule],
   template: `
     <p-dialog
-      [(visible)]="visible"
+      [visible]="visible()"
       [modal]="true"
       [closable]="true"
       [draggable]="false"
@@ -28,12 +28,12 @@ import { ButtonModule } from 'primeng/button';
     >
       <ng-template pTemplate="header">
         <div class="dialog-header">
-          <h3 class="dialog-title">{{ title }}</h3>
+          <h3 class="dialog-title">{{ title() }}</h3>
         </div>
       </ng-template>
 
       <div class="dialog-content">
-        <p class="description-text">{{ description }}</p>
+        <p class="description-text">{{ description() }}</p>
       </div>
 
       <ng-template pTemplate="footer">
@@ -114,17 +114,17 @@ import { ButtonModule } from 'primeng/button';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BookDescriptionDialogComponent {
-  visible = false;
-  title = '';
-  description = '';
+  readonly visible = signal(false);
+  readonly title = signal('');
+  readonly description = signal('');
 
   open(title: string, description: string): void {
-    this.title = title;
-    this.description = description;
-    this.visible = true;
+    this.title.set(title);
+    this.description.set(description);
+    this.visible.set(true);
   }
 
   onClose(): void {
-    this.visible = false;
+    this.visible.set(false);
   }
 }
