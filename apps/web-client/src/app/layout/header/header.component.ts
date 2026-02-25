@@ -29,18 +29,18 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         <span class="material-symbols-outlined search-icon">search</span>
         <input
           type="text"
-          class="search-input"
+          class="input-base search-input-padding"
           placeholder="Global search..."
           aria-label="Global search"
         />
       </div>
 
       <div class="header__actions">
-        <button class="icon-button" aria-label="Notifications">
+        <button class="btn-icon" aria-label="Notifications">
           <span class="material-symbols-outlined">notifications_none</span>
         </button>
         <app-theme-toggle />
-        <button class="icon-button" aria-label="User profile">
+        <button class="btn-icon" aria-label="User profile">
           <span class="material-symbols-outlined">account_circle</span>
         </button>
       </div>
@@ -126,6 +126,8 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         font-size: 20px;
         width: 20px;
         height: 20px;
+        pointer-events: none;
+        z-index: 1;
         font-variation-settings:
           'FILL' 0,
           'wght' 400,
@@ -133,30 +135,8 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
           'opsz' 20;
       }
 
-      .search-input {
-        width: 100%;
-        height: 40px;
-        padding: 0 16px 0 44px;
-        border: 1px solid var(--color-border);
-        border-radius: 0.5rem;
-        background-color: var(--color-bg-input);
-        color: var(--color-text-primary);
-        font-size: 0.875rem;
-        transition: all 200ms ease;
-      }
-
-      .search-input::placeholder {
-        color: var(--color-text-muted);
-      }
-
-      .search-input:hover {
-        border-color: var(--color-border-strong);
-      }
-
-      .search-input:focus {
-        outline: none;
-        border-color: var(--color-accent);
-        box-shadow: 0 0 0 3px rgba(23, 161, 207, 0.1);
+      .search-input-padding {
+        padding-left: 44px;
       }
 
       .header__actions {
@@ -164,51 +144,6 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         align-items: center;
         gap: 0.5rem;
         flex-shrink: 0;
-      }
-
-      .icon-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        padding: 0;
-        border: none;
-        border-radius: 0.5rem;
-        background-color: transparent;
-        color: rgb(100 116 139); /* slate-500 */
-        cursor: pointer;
-        transition: all 150ms ease;
-      }
-
-      :host-context([data-theme='dark']) .icon-button {
-        color: rgb(148 163 184); /* slate-400 */
-      }
-
-      .icon-button:hover {
-        background-color: rgb(241 245 249); /* slate-100 */
-        color: rgb(15 23 42); /* slate-900 */
-      }
-
-      :host-context([data-theme='dark']) .icon-button:hover {
-        background-color: rgb(30 41 59); /* slate-800 */
-        color: rgb(241 245 249); /* slate-100 */
-      }
-
-      .icon-button:focus-visible {
-        outline: 2px solid #17a1cf;
-        outline-offset: 2px;
-      }
-
-      .icon-button .material-symbols-outlined {
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
-        font-variation-settings:
-          'FILL' 0,
-          'wght' 400,
-          'GRAD' 0,
-          'opsz' 20;
       }
     `,
   ],
