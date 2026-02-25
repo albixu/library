@@ -93,6 +93,8 @@ import { Subject, debounceTime } from 'rxjs';
       .input-wrapper .input-base:focus {
         background-color: #0f172a !important;
         border-color: #17a1cf !important; /* primary */
+        outline: none !important;
+        box-shadow: none !important; /* Remove ring shadow */
       }
 
       .input-wrapper .input-base:disabled {
