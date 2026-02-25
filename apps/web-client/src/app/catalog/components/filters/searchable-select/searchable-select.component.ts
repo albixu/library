@@ -122,9 +122,13 @@ export type { SelectOption };
 
       :host ::ng-deep .p-select:focus-visible,
       :host ::ng-deep .p-select.p-focus {
-        outline: 2px solid #17a1cf;
-        outline-offset: 2px;
-        border-color: #17a1cf;
+        outline: none;
+        border-color: #1e293b; /* slate-800 - same as hover */
+      }
+
+      [data-theme='light'] :host ::ng-deep .p-select:focus-visible,
+      [data-theme='light'] :host ::ng-deep .p-select.p-focus {
+        border-color: #cbd5e1; /* slate-300 - same as hover */
       }
 
       :host ::ng-deep .p-select.p-disabled {
