@@ -37,7 +37,7 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 
       <div class="header__actions">
         <button class="btn-icon" aria-label="Notifications">
-          <span class="material-symbols-outlined">notifications_none</span>
+          <span class="material-symbols-outlined">notifications</span>
         </button>
         <app-theme-toggle />
         <button class="btn-icon" aria-label="User profile">
@@ -113,8 +113,7 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 
       .header__search {
         position: relative;
-        flex: 1;
-        max-width: 600px;
+        flex: 0 0 256px; /* w-64 = 256px - Stitch exact width */
         display: flex;
         align-items: center;
       }
@@ -142,8 +141,10 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
       .header__actions {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 1rem;
         flex-shrink: 0;
+        padding-left: 1.5rem;
+        border-left: 1px solid var(--color-border);
       }
     `,
   ],

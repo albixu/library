@@ -113,7 +113,7 @@ describe('HeaderComponent', () => {
 
       const icons = fixture.nativeElement.querySelectorAll('.btn-icon .material-symbols-outlined');
       expect(icons.length).toBe(2);
-      expect(icons[0].textContent.trim()).toBe('notifications_none');
+      expect(icons[0].textContent.trim()).toBe('notifications');
       expect(icons[1].textContent.trim()).toBe('account_circle');
     });
 
