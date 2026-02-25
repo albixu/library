@@ -45,7 +45,7 @@ export type { SelectOption };
                   class="chip-remove"
                   data-testid="remove-chip"
                   [attr.aria-label]="'Remove ' + option.name"
-                  (click)="removeOption(option.id)"
+                  (click)="removeOption(option.name)"
                 >
                   <span class="material-symbols-outlined">close</span>
                 </button>
@@ -82,7 +82,7 @@ export type { SelectOption };
           [inputId]="inputId()"
           [ariaLabel]="label()"
           optionLabel="name"
-          optionValue="id"
+          optionValue="name"
           emptyMessage="No results found"
           emptyFilterMessage="No results found"
           display="chip"
@@ -448,9 +448,9 @@ export class MultiSelectChipsComponent {
 
   // Computed
   readonly selectedOptions = computed(() => {
-    const selectedIds = this.internalValue();
+    const selectedNames = this.internalValue();
     const allOptions = this.options();
-    return allOptions.filter((opt) => selectedIds.includes(opt.id));
+    return allOptions.filter((opt) => selectedNames.includes(opt.name));
   });
 
   constructor() {
@@ -467,8 +467,8 @@ export class MultiSelectChipsComponent {
     this.valueChange.emit(newValue);
   }
 
-  removeOption(id: string): void {
-    const newValue = this.internalValue().filter((v) => v !== id);
+  removeOption(name: string): void {
+    const newValue = this.internalValue().filter((v) => v !== name);
     this.internalValue.set(newValue);
     this.valueChange.emit(newValue);
   }

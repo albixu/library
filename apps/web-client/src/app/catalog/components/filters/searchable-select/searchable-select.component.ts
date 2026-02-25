@@ -38,7 +38,7 @@ export type { SelectOption };
         [inputId]="inputId()"
         [ariaLabel]="label()"
         optionLabel="name"
-        optionValue="id"
+        optionValue="name"
         emptyMessage="No results found"
         emptyFilterMessage="No results found"
         (ngModelChange)="onSelectionChange($event)"

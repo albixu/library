@@ -67,11 +67,11 @@ describe('SearchableSelectComponent', () => {
 
     it('should set selected value from input', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', '1');
+      fixture.componentRef.setInput('value', 'Technical');
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(component.internalValue()).toBe('1');
+      expect(component.internalValue()).toBe('Technical');
     });
   });
 
@@ -84,16 +84,16 @@ describe('SearchableSelectComponent', () => {
       component.valueChange.subscribe((value: string) => emittedValues.push(value));
 
       // Simulate selection change
-      component.onSelectionChange('2');
+      component.onSelectionChange('Business');
       await fixture.whenStable();
 
-      expect(emittedValues).toEqual(['2']);
-      expect(component.internalValue()).toBe('2');
+      expect(emittedValues).toEqual(['Business']);
+      expect(component.internalValue()).toBe('Business');
     });
 
     it('should handle null selection (clear)', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', '1');
+      fixture.componentRef.setInput('value', 'Technical');
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -109,17 +109,17 @@ describe('SearchableSelectComponent', () => {
     });
 
     it('should sync external value changes to internal value', async () => {
-      fixture.componentRef.setInput('value', '1');
+      fixture.componentRef.setInput('value', 'Technical');
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(component.internalValue()).toBe('1');
+      expect(component.internalValue()).toBe('Technical');
 
-      fixture.componentRef.setInput('value', '3');
+      fixture.componentRef.setInput('value', 'Fiction');
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(component.internalValue()).toBe('3');
+      expect(component.internalValue()).toBe('Fiction');
     });
   });
 

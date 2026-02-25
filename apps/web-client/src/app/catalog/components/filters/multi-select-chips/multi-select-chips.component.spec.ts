@@ -67,18 +67,18 @@ describe('MultiSelectChipsComponent', () => {
 
     it('should set selected values from input', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1', '2']);
+      fixture.componentRef.setInput('value', ['Programming', 'Web Development']);
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(component.internalValue()).toEqual(['1', '2']);
+      expect(component.internalValue()).toEqual(['Programming', 'Web Development']);
     });
   });
 
   describe('Chips display', () => {
     it('should display chips for selected values', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1', '2']);
+      fixture.componentRef.setInput('value', ['Programming', 'Web Development']);
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -88,7 +88,7 @@ describe('MultiSelectChipsComponent', () => {
 
     it('should display correct names on chips', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1']);
+      fixture.componentRef.setInput('value', ['Programming']);
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -98,7 +98,7 @@ describe('MultiSelectChipsComponent', () => {
 
     it('should remove chip when remove button is clicked', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1', '2']);
+      fixture.componentRef.setInput('value', ['Programming', 'Web Development']);
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -124,32 +124,32 @@ describe('MultiSelectChipsComponent', () => {
       component.valueChange.subscribe((value: string[]) => emittedValues.push(value));
 
       // Simulate selection change
-      component.onSelectionChange(['1', '2']);
+      component.onSelectionChange(['Programming', 'Web Development']);
       await fixture.whenStable();
 
-      expect(emittedValues).toEqual([['1', '2']]);
-      expect(component.internalValue()).toEqual(['1', '2']);
+      expect(emittedValues).toEqual([['Programming', 'Web Development']]);
+      expect(component.internalValue()).toEqual(['Programming', 'Web Development']);
     });
 
     it('should sync external value changes to internal value', async () => {
-      fixture.componentRef.setInput('value', ['1']);
+      fixture.componentRef.setInput('value', ['Programming']);
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(component.internalValue()).toEqual(['1']);
+      expect(component.internalValue()).toEqual(['Programming']);
 
-      fixture.componentRef.setInput('value', ['2', '3']);
+      fixture.componentRef.setInput('value', ['Web Development', 'Database']);
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(component.internalValue()).toEqual(['2', '3']);
+      expect(component.internalValue()).toEqual(['Web Development', 'Database']);
     });
   });
 
   describe('Clear all functionality', () => {
     it('should show clear all button when values are selected', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1', '2']);
+      fixture.componentRef.setInput('value', ['Programming', 'Web Development']);
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -168,7 +168,7 @@ describe('MultiSelectChipsComponent', () => {
 
     it('should clear all selections when clear all is clicked', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1', '2']);
+      fixture.componentRef.setInput('value', ['Programming', 'Web Development']);
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -195,7 +195,7 @@ describe('MultiSelectChipsComponent', () => {
 
     it('should have proper aria-label on chip remove buttons', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1']);
+      fixture.componentRef.setInput('value', ['Programming']);
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -226,7 +226,7 @@ describe('MultiSelectChipsComponent', () => {
 
     it('should hide remove buttons on chips when disabled', async () => {
       fixture.componentRef.setInput('options', mockOptions);
-      fixture.componentRef.setInput('value', ['1']);
+      fixture.componentRef.setInput('value', ['Programming']);
       fixture.componentRef.setInput('disabled', true);
       fixture.detectChanges();
       await fixture.whenStable();
