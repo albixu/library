@@ -29,7 +29,7 @@ import { Subject, debounceTime } from 'rxjs';
   imports: [FormsModule],
   template: `
     <div class="text-filter-input">
-      <label class="filter-label" [attr.for]="'filter-' + label()">
+      <label class="label-filter" [attr.for]="'filter-' + label()">
         {{ label() }}
       </label>
       <div class="input-wrapper">
@@ -37,7 +37,7 @@ import { Subject, debounceTime } from 'rxjs';
         <input
           [id]="'filter-' + label()"
           type="text"
-          class="filter-input"
+          class="input-base input-with-icons"
           [placeholder]="placeholder()"
           [value]="internalValue()"
           [disabled]="disabled()"
@@ -47,12 +47,12 @@ import { Subject, debounceTime } from 'rxjs';
         @if (showClearButton()) {
           <button
             type="button"
-            class="clear-button"
+            class="btn-clear"
             data-testid="clear-button"
             aria-label="Clear filter"
             (click)="onClear()"
           >
-            <span class="material-symbols-outlined">close</span>
+            <span class="material-symbols-outlined icon-sm">close</span>
           </button>
         }
       </div>
@@ -72,14 +72,6 @@ import { Subject, debounceTime } from 'rxjs';
         width: 100%;
       }
 
-      .filter-label {
-        font-size: 0.75rem;
-        font-weight: 500;
-        color: #94a3b8; /* slate-400 */
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
       .input-wrapper {
         position: relative;
         display: flex;
@@ -90,67 +82,14 @@ import { Subject, debounceTime } from 'rxjs';
         position: absolute;
         left: 0.75rem;
         font-size: 1.125rem;
-        color: #64748b; /* slate-500 */
+        color: var(--slate-500);
         pointer-events: none;
+        z-index: 1;
       }
 
-      .filter-input {
-        width: 100%;
-        padding: 0.625rem 2.75rem 0.625rem 2.5rem;
-        font-size: 0.875rem;
-        color: #f1f5f9; /* slate-100 */
-        background-color: #1e293b; /* slate-800 */
-        border: 1px solid #334155; /* slate-700 */
-        border-radius: 0.5rem;
-        transition: all 0.15s ease;
-
-        &::placeholder {
-          color: #64748b; /* slate-500 */
-        }
-
-        &:hover:not(:disabled) {
-          border-color: #475569; /* slate-600 */
-        }
-
-        &:focus {
-          outline: none;
-          border-color: #17a1cf; /* primary */
-          box-shadow: 0 0 0 3px rgba(23, 161, 207, 0.1);
-        }
-
-        &:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-      }
-
-      .clear-button {
-        position: absolute;
-        right: 0.5rem;
-        padding: 0.25rem;
-        background: transparent;
-        border: none;
-        border-radius: 0.25rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #64748b; /* slate-500 */
-        transition: all 0.15s ease;
-
-        &:hover {
-          background-color: rgba(100, 116, 139, 0.1);
-          color: #f1f5f9; /* slate-100 */
-        }
-
-        &:focus-visible {
-          outline: 2px solid #3b82f6;
-          outline-offset: 2px;
-        }
-
-        .material-symbols-outlined {
-          font-size: 1.125rem;
-        }
+      .input-with-icons {
+        padding-left: 2.5rem;
+        padding-right: 2.75rem;
       }
     `,
   ],

@@ -31,11 +31,11 @@ import { Subject, debounceTime } from 'rxjs';
   imports: [FormsModule],
   template: `
     <div class="semantic-search" [class.semantic-search--disabled]="disabled()">
-      <label class="semantic-search__label" for="semantic-search-textarea">{{ label() }}</label>
+      <label class="label-filter" for="semantic-search-textarea">{{ label() }}</label>
       <div class="semantic-search__wrapper">
         <textarea
           id="semantic-search-textarea"
-          class="semantic-search__textarea"
+          class="textarea-base"
           [placeholder]="placeholder()"
           [value]="internalValue()"
           [disabled]="disabled()"
@@ -47,12 +47,12 @@ import { Subject, debounceTime } from 'rxjs';
         @if (showClearButton()) {
           <button
             type="button"
-            class="semantic-search__clear-button"
+            class="btn-clear clear-top-right"
             data-testid="clear-button"
             aria-label="Clear search"
             (click)="onClear()"
           >
-            <span class="material-symbols-outlined">close</span>
+            <span class="material-symbols-outlined icon-sm">close</span>
           </button>
         }
       </div>
@@ -79,104 +79,13 @@ import { Subject, debounceTime } from 'rxjs';
         width: 100%;
       }
 
-      .semantic-search__label {
-        display: block;
-        font-size: 0.875rem;
-        font-weight: 500;
-        margin-bottom: 0.5rem;
-        color: rgb(148 163 184);
-      }
-
-      [data-theme='dark'] .semantic-search__label {
-        color: rgb(148 163 184);
-      }
-
       .semantic-search__wrapper {
         position: relative;
       }
 
-      .semantic-search__textarea {
-        width: 100%;
-        padding: 0.75rem;
-        padding-right: 2.75rem;
-        font-size: 0.9375rem;
-        border: 1px solid rgb(51 65 85);
-        border-radius: 0.5rem;
-        background-color: rgb(30 41 59);
-        color: rgb(241 245 249);
-        resize: vertical;
-        min-height: 72px;
-        transition:
-          border-color 150ms,
-          box-shadow 150ms;
-      }
-
-      .semantic-search__textarea::placeholder {
-        color: rgb(100 116 139);
-      }
-
-      .semantic-search__textarea:focus {
-        outline: none;
-        border-color: #17a1cf;
-        box-shadow: 0 0 0 3px rgba(23, 161, 207, 0.1);
-      }
-
-      .semantic-search__textarea:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        background-color: rgb(15 23 42);
-      }
-
-      [data-theme='light'] .semantic-search__textarea {
-        background-color: rgb(255 255 255);
-        color: rgb(30 41 59);
-        border-color: rgb(226 232 240);
-      }
-
-      [data-theme='light'] .semantic-search__textarea::placeholder {
-        color: rgb(148 163 184);
-      }
-
-      [data-theme='light'] .semantic-search__textarea:disabled {
-        background-color: rgb(248 250 252);
-      }
-
-      .semantic-search__clear-button {
-        position: absolute;
+      .clear-top-right {
         top: 0.5rem;
-        right: 0.5rem;
-        width: 2rem;
-        height: 2rem;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: transparent;
-        border: none;
-        border-radius: 0.375rem;
-        color: rgb(148 163 184);
-        cursor: pointer;
-        transition:
-          background-color 150ms,
-          color 150ms;
-      }
-
-      .semantic-search__clear-button:hover {
-        background-color: rgb(51 65 85);
-        color: rgb(241 245 249);
-      }
-
-      [data-theme='light'] .semantic-search__clear-button {
-        color: rgb(100 116 139);
-      }
-
-      [data-theme='light'] .semantic-search__clear-button:hover {
-        background-color: rgb(241 245 249);
-        color: rgb(30 41 59);
-      }
-
-      .semantic-search__clear-button .material-symbols-outlined {
-        font-size: 1.25rem;
+        transform: none;
       }
 
       .semantic-search__hints {
@@ -185,7 +94,7 @@ import { Subject, debounceTime } from 'rxjs';
         align-items: center;
         margin-top: 0.375rem;
         font-size: 0.75rem;
-        color: rgb(148 163 184);
+        color: var(--slate-400);
         min-height: 1rem;
       }
 
@@ -198,7 +107,7 @@ import { Subject, debounceTime } from 'rxjs';
         margin-left: 0.5rem;
       }
 
-      .semantic-search--disabled .semantic-search__label {
+      .semantic-search--disabled .label-filter {
         opacity: 0.5;
       }
     `,
