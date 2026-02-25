@@ -105,15 +105,15 @@ import { Subject, debounceTime } from 'rxjs';
 
       .input-icon {
         position: absolute;
-        left: 0.5rem; /* Reduced from 0.75rem to match searchable-select spacing */
-        font-size: 1.125rem;
+        left: 0.75rem; /* Icon position from left edge */
+        font-size: 1.125rem; /* 18px icon size */
         color: var(--slate-500);
         pointer-events: none;
         z-index: 1;
       }
 
       .input-with-icons {
-        padding: 0 2.75rem 0 0.75rem !important; /* Override global .input-base px-3 from Tailwind */
+        padding: 0 2.75rem 0 2.5rem !important; /* Left padding increased to 40px to accommodate icon */
       }
     `,
   ],
