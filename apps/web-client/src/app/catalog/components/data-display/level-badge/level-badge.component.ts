@@ -25,69 +25,79 @@ import { BookLevelName } from '../../../../core/models/index.js';
       white-space: nowrap;
     }
 
-    /* Light mode colors */
+    /* Light mode colors - from Stitch design */
     :host-context(:not([data-theme='dark'])) {
       .level-beginner {
-        background-color: #dcfce7;
-        color: #15803d;
+        background-color: #dcfce7; /* green-100 */
+        color: #15803d; /* green-700 */
       }
 
       .level-intermediate {
-        background-color: #fef3c7;
-        color: #b45309;
+        background-color: #fef3c7; /* amber-100 */
+        color: #b45309; /* amber-700 */
       }
 
       .level-advanced {
-        background-color: #fee2e2;
-        color: #b91c1c;
+        background-color: #fee2e2; /* red-100 */
+        color: #b91c1c; /* red-700 */
+      }
+
+      .level-expert {
+        background-color: #f3e8ff; /* purple-100 */
+        color: #7e22ce; /* purple-700 */
       }
 
       .level-beginner-intermediate {
-        background-color: #ccfbf1;
-        color: #0f766e;
+        background-color: #dbeafe; /* blue-100 */
+        color: #1e40af; /* blue-700 */
       }
 
       .level-intermediate-advanced {
-        background-color: #fed7aa;
-        color: #c2410c;
+        background-color: #fed7aa; /* orange-100 */
+        color: #c2410c; /* orange-700 */
       }
 
       .level-unknown {
-        background-color: #f3f4f6;
-        color: #6b7280;
+        background-color: #f3f4f6; /* gray-100 */
+        color: #6b7280; /* gray-500 */
       }
     }
 
-    /* Dark mode colors (from Figma design) */
+    /* Dark mode colors - from Stitch design */
     :host-context([data-theme='dark']) {
       .level-beginner {
-        background-color: rgba(20, 83, 45, 0.3);
-        color: #4ade80;
+        background-color: rgba(34, 197, 94, 0.15); /* green-900/30 equivalent */
+        color: #4ade80; /* green-400 */
       }
 
       .level-intermediate {
-        background-color: rgba(120, 53, 15, 0.3);
-        color: #fbbf24;
+        background-color: rgba(251, 191, 36, 0.15); /* amber-900/30 equivalent */
+        color: #fbbf24; /* amber-400 */
       }
 
       .level-advanced {
-        background-color: rgba(127, 29, 29, 0.3);
-        color: #f87171;
+        background-color: rgba(239, 68, 68, 0.15); /* red-900/30 equivalent */
+        color: #f87171; /* red-400 */
+      }
+
+      .level-expert {
+        background-color: rgba(168, 85, 247, 0.15); /* purple-900/30 equivalent */
+        color: #c084fc; /* purple-400 */
       }
 
       .level-beginner-intermediate {
-        background-color: rgba(19, 78, 74, 0.3);
-        color: #2dd4bf;
+        background-color: rgba(59, 130, 246, 0.15); /* blue-900/30 equivalent */
+        color: #60a5fa; /* blue-400 */
       }
 
       .level-intermediate-advanced {
-        background-color: rgba(124, 45, 18, 0.3);
-        color: #fb923c;
+        background-color: rgba(249, 115, 22, 0.15); /* orange-900/30 equivalent */
+        color: #fb923c; /* orange-400 */
       }
 
       .level-unknown {
         background-color: rgba(31, 41, 55, 0.3);
-        color: #9ca3af;
+        color: #9ca3af; /* gray-400 */
       }
     }
   `,
