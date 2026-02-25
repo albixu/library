@@ -69,15 +69,15 @@ import { BookLevelName } from '../../../../core/models/index.js';
       color: #60a5fa; /* blue-400 */
     }
 
-    /* Intermediate to Advanced - Orange */
+    /* Intermediate to Advanced - Purple */
     .level-intermediate-advanced {
-      background-color: #fed7aa; /* orange-100 */
-      color: #c2410c; /* orange-700 */
+      background-color: #f3e8ff; /* purple-100 */
+      color: #7e22ce; /* purple-700 */
     }
 
     [data-theme='dark'] .level-intermediate-advanced {
-      background-color: rgba(249, 115, 22, 0.15);
-      color: #fb923c; /* orange-400 */
+      background-color: rgba(168, 85, 247, 0.15);
+      color: #c084fc; /* purple-400 */
     }
 
     /* Unknown - Gray */
@@ -101,12 +101,15 @@ export class LevelBadgeComponent {
     if (!lvl) return '';
 
     // Map levels to CSS classes - compound levels use the higher level's style
+    // Support both uppercase and lowercase variants for compound levels
     const classMap: Record<BookLevelName, string> = {
       Beginner: 'level-badge level-beginner',
       Intermediate: 'level-badge level-intermediate',
       Advanced: 'level-badge level-advanced',
       'Beginner to Intermediate': 'level-badge level-beginner-intermediate',
+      'Beginner to intermediate': 'level-badge level-beginner-intermediate',
       'Intermediate to Advanced': 'level-badge level-intermediate-advanced',
+      'Intermediate to advanced': 'level-badge level-intermediate-advanced',
     };
 
     return classMap[lvl] || 'level-badge level-unknown';

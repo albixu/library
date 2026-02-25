@@ -81,13 +81,16 @@ export type BookFormat =
 
 /**
  * Book level enum values
+ * Supports both uppercase and lowercase variants for the second word in compound levels
  */
 export type BookLevelName =
   | 'Beginner'
   | 'Intermediate'
   | 'Advanced'
   | 'Beginner to Intermediate'
-  | 'Intermediate to Advanced';
+  | 'Beginner to intermediate'
+  | 'Intermediate to Advanced'
+  | 'Intermediate to advanced';
 
 /**
  * Book search result item (from GET /books)
