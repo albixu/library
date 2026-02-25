@@ -16,7 +16,7 @@ import {
  * Default pagination configuration
  */
 const DEFAULT_PAGINATION: PaginationInfo = {
-  limit: 50,
+  limit: 25,
   hasNextPage: false,
   nextCursor: null,
   totalCount: 0,

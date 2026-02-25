@@ -94,7 +94,6 @@ describe('BookListPageComponent', () => {
       searchBooks: vi.fn(),
       loadNextPage: vi.fn(),
       setFilters: vi.fn(),
-      setPageSize: vi.fn(),
       loadTypes: vi.fn(),
       loadCategories: vi.fn(),
       loadLevels: vi.fn(),
@@ -193,12 +192,6 @@ describe('BookListPageComponent', () => {
       component.onLoadMore();
 
       expect(mockStore.loadNextPage).toHaveBeenCalled();
-    });
-
-    it('should change page size when paginator emits pageSizeChange', () => {
-      component.onPageSizeChange(25);
-
-      expect(mockStore.setPageSize).toHaveBeenCalledWith(25);
     });
   });
 

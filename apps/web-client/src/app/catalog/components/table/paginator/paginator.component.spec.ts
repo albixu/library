@@ -19,9 +19,8 @@ describe('PaginatorComponent', () => {
       expect(component).toBeTruthy();
     });
 
-    it('should have default pageSize of 25', () => {
-      fixture.detectChanges();
-      expect(component.pageSize()).toBe(25);
+    it('should have fixed PAGE_SIZE of 25', () => {
+      expect(PaginatorComponent.PAGE_SIZE).toBe(25);
     });
 
     it('should have default totalCount of 0', () => {
@@ -42,19 +41,6 @@ describe('PaginatorComponent', () => {
     it('should have default loading of false', () => {
       fixture.detectChanges();
       expect(component.loading()).toBe(false);
-    });
-  });
-
-  describe('Page size options', () => {
-    it('should have default page size options of [25, 50, 100]', () => {
-      fixture.detectChanges();
-      expect(component.pageSizeOptions()).toEqual([25, 50, 100]);
-    });
-
-    it('should use custom page size options when provided', () => {
-      fixture.componentRef.setInput('pageSizeOptions', [10, 20, 50]);
-      fixture.detectChanges();
-      expect(component.pageSizeOptions()).toEqual([10, 20, 50]);
     });
   });
 
@@ -162,32 +148,6 @@ describe('PaginatorComponent', () => {
       loadMoreButton.click();
 
       expect(loadMoreSpy).toHaveBeenCalled();
-    });
-
-    it('should emit pageSizeChange event when page size changes', () => {
-      const pageSizeChangeSpy = vi.fn();
-      component.pageSizeChange.subscribe(pageSizeChangeSpy);
-
-      fixture.componentRef.setInput('totalCount', 100);
-      fixture.componentRef.setInput('currentCount', 25);
-      fixture.detectChanges();
-
-      component.onPageSizeChange(50);
-
-      expect(pageSizeChangeSpy).toHaveBeenCalledWith(50);
-    });
-  });
-
-  describe('Loading state', () => {
-    it('should disable page size select when loading', async () => {
-      fixture.componentRef.setInput('totalCount', 100);
-      fixture.componentRef.setInput('loading', true);
-      fixture.detectChanges();
-      await fixture.whenStable();
-
-      const select = fixture.nativeElement.querySelector('select.select-base') as HTMLSelectElement;
-      expect(select).toBeTruthy(); // Verify element exists
-      expect(select.disabled).toBe(true);
     });
   });
 

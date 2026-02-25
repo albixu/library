@@ -152,10 +152,8 @@ import {
                   [totalCount]="store.pagination().totalCount"
                   [currentCount]="store.books().length"
                   [hasNextPage]="store.pagination().hasNextPage"
-                  [pageSize]="store.pagination().limit"
                   [loading]="store.loading()"
                   (loadMore)="onLoadMore()"
-                  (pageSizeChange)="onPageSizeChange($event)"
                 />
               }
             } @else {
@@ -173,10 +171,8 @@ import {
                       [totalCount]="store.pagination().totalCount"
                       [currentCount]="store.books().length"
                       [hasNextPage]="store.pagination().hasNextPage"
-                      [pageSize]="store.pagination().limit"
                       [loading]="store.loading()"
                       (loadMore)="onLoadMore()"
-                      (pageSizeChange)="onPageSizeChange($event)"
                     />
                   </div>
                 }
@@ -669,10 +665,6 @@ export class BookListPageComponent implements OnInit {
 
   onLoadMore(): void {
     this.store.loadNextPage();
-  }
-
-  onPageSizeChange(pageSize: number): void {
-    this.store.setPageSize(pageSize);
   }
 
   onSendToKindle(book: Book): void {
