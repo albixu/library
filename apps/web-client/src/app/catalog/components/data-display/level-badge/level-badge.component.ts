@@ -42,11 +42,6 @@ import { BookLevelName } from '../../../../core/models/index.js';
         color: #b91c1c; /* red-700 */
       }
 
-      .level-expert {
-        background-color: #f3e8ff; /* purple-100 */
-        color: #7e22ce; /* purple-700 */
-      }
-
       .level-beginner-intermediate {
         background-color: #dbeafe; /* blue-100 */
         color: #1e40af; /* blue-700 */
@@ -78,11 +73,6 @@ import { BookLevelName } from '../../../../core/models/index.js';
       .level-advanced {
         background-color: rgba(239, 68, 68, 0.15); /* red-900/30 equivalent */
         color: #f87171; /* red-400 */
-      }
-
-      .level-expert {
-        background-color: rgba(168, 85, 247, 0.15); /* purple-900/30 equivalent */
-        color: #c084fc; /* purple-400 */
       }
 
       .level-beginner-intermediate {
