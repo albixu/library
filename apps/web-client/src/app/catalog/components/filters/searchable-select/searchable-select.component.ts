@@ -39,8 +39,8 @@ export type { SelectOption };
         [ariaLabel]="label()"
         optionLabel="name"
         optionValue="name"
-        emptyMessage="No results found"
-        emptyFilterMessage="No results found"
+        emptyMessage="No se encontraron resultados"
+        emptyFilterMessage="No se encontraron resultados"
         (ngModelChange)="onSelectionChange($event)"
       >
         <ng-template pTemplate="dropdownicon">

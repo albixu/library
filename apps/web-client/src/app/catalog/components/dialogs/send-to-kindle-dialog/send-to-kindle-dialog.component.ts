@@ -53,7 +53,7 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
       <div class="dialog-header">
         <div class="dialog-title-wrapper">
           <span class="material-symbols-outlined dialog-icon">send_to_mobile</span>
-          <h2 id="dialog-title" class="dialog-title">Send to Kindle</h2>
+          <h2 id="dialog-title" class="dialog-title">Enviar a Kindle</h2>
         </div>
       </div>
 
@@ -66,13 +66,13 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
         @if (!book.available) {
           <div class="warning-banner unavailable" data-testid="unavailable-warning">
             <span class="material-symbols-outlined">warning</span>
-            <span>This book is currently not available for sending.</span>
+            <span>Este libro actualmente no está disponible para envío.</span>
           </div>
         }
 
         @if (state() === 'input' || state() === 'sending') {
           <div class="form-field">
-            <label for="kindle-email" class="form-label">Kindle Email</label>
+            <label for="kindle-email" class="form-label">Email de Kindle</label>
             <div class="input-wrapper">
               <span class="material-symbols-outlined input-icon">email</span>
               <input
@@ -83,26 +83,25 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
                   emailControl.hasError('email') || emailControl.hasError('required')
                 "
                 [formControl]="emailControl"
-                placeholder="your-email@kindle.com"
-                aria-label="Kindle email address"
+                placeholder="tu-email@kindle.com"
+                aria-label="Dirección de email de Kindle"
                 [attr.aria-describedby]="'email-hint'"
               />
             </div>
             @if (emailControl.hasError('required') && emailControl.touched) {
-              <span class="error-message">Email is required</span>
+              <span class="error-message">El email es requerido</span>
             }
             @if (emailControl.hasError('email') && !emailControl.hasError('required')) {
-              <span class="error-message">Please enter a valid email address</span>
+              <span class="error-message">Por favor ingresa una dirección de email válida</span>
             }
-            <span id="email-hint" class="hint-text">Enter your Kindle device email address</span>
+            <span id="email-hint" class="hint-text">Ingresa la dirección de email de tu dispositivo Kindle</span>
           </div>
 
           @if (showKindleWarning()) {
             <div class="warning-banner kindle-warning" data-testid="kindle-warning">
               <span class="material-symbols-outlined">info</span>
               <span>
-                For best results, use your @kindle.com email address. Other emails may work but are
-                not guaranteed.
+                Para mejores resultados, usa tu dirección de email @kindle.com. Otros emails pueden funcionar pero no están garantizados.
               </span>
             </div>
           }
@@ -111,7 +110,7 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
         @if (state() === 'sending') {
           <div class="loading-container">
             <div class="spinner"></div>
-            <p>Sending "{{ book.title }}" to your Kindle...</p>
+            <p>Enviando "{{ book.title }}" a tu Kindle...</p>
           </div>
         }
 
@@ -140,7 +139,7 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
             (click)="onCancel()"
             [disabled]="state() === 'sending'"
           >
-            Cancel
+            Cancelar
           </button>
           <button
             type="button"
@@ -150,10 +149,10 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
             (click)="onSend()"
           >
             @if (state() === 'sending') {
-              <span>Sending...</span>
+              <span>Enviando...</span>
             } @else {
               <span class="material-symbols-outlined btn-icon">send</span>
-              <span>Send to Kindle</span>
+              <span>Enviar a Kindle</span>
             }
           </button>
         }
@@ -165,7 +164,7 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
             data-testid="close-button"
             (click)="onClose()"
           >
-            Close
+            Cerrar
           </button>
         }
       </div>

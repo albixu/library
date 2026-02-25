@@ -44,7 +44,7 @@ export type { SelectOption };
                   type="button"
                   class="chip-remove"
                   data-testid="remove-chip"
-                  [attr.aria-label]="'Remove ' + option.name"
+                  [attr.aria-label]="'Eliminar ' + option.name"
                   (click)="removeOption(option.name)"
                 >
                   <span class="material-symbols-outlined">close</span>
@@ -57,10 +57,10 @@ export type { SelectOption };
               type="button"
               class="clear-all-btn"
               data-testid="clear-all"
-              aria-label="Clear all selections"
+              aria-label="Limpiar todas las selecciones"
               (click)="clearAll()"
             >
-              Clear all
+              Limpiar todo
             </button>
           }
         </div>
@@ -83,8 +83,8 @@ export type { SelectOption };
           [ariaLabel]="label()"
           optionLabel="name"
           optionValue="name"
-          emptyMessage="No results found"
-          emptyFilterMessage="No results found"
+          emptyMessage="No se encontraron resultados"
+          emptyFilterMessage="No se encontraron resultados"
           display="chip"
           [showToggleAll]="false"
           (ngModelChange)="onSelectionChange($event)"
@@ -565,7 +565,7 @@ export type { SelectOption };
 })
 export class MultiSelectChipsComponent {
   // Inputs
-  readonly label = input<string>('Select');
+  readonly label = input<string>('Seleccionar');
   readonly placeholder = input<string>('');
   readonly options = input<SelectOption[]>([]);
   readonly value = input<string[]>([]);
@@ -589,9 +589,9 @@ export class MultiSelectChipsComponent {
   readonly displayPlaceholder = computed(() => {
     const count = this.selectedOptions().length;
     if (count === 0) {
-      return this.placeholder() || 'Select options...';
+      return this.placeholder() || 'Seleccionar opciones...';
     }
-    return `${count} selected`;
+    return `${count} seleccionado${count > 1 ? 's' : ''}`;
   });
 
   constructor() {

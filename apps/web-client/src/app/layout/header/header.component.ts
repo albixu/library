@@ -31,8 +31,8 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
           <input
             type="text"
             class="input-base search-input-padding"
-            placeholder="Global search..."
-            aria-label="Global search"
+            placeholder="Búsqueda global..."
+            aria-label="Búsqueda global"
             [value]="searchValue()"
             (input)="onSearchInput($event)"
           />
@@ -41,7 +41,7 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
               type="button"
               class="btn-clear"
               data-testid="clear-search-button"
-              aria-label="Clear search"
+              aria-label="Limpiar búsqueda"
               (click)="onClearSearch()"
             >
               <span class="material-symbols-outlined icon-sm">close</span>
@@ -50,11 +50,11 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         </div>
 
         <div class="header__actions">
-          <button class="header__icon-button" aria-label="Notifications">
+          <button class="header__icon-button" aria-label="Notificaciones">
             <span class="material-symbols-outlined">notifications</span>
           </button>
           <app-theme-toggle />
-          <div class="header__avatar" role="img" aria-label="User profile">
+          <div class="header__avatar" role="img" aria-label="Perfil de usuario">
             <span class="material-symbols-outlined">account_circle</span>
           </div>
         </div>

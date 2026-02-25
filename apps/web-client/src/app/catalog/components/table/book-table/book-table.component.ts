@@ -20,22 +20,22 @@ import { Book } from '../../../../core/models/index.js';
   ],
   template: `
     <div class="book-table-wrapper">
-      <app-loading-overlay [visible]="loading()" message="Loading books..." />
+      <app-loading-overlay [visible]="loading()" message="Cargando libros..." />
 
       @if (books().length > 0) {
         <div class="book-table-container">
           <div class="table-scroll">
-            <table aria-label="Books" class="book-table">
+            <table aria-label="Libros" class="book-table">
               <thead>
                 <tr>
                   <th>ISBN</th>
-                  <th>Book Details</th>
-                  <th>Type / Category</th>
-                  <th class="text-center">Lang</th>
-                  <th>Level</th>
-                  <th>Format</th>
-                  <th>Description</th>
-                  <th class="text-right">Actions</th>
+                  <th>Detalles del Libro</th>
+                  <th>Tipo / Categoría</th>
+                  <th class="text-center">Idioma</th>
+                  <th>Nivel</th>
+                  <th>Formato</th>
+                  <th>Descripción</th>
+                  <th class="text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -57,7 +57,7 @@ import { Book } from '../../../../core/models/index.js';
                     </td>
                     <td class="type-category-column">
                       <div class="type-category-cell">
-                        <span class="book-type">{{ book.type || 'Unknown' }}</span>
+                        <span class="book-type">{{ book.type || 'Desconocido' }}</span>
                         <app-category-chips
                           [categories]="getCategoryNames(book)"
                           [maxVisible]="1"
@@ -88,8 +88,8 @@ import { Book } from '../../../../core/models/index.js';
                       <button
                         class="action-button"
                         type="button"
-                        aria-label="Send to Kindle"
-                        title="Send to Kindle"
+                        aria-label="Enviar a Kindle"
+                        title="Enviar a Kindle"
                         (click)="onSendToKindle($event, book)"
                       >
                         <span class="material-symbols-outlined">send_to_mobile</span>

@@ -48,7 +48,7 @@ import {
           class="backdrop"
           role="button"
           tabindex="0"
-          aria-label="Close filters"
+          aria-label="Cerrar filtros"
           (click)="toggleMobileDrawer()"
           (keydown.escape)="toggleMobileDrawer()"
           (keydown.enter)="toggleMobileDrawer()"
@@ -62,7 +62,7 @@ import {
         [class.open]="isMobile() ? isMobileDrawerOpen() : true"
         [class.mobile]="isMobile()"
         role="complementary"
-        aria-label="Book filters"
+        aria-label="Filtros de libros"
         class="filter-sidenav"
       >
         <app-filter-panel
@@ -85,13 +85,13 @@ import {
             <button
               type="button"
               data-testid="mobile-filter-toggle"
-              aria-label="Toggle filters"
+              aria-label="Alternar filtros"
               class="filter-toggle-btn"
               (click)="toggleMobileDrawer()"
             >
               <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
             </button>
-            <span class="mobile-title">Book Catalog</span>
+            <span class="mobile-title">Catálogo de Libros</span>
             @if (store.hasFilters()) {
               <span class="filter-badge">{{ activeFilterCount() }}</span>
             }
@@ -105,36 +105,36 @@ import {
               <span class="material-symbols-outlined error-icon" aria-hidden="true">
                 error_outline
               </span>
-              <h2 class="error-title">Unable to load books</h2>
+              <h2 class="error-title">No se pueden cargar los libros</h2>
               <p class="error-message">{{ store.error() }}</p>
               <button type="button" class="btn btn-primary" (click)="onRetrySearch()">
                 <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
-                Retry
+                Reintentar
               </button>
             </div>
           } @else {
             <!-- Results info -->
             <div class="results-header">
               <div>
-                <h2 class="results-title">Books Collection</h2>
+                <h2 class="results-title">Colección de Libros</h2>
                 <p class="results-subtitle">
                   @if (store.loading()) {
-                    Loading books...
+                    Cargando libros...
                   } @else if (store.isEmpty()) {
-                    No books found
+                    No se encontraron libros
                   } @else {
-                    Manage and explore your digital library catalog
+                    Gestiona y explora tu catálogo de biblioteca digital
                   }
                 </p>
               </div>
               <div class="results-actions">
                 <button type="button" class="btn btn-secondary">
                   <span class="material-symbols-outlined" aria-hidden="true">download</span>
-                  Export
+                  Exportar
                 </button>
                 <button type="button" class="btn btn-primary">
                   <span class="material-symbols-outlined" aria-hidden="true">add</span>
-                  Add New Book
+                  Añadir Nuevo Libro
                 </button>
               </div>
             </div>
