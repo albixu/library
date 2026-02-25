@@ -1,17 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HeaderComponent } from './header.component.js';
 import { ThemeService } from '@core/services/theme.service';
-import { signal, computed } from '@angular/core';
+import { signal } from '@angular/core';
 
 describe('HeaderComponent', () => {
   let component: HeaderComponent;
   let fixture: ComponentFixture<HeaderComponent>;
   let mockThemeService: {
     theme: ReturnType<typeof signal<'light' | 'dark'>>;
-    isDark: ReturnType<typeof computed<boolean>>;
-    themeIcon: ReturnType<typeof computed<string>>;
-    toggleLabel: ReturnType<typeof computed<string>>;
-    toggleTheme: ReturnType<typeof vi.fn>;
+    setTheme: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -20,13 +17,8 @@ describe('HeaderComponent', () => {
 
     mockThemeService = {
       theme: themeSignal,
-      isDark: computed(() => themeSignal() === 'dark'),
-      themeIcon: computed(() => (themeSignal() === 'dark' ? 'light_mode' : 'dark_mode')),
-      toggleLabel: computed(() =>
-        themeSignal() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-      ),
-      toggleTheme: vi.fn(() => {
-        themeSignal.update((current) => (current === 'light' ? 'dark' : 'light'));
+      setTheme: vi.fn((theme: 'light' | 'dark') => {
+        themeSignal.set(theme);
       }),
     };
 
@@ -107,20 +99,25 @@ describe('HeaderComponent', () => {
   });
 
   describe('Action Buttons', () => {
-    it('should have notifications and profile icon buttons with Material Symbols', () => {
-      const buttons = fixture.nativeElement.querySelectorAll('.btn-icon');
-      expect(buttons.length).toBe(2);
+    it('should have notifications button with Material Symbol icon', () => {
+      const button = fixture.nativeElement.querySelector('.header__icon-button');
+      expect(button).toBeTruthy();
+      expect(button.getAttribute('aria-label')).toBe('Notifications');
 
-      const icons = fixture.nativeElement.querySelectorAll('.btn-icon .material-symbols-outlined');
-      expect(icons.length).toBe(2);
-      expect(icons[0].textContent.trim()).toBe('notifications');
-      expect(icons[1].textContent.trim()).toBe('account_circle');
+      const icon = button.querySelector('.material-symbols-outlined');
+      expect(icon).toBeTruthy();
+      expect(icon.textContent.trim()).toBe('notifications');
     });
 
-    it('should have tooltip title attributes on action buttons', () => {
-      const buttons = fixture.nativeElement.querySelectorAll('.btn-icon');
-      expect(buttons[0].getAttribute('aria-label')).toBe('Notifications');
-      expect(buttons[1].getAttribute('aria-label')).toBe('User profile');
+    it('should have avatar with account_circle icon', () => {
+      const avatar = fixture.nativeElement.querySelector('.header__avatar');
+      expect(avatar).toBeTruthy();
+      expect(avatar.getAttribute('role')).toBe('img');
+      expect(avatar.getAttribute('aria-label')).toBe('User profile');
+
+      const icon = avatar.querySelector('.material-symbols-outlined');
+      expect(icon).toBeTruthy();
+      expect(icon.textContent.trim()).toBe('account_circle');
     });
   });
 

@@ -25,24 +25,26 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         <span class="header__title">BiblioManager</span>
       </div>
 
-      <div class="header__search">
-        <span class="material-symbols-outlined search-icon">search</span>
-        <input
-          type="text"
-          class="input-base search-input-padding"
-          placeholder="Global search..."
-          aria-label="Global search"
-        />
-      </div>
+      <div class="header__right">
+        <div class="header__search">
+          <span class="material-symbols-outlined search-icon">search</span>
+          <input
+            type="text"
+            class="input-base search-input-padding"
+            placeholder="Global search..."
+            aria-label="Global search"
+          />
+        </div>
 
-      <div class="header__actions">
-        <button class="btn-icon" aria-label="Notifications">
-          <span class="material-symbols-outlined">notifications</span>
-        </button>
-        <app-theme-toggle />
-        <button class="btn-icon" aria-label="User profile">
-          <span class="material-symbols-outlined">account_circle</span>
-        </button>
+        <div class="header__actions">
+          <button class="header__icon-button" aria-label="Notifications">
+            <span class="material-symbols-outlined">notifications</span>
+          </button>
+          <app-theme-toggle />
+          <div class="header__avatar" role="img" aria-label="User profile">
+            <span class="material-symbols-outlined">account_circle</span>
+          </div>
+        </div>
       </div>
     </header>
   `,
@@ -111,9 +113,15 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         color: var(--color-text-primary);
       }
 
+      .header__right {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-shrink: 0;
+      }
+
       .header__search {
         position: relative;
-        flex: 0 0 256px; /* w-64 = 256px - Stitch exact width */
         display: flex;
         align-items: center;
       }
@@ -136,6 +144,7 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 
       .search-input-padding {
         padding-left: 44px;
+        width: 256px;
       }
 
       .header__actions {
@@ -145,6 +154,69 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         flex-shrink: 0;
         padding-left: 1.5rem;
         border-left: 1px solid var(--color-border);
+      }
+
+      .header__icon-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem;
+        border: none;
+        background: transparent;
+        color: rgb(100 116 139); /* slate-500 */
+        cursor: pointer;
+        transition: color 150ms ease;
+      }
+
+      :host-context([data-theme='dark']) .header__icon-button {
+        color: rgb(100 116 139); /* slate-500 */
+      }
+
+      .header__icon-button:hover {
+        color: #17a1cf; /* primary */
+      }
+
+      .header__icon-button .material-symbols-outlined {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 20;
+      }
+
+      .header__avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 9999px;
+        background-color: rgb(226 232 240); /* slate-200 */
+        overflow: hidden;
+        cursor: pointer;
+      }
+
+      :host-context([data-theme='dark']) .header__avatar {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
+
+      .header__avatar .material-symbols-outlined {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+        color: rgb(71 85 105); /* slate-600 */
+        font-variation-settings:
+          'FILL' 1,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24;
+      }
+
+      :host-context([data-theme='dark']) .header__avatar .material-symbols-outlined {
+        color: rgb(148 163 184); /* slate-400 */
       }
     `,
   ],
