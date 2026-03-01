@@ -25,6 +25,8 @@ import { InvalidISBNError } from '../../../../domain/value-objects/ISBN.js';
 import { InvalidBookFormatError } from '../../../../domain/value-objects/BookFormat.js';
 import {
   EmbeddingServiceUnavailableError,
+  TranslationServiceUnavailableError,
+  TranslationError,
 } from '../../../../application/errors/ApplicationErrors.js';
 import {
   errorResponse,
@@ -83,10 +85,10 @@ function createErrorResponse(
  * { success: false, data: null, error: { message, details? } }
  *
  * Status code mapping:
- * - 400 Bad Request: Validation errors (field constraints, ISBN format, type/format invalid)
+ * - 400 Bad Request: Validation errors (field constraints, ISBN format, type/format invalid, translation failure)
  * - 409 Conflict: Duplicate errors (ISBN already exists, book already exists)
  * - 422 Unprocessable Entity: Business rule violations (type-category-level mismatches)
- * - 503 Service Unavailable: Embedding service down
+ * - 503 Service Unavailable: Embedding or translation service down
  * - 500 Internal Server Error: Unknown/unexpected errors
  *
  * @param error - The error to map
@@ -126,6 +128,18 @@ export function mapErrorToHttpResponse(error: unknown): HttpErrorResponse {
   }
 
   if (error instanceof EmbeddingTextTooLongError) {
+    return createErrorResponse(400, error.message);
+  }
+
+  // Translation service errors
+  if (error instanceof TranslationServiceUnavailableError) {
+    return createErrorResponse(
+      503,
+      'Translation service unavailable, please try again later',
+    );
+  }
+
+  if (error instanceof TranslationError) {
     return createErrorResponse(400, error.message);
   }
 

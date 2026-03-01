@@ -593,6 +593,11 @@ export class PostgresBookRepository implements BookRepository {
 
   /**
    * Generates cursor for next page
+   *
+   * Uses normalizedTitle (instead of raw title) as the pagination anchor so that
+   * cursor comparisons are consistent with the ORDER BY expression.
+   * Raw titles with accents or mixed case can break keyset pagination when the
+   * DB collation differs from the application's sort assumption.
    */
   private generateCursor(
     lastResult: SearchResultRow,
@@ -600,7 +605,7 @@ export class PostgresBookRepository implements BookRepository {
   ): string {
     const cursorData: CursorData = {
       lastId: lastResult.id,
-      lastValue: lastResult.title,
+      lastValue: lastResult.normalizedTitle,
     };
 
     if (hasEmbedding && lastResult.similarity_score !== null) {
@@ -709,15 +714,15 @@ export class PostgresBookRepository implements BookRepository {
     // For title ordering
     if (orderBy === 'title_desc') {
       return sql`(
-        ${books.title} < ${cursor.lastValue}
-        OR (${books.title} = ${cursor.lastValue} AND ${books.id} > ${cursor.lastId})
+        ${books.normalizedTitle} < ${cursor.lastValue}
+        OR (${books.normalizedTitle} = ${cursor.lastValue} AND ${books.id} > ${cursor.lastId})
       )`;
     }
 
     // Default: title ascending
     return sql`(
-      ${books.title} > ${cursor.lastValue}
-      OR (${books.title} = ${cursor.lastValue} AND ${books.id} > ${cursor.lastId})
+      ${books.normalizedTitle} > ${cursor.lastValue}
+      OR (${books.normalizedTitle} = ${cursor.lastValue} AND ${books.id} > ${cursor.lastId})
     )`;
   }
 
@@ -730,20 +735,20 @@ export class PostgresBookRepository implements BookRepository {
     embedding: number[] | undefined,
   ): ReturnType<typeof asc>[] {
     if (hasEmbedding && embedding) {
-      // Order by similarity descending, then title, then id for tie-breaking
+      // Order by similarity descending, then normalizedTitle, then id for tie-breaking
       return [
         sql`1 - (${books.embedding} <=> ${`[${embedding.join(',')}]`}::vector) DESC`,
-        asc(books.title),
+        asc(books.normalizedTitle),
         asc(books.id),
       ] as ReturnType<typeof asc>[];
     }
 
     switch (orderBy) {
       case 'title_desc':
-        return [desc(books.title), asc(books.id)];
+        return [desc(books.normalizedTitle), asc(books.id)];
       case 'title_asc':
       default:
-        return [asc(books.title), asc(books.id)];
+        return [asc(books.normalizedTitle), asc(books.id)];
     }
   }
 

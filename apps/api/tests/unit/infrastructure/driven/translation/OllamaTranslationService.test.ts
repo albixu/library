@@ -28,6 +28,7 @@ describe('OllamaTranslationService', () => {
   afterEach(() => {
     global.fetch = originalFetch;
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   describe('translate', () => {
@@ -205,6 +206,15 @@ describe('OllamaTranslationService', () => {
   });
 
   describe('retry behavior', () => {
+    beforeEach(() => {
+      // Use fake timers so exponential backoff delays (1s, 2s, 4s…) don't slow tests down
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it('should retry on transient failures', async () => {
       // Fail twice, succeed on third
       mockFetch
@@ -220,7 +230,11 @@ describe('OllamaTranslationService', () => {
         retries: 3,
       });
 
-      const result = await retryService.translate('Hello', 'es');
+      // Run translation and advance timers concurrently to avoid unhandled rejections
+      const [result] = await Promise.all([
+        retryService.translate('Hello', 'es'),
+        vi.runAllTimersAsync(),
+      ]);
 
       expect(result.translatedText).toBe('Hola');
       expect(mockFetch).toHaveBeenCalledTimes(3);
@@ -240,9 +254,13 @@ describe('OllamaTranslationService', () => {
       });
       mockFetch.mockRejectedValue(new Error('Persistent error'));
 
-      await expect(retryService.translate('Hello', 'es')).rejects.toThrow(
-        TranslationServiceUnavailableError,
-      );
+      // Run the translation and advance all timers concurrently to avoid unhandled rejections
+      await expect(
+        Promise.all([
+          retryService.translate('Hello', 'es'),
+          vi.runAllTimersAsync(),
+        ]),
+      ).rejects.toThrow(TranslationServiceUnavailableError);
 
       expect(mockFetch).toHaveBeenCalledTimes(3);
     });
@@ -256,7 +274,10 @@ describe('OllamaTranslationService', () => {
 
       let errorMessage = '';
       try {
-        await retryService.translate('Hello', 'es');
+        await Promise.all([
+          retryService.translate('Hello', 'es'),
+          vi.runAllTimersAsync(),
+        ]);
       } catch (error) {
         if (error instanceof TranslationServiceUnavailableError) {
           errorMessage = error.message;
@@ -336,6 +357,7 @@ describe('OllamaTranslationService', () => {
     });
 
     it('should use default retries when not specified', async () => {
+      vi.useFakeTimers();
       const configWithoutRetries: TranslationServiceConfig = {
         baseUrl: 'http://ollama:11434',
         model: 'qwen2.5:3b',
@@ -343,10 +365,16 @@ describe('OllamaTranslationService', () => {
       const serviceWithDefaults = new OllamaTranslationService(configWithoutRetries);
       mockFetch.mockRejectedValue(new Error('Error'));
 
-      await expect(serviceWithDefaults.translate('Hello', 'es')).rejects.toThrow();
+      await expect(
+        Promise.all([
+          serviceWithDefaults.translate('Hello', 'es'),
+          vi.runAllTimersAsync(),
+        ]),
+      ).rejects.toThrow();
 
       // Default is 3 retries
       expect(mockFetch).toHaveBeenCalledTimes(3);
+      vi.useRealTimers();
     });
 
     it('should use custom model from config', async () => {

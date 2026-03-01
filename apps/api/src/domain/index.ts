@@ -48,7 +48,6 @@ export {
 export {
   DomainError,
   BookNotFoundError,
-  BookAlreadyExistsError,
   RequiredFieldError,
   FieldTooLongError,
   InvalidUUIDError,
