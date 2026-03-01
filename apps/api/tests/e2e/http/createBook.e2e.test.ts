@@ -16,11 +16,92 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import {
   createE2EContext,
+  createTestDb,
+  closeTestDb,
+  clearTestData,
   E2E_BASE_URL,
   generateUniqueISBN,
   e2eFixtures,
-  clearTestData,
 } from '../setup.js';
+import { OllamaEmbeddingService } from '../../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
+import { OllamaTranslationService } from '../../../src/infrastructure/driven/translation/OllamaTranslationService.js';
+import { PostgresBookRepository } from '../../../src/infrastructure/driven/persistence/PostgresBookRepository.js';
+import { PostgresCategoryRepository } from '../../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
+import { PostgresTypeRepository } from '../../../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
+import { PostgresAuthorRepository } from '../../../src/infrastructure/driven/persistence/PostgresAuthorRepository.js';
+import { PostgresLevelRepository } from '../../../src/infrastructure/driven/persistence/PostgresLevelRepository.js';
+import { CreateBookUseCase } from '../../../src/application/use-cases/CreateBookUseCase.js';
+import { SearchBooksUseCase } from '../../../src/application/use-cases/SearchBooksUseCase.js';
+import { ListBookTypesUseCase } from '../../../src/application/use-cases/ListBookTypesUseCase.js';
+import { ListCategoriesUseCase } from '../../../src/application/use-cases/ListCategoriesUseCase.js';
+import { ListBookLevelsUseCase } from '../../../src/application/use-cases/ListBookLevelsUseCase.js';
+import { createServer } from '../../../src/infrastructure/driver/http/server.js';
+import { noopLogger } from '../../../src/application/ports/Logger.js';
+
+const OLLAMA_URL = process.env['OLLAMA_BASE_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama:11434';
+const TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'qwen2.5:3b';
+
+/**
+ * Creates a server with a broken service URL to test 503 responses.
+ * Returns the server and base URL for requests.
+ */
+async function createBrokenServiceServer(options: {
+  brokenEmbedding?: boolean;
+  brokenTranslation?: boolean;
+  port: number;
+}) {
+  const db = await createTestDb();
+  await clearTestData(db);
+
+  const invalidUrl = 'http://localhost:19999'; // Non-existent port
+
+  const embeddingService = new OllamaEmbeddingService({
+    baseUrl: options.brokenEmbedding ? invalidUrl : OLLAMA_URL,
+    model: 'nomic-embed-text',
+    timeoutMs: 2000, // Short timeout for faster tests
+  });
+
+  const translationService = new OllamaTranslationService({
+    baseUrl: options.brokenTranslation ? invalidUrl : OLLAMA_URL,
+    model: TRANSLATION_MODEL,
+    timeoutMs: 2000,
+    retries: 1, // Fewer retries for faster tests
+  });
+
+  const bookRepository = new PostgresBookRepository(db as any);
+  const categoryRepository = new PostgresCategoryRepository(db as any);
+  const typeRepository = new PostgresTypeRepository(db as any);
+  const authorRepository = new PostgresAuthorRepository(db as any);
+  const levelRepository = new PostgresLevelRepository(db as any);
+
+  const createBookUseCase = new CreateBookUseCase({
+    bookRepository,
+    categoryRepository,
+    typeRepository,
+    authorRepository,
+    levelRepository,
+    embeddingService,
+    translationService,
+    logger: noopLogger,
+  });
+
+  const server = await createServer({
+    createBookUseCase,
+    searchBooksUseCase: new SearchBooksUseCase({ bookRepository, embeddingService, logger: noopLogger }),
+    listBookTypesUseCase: new ListBookTypesUseCase(typeRepository),
+    listCategoriesUseCase: new ListCategoriesUseCase(categoryRepository, typeRepository),
+    listBookLevelsUseCase: new ListBookLevelsUseCase(levelRepository, typeRepository),
+    logger: noopLogger,
+  });
+
+  await server.listen({ port: options.port, host: '127.0.0.1' });
+
+  return {
+    server,
+    db,
+    baseUrl: `http://127.0.0.1:${options.port}`,
+  };
+}
 
 describe('POST /api/books (E2E)', () => {
   const context = createE2EContext();
@@ -623,36 +704,124 @@ describe('POST /api/books (E2E)', () => {
       expect(body.error).toHaveProperty('message');
     });
 
-    // NOTE: Tests requiring actual translation are skipped when the model is unavailable
-    // To run these tests, ensure: docker exec library-ollama ollama pull qwen2.5:3b
-    it.skip('should translate English description to Spanish', async () => {
-      // This test requires translation model qwen2.5:3b to be available
-      // When available, it should:
-      // 1. Accept English description
-      // 2. Store original English in originalDescription
-      // 3. Store translated Spanish in description
+    // NOTE: Tests requiring actual translation use skipIf when the model is unavailable.
+    // To run these tests, ensure the translation model is pulled in Ollama.
+    it.skipIf(
+      async () => {
+        const svc = new OllamaTranslationService({ baseUrl: OLLAMA_URL, model: TRANSLATION_MODEL, timeoutMs: 5000, retries: 1 });
+        return !(await svc.isAvailable());
+      },
+    )('should translate English description to Spanish', async () => {
+      const englishDescription = 'A comprehensive guide to clean code principles and practices.';
+      const bookData = {
+        title: 'Clean Code Guide',
+        authors: ['Robert C. Martin'],
+        description: englishDescription,
+        type: 'technical',
+        format: 'pdf',
+        categories: ['Programming'],
+        language: 'en', // English triggers translation
+        isbn: generateUniqueISBN(),
+      };
+
+      const response = await fetch(`${E2E_BASE_URL}/api/books`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookData),
+      });
+
+      expect(response.status).toBe(201);
+
+      const body = await response.json();
+      const { data } = body;
+
+      // HU-013: Original English stored in originalDescription
+      expect(data.language).toBe('en');
+      expect(data.originalDescription).toBe(englishDescription);
+
+      // HU-013: description should contain the Spanish translation (different from original)
+      expect(typeof data.description).toBe('string');
+      expect(data.description.length).toBeGreaterThan(0);
+      // The translated description should differ from the English original
+      expect(data.description).not.toBe(englishDescription);
     });
 
-    it.skip('should return 503 when translation service is unavailable', async () => {
-      // This test would require:
-      // 1. Ensuring translation model is NOT available
-      // 2. Sending a book with non-Spanish language
-      // 3. Verifying 503 response with TranslationServiceUnavailableError
+    it('should return 503 when translation service is unavailable', async () => {
+      // Create a server with a broken translation service URL
+      const { server, db, baseUrl } = await createBrokenServiceServer({
+        brokenTranslation: true,
+        port: 3003,
+      });
+
+      try {
+        const bookData = {
+          title: 'Book Requiring Translation',
+          authors: ['Some Author'],
+          description: 'A book with an English description that needs translation.',
+          type: 'technical',
+          format: 'pdf',
+          categories: ['Programming'],
+          language: 'en', // Non-Spanish triggers translation
+          isbn: generateUniqueISBN(),
+        };
+
+        const response = await fetch(`${baseUrl}/api/books`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bookData),
+        });
+
+        expect(response.status).toBe(503);
+
+        const body = await response.json();
+        expect(body).toHaveProperty('success', false);
+        expect(body).toHaveProperty('data', null);
+        expect(body.error.message).toContain('unavailable');
+      } finally {
+        await server.close();
+        await clearTestData(db);
+        await closeTestDb(db);
+      }
     });
   });
 
   describe('Service Unavailable (503)', () => {
-    // Note: This test requires mocking or temporarily disabling Ollama
-    // In a real scenario, we would use a test flag or mock server
-    // For now, this serves as documentation of expected behavior
-    it.skip('should return 503 when embedding service is unavailable', async () => {
-      // This test would require:
-      // 1. Stopping Ollama container
-      // 2. Making request
-      // 3. Verifying 503 response
-      // 4. Restarting Ollama container
-      //
-      // Implementation deferred to avoid affecting other tests
+    it('should return 503 when embedding service is unavailable', async () => {
+      // Create a server with a broken embedding service URL
+      const { server, db, baseUrl } = await createBrokenServiceServer({
+        brokenEmbedding: true,
+        port: 3004,
+      });
+
+      try {
+        const bookData = {
+          title: 'Book With Broken Embedding',
+          authors: ['Some Author'],
+          description: 'Un libro que falla porque el servicio de embeddings no está disponible.',
+          type: 'technical',
+          format: 'pdf',
+          categories: ['Programming'],
+          language: 'es', // Spanish avoids translation dependency
+          isbn: generateUniqueISBN(),
+        };
+
+        const response = await fetch(`${baseUrl}/api/books`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bookData),
+        });
+
+        expect(response.status).toBe(503);
+
+        const body = await response.json();
+        expect(body).toHaveProperty('success', false);
+        expect(body).toHaveProperty('data', null);
+        expect(body.error.message).toContain('unavailable');
+      } finally {
+        await server.close();
+        await clearTestData(db);
+        await closeTestDb(db);
+      }
     });
   });
 });
