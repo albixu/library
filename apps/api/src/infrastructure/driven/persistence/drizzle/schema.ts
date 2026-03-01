@@ -148,7 +148,7 @@ export const books = pgTable('books', {
   format: varchar('format', { length: 50 }).notNull(),
   // HU-008: Level changed from enum to FK referencing levels table
   levelId: uuid('level_id').references(() => levels.id, { onDelete: 'set null' }),
-  available: boolean('available').notNull().default(false),
+  available: boolean('available').notNull().default(true),
   path: varchar('path', { length: 1000 }),
   embedding: vector('embedding', { dimensions: 768 }),
   // Normalized field for duplicate detection (stored lowercase)

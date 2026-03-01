@@ -176,8 +176,8 @@ export class Book {
     // HU-008: Validate levelId as UUID if provided
     const levelId = props.levelId ? Book.validateLevelId(props.levelId) : null;
 
-    // Available defaults to false, path is optional
-    const available = props.available ?? false;
+    // Available defaults to true (new books are available by default), path is optional
+    const available = props.available ?? true;
     const path = props.path ? Book.validatePath(props.path) : null;
 
     const now = new Date();

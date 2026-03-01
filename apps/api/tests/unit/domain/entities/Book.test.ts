@@ -127,7 +127,7 @@ describe('Book', () => {
       expect(book.isbn).toBeNull();
       expect(book.levelId).toBeNull();
       expect(book.description).toBe('A handbook of agile software craftsmanship');
-      expect(book.available).toBe(false);
+      expect(book.available).toBe(true);
       expect(book.path).toBeNull();
     });
 
@@ -553,9 +553,10 @@ describe('Book', () => {
       });
 
       describe('available', () => {
-        it('should default to false when not provided', () => {
-          const book = Book.create(createValidBookProps());
-          expect(book.available).toBe(false);
+        it('should default to true when not provided', () => {
+          const { available: _ignored, ...propsWithoutAvailable } = createValidBookProps();
+          const book = Book.create(propsWithoutAvailable);
+          expect(book.available).toBe(true);
         });
 
         it('should accept true value', () => {
