@@ -67,7 +67,7 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | `createdAt` | timestamp | Sí | Fecha de creación |
 | `updatedAt` | timestamp | Sí | Fecha de modificación |
 
-> **Nota HU-013**: Las descripciones de libros se almacenan tanto en su idioma original (`originalDescription`) como traducidas al español (`description`). El campo `language` indica el idioma original usando códigos ISO 639-1. Las traducciones se realizan automáticamente usando Ollama (qwen2.5:1.5b) durante la creación del libro.
+> **Nota HU-013**: Las descripciones de libros se almacenan tanto en su idioma original (`originalDescription`) como traducidas al español (`description`). El campo `language` indica el idioma original usando códigos ISO 639-1. Las traducciones se realizan automáticamente usando Ollama (aya-expanse:8b) durante la creación del libro.
 
 ### 3.2 Entidad: Author
 
@@ -197,8 +197,8 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 │                           │PostgreSQL │   │  Ollama   │   │  Ollama   │     │
 │                           │+ pgvector │   │(embeddings)│  │(translate)│     │
 │                           │           │   │           │   │           │     │
-│                           │ Puerto:   │   │ nomic-    │   │ qwen2.5:  │     │
-│                           │ 5432      │   │ embed-text│   │ 1.5b      │     │
+│                           │ Puerto:   │   │ nomic-    │   │ aya-      │     │
+│                           │ 5432      │   │ embed-text│   │ expanse:8b│     │
 │                           └───────────┘   └───────────┘   └───────────┘     │
 │                                                                               │
 │                           ┌───────────────────────────────────────────┐      │
@@ -217,8 +217,8 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 | **API** | Node.js 20, Fastify, TypeScript | Backend REST con arquitectura hexagonal y DDD | `02-project-structure.md` |
 | **Web Client** | Angular 19, Signals, SCSS | Interfaz web responsive con Design System propio | `03-web-client-design.md` |
 | **Base de Datos** | PostgreSQL 16 + pgvector | Almacenamiento de datos y búsqueda vectorial | - |
-| **Embeddings** | Ollama + nomic-embed-text | Generación de embeddings para búsqueda semántica | - |
-| **Traducciones** | Ollama + qwen2.5:1.5b | Traducción automática de descripciones al español | - |
+| **Embeddings** | Ollama Embeddings + nomic-embed-text | Generación de embeddings para búsqueda semántica | - |
+| **Traducciones** | Ollama Translations + aya-expanse:8b | Traducción automática de descripciones al español | - |
 
 ### 4.3 Flujo de Datos Principal
 
@@ -346,8 +346,8 @@ Usuario                Web Client               API                    PostgreSQ
 | **Lenguaje** | TypeScript 5.x |
 | **Runtime** | Node.js 20 LTS |
 | **Base de datos** | PostgreSQL 16 + pgvector |
-| **Embeddings** | Ollama + nomic-embed-text |
-| **Traducciones** | Ollama + qwen2.5:1.5b |
+| **Embeddings** | Ollama Embeddings + nomic-embed-text |
+| **Traducciones** | Ollama Translations + aya-expanse:8b |
 | **Framework HTTP** | Fastify 4.x |
 | **ORM** | Drizzle ORM |
 | **Validación** | Zod |
@@ -408,6 +408,7 @@ Usuario                Web Client               API                    PostgreSQ
 ## 10. Referencias
 
 ### Backend
+
 - [pgvector Documentation](https://github.com/pgvector/pgvector)
 - [Ollama](https://ollama.ai/)
 - [nomic-embed-text](https://huggingface.co/nomic-ai/nomic-embed-text-v1)
@@ -415,6 +416,7 @@ Usuario                Web Client               API                    PostgreSQ
 - [Drizzle ORM](https://orm.drizzle.team/)
 
 ### Frontend
+
 - [Angular 19 Documentation](https://angular.dev)
 - [Angular Signals Guide](https://angular.dev/guide/signals)
 - [Storybook](https://storybook.js.org/)

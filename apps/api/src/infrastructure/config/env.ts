@@ -69,11 +69,12 @@ const DEFAULTS = {
   NODE_ENV: 'development',
   PORT: 3000,
   LOG_LEVEL: 'debug',
-  OLLAMA_BASE_URL: 'http://ollama:11434',
+  OLLAMA_EMBEDDING_URL: 'http://ollama-embeddings:11434',
   OLLAMA_MODEL: 'nomic-embed-text',
   OLLAMA_TIMEOUT_MS: 30000,
-  // HU-013: Translation service defaults
-  TRANSLATION_MODEL: 'qwen2.5:1.5b',
+  // HU-013 & HU-021: Translation service defaults
+  OLLAMA_TRANSLATION_URL: 'http://ollama-translations:11435',
+  TRANSLATION_MODEL: 'aya-expanse:8b',
   TRANSLATION_TIMEOUT_MS: 60000,
   TRANSLATION_RETRIES: 3,
 } as const;
@@ -107,7 +108,7 @@ export function loadEnvConfig(): EnvConfig {
   if (!databaseUrl || databaseUrl.trim() === '') {
     throw new Error(
       'DATABASE_URL environment variable is required but not set. ' +
-        'Please set it in your environment or .env file (e.g., postgresql://user:password@host:5432/database)',
+      'Please set it in your environment or .env file (e.g., postgresql://user:password@host:5432/database)',
     );
   }
 
@@ -121,7 +122,7 @@ export function loadEnvConfig(): EnvConfig {
       url: databaseUrl,
     },
     ollama: {
-      baseUrl: process.env['OLLAMA_BASE_URL'] ?? DEFAULTS.OLLAMA_BASE_URL,
+      baseUrl: process.env['OLLAMA_EMBEDDING_URL'] ?? DEFAULTS.OLLAMA_EMBEDDING_URL,
       model: process.env['OLLAMA_MODEL'] ?? DEFAULTS.OLLAMA_MODEL,
       timeoutMs: safeParseInt(
         process.env['OLLAMA_TIMEOUT_MS'],
@@ -131,7 +132,7 @@ export function loadEnvConfig(): EnvConfig {
     },
     // HU-013: Translation service configuration
     translation: {
-      baseUrl: process.env['OLLAMA_BASE_URL'] ?? DEFAULTS.OLLAMA_BASE_URL,
+      baseUrl: process.env['OLLAMA_TRANSLATION_URL'] ?? DEFAULTS.OLLAMA_TRANSLATION_URL,
       model: process.env['TRANSLATION_MODEL'] ?? DEFAULTS.TRANSLATION_MODEL,
       timeoutMs: safeParseInt(
         process.env['TRANSLATION_TIMEOUT_MS'],
