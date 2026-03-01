@@ -79,8 +79,8 @@ La API sigue una arquitectura hexagonal estricta con tres capas principales:
 │  ┌─────────────────────────────────────────────────────────────────┐    │
 │  │                    DRIVEN ADAPTERS (Output)                      │    │
 │  │  ┌───────────────┐  ┌─────────────────┐  ┌──────────────────┐   │    │
-│  │  │ Postgres      │  │ Ollama Embedding│  │ Ollama           │   │    │
-│  │  │ Repositories  │  │ Service         │  │ Translation      │   │    │
+│  │  │ Postgres      │  │ Ollama Embedd.  │  │ Ollama           │   │    │
+│  │  │ Repositories  │  │ Service         │  │ Translations     │   │    │
 │  │  │ (Drizzle)     │  │                 │  │ Service          │   │    │
 │  │  └───────────────┘  └─────────────────┘  └──────────────────┘   │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
