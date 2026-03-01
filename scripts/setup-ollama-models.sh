@@ -5,8 +5,8 @@
 # Script to download, verify, and warm-up required AI models in Ollama.
 #
 # Models:
-#   - nomic-embed-text: For generating embeddings (semantic search)
-#   - qwen2.5:1.5b: For translating descriptions to Spanish (lightweight)
+#   - nomic-embed-text: For generating embeddings (semantic search) [ollama-embeddings]
+#   - aya-expanse:8b: For translating descriptions to Spanish [ollama-translations]
 #
 # Features:
 #   - Downloads models if not present
@@ -27,13 +27,16 @@ set -euo pipefail
 # Configuration
 # ============================================================
 
-OLLAMA_HOST="${OLLAMA_HOST:-http://localhost:11434}"
-OLLAMA_CONTAINER="${OLLAMA_CONTAINER:-library-ollama}"
+OLLAMA_EMBEDDING_HOST="${OLLAMA_EMBEDDING_HOST:-http://localhost:11434}"
+OLLAMA_EMBEDDING_CONTAINER="${OLLAMA_EMBEDDING_CONTAINER:-library-ollama-embeddings}"
+
+OLLAMA_TRANSLATION_HOST="${OLLAMA_TRANSLATION_HOST:-http://localhost:11435}"
+OLLAMA_TRANSLATION_CONTAINER="${OLLAMA_TRANSLATION_CONTAINER:-library-ollama-translations}"
 
 # Models to download
 MODELS=(
-    "nomic-embed-text"
-    "qwen2.5:1.5b"
+    "nomic-embed-text|${OLLAMA_EMBEDDING_HOST}|${OLLAMA_EMBEDDING_CONTAINER}"
+    "aya-expanse:8b|${OLLAMA_TRANSLATION_HOST}|${OLLAMA_TRANSLATION_CONTAINER}"
 )
 
 # Colors for output
@@ -64,33 +67,36 @@ log_error() {
 }
 
 check_ollama_running() {
-    log_info "Checking if Ollama is running at ${OLLAMA_HOST}..."
+    local host="$1"
+    local container="$2"
+    log_info "Checking if Ollama ${container} is running at ${host}..."
     
     local max_retries=30
     local retry_count=0
     
     while [ $retry_count -lt $max_retries ]; do
-        if curl -s "${OLLAMA_HOST}/api/tags" > /dev/null 2>&1; then
-            log_success "Ollama is running!"
+        if curl -s "${host}/api/tags" > /dev/null 2>&1; then
+            log_success "Ollama ${container} is running!"
             return 0
         fi
         
         retry_count=$((retry_count + 1))
-        log_warn "Ollama not ready yet. Retrying in 2 seconds... ($retry_count/$max_retries)"
+        log_warn "Ollama ${container} not ready yet. Retrying in 2 seconds... ($retry_count/$max_retries)"
         sleep 2
     done
     
-    log_error "Ollama is not responding at ${OLLAMA_HOST}"
+    log_error "Ollama ${container} is not responding at ${host}"
     log_error "Make sure the Ollama container is running:"
-    log_error "  docker-compose -f docker-compose.prod.yml up -d ollama"
-    exit 1
+    log_error "  docker-compose -f docker-compose.prod.yml up -d ${container}"
+    return 1
 }
 
 check_model_exists() {
     local model_name="$1"
+    local host="$2"
     local response
     
-    response=$(curl -s "${OLLAMA_HOST}/api/tags")
+    response=$(curl -s "${host}/api/tags")
     
     if echo "$response" | grep -q "\"name\":\"${model_name}\""; then
         return 0
@@ -101,13 +107,14 @@ check_model_exists() {
 
 download_model() {
     local model_name="$1"
+    local host="$2"
     
-    log_info "Downloading model: ${model_name}..."
+    log_info "Downloading model: ${model_name} from ${host}..."
     log_info "This may take several minutes depending on your connection speed."
     
     # Use curl to pull the model (streaming response)
     local response
-    response=$(curl -s -X POST "${OLLAMA_HOST}/api/pull" \
+    response=$(curl -s -X POST "${host}/api/pull" \
         -H "Content-Type: application/json" \
         -d "{\"name\": \"${model_name}\", \"stream\": false}" \
         --max-time 3600) # 1 hour timeout for large models
@@ -125,7 +132,7 @@ download_model() {
         
         while [ $poll_count -lt $max_polls ]; do
             sleep 5
-            if check_model_exists "$model_name"; then
+            if check_model_exists "$model_name" "$host"; then
                 log_success "Model ${model_name} downloaded successfully!"
                 return 0
             fi
@@ -144,13 +151,14 @@ download_model() {
 
 verify_model() {
     local model_name="$1"
+    local host="$2"
     
-    log_info "Verifying model: ${model_name}..."
+    log_info "Verifying model: ${model_name} from ${host}..."
     
     # For embedding model, test with a simple embedding request
     if [[ "$model_name" == *"embed"* ]]; then
         local response
-        response=$(curl -s -X POST "${OLLAMA_HOST}/api/embeddings" \
+        response=$(curl -s -X POST "${host}/api/embeddings" \
             -H "Content-Type: application/json" \
             -d "{\"model\": \"${model_name}\", \"prompt\": \"test\"}" \
             --max-time 60)
@@ -162,7 +170,7 @@ verify_model() {
     else
         # For LLM models, test with a simple generate request
         local response
-        response=$(curl -s -X POST "${OLLAMA_HOST}/api/generate" \
+        response=$(curl -s -X POST "${host}/api/generate" \
             -H "Content-Type: application/json" \
             -d "{\"model\": \"${model_name}\", \"prompt\": \"Say hello\", \"stream\": false}" \
             --max-time 120)
@@ -179,18 +187,19 @@ verify_model() {
 
 warmup_model() {
     local model_name="$1"
+    local host="$2"
     
     log_info "Warming up model: ${model_name} (pre-loading into memory)..."
     
     # For embedding model, run a simple embedding to load into memory
     if [[ "$model_name" == *"embed"* ]]; then
-        curl -s -X POST "${OLLAMA_HOST}/api/embeddings" \
+        curl -s -X POST "${host}/api/embeddings" \
             -H "Content-Type: application/json" \
             -d "{\"model\": \"${model_name}\", \"prompt\": \"Warmup embedding request to pre-load model into memory for faster subsequent requests.\"}" \
             --max-time 120 > /dev/null 2>&1
     else
         # For LLM models, run a simple generation to load into memory
-        curl -s -X POST "${OLLAMA_HOST}/api/generate" \
+        curl -s -X POST "${host}/api/generate" \
             -H "Content-Type: application/json" \
             -d "{\"model\": \"${model_name}\", \"prompt\": \"Respond with OK\", \"stream\": false}" \
             --max-time 180 > /dev/null 2>&1
@@ -209,27 +218,36 @@ main() {
     echo "  Library - Ollama Models Setup"
     echo "============================================================"
     echo ""
+    log_info "Verifying hosts and containers..."
     
-    # Check if Ollama is running
-    check_ollama_running
+    # Precheck hosts
+    for model_info in "${MODELS[@]}"; do
+        IFS='|' read -r model host container <<< "$model_info"
+        if ! check_ollama_running "$host" "$container"; then
+             exit 1
+        fi
+    done
     
     echo ""
-    log_info "Models to install: ${MODELS[*]}"
+    log_info "Models to install..."
     echo ""
     
     local failed_models=()
+    local failed_containers=()
     
-    for model in "${MODELS[@]}"; do
+    for model_info in "${MODELS[@]}"; do
+        IFS='|' read -r model host container <<< "$model_info"
         echo "------------------------------------------------------------"
         
-        if check_model_exists "$model"; then
+        if check_model_exists "$model" "$host"; then
             log_success "Model ${model} is already installed!"
-            verify_model "$model"
+            verify_model "$model" "$host"
         else
-            if download_model "$model"; then
-                verify_model "$model"
+            if download_model "$model" "$host"; then
+                verify_model "$model" "$host"
             else
                 failed_models+=("$model")
+                failed_containers+=("$container")
             fi
         fi
         
@@ -241,9 +259,10 @@ main() {
     log_info "Warming up models (pre-loading into memory)..."
     echo ""
     
-    for model in "${MODELS[@]}"; do
-        if check_model_exists "$model"; then
-            warmup_model "$model"
+    for model_info in "${MODELS[@]}"; do
+        IFS='|' read -r model host container <<< "$model_info"
+        if check_model_exists "$model" "$host"; then
+            warmup_model "$model" "$host"
         fi
     done
     
@@ -259,8 +278,8 @@ main() {
     else
         log_error "Some models failed to install: ${failed_models[*]}"
         log_error "Please try running this script again or download manually:"
-        for model in "${failed_models[@]}"; do
-            log_error "  docker exec ${OLLAMA_CONTAINER} ollama pull ${model}"
+        for i in "${!failed_models[@]}"; do
+            log_error "  docker exec ${failed_containers[$i]} ollama pull ${failed_models[$i]}"
         done
         exit 1
     fi
