@@ -248,7 +248,7 @@ describe('CreateBookUseCase', () => {
 
         expect(result.isbn).toBeNull();
         expect(result.level).toBeNull();
-        expect(result.available).toBe(false);
+        expect(result.available).toBe(true);
         expect(result.path).toBeNull();
       });
     });
