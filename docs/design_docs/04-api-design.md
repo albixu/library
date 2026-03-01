@@ -14,6 +14,7 @@ Este documento define la arquitectura y diseño del backend API para el sistema 
 ### 1.2 Alcance
 
 **Incluido:**
+
 - Creación de libros con generación automática de embeddings
 - Búsqueda de libros con filtros múltiples y búsqueda semántica
 - Traducción automática de descripciones (inglés → español)
@@ -21,6 +22,7 @@ Este documento define la arquitectura y diseño del backend API para el sistema 
 - Paginación cursor-based
 
 **Excluido:**
+
 - Autenticación/autorización de usuarios
 - Actualización y eliminación de libros
 - Gestión de archivos físicos (upload/download)
@@ -42,8 +44,8 @@ Este documento define la arquitectura y diseño del backend API para el sistema 
 | Validación | Zod | Latest |
 | Testing | Vitest | Latest |
 | Logging | Pino | Latest |
-| Embeddings | Ollama (nomic-embed-text) | Latest |
-| Traducción | Ollama (qwen2.5:1.5b) | Latest |
+| Embeddings | Ollama Embeddings (nomic-embed-text) | Latest |
+| Traducción | Ollama Translations (aya-expanse:8b) | Latest |
 
 ### 2.2 Arquitectura Hexagonal (Ports & Adapters)
 
@@ -254,6 +256,7 @@ Busca libros con múltiples filtros combinados con lógica AND y paginación cur
 ### 3.3 POST /api/books - Crear Libro
 
 Crea un nuevo libro generando automáticamente:
+
 1. Embedding vectorial (768 dimensiones) para búsqueda semántica
 2. Traducción al español de la descripción (si el idioma original no es español)
 
@@ -489,6 +492,7 @@ class ISBN {
 ```
 
 Validaciones:
+
 - ISBN-10: 10 dígitos, último puede ser 'X'
 - ISBN-13: 13 dígitos, empieza con 978 o 979
 - Checksum válido
@@ -751,6 +755,7 @@ Implementan los puertos de repositorio usando Drizzle ORM:
 - **PostgresLevelRepository**: Consulta de niveles con filtro por tipo
 
 **Características:**
+
 - Transacciones para operaciones compuestas
 - Búsqueda vectorial con pgvector (`<=>` cosine distance)
 - Paginación cursor-based eficiente
@@ -761,7 +766,7 @@ Implementan los puertos de repositorio usando Drizzle ORM:
 ```typescript
 class OllamaEmbeddingService implements EmbeddingService {
   // Configuración
-  baseUrl: string;           // Default: http://ollama:11434
+  baseUrl: string;           // Default: http://ollama-embeddings:11434
   model: string;             // Default: nomic-embed-text
   timeoutMs: number;         // Default: 30000
   maxTextLength: number;     // 7000 chars
@@ -771,6 +776,7 @@ class OllamaEmbeddingService implements EmbeddingService {
 ```
 
 **Características:**
+
 - Genera embeddings de 768 dimensiones
 - Validación de longitud máxima (7000 chars)
 - Retry con backoff exponencial
@@ -781,8 +787,8 @@ class OllamaEmbeddingService implements EmbeddingService {
 ```typescript
 class OllamaTranslationService implements TranslationService {
   // Configuración
-  baseUrl: string;           // Default: http://ollama:11434
-  model: string;             // Default: qwen2.5:1.5b
+  baseUrl: string;           // Default: http://ollama-translations:11434
+  model: string;             // Default: aya-expanse:8b
   timeoutMs: number;         // Default: 60000
   retries: number;           // Default: 3
 
@@ -791,6 +797,7 @@ class OllamaTranslationService implements TranslationService {
 ```
 
 **Características:**
+
 - Traduce cualquier idioma al español
 - Si ya está en español, devuelve el texto original
 - Retry con backoff exponencial
@@ -824,6 +831,7 @@ server.register(levelRoutes, { prefix: '/api' });
 #### Controllers
 
 Cada controller:
+
 1. Recibe la request HTTP
 2. Valida con Zod schema
 3. Ejecuta el use case correspondiente

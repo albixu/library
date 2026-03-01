@@ -27,7 +27,7 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 | Lenguaje | TypeScript + Node.js 20 |
 | Base de datos | PostgreSQL 16 + pgvector |
 | Embeddings | Ollama + nomic-embed-text |
-| Traducciones | Ollama + qwen2.5:1.5b |
+| Traducciones | Ollama + aya-expanse:8b |
 | API | Fastify |
 | ORM | Drizzle ORM |
 | Frontend | Angular 21 + Angular Material |
@@ -78,10 +78,10 @@ docker-compose ps
 
 # O descargar manualmente:
 # Modelo para embeddings (búsqueda semántica)
-docker exec library-ollama ollama pull nomic-embed-text
+docker exec library-ollama-embeddings ollama pull nomic-embed-text
 
 # Modelo para traducciones (descripción de libros)
-docker exec library-ollama ollama pull qwen2.5:1.5b
+docker exec library-ollama-translations ollama pull aya-expanse:8b
 ```
 
 ### 5. Ejecutar migraciones de base de datos
@@ -115,8 +115,9 @@ docs/db/initial_data/books_XXXX.json
 Consolida múltiples archivos JSON de `original_data/` en ficheros particionados, traduciendo las descripciones al español.
 
 **Requisitos:**
+
 - Archivos JSON en `original_data/` (raíz del proyecto)
-- Ollama con modelo de traducción `qwen2.5:1.5b`
+- Ollama con modelo de traducción `aya-expanse:8b`
 
 ```bash
 # 1. Iniciar entorno de consolidación
@@ -126,7 +127,7 @@ docker-compose -f docker-compose.consolidate.yml up -d
 docker-compose -f docker-compose.consolidate.yml ps
 
 # 3. Descargar modelo de traducción (solo la primera vez)
-docker exec library-consolidate-ollama ollama pull qwen2.5:1.5b
+docker exec library-consolidate-ollama-translations ollama pull aya-expanse:8b
 
 # 4. Ejecutar script de consolidación
 docker exec library-consolidate-api npm run consolidate:books
@@ -138,6 +139,7 @@ docker-compose -f docker-compose.consolidate.yml down
 **Resultado:** Ficheros `docs/db/initial_data/books_0001.json`, `books_0002.json`, etc. (máximo 1000 libros por fichero)
 
 **Variables de entorno opcionales:**
+
 - `BOOKS_PER_FILE=1000` - Libros por fichero de salida
 - `TRANSLATION_TIMEOUT_MS=180000` - Timeout para traducciones (3 min)
 
@@ -146,6 +148,7 @@ docker-compose -f docker-compose.consolidate.yml down
 Carga los ficheros particionados en PostgreSQL, generando embeddings para búsqueda semántica.
 
 **Requisitos:**
+
 - Ficheros en `docs/db/initial_data/` (generados en Fase 1)
 - Ollama con modelo de embeddings `nomic-embed-text`
 - PostgreSQL con esquema migrado
@@ -158,7 +161,7 @@ docker-compose -f docker-compose.seed.yml up -d
 docker-compose -f docker-compose.seed.yml ps
 
 # 3. Descargar modelo de embeddings (solo la primera vez)
-docker exec library-seed-ollama ollama pull nomic-embed-text
+docker exec library-seed-ollama-embeddings ollama pull nomic-embed-text
 
 # 4. Ejecutar migraciones de base de datos (si es necesario)
 docker exec library-seed-api npm run db:migrate
@@ -173,6 +176,7 @@ docker-compose -f docker-compose.seed.yml down
 **Resultado:** Libros cargados en PostgreSQL con embeddings vectoriales
 
 **Variables de entorno opcionales:**
+
 - `BATCH_SIZE=50` - Libros a procesar por lote
 - `MAX_RETRIES=3` - Reintentos en caso de error de embedding
 
@@ -432,16 +436,20 @@ docker exec library-api-dev npm run seed:database
 
 ```bash
 # Descargar modelo de embeddings
-docker exec library-ollama ollama pull nomic-embed-text
+docker exec library-ollama-embeddings ollama pull nomic-embed-text
 
 # Descargar modelo de traducción
-docker exec library-ollama ollama pull qwen2.5:1.5b
+docker exec library-ollama-translations ollama pull aya-expanse:8b
 
-# Listar modelos descargados
-docker exec library-ollama ollama list
+# Listar modelos descargados en el contenedor embeddings
+docker exec library-ollama-embeddings ollama list
 
-# Verificar estado de Ollama
+# Listar modelos descargados en el contenedor embeddings
+docker exec library-ollama-translations ollama list
+
+# Verificar estado de los contenedores
 curl http://localhost:11434/api/tags
+curl http://localhost:11435/api/tags
 ```
 
 #### Web Client (Angular)
@@ -462,8 +470,9 @@ npm start -- --port 4300
 ```
 
 **Acceso desde el navegador:**
-- **Desarrollo:** http://localhost:4200
-- **API (backend):** http://localhost:3000
+
+- **Desarrollo:** <http://localhost:4200>
+- **API (backend):** <http://localhost:3000>
 
 #### Tests del Web Client
 
@@ -505,7 +514,8 @@ npm run build-storybook
 ```
 
 **Acceso desde el navegador:**
-- **Storybook:** http://localhost:6006
+
+- **Storybook:** <http://localhost:6006>
 
 #### Lint del Web Client
 
@@ -585,7 +595,8 @@ El proyecto incluye cinco configuraciones de Docker Compose:
 | Web Client | 4200 | 80 | 4200 |
 | API | 3000 | 3000 | 3001 |
 | PostgreSQL | 5432 | (interno) | 5433 |
-| Ollama | 11434 | (interno) | 11435 |
+| Ollama Embeddings | 11434 | (interno) | 11435 |
+| Ollama Translations | 11435 | (interno) | 11436 |
 
 > **Nota:** Los entornos de consolidación y seeding no exponen puertos externos. Son tareas de un solo uso que reutilizan los volúmenes de datos existentes.
 
@@ -768,14 +779,16 @@ gunzip -c backup.sql.gz | docker exec -i library-postgres psql -U library librar
 
 ```bash
 # Verificar que Ollama está corriendo
-docker-compose -f docker-compose.prod.yml logs ollama
+docker-compose -f docker-compose.prod.yml logs ollama-embeddings
+docker-compose -f docker-compose.prod.yml logs ollama-translations
 
 # Verificar conectividad
 curl http://localhost:11434/api/tags
+curl http://localhost:11435/api/tags
 
 # Descargar modelos manualmente
-docker exec library-ollama ollama pull nomic-embed-text
-docker exec library-ollama ollama pull qwen2.5:1.5b
+docker exec library-ollama-embeddings ollama pull nomic-embed-text
+docker exec library-ollama-translations ollama pull aya-expanse:8b
 ```
 
 #### Error de conexión a la base de datos
@@ -831,6 +844,7 @@ docker-compose -f docker-compose.prod.yml up -d
 #### Memoria insuficiente para Ollama
 
 Los modelos de IA requieren memoria significativa:
+
 - `nomic-embed-text`: ~500MB
 - `qwen2.5:1.5b`: ~1GB
 
