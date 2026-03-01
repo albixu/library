@@ -3,14 +3,14 @@
 # ================================
 # Purpose: Generate partitioned JSON files from original_data/
 # This compose file is optimized for memory-intensive book consolidation
-# with translation support.
+# with translation support using an isolated Ollama translation container.
 #
 # Usage:
 #   1. Start services:
 #      docker-compose -f docker-compose.consolidate.yml up -d
 #
 #   2. Wait for Ollama to be ready and pull translation model:
-#      docker exec library-consolidate-ollama ollama pull qwen2.5:1.5b
+#      docker exec library-consolidate-ollama ollama pull aya-expanse:8b
 #
 #   3. Run consolidation script:
 #      docker exec library-consolidate-api npm run consolidate:books
@@ -45,11 +45,9 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
-      # Database connection (required for checking existing books)
-      - DATABASE_URL=postgresql://library:library@postgres:5432/library
       # Ollama for translations
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - TRANSLATION_MODEL=qwen2.5:1.5b
+      - OLLAMA_TRANSLATION_URL=http://ollama-translations:11434
+      - TRANSLATION_MODEL=aya-expanse:8b
       # Increase timeout for translations (3 minutes)
       - TRANSLATION_TIMEOUT_MS=180000
       # Books per output file
@@ -57,9 +55,7 @@ services:
       # Monorepo root mapping
       - MONOREPO_ROOT=/app
     depends_on:
-      postgres:
-        condition: service_healthy
-      ollama:
+      ollama-translations:
         condition: service_started
     networks:
       - consolidate-network
@@ -71,41 +67,21 @@ services:
         limits:
           memory: 2G
 
-  # ----- PostgreSQL (for checking existing books) -----
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: library-consolidate-postgres
-    environment:
-      - POSTGRES_DB=library
-      - POSTGRES_USER=library
-      - POSTGRES_PASSWORD=library
-    volumes:
-      # Use the same data volume as development
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U library -d library"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - consolidate-network
-    restart: "no"
-
   # ----- Ollama (Translation Model) -----
-  ollama:
+  ollama-translations:
     image: ollama/ollama:latest
     container_name: library-consolidate-ollama
     volumes:
-      # Use the same ollama data volume
-      - ollama_data:/root/.ollama
+      # Use the same ollama translations data volume
+      - ollama_translations_data:/root/.ollama
     networks:
       - consolidate-network
     restart: "no"
-    # Memory for translation model (~1.5GB for qwen2.5:1.5b)
+    # Memory for translation model (~5.5GB for aya-expanse:8b)
     deploy:
       resources:
         limits:
-          memory: 4G
+          memory: 8G
 
 # ----- Networks -----
 networks:
@@ -114,12 +90,8 @@ networks:
 
 # ----- Volumes -----
 volumes:
-  # Reuse existing volumes from development
-  postgres_data:
-    name: library-postgres-data
-    external: true
-  ollama_data:
-    name: library-ollama-data
+  ollama_translations_data:
+    name: library-ollama-translations-data
     external: true
   api_node_modules:
     name: library-api-node-modules

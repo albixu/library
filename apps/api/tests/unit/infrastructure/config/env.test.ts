@@ -23,7 +23,8 @@ describe('Environment Configuration', () => {
       process.env['PORT'] = '4000';
       process.env['LOG_LEVEL'] = 'info';
       process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
-      process.env['OLLAMA_BASE_URL'] = 'http://localhost:11434';
+      process.env['OLLAMA_EMBEDDING_URL'] = 'http://localhost:11434';
+      process.env['OLLAMA_TRANSLATION_URL'] = 'http://localhost:11435';
       process.env['OLLAMA_MODEL'] = 'test-model';
       process.env['OLLAMA_TIMEOUT_MS'] = '15000';
 
@@ -36,6 +37,7 @@ describe('Environment Configuration', () => {
       expect(config.ollama.baseUrl).toBe('http://localhost:11434');
       expect(config.ollama.model).toBe('test-model');
       expect(config.ollama.timeoutMs).toBe(15000);
+      expect(config.translation.baseUrl).toBe('http://localhost:11435');
     });
 
     it('should use default values when optional environment variables are not set', () => {
@@ -44,7 +46,8 @@ describe('Environment Configuration', () => {
       delete process.env['NODE_ENV'];
       delete process.env['PORT'];
       delete process.env['LOG_LEVEL'];
-      delete process.env['OLLAMA_BASE_URL'];
+      delete process.env['OLLAMA_EMBEDDING_URL'];
+      delete process.env['OLLAMA_TRANSLATION_URL'];
       delete process.env['OLLAMA_MODEL'];
       delete process.env['OLLAMA_TIMEOUT_MS'];
 
@@ -54,9 +57,10 @@ describe('Environment Configuration', () => {
       expect(config.app.port).toBe(3000);
       expect(config.app.logLevel).toBe('debug');
       expect(config.database.url).toBe('postgresql://test:test@localhost:5432/testdb');
-      expect(config.ollama.baseUrl).toBe('http://ollama:11434');
+      expect(config.ollama.baseUrl).toBe('http://ollama-embeddings:11434');
       expect(config.ollama.model).toBe('nomic-embed-text');
       expect(config.ollama.timeoutMs).toBe(30000);
+      expect(config.translation.baseUrl).toBe('http://ollama-translations:11435');
     });
 
     it('should throw error when DATABASE_URL is not set', () => {
@@ -95,7 +99,7 @@ describe('Environment Configuration', () => {
   describe('getOllamaConfig', () => {
     it('should return Ollama configuration when DATABASE_URL is set', () => {
       process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
-      process.env['OLLAMA_BASE_URL'] = 'http://custom:11434';
+      process.env['OLLAMA_EMBEDDING_URL'] = 'http://custom:11434';
       process.env['OLLAMA_MODEL'] = 'custom-model';
       process.env['OLLAMA_TIMEOUT_MS'] = '20000';
 
@@ -114,7 +118,7 @@ describe('Environment Configuration', () => {
       const config = getOllamaConfig();
 
       expect(config).toEqual({
-        baseUrl: 'http://ollama:11434',
+        baseUrl: 'http://ollama-embeddings:11434',
         model: 'nomic-embed-text',
         timeoutMs: 30000,
       });
