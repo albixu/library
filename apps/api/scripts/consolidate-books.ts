@@ -25,7 +25,6 @@
  *   npm run consolidate:books
  *
  * Environment variables:
- *   DATABASE_URL - PostgreSQL connection string (required)
  *   OLLAMA_BASE_URL - Ollama service URL (default: http://ollama:11434)
  *   TRANSLATION_MODEL - Model for translation (default: qwen2.5:1.5b)
  *   TRANSLATION_TIMEOUT_MS - Timeout for translation (default: 180000)
@@ -35,17 +34,9 @@
 import { readdir, readFile, writeFile, mkdir, rm, access } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from '../src/infrastructure/driven/persistence/drizzle/schema.js';
 import { loadEnvConfig } from '../src/infrastructure/config/env.js';
 import { OllamaTranslationService } from '../src/infrastructure/driven/translation/OllamaTranslationService.js';
 import type { TranslationService } from '../src/application/ports/TranslationService.js';
-
-/**
- * Drizzle database type for type safety
- */
-type DrizzleDb = ReturnType<typeof drizzle<typeof schema>>;
 
 // Get directory paths
 const __filename = fileURLToPath(import.meta.url);
@@ -106,7 +97,6 @@ interface ConsolidationResult {
   readonly totalBooksRead: number;
   readonly uniqueBooks: number;
   readonly duplicatesSkipped: number;
-  readonly existingInDbSkipped: number;
   readonly translatedCount: number;
   readonly translationErrors: number;
   readonly outputFilesGenerated: number;
@@ -154,26 +144,6 @@ function isValidSourceBook(obj: unknown): obj is SourceBook {
 }
 
 /**
- * Retrieves all existing ISBNs from the database
- * Used to exclude books that are already in the database from consolidation
- *
- * @param db - Drizzle database instance
- * @returns Set of existing ISBN strings (null values filtered out)
- */
-async function getExistingIsbns(db: DrizzleDb): Promise<Set<string>> {
-  const results = await db.select({ isbn: schema.books.isbn }).from(schema.books);
-  const isbns = new Set<string>();
-
-  for (const row of results) {
-    if (row.isbn !== null) {
-      isbns.add(row.isbn);
-    }
-  }
-
-  return isbns;
-}
-
-/**
  * Reads and parses a single JSON file
  */
 async function readJsonFile(filePath: string): Promise<SourceBook[]> {
@@ -217,7 +187,7 @@ async function translateDescription(
       return { translated: result.translatedText, success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       if (attempt < MAX_RETRIES) {
         const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
         console.warn(`  Translation attempt ${attempt}/${MAX_RETRIES} failed, retrying in ${delay}ms...`);
@@ -269,16 +239,16 @@ async function writePartitionedFiles(
   await mkdir(outputDir, { recursive: true });
 
   const totalFiles = Math.ceil(books.length / booksPerFile);
-  
+
   for (let i = 0; i < totalFiles; i++) {
     const start = i * booksPerFile;
     const end = Math.min(start + booksPerFile, books.length);
     const batch = books.slice(start, end);
-    
+
     // Format: books_0001.json, books_0002.json, etc.
     const fileName = `books_${String(i + 1).padStart(4, '0')}.json`;
     const filePath = join(outputDir, fileName);
-    
+
     await writeFile(filePath, JSON.stringify(batch, null, 2), 'utf-8');
     console.log(`  Written ${batch.length} books to ${fileName}`);
   }
@@ -291,7 +261,7 @@ async function writePartitionedFiles(
  */
 async function consolidateBooks(): Promise<ConsolidationResult> {
   const startTime = Date.now();
-  
+
   console.log('Starting book consolidation with translation...');
   console.log(`Source directory: ${SOURCE_DIR}`);
   console.log(`Output directory: ${OUTPUT_DIR}`);
@@ -322,16 +292,7 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
   }
   console.log(`Translation service available (model: ${env.translation.model})`);
 
-  // Initialize database connection
-  const pool = new Pool({ connectionString: env.database.url });
-  const db = drizzle(pool, { schema });
-
   try {
-    // Get existing ISBNs from database
-    console.log('Connecting to database to check existing books...');
-    const existingIsbns = await getExistingIsbns(db);
-    console.log(`Found ${existingIsbns.size} existing books in database`);
-
     // Get all JSON files sorted alphabetically
     const files = await readdir(SOURCE_DIR);
     const jsonFiles = files.filter((f) => f.endsWith('.json')).sort();
@@ -359,12 +320,6 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
       totalBooksRead += books.length;
 
       for (const book of books) {
-        // Skip if already exists in database
-        if (existingIsbns.has(book.id)) {
-          existingInDbSkipped++;
-          continue;
-        }
-
         // Skip if duplicate within source files
         if (seenIsbns.has(book.id)) {
           duplicatesSkipped++;
@@ -378,7 +333,6 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
 
     console.log(`\nBooks to process: ${booksToProcess.length}`);
     console.log(`Duplicates skipped: ${duplicatesSkipped}`);
-    console.log(`Already in database: ${existingInDbSkipped}`);
 
     if (booksToProcess.length === 0) {
       console.log('No books to process');
@@ -387,7 +341,6 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
         totalBooksRead,
         uniqueBooks: 0,
         duplicatesSkipped,
-        existingInDbSkipped,
         translatedCount: 0,
         translationErrors: 0,
         outputFilesGenerated: 0,
@@ -406,7 +359,7 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
     for (let i = 0; i < booksToProcess.length; i++) {
       const book = booksToProcess[i]!;
       const progress = ((i + 1) / booksToProcess.length * 100).toFixed(1);
-      
+
       // Calculate ETA
       const elapsed = Date.now() - translationStartTime;
       const avgTimePerBook = i > 0 ? elapsed / i : 0;
@@ -415,7 +368,7 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
 
       const needsTranslation = book.language?.toLowerCase() !== 'es' && book.description.trim().length > 0;
       const statusIcon = needsTranslation ? '🔄' : '✓';
-      
+
       console.log(
         `[${progress}%] ${statusIcon} ${i + 1}/${booksToProcess.length} - "${book.title.substring(0, 50)}..." ` +
         `(ETA: ${formatDuration(eta)})`
@@ -462,7 +415,6 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
       totalBooksRead,
       uniqueBooks: consolidatedBooks.length,
       duplicatesSkipped,
-      existingInDbSkipped,
       translatedCount,
       translationErrors,
       outputFilesGenerated,
@@ -475,7 +427,6 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
     console.log(`Total books read: ${result.totalBooksRead}`);
     console.log(`Unique books: ${result.uniqueBooks}`);
     console.log(`Duplicates skipped: ${result.duplicatesSkipped}`);
-    console.log(`Already in database: ${result.existingInDbSkipped}`);
     console.log(`Translated: ${result.translatedCount}`);
     console.log(`Translation errors: ${result.translationErrors}`);
     console.log(`Output files generated: ${result.outputFilesGenerated}`);
@@ -484,8 +435,7 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
 
     return result;
   } finally {
-    // Always close the database connection
-    await pool.end();
+    // Nothing to close since DB dependency was removed
   }
 }
 
@@ -508,5 +458,5 @@ if (isMainModule()) {
   });
 }
 
-export { consolidateBooks, transformBook, isValidSourceBook, getExistingIsbns };
-export type { SourceBook, ConsolidatedBook, ConsolidationResult, DrizzleDb };
+export { consolidateBooks, transformBook, isValidSourceBook };
+export type { SourceBook, ConsolidatedBook, ConsolidationResult };
