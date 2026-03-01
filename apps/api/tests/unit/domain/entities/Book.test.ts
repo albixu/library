@@ -279,8 +279,8 @@ describe('Book', () => {
           ).toThrow(RequiredFieldError);
         });
 
-        it('should throw TooManyItemsError for more than 20 authors', () => {
-          const tooManyAuthors = Array.from({ length: 21 }, (_, i) =>
+        it('should throw TooManyItemsError for more than 10 authors', () => {
+          const tooManyAuthors = Array.from({ length: 11 }, (_, i) =>
             createAuthor(
               `550e8400-e29b-41d4-a716-4466554400${i.toString().padStart(2, '0')}`,
               `Author ${i}`
@@ -303,15 +303,15 @@ describe('Book', () => {
           ).toThrow(DuplicateItemError);
         });
 
-        it('should accept exactly 20 authors', () => {
-          const twentyAuthors = Array.from({ length: 20 }, (_, i) =>
+        it('should accept exactly 10 authors', () => {
+          const tenAuthors = Array.from({ length: 10 }, (_, i) =>
             createAuthor(
               `550e8400-e29b-41d4-a716-4466554400${i.toString().padStart(2, '0')}`,
               `Author ${i}`
             )
           );
-          const book = Book.create(createValidBookProps({ authors: twentyAuthors }));
-          expect(book.authors).toHaveLength(20);
+          const book = Book.create(createValidBookProps({ authors: tenAuthors }));
+          expect(book.authors).toHaveLength(10);
         });
       });
 
