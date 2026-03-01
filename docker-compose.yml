@@ -50,7 +50,8 @@ services:
       - NODE_ENV=development
       - PORT=3000
       - DATABASE_URL=postgresql://library:${POSTGRES_PASSWORD}@postgres:5432/library
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_EMBEDDING_URL=http://ollama-embeddings:11434
+      - OLLAMA_TRANSLATION_URL=http://ollama-translations:11435
       # Monorepo root for consolidate-books script (in Docker, /app is the root)
       - MONOREPO_ROOT=/app
       # Set AUTO_SEED=true to seed database on first run if empty
@@ -58,7 +59,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      ollama:
+      ollama-embeddings:
+        condition: service_started
+      ollama-translations:
         condition: service_started
     networks:
       - library-network
@@ -71,8 +74,8 @@ services:
       dockerfile: docker/Dockerfile.dev
     container_name: library-web-client
     ports:
-      - "4200:4200"   # Angular dev server
-      - "6006:6006"   # Storybook
+      - "4200:4200" # Angular dev server
+      - "6006:6006" # Storybook
     volumes:
       # Mount source code for hot reload
       - ./apps/web-client/src:/app/src
@@ -115,7 +118,7 @@ services:
       # Note: Schema is managed by Drizzle migrations (run via npm run db:migrate)
       # init-db.sql is kept for reference/documentation only
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U library -d library"]
+      test: [ "CMD-SHELL", "pg_isready -U library -d library" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -124,29 +127,43 @@ services:
     restart: unless-stopped
 
   # ----- Ollama (Embeddings) -----
-  ollama:
+  ollama-embeddings:
     image: ollama/ollama:latest
-    container_name: library-ollama
+    container_name: library-ollama-embeddings
     ports:
       - "11434:11434"
     volumes:
-      - ollama_data:/root/.ollama
+      - ollama_embeddings_data:/root/.ollama
     networks:
       - library-network
     restart: unless-stopped
-    # Note: After first start, run: docker exec library-ollama ollama pull nomic-embed-text
+    # Note: After first start, run: docker exec library-ollama-embeddings ollama pull nomic-embed-text
 
-# ----- Networks -----
+    # ----- Ollama (Translations) -----
+  ollama-translations:
+    image: ollama/ollama:latest
+    container_name: library-ollama-translations
+    ports:
+      - "11435:11434"
+    volumes:
+      - ollama_translations_data:/root/.ollama
+    networks:
+      - library-network
+    restart: unless-stopped
+    # Note: After first start, run: docker exec library-ollama-translations ollama pull aya-expanse:8b
+
+    # ----- Networks -----
 networks:
   library-network:
     driver: bridge
 
-# ----- Volumes -----
 volumes:
   postgres_data:
     name: library-postgres-data-prod
-  ollama_data:
-    name: library-ollama-data-prod
+  ollama_embeddings_data:
+    name: library-ollama-embeddings-data-prod
+  ollama_translations_data:
+    name: library-ollama-translations-data-prod
   api_node_modules:
     name: library-api-node-modules
   web_client_node_modules:
