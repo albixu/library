@@ -496,57 +496,55 @@ describe('CreateBookUseCase Integration', () => {
   // HU-013: Tests for translation functionality
   // NOTE: These tests require the translation model (qwen2.5:3b) to be installed in Ollama.
   // Run: docker exec library-ollama ollama pull qwen2.5:3b
-  // Tests will be skipped if the model is not available.
+  // Tests will be skipped automatically if the model is not available.
   describe('translation handling (HU-013)', () => {
-    let translationModelAvailable = false;
-
-    beforeAll(async () => {
-      // Check if translation model is available by testing a simple translation
+    /**
+     * Returns true (skip) when the translation model is NOT available.
+     * Used with it.skipIf to cleanly skip tests without silent early returns.
+     */
+    const translationModelUnavailable = async (): Promise<boolean> => {
       try {
+        await translationService.isAvailable();
+        // isAvailable only checks the service; we need to verify the model works
         await translationService.translate('test', 'es');
-        translationModelAvailable = true;
+        return false; // model works → do NOT skip
       } catch {
-        translationModelAvailable = false;
-        console.warn(
-          '\n⚠️  Translation model not available. Translation tests will be skipped.\n' +
-          '   Run: docker exec library-ollama ollama pull qwen2.5:3b\n'
-        );
+        return true; // model not available → skip
       }
-    });
+    };
 
-    it('should create book with translated description (English → Spanish)', async () => {
-      if (!translationModelAvailable) {
-        console.log('Skipping: Translation model not available');
-        return;
-      }
+    it.skipIf(translationModelUnavailable)(
+      'should create book with translated description (English → Spanish)',
+      async () => {
+        const englishDescription = 'A handbook of agile software craftsmanship';
+        const input = createValidInput({
+          description: englishDescription,
+          language: 'en',
+          isbn: '9780596517748', // Different ISBN
+        });
 
-      const englishDescription = 'A handbook of agile software craftsmanship';
-      const input = createValidInput({
-        description: englishDescription,
-        language: 'en',
-        isbn: '9780596517748', // Different ISBN
-      });
+        const result = await useCase.execute(input);
 
-      const result = await useCase.execute(input);
+        // originalDescription should be the English input
+        expect(result.originalDescription).toBe(englishDescription);
 
-      // originalDescription should be the English input
-      expect(result.originalDescription).toBe(englishDescription);
-      
-      // description should be translated to Spanish
-      expect(result.description).toBeDefined();
-      expect(result.description.length).toBeGreaterThan(0);
-      
-      // Translation should contain Spanish words (not be the same as English)
-      const lowerDesc = result.description.toLowerCase();
-      const hasSpanishIndicators =
-        lowerDesc.includes('manual') ||
-        lowerDesc.includes('artesanía') ||
-        lowerDesc.includes('ágil') ||
-        lowerDesc.includes('software') ||
-        result.description !== englishDescription;
-      
-      expect(hasSpanishIndicators).toBe(true);
-    }, 180000); // 3 minute timeout
+        // description should be translated to Spanish
+        expect(result.description).toBeDefined();
+        expect(result.description.length).toBeGreaterThan(0);
+
+        // Translation should contain Spanish words (not be the same as English)
+        const lowerDesc = result.description.toLowerCase();
+        const hasSpanishIndicators =
+          lowerDesc.includes('manual') ||
+          lowerDesc.includes('artesanía') ||
+          lowerDesc.includes('ágil') ||
+          lowerDesc.includes('software') ||
+          result.description !== englishDescription;
+
+        expect(hasSpanishIndicators).toBe(true);
+      },
+      180000, // 3 minute timeout
+    );
 
     it('should create book without translation (Spanish)', async () => {
       const spanishDescription = 'Un manual de artesanía de software ágil';
@@ -563,52 +561,50 @@ describe('CreateBookUseCase Integration', () => {
       expect(result.description).toBe(spanishDescription);
     }, 60000);
 
-    it('should persist both originalDescription and description', async () => {
-      if (!translationModelAvailable) {
-        console.log('Skipping: Translation model not available');
-        return;
-      }
+    it.skipIf(translationModelUnavailable)(
+      'should persist both originalDescription and description',
+      async () => {
+        const englishDescription = 'Clean code is code that has been written with care';
+        const input = createValidInput({
+          description: englishDescription,
+          language: 'en',
+          isbn: '9780201633610', // Different ISBN
+        });
 
-      const englishDescription = 'Clean code is code that has been written with care';
-      const input = createValidInput({
-        description: englishDescription,
-        language: 'en',
-        isbn: '9780201633610', // Different ISBN
-      });
+        const created = await useCase.execute(input);
+        const found = await bookRepository.findById(created.id);
 
-      const created = await useCase.execute(input);
-      const found = await bookRepository.findById(created.id);
+        expect(found).not.toBeNull();
+        expect(found!.originalDescription).toBe(englishDescription);
+        // description should be translated (different from original for English)
+        expect(found!.description).toBeDefined();
+        expect(found!.description.length).toBeGreaterThan(0);
+      },
+      180000,
+    );
 
-      expect(found).not.toBeNull();
-      expect(found!.originalDescription).toBe(englishDescription);
-      // description should be translated (different from original for English)
-      expect(found!.description).toBeDefined();
-      expect(found!.description.length).toBeGreaterThan(0);
-    }, 180000);
+    it.skipIf(translationModelUnavailable)(
+      'should generate embedding from Spanish description',
+      async () => {
+        const englishDescription = 'Test book for embedding generation';
+        const input = createValidInput({
+          description: englishDescription,
+          language: 'en',
+          isbn: '9780596009205', // Different ISBN
+        });
 
-    it('should generate embedding from Spanish description', async () => {
-      if (!translationModelAvailable) {
-        console.log('Skipping: Translation model not available');
-        return;
-      }
+        const result = await useCase.execute(input);
 
-      const englishDescription = 'Test book for embedding generation';
-      const input = createValidInput({
-        description: englishDescription,
-        language: 'en',
-        isbn: '9780596009205', // Different ISBN
-      });
+        // Verify the book was created successfully
+        // This implies embedding was generated from the Spanish description
+        expect(result.id).toBeDefined();
+        expect(result.description).toBeDefined();
 
-      const result = await useCase.execute(input);
-
-      // Verify the book was created successfully
-      // This implies embedding was generated from the Spanish description
-      expect(result.id).toBeDefined();
-      expect(result.description).toBeDefined();
-      
-      // The embedding should have been generated successfully
-      const found = await bookRepository.findById(result.id);
-      expect(found).not.toBeNull();
-    }, 180000);
+        // The embedding should have been generated successfully
+        const found = await bookRepository.findById(result.id);
+        expect(found).not.toBeNull();
+      },
+      180000,
+    );
   });
 });
