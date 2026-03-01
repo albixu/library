@@ -105,7 +105,7 @@ describe('HttpErrorMapper', () => {
       });
 
       it('should map DuplicateBookError to 409', () => {
-        const error = new DuplicateBookError('Clean Code', 'Robert C. Martin');
+        const error = new DuplicateBookError('Robert C. Martin', 'Clean Code', 'pdf');
 
         const response = mapErrorToHttpResponse(error);
 
