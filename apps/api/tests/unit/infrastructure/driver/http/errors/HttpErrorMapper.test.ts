@@ -19,12 +19,15 @@ import {
   DomainError,
   CategoryTypeMismatchError,
   LevelTypeMismatchError,
+  InvalidLanguageCodeError,
 } from '../../../../../../src/domain/errors/DomainErrors.js';
 import { InvalidISBNError } from '../../../../../../src/domain/value-objects/ISBN.js';
 import { InvalidBookFormatError } from '../../../../../../src/domain/value-objects/BookFormat.js';
 import {
   EmbeddingServiceUnavailableError,
   EmbeddingTextTooLongError,
+  TranslationServiceUnavailableError,
+  TranslationError,
 } from '../../../../../../src/application/errors/ApplicationErrors.js';
 
 describe('HttpErrorMapper', () => {
@@ -134,6 +137,43 @@ describe('HttpErrorMapper', () => {
         expect(response.statusCode).toBe(400);
         expect(response.body.success).toBe(false);
         expect(response.body.error.message).toContain('8000');
+      });
+    });
+
+    describe('Translation service errors', () => {
+      it('should map TranslationServiceUnavailableError to 503', () => {
+        const error = new TranslationServiceUnavailableError();
+
+        const response = mapErrorToHttpResponse(error);
+
+        expect(response.statusCode).toBe(503);
+        expect(response.body.success).toBe(false);
+        expect(response.body.data).toBeNull();
+        expect(response.body.error.message).toBe(
+          'Translation service unavailable, please try again later',
+        );
+      });
+
+      it('should map TranslationError to 400', () => {
+        const error = new TranslationError('Invalid translation response format');
+
+        const response = mapErrorToHttpResponse(error);
+
+        expect(response.statusCode).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.data).toBeNull();
+        expect(response.body.error.message).toBe('Invalid translation response format');
+      });
+
+      it('should map InvalidLanguageCodeError to 400', () => {
+        const error = new InvalidLanguageCodeError('xx');
+
+        const response = mapErrorToHttpResponse(error);
+
+        expect(response.statusCode).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.data).toBeNull();
+        expect(response.body.error.message).toContain('xx');
       });
     });
 
