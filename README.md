@@ -27,7 +27,7 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 | Lenguaje | TypeScript + Node.js 20 |
 | Base de datos | PostgreSQL 16 + pgvector |
 | Embeddings | Ollama + nomic-embed-text |
-| Traducciones | Ollama + llama3.2:3b |
+| Traducciones | Ollama + llama3.2:1b |
 | API | Fastify |
 | ORM | Drizzle ORM |
 | Frontend | Angular 21 + Angular Material |
@@ -81,7 +81,7 @@ docker-compose ps
 docker exec library-ollama-embeddings ollama pull nomic-embed-text
 
 # Modelo para traducciones (descripción de libros)
-docker exec library-ollama-translations ollama pull llama3.2:3b
+docker exec library-ollama-translations ollama pull llama3.2:1b
 ```
 
 ### 5. Ejecutar migraciones de base de datos
@@ -117,7 +117,7 @@ Consolida múltiples archivos JSON de `original_data/` en ficheros particionados
 **Requisitos:**
 
 - Archivos JSON en `original_data/` (raíz del proyecto)
-- Ollama con modelo de traducción `llama3.2:3b`
+- Ollama con modelo de traducción `llama3.2:1b`
 
 ```bash
 # 1. Iniciar entorno de consolidación
@@ -127,7 +127,7 @@ docker-compose -f docker-compose.consolidate.yml up -d
 docker-compose -f docker-compose.consolidate.yml ps
 
 # 3. Descargar modelo de traducción (solo la primera vez)
-docker exec library-consolidate-ollama-translations ollama pull llama3.2:3b
+docker exec library-consolidate-ollama-translations ollama pull llama3.2:1b
 
 # 4. Ejecutar script de consolidación
 docker exec library-consolidate-api npm run consolidate:books
@@ -439,7 +439,7 @@ docker exec library-api-dev npm run seed:database
 docker exec library-ollama-embeddings ollama pull nomic-embed-text
 
 # Descargar modelo de traducción
-docker exec library-ollama-translations ollama pull llama3.2:3b
+docker exec library-ollama-translations ollama pull llama3.2:1b
 
 # Listar modelos descargados en el contenedor embeddings
 docker exec library-ollama-embeddings ollama list
@@ -788,7 +788,7 @@ curl http://localhost:11435/api/tags
 
 # Descargar modelos manualmente
 docker exec library-ollama-embeddings ollama pull nomic-embed-text
-docker exec library-ollama-translations ollama pull llama3.2:3b
+docker exec library-ollama-translations ollama pull llama3.2:1b
 ```
 
 #### Error de conexión a la base de datos

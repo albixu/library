@@ -74,7 +74,7 @@ const DEFAULTS = {
   OLLAMA_TIMEOUT_MS: 30000,
   // HU-013 & HU-021: Translation service defaults
   OLLAMA_TRANSLATION_URL: 'http://ollama-translations:11435',
-  TRANSLATION_MODEL: 'llama3.2:3b',
+  TRANSLATION_MODEL: 'llama3.2:1b',
   TRANSLATION_TIMEOUT_MS: 60000,
   TRANSLATION_RETRIES: 3,
 } as const;

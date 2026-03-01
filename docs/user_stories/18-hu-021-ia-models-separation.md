@@ -4,13 +4,13 @@
 
 **Como** administrador del sistema,  
 **Quiero** optimizar el script de consolidación de libros y separar los servicios de IA en contenedores independientes,  
-**Para** mejorar la eficiencia en el uso de memoria RAM, usar un modelo más óptimo para las traducciones (`llama3.2:3b`) y arreglar la lógica de deduplicación de ISBNs basándola en los ficheros de origen y no en la base de datos.
+**Para** mejorar la eficiencia en el uso de memoria RAM, usar un modelo más óptimo para las traducciones (`llama3.2:1b`) y arreglar la lógica de deduplicación de ISBNs basándola en los ficheros de origen y no en la base de datos.
   
 ## Contexto
 
 Actualmente, el proceso de consolidar los archivos original data (`consolidate-books.ts`) usa la base de datos para ignorar los ISBNs que ya existen. La lógica de negocio establece que el propósito de este script solo debe ser parsear y enviar estos ficheros a `docs/db/initial_data/`, debiendo ignorar los libros repetidos en las sucesivas lecturas de los ficheros de origen, **sin apoyarse en la base de datos**.
 
-Continuando con las mejoras, el servidor actualmente carga un único contenedor de **Ollama** con tanto el modelo de traducciones (`qwen2.5:1.5b`) como de embeddings (`nomic-embed-text`). El proceso de `consolidate` solo necesita traducciones, y el `seed` / búsqueda online solo necesita embeddings. Separarlos en **dos contenedores distintos** y cambiar el modelo de traducción por `llama3.2:3b` (más óptimo localmente) aligerará muchísimo la carga de la máquina y hará más escalable el sistema.
+Continuando con las mejoras, el servidor actualmente carga un único contenedor de **Ollama** con tanto el modelo de traducciones (`qwen2.5:1.5b`) como de embeddings (`nomic-embed-text`). El proceso de `consolidate` solo necesita traducciones, y el `seed` / búsqueda online solo necesita embeddings. Separarlos en **dos contenedores distintos** y cambiar el modelo de traducción por `llama3.2:1b` (más óptimo localmente) aligerará muchísimo la carga de la máquina y hará más escalable el sistema.
 
 ## Documentación Relacionada
 
@@ -32,20 +32,20 @@ Continuando con las mejoras, el servidor actualmente carga un único contenedor 
 ### AC-2: Optimización de recursos en Docker de Consolidación
 
 - [ ] El archivo `docker-compose.consolidate.yml` no levantará el servicio `postgres` (ni su volumen o network dependiente).
-- [ ] El contenedor de Ollama para este compose se actualizará para usar el contenedor respectivo dedicado a traducciones (`ollama-translations`) mediante el nuevo modelo `llama3.2:3b`.
+- [ ] El contenedor de Ollama para este compose se actualizará para usar el contenedor respectivo dedicado a traducciones (`ollama-translations`) mediante el nuevo modelo `llama3.2:1b`.
 - [ ] Se actualizará la variable de entorno `TRANSLATION_MODEL` en las dependencias de este compose.
 
 ### AC-3: Separación de contenedores Ollama
 
 - [ ] Múltiples entornos (`docker-compose.yml`, `docker-compose.prod.yml`, `docker-compose.test.yml`, `docker-compose.seed.yml`) instanciarán **dos contenedores independientes de Ollama**:
   - `ollama-embeddings`: Servicio de Ollama exclusivo con `nomic-embed-text`.
-  - `ollama-translations`: Servicio de Ollama exclusivo con `llama3.2:3b`.
+  - `ollama-translations`: Servicio de Ollama exclusivo con `llama3.2:1b`.
 - [ ] En las inyecciones de puertos de la aplicación (`src/infrastructure/config/env.ts` o similaes), el backend deberá pedir dos URLs, p. ej. `OLLAMA_EMBEDDING_URL` y `OLLAMA_TRANSLATION_URL`.
 - [ ] Actualizar el script global `scripts/setup-ollama-models.sh` para hacer push/pull automático y correcto de los dos modelos en sus containers dependientes.
 
 ### AC-4: Documentación
 
-- [ ] Actualizar el texto fundacional de `README.md` borrando referencias al modelo global `qwen2.5:1.5b` e integrando explícitamente el uso de the `llama3.2:3b`.
+- [ ] Actualizar el texto fundacional de `README.md` borrando referencias al modelo global `qwen2.5:1.5b` e integrando explícitamente el uso de the `llama3.2:1b`.
 - [ ] Actualizar `docs/design_docs/01-project-overview.md` y `04-api-design.md` ajustando la definición del Diagrama de Componentes que muestra dos cajas de Ollama separadas y detalla el cambio de LLM.
 - [ ] Queda explícitamente prohibido alterar documentos pre-existentes localizados en `docs/user_stories/` previos al `18-`.
 

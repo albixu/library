@@ -6,7 +6,7 @@
 #
 # Models:
 #   - nomic-embed-text: For generating embeddings (semantic search) [ollama-embeddings]
-#   - llama3.2:3b: For translating descriptions to Spanish [ollama-translations]
+#   - llama3.2:1b: For translating descriptions to Spanish [ollama-translations]
 #
 # Features:
 #   - Downloads models if not present
@@ -36,7 +36,7 @@ OLLAMA_TRANSLATION_CONTAINER="${OLLAMA_TRANSLATION_CONTAINER:-library-ollama-tra
 # Models to download
 MODELS=(
     "nomic-embed-text|${OLLAMA_EMBEDDING_HOST}|${OLLAMA_EMBEDDING_CONTAINER}"
-    "llama3.2:3b|${OLLAMA_TRANSLATION_HOST}|${OLLAMA_TRANSLATION_CONTAINER}"
+    "llama3.2:1b|${OLLAMA_TRANSLATION_HOST}|${OLLAMA_TRANSLATION_CONTAINER}"
 )
 
 # Colors for output
