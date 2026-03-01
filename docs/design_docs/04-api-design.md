@@ -45,7 +45,7 @@ Este documento define la arquitectura y diseño del backend API para el sistema 
 | Testing | Vitest | Latest |
 | Logging | Pino | Latest |
 | Embeddings | Ollama Embeddings (nomic-embed-text) | Latest |
-| Traducción | Ollama Translations (aya-expanse:8b) | Latest |
+| Traducción | Ollama Translations (llama3.2:3b) | Latest |
 
 ### 2.2 Arquitectura Hexagonal (Ports & Adapters)
 
@@ -788,7 +788,7 @@ class OllamaEmbeddingService implements EmbeddingService {
 class OllamaTranslationService implements TranslationService {
   // Configuración
   baseUrl: string;           // Default: http://ollama-translations:11434
-  model: string;             // Default: aya-expanse:8b
+  model: string;             // Default: llama3.2:3b
   timeoutMs: number;         // Default: 60000
   retries: number;           // Default: 3
 

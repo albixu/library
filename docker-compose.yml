@@ -150,7 +150,7 @@ services:
     networks:
       - library-network
     restart: unless-stopped
-    # Note: After first start, run: docker exec library-ollama-translations ollama pull aya-expanse:8b
+    # Note: After first start, run: docker exec library-ollama-translations ollama pull llama3.2:3b
 
     # ----- Networks -----
 networks:

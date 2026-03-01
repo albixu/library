@@ -67,7 +67,7 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | `createdAt` | timestamp | Sí | Fecha de creación |
 | `updatedAt` | timestamp | Sí | Fecha de modificación |
 
-> **Nota HU-013**: Las descripciones de libros se almacenan tanto en su idioma original (`originalDescription`) como traducidas al español (`description`). El campo `language` indica el idioma original usando códigos ISO 639-1. Las traducciones se realizan automáticamente usando Ollama (aya-expanse:8b) durante la creación del libro.
+> **Nota HU-013**: Las descripciones de libros se almacenan tanto en su idioma original (`originalDescription`) como traducidas al español (`description`). El campo `language` indica el idioma original usando códigos ISO 639-1. Las traducciones se realizan automáticamente usando Ollama (llama3.2:3b) durante la creación del libro.
 
 ### 3.2 Entidad: Author
 
@@ -218,7 +218,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 | **Web Client** | Angular 19, Signals, SCSS | Interfaz web responsive con Design System propio | `03-web-client-design.md` |
 | **Base de Datos** | PostgreSQL 16 + pgvector | Almacenamiento de datos y búsqueda vectorial | - |
 | **Embeddings** | Ollama Embeddings + nomic-embed-text | Generación de embeddings para búsqueda semántica | - |
-| **Traducciones** | Ollama Translations + aya-expanse:8b | Traducción automática de descripciones al español | - |
+| **Traducciones** | Ollama Translations + llama3.2:3b | Traducción automática de descripciones al español | - |
 
 ### 4.3 Flujo de Datos Principal
 
@@ -347,7 +347,7 @@ Usuario                Web Client               API                    PostgreSQ
 | **Runtime** | Node.js 20 LTS |
 | **Base de datos** | PostgreSQL 16 + pgvector |
 | **Embeddings** | Ollama Embeddings + nomic-embed-text |
-| **Traducciones** | Ollama Translations + aya-expanse:8b |
+| **Traducciones** | Ollama Translations + llama3.2:3b |
 | **Framework HTTP** | Fastify 4.x |
 | **ORM** | Drizzle ORM |
 | **Validación** | Zod |

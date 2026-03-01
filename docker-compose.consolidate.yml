@@ -10,7 +10,7 @@
 #      docker-compose -f docker-compose.consolidate.yml up -d
 #
 #   2. Wait for Ollama to be ready and pull translation model:
-#      docker exec library-consolidate-ollama ollama pull aya-expanse:8b
+#      docker exec library-consolidate-ollama ollama pull llama3.2:3b
 #
 #   3. Run consolidation script:
 #      docker exec library-consolidate-api npm run consolidate:books
@@ -45,9 +45,10 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
+      - DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy
       # Ollama for translations
       - OLLAMA_TRANSLATION_URL=http://ollama-translations:11434
-      - TRANSLATION_MODEL=aya-expanse:8b
+      - TRANSLATION_MODEL=llama3.2:3b
       # Increase timeout for translations (3 minutes)
       - TRANSLATION_TIMEOUT_MS=180000
       # Books per output file
@@ -77,7 +78,7 @@ services:
     networks:
       - consolidate-network
     restart: "no"
-    # Memory for translation model (~5.5GB for aya-expanse:8b)
+    # Memory for translation model (~2.5GB for llama3.2:3b)
     deploy:
       resources:
         limits:
