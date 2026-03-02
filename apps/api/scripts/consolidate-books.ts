@@ -328,7 +328,6 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
     const booksToProcess: SourceBook[] = [];
     let totalBooksRead = 0;
     let duplicatesSkipped = 0;
-    let existingInDbSkipped = 0;
 
     // First pass: read and deduplicate all books
     console.log('\n--- Phase 1: Reading and deduplicating books ---');
