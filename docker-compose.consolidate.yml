@@ -3,14 +3,18 @@
 # ================================
 # Purpose: Generate partitioned JSON files from original_data/
 # This compose file is optimized for memory-intensive book consolidation
-# with translation support using an isolated Ollama translation container.
+# with translation support using LibreTranslate (fast, self-hosted).
+#
+# LibreTranslate is used as the translation provider for bulk operations
+# (~120x faster than Ollama for large datasets).
 #
 # Usage:
 #   1. Start services:
 #      docker-compose -f docker-compose.consolidate.yml up -d
 #
-#   2. Wait for Ollama to be ready and pull translation model:
-#      docker exec library-consolidate-ollama ollama pull llama3.2:1b
+#   2. Wait for LibreTranslate to be ready (loads en+es models on startup):
+#      docker logs -f library-consolidate-libretranslate
+#      # Ready when you see: "Running on http://0.0.0.0:5000"
 #
 #   3. Run consolidation script:
 #      docker exec library-consolidate-api npm run consolidate:books
@@ -46,17 +50,16 @@ services:
       - NODE_ENV=development
       - PORT=3000
       - DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy
-      # Ollama for translations
-      - OLLAMA_TRANSLATION_URL=http://ollama-translations:11434
-      - TRANSLATION_MODEL=llama3.2:1b
-      # Increase timeout for translations (3 minutes)
-      - TRANSLATION_TIMEOUT_MS=180000
+      # LibreTranslate for bulk translations (fast, self-hosted)
+      - TRANSLATION_PROVIDER=libretranslate
+      - LIBRETRANSLATE_URL=http://libretranslate:5000
+      - LIBRETRANSLATE_TIMEOUT_MS=10000
       # Books per output file
       - BOOKS_PER_FILE=1000
       # Monorepo root mapping
       - MONOREPO_ROOT=/app
     depends_on:
-      ollama-translations:
+      libretranslate:
         condition: service_started
     networks:
       - consolidate-network
@@ -68,21 +71,20 @@ services:
         limits:
           memory: 2G
 
-  # ----- Ollama (Translation Model) -----
-  ollama-translations:
-    image: ollama/ollama:latest
-    container_name: library-consolidate-ollama
-    volumes:
-      # Use the same ollama translations data volume
-      - ollama_translations_data:/root/.ollama
+  # ----- LibreTranslate (Translation Service) -----
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    container_name: library-consolidate-libretranslate
+    # Only load English and Spanish models for fast startup and low memory usage
+    command: --load-only en,es
     networks:
       - consolidate-network
     restart: "no"
-    # Memory for translation model (~2.5GB for llama3.2:1b)
+    # Memory for translation models (~1GB for en+es)
     deploy:
       resources:
         limits:
-          memory: 8G
+          memory: 2G
 
 # ----- Networks -----
 networks:
@@ -91,9 +93,6 @@ networks:
 
 # ----- Volumes -----
 volumes:
-  ollama_translations_data:
-    name: library-ollama-translations-data
-    external: true
   api_node_modules:
     name: library-api-node-modules
     external: true
