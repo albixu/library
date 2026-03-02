@@ -12,6 +12,7 @@ import { loadEnvConfig } from './infrastructure/config/env.js';
 import { PinoLogger } from './infrastructure/driven/logging/PinoLogger.js';
 import { OllamaEmbeddingService } from './infrastructure/driven/embedding/OllamaEmbeddingService.js';
 import { OllamaTranslationService } from './infrastructure/driven/translation/OllamaTranslationService.js';
+import { LibreTranslateTranslationService } from './infrastructure/driven/translation/LibreTranslateTranslationService.js';
 import { PostgresBookRepository } from './infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from './infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { PostgresTypeRepository } from './infrastructure/driven/persistence/PostgresTypeRepository.js';
@@ -61,13 +62,29 @@ async function bootstrap(): Promise<void> {
       model: env.ollama.model,
     });
 
-    // HU-013: Translation service for description translation
-    const translationService = new OllamaTranslationService({
-      baseUrl: env.translation.baseUrl,
-      model: env.translation.model,
-      timeoutMs: env.translation.timeoutMs,
-      retries: env.translation.retries,
-    });
+    // HU-013 / HU-026: Translation service — Strategy pattern via TRANSLATION_PROVIDER
+    let translationService;
+    if (env.translation.provider === 'libretranslate') {
+      bootstrapLogger.info('Translation provider: LibreTranslate', {
+        url: env.translation.libreTranslateUrl,
+      });
+      translationService = new LibreTranslateTranslationService({
+        baseUrl: env.translation.libreTranslateUrl,
+        timeoutMs: env.translation.libreTranslateTimeoutMs,
+        retries: env.translation.retries,
+      });
+    } else {
+      bootstrapLogger.info('Translation provider: Ollama', {
+        url: env.translation.baseUrl,
+        model: env.translation.model,
+      });
+      translationService = new OllamaTranslationService({
+        baseUrl: env.translation.baseUrl,
+        model: env.translation.model,
+        timeoutMs: env.translation.timeoutMs,
+        retries: env.translation.retries,
+      });
+    }
 
     const bookRepository = new PostgresBookRepository(db);
     const categoryRepository = new PostgresCategoryRepository(db);

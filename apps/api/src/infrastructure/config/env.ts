@@ -19,17 +19,28 @@ export interface OllamaConfig {
 }
 
 /**
+ * Supported translation providers (HU-026)
+ */
+export type TranslationProvider = 'ollama' | 'libretranslate';
+
+/**
  * Translation service configuration (HU-013)
  */
 export interface TranslationConfig {
-  /** Base URL of the translation service (Ollama) */
+  /** Selected translation provider (HU-026) */
+  provider: TranslationProvider;
+  /** Base URL of the Ollama translation service */
   baseUrl: string;
-  /** Model to use for translation */
+  /** Model to use for translation (Ollama only) */
   model: string;
   /** Request timeout in milliseconds */
   timeoutMs: number;
   /** Number of retry attempts */
   retries: number;
+  /** Base URL of the LibreTranslate service (HU-026) */
+  libreTranslateUrl: string;
+  /** Request timeout in milliseconds for LibreTranslate (HU-026) */
+  libreTranslateTimeoutMs: number;
 }
 
 /**
@@ -77,6 +88,10 @@ const DEFAULTS = {
   TRANSLATION_MODEL: 'llama3.2:1b',
   TRANSLATION_TIMEOUT_MS: 60000,
   TRANSLATION_RETRIES: 3,
+  // HU-026: Translation provider selection
+  TRANSLATION_PROVIDER: 'ollama' as const,
+  LIBRETRANSLATE_URL: 'http://libretranslate:5000',
+  LIBRETRANSLATE_TIMEOUT_MS: 10000,
 } as const;
 
 /**
@@ -95,6 +110,21 @@ function safeParseInt(value: string | undefined, defaultValue: number, fieldName
     );
   }
   return parsed;
+}
+
+/**
+ * Validates and parses the TRANSLATION_PROVIDER environment variable.
+ * Throws a descriptive error at startup if the value is not supported.
+ */
+function parseTranslationProvider(value: string | undefined): TranslationProvider {
+  const resolved = (value ?? DEFAULTS.TRANSLATION_PROVIDER).trim();
+  if (resolved === 'ollama' || resolved === 'libretranslate') {
+    return resolved;
+  }
+  throw new Error(
+    `Invalid TRANSLATION_PROVIDER value: "${resolved}". ` +
+    'Supported values are: "ollama", "libretranslate".',
+  );
 }
 
 /**
@@ -132,6 +162,7 @@ export function loadEnvConfig(): EnvConfig {
     },
     // HU-013: Translation service configuration
     translation: {
+      provider: parseTranslationProvider(process.env['TRANSLATION_PROVIDER']),
       baseUrl: process.env['OLLAMA_TRANSLATION_URL'] ?? DEFAULTS.OLLAMA_TRANSLATION_URL,
       model: process.env['TRANSLATION_MODEL'] ?? DEFAULTS.TRANSLATION_MODEL,
       timeoutMs: safeParseInt(
@@ -143,6 +174,14 @@ export function loadEnvConfig(): EnvConfig {
         process.env['TRANSLATION_RETRIES'],
         DEFAULTS.TRANSLATION_RETRIES,
         'TRANSLATION_RETRIES',
+      ),
+      // HU-026: LibreTranslate configuration
+      libreTranslateUrl:
+        process.env['LIBRETRANSLATE_URL'] ?? DEFAULTS.LIBRETRANSLATE_URL,
+      libreTranslateTimeoutMs: safeParseInt(
+        process.env['LIBRETRANSLATE_TIMEOUT_MS'],
+        DEFAULTS.LIBRETRANSLATE_TIMEOUT_MS,
+        'LIBRETRANSLATE_TIMEOUT_MS',
       ),
     },
   };
