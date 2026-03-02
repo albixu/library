@@ -20,15 +20,17 @@
  *
  * Requirements:
  * - Database must be running (uses DATABASE_URL env var)
- * - Ollama service must be running with llama3.2:1b model
+ * - Translation service must be running (Ollama or LibreTranslate, see TRANSLATION_PROVIDER)
  *
  * Usage:
  *   npx tsx scripts/consolidate-books.ts
  *   npm run consolidate:books
  *
  * Environment variables:
- *   OLLAMA_BASE_URL          - Ollama service URL (default: http://ollama:11434)
- *   TRANSLATION_MODEL        - Model for translation (default: llama3.2:1b)
+ *   TRANSLATION_PROVIDER     - Translation provider: 'ollama' (default) or 'libretranslate'
+ *   OLLAMA_TRANSLATION_URL   - Ollama service URL (default: http://ollama-translations:11435)
+ *   TRANSLATION_MODEL        - Model for translation (default: llama3.2:1b, Ollama only)
+ *   LIBRETRANSLATE_URL       - LibreTranslate service URL (default: http://libretranslate:5000)
  *   TRANSLATION_TIMEOUT_MS   - Timeout for translation (default: 180000)
  *   TRANSLATION_CONCURRENCY  - Parallel translations per batch (default: 3)
  *   TRANSLATION_CACHE_PATH   - Path to translation cache JSON (default: <SOURCE_DIR>/.translation-cache.json)
@@ -40,6 +42,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnvConfig } from '../src/infrastructure/config/env.js';
 import { OllamaTranslationService } from '../src/infrastructure/driven/translation/OllamaTranslationService.js';
+import { LibreTranslateTranslationService } from '../src/infrastructure/driven/translation/LibreTranslateTranslationService.js';
 import type { TranslationService } from '../src/application/ports/TranslationService.js';
 import {
   loadCache,
@@ -294,23 +297,35 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
   console.log(`Translation concurrency: ${concurrency}`);
   console.log(`Translation cache: ${cachePath}`);
 
-  // Initialize translation service
-  const translationService = new OllamaTranslationService({
-    baseUrl: env.translation.baseUrl,
-    model: env.translation.model,
-    timeoutMs: translationTimeoutMs,
-    retries: 1, // We handle retries ourselves for better logging
-  });
+  // Initialize translation service — Strategy pattern via TRANSLATION_PROVIDER (HU-026)
+  let translationService: TranslationService;
+  let translationServiceLabel: string;
+  if (env.translation.provider === 'libretranslate') {
+    translationService = new LibreTranslateTranslationService({
+      baseUrl: env.translation.libreTranslateUrl,
+      timeoutMs: translationTimeoutMs,
+      retries: 1, // We handle retries ourselves for better logging
+    });
+    translationServiceLabel = `LibreTranslate at ${env.translation.libreTranslateUrl}`;
+  } else {
+    translationService = new OllamaTranslationService({
+      baseUrl: env.translation.baseUrl,
+      model: env.translation.model,
+      timeoutMs: translationTimeoutMs,
+      retries: 1, // We handle retries ourselves for better logging
+    });
+    translationServiceLabel = `Ollama at ${env.translation.baseUrl} (model: ${env.translation.model})`;
+  }
 
   // Check if translation service is available
   const isTranslationAvailable = await translationService.isAvailable();
   if (!isTranslationAvailable) {
     throw new Error(
-      `Translation service not available at ${env.translation.baseUrl}. ` +
-      'Make sure Ollama is running with the translation model loaded.'
+      `Translation service not available: ${translationServiceLabel}. ` +
+      'Make sure the service is running and reachable.'
     );
   }
-  console.log(`Translation service available (model: ${env.translation.model})`);
+  console.log(`Translation service available: ${translationServiceLabel}`);
 
   try {
     // Get all JSON files sorted alphabetically
