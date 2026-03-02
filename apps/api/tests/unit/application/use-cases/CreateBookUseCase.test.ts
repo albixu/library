@@ -174,7 +174,7 @@ describe('CreateBookUseCase', () => {
       translate: vi.fn().mockImplementation(async (text: string): Promise<TranslationResult> => ({
         translatedText: `[Translated] ${text}`,
         targetLanguage: 'es',
-        model: 'qwen2.5:3b',
+        model: 'llama3.2:1b',
       })),
       isAvailable: vi.fn().mockResolvedValue(true),
     };

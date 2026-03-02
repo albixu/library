@@ -877,7 +877,7 @@ interface EnvConfig {
   };
   translation: {
     baseUrl: string;      // Same as ollama.baseUrl
-    model: string;        // TRANSLATION_MODEL (qwen2.5:3b)
+    model: string;        // TRANSLATION_MODEL (llama3.2:1b)
     timeoutMs: number;    // TRANSLATION_TIMEOUT_MS (60000)
     retries: number;      // TRANSLATION_RETRIES (3)
   };
@@ -1267,7 +1267,7 @@ services:
 ollama pull nomic-embed-text
 
 # Traducción
-ollama pull qwen2.5:1.5b
+ollama pull llama3.2:1b
 ```
 
 ---

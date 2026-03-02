@@ -20,7 +20,7 @@ describe('OllamaTranslationService Integration', () => {
 
   // Configuration for the Docker Compose Ollama instance
   const OLLAMA_BASE_URL = process.env['OLLAMA_BASE_URL'] ?? 'http://localhost:11434';
-  const TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'qwen2.5:3b';
+  const TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'llama3.2:1b';
 
   beforeAll(async () => {
     service = new OllamaTranslationService({

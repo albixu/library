@@ -533,7 +533,7 @@ paths:
             
             Posibles causas:
             - Servicio de embeddings (modelo nomic-embed-text) no disponible
-            - Servicio de traducción (modelo qwen2.5:3b) no disponible (solo si language != 'es')
+            - Servicio de traducción (modelo llama3.2:1b) no disponible (solo si language != 'es')
           content:
             application/json:
               schema:
