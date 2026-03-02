@@ -232,8 +232,8 @@ describe('OllamaTranslationService Integration', () => {
       expect(result.translatedText).toBe('');
     });
 
-    it('should throw TranslationError for text exceeding 5000 chars', async () => {
-      const longText = 'a'.repeat(5001);
+    it('should throw TranslationError for text exceeding 10000 chars', async () => {
+      const longText = 'a'.repeat(10001);
 
       await expect(service.translate(longText, 'es')).rejects.toThrow(TranslationError);
     });

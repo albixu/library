@@ -27,7 +27,7 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 | Lenguaje | TypeScript + Node.js 20 |
 | Base de datos | PostgreSQL 16 + pgvector |
 | Embeddings | Ollama + nomic-embed-text |
-| Traducciones | Ollama + llama3.2:1b |
+| Traducciones | LibreTranslate (self-hosted) |
 | API | Fastify |
 | ORM | Drizzle ORM |
 | Frontend | Angular 21 + Angular Material |
@@ -112,36 +112,40 @@ docs/db/initial_data/books_XXXX.json
 
 ### Fase 1: Consolidar archivos JSON
 
-Consolida múltiples archivos JSON de `original_data/` en ficheros particionados, traduciendo las descripciones al español.
+Consolida múltiples archivos JSON de `original_data/` en ficheros particionados, traduciendo las descripciones al español mediante **LibreTranslate** (self-hosted, sin coste ni límite de uso).
 
 **Requisitos:**
 
 - Archivos JSON en `original_data/` (raíz del proyecto)
-- Ollama con modelo de traducción `llama3.2:1b`
+- LibreTranslate en ejecución (incluido en `docker-compose.consolidate.yml`)
 
 ```bash
-# 1. Iniciar entorno de consolidación
+# 1. Iniciar entorno de consolidación (incluye LibreTranslate)
 docker-compose -f docker-compose.consolidate.yml up -d
 
 # 2. Verificar que los servicios están corriendo
 docker-compose -f docker-compose.consolidate.yml ps
 
-# 3. Descargar modelo de traducción (solo la primera vez)
-docker exec library-consolidate-ollama-translations ollama pull llama3.2:1b
-
-# 4. Ejecutar script de consolidación
+# 3. Ejecutar script de consolidación
 docker exec library-consolidate-api npm run consolidate:books
 
-# 5. Detener servicios cuando termine
+# 4. Detener servicios cuando termine
 docker-compose -f docker-compose.consolidate.yml down
 ```
+
+> **⚠️ Aviso de memoria (OOM):** Con catálogos grandes (~55.000 libros), el proceso puede ser
+> terminado por el sistema operativo por falta de memoria. Si ocurre, establece la variable de
+> entorno `NODE_OPTIONS=--max-old-space-size=4096` o usa el script `consolidate:books` que ya
+> la incluye por defecto.
 
 **Resultado:** Ficheros `docs/db/initial_data/books_0001.json`, `books_0002.json`, etc. (máximo 1000 libros por fichero)
 
 **Variables de entorno opcionales:**
 
 - `BOOKS_PER_FILE=1000` - Libros por fichero de salida
-- `TRANSLATION_TIMEOUT_MS=180000` - Timeout para traducciones (3 min)
+- `TRANSLATION_TIMEOUT_MS=60000` - Timeout para traducciones (1 min)
+- `LIBRETRANSLATE_URL=http://libretranslate:5000` - URL de LibreTranslate
+- `LIBRETRANSLATE_API_KEY=` - API key de LibreTranslate (vacío para instancias locales sin auth)
 
 ### Fase 2: Sembrar la base de datos
 
@@ -438,18 +442,11 @@ docker exec library-api-dev npm run seed:database
 # Descargar modelo de embeddings
 docker exec library-ollama-embeddings ollama pull nomic-embed-text
 
-# Descargar modelo de traducción
-docker exec library-ollama-translations ollama pull llama3.2:1b
-
-# Listar modelos descargados en el contenedor embeddings
+# Listar modelos descargados
 docker exec library-ollama-embeddings ollama list
 
-# Listar modelos descargados en el contenedor embeddings
-docker exec library-ollama-translations ollama list
-
-# Verificar estado de los contenedores
+# Verificar estado
 curl http://localhost:11434/api/tags
-curl http://localhost:11435/api/tags
 ```
 
 #### Web Client (Angular)
@@ -780,15 +777,23 @@ gunzip -c backup.sql.gz | docker exec -i library-postgres psql -U library librar
 ```bash
 # Verificar que Ollama está corriendo
 docker-compose -f docker-compose.prod.yml logs ollama-embeddings
-docker-compose -f docker-compose.prod.yml logs ollama-translations
 
 # Verificar conectividad
 curl http://localhost:11434/api/tags
-curl http://localhost:11435/api/tags
 
-# Descargar modelos manualmente
+# Descargar modelo manualmente
 docker exec library-ollama-embeddings ollama pull nomic-embed-text
-docker exec library-ollama-translations ollama pull llama3.2:1b
+```
+
+#### LibreTranslate no está disponible (consolidación)
+
+```bash
+# Verificar que el servicio está corriendo
+docker-compose -f docker-compose.consolidate.yml ps libretranslate
+docker-compose -f docker-compose.consolidate.yml logs libretranslate
+
+# Verificar conectividad
+curl http://localhost:5000/languages
 ```
 
 #### Error de conexión a la base de datos
