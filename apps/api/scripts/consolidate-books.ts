@@ -11,24 +11,28 @@
  * - Keeps first occurrence of each ISBN (alphabetical file order)
  * - Preserves ALL original properties from source books
  * - Translates non-Spanish descriptions to Spanish using Ollama
+ * - Persistent translation cache (SHA-256 indexed JSON) to skip already-translated texts
+ * - Parallel batch processing (configurable concurrency) to speed up translation
  * - Generates multiple output files with configurable batch size (default: 1000)
  * - Deletes existing output directory before generating new files
  * - Idempotent: can be run multiple times safely
- * - Shows progress with ETA for translation
+ * - Shows progress with ETA and cache statistics per batch
  *
  * Requirements:
  * - Database must be running (uses DATABASE_URL env var)
- * - Ollama service must be running with qwen2.5:1.5b model
+ * - Ollama service must be running with llama3.2:1b model
  *
  * Usage:
  *   npx tsx scripts/consolidate-books.ts
  *   npm run consolidate:books
  *
  * Environment variables:
- *   OLLAMA_BASE_URL - Ollama service URL (default: http://ollama:11434)
- *   TRANSLATION_MODEL - Model for translation (default: qwen2.5:1.5b)
- *   TRANSLATION_TIMEOUT_MS - Timeout for translation (default: 180000)
- *   BOOKS_PER_FILE - Number of books per output file (default: 1000)
+ *   OLLAMA_BASE_URL          - Ollama service URL (default: http://ollama:11434)
+ *   TRANSLATION_MODEL        - Model for translation (default: llama3.2:1b)
+ *   TRANSLATION_TIMEOUT_MS   - Timeout for translation (default: 180000)
+ *   TRANSLATION_CONCURRENCY  - Parallel translations per batch (default: 3)
+ *   TRANSLATION_CACHE_PATH   - Path to translation cache JSON (default: <SOURCE_DIR>/.translation-cache.json)
+ *   BOOKS_PER_FILE           - Number of books per output file (default: 1000)
  */
 
 import { readdir, readFile, writeFile, mkdir, rm, access } from 'node:fs/promises';
@@ -37,6 +41,14 @@ import { fileURLToPath } from 'node:url';
 import { loadEnvConfig } from '../src/infrastructure/config/env.js';
 import { OllamaTranslationService } from '../src/infrastructure/driven/translation/OllamaTranslationService.js';
 import type { TranslationService } from '../src/application/ports/TranslationService.js';
+import {
+  loadCache,
+  saveCache,
+  getCacheKey,
+  get as cacheGet,
+  set as cacheSet,
+  type TranslationCache,
+} from './translation-cache.js';
 
 // Get directory paths
 const __filename = fileURLToPath(import.meta.url);
@@ -57,6 +69,7 @@ const OUTPUT_DIR = join(MONOREPO_ROOT, 'docs', 'db', 'initial_data');
 // Configuration
 const DEFAULT_BOOKS_PER_FILE = 1000;
 const DEFAULT_TRANSLATION_TIMEOUT_MS = 180000;
+const DEFAULT_TRANSLATION_CONCURRENCY = 3;
 const RETRY_DELAY_MS = 2000;
 const MAX_RETRIES = 3;
 
@@ -99,6 +112,9 @@ interface ConsolidationResult {
   readonly duplicatesSkipped: number;
   readonly translatedCount: number;
   readonly translationErrors: number;
+  readonly cacheHits: number;
+  readonly cacheMisses: number;
+  readonly concurrency: number;
   readonly outputFilesGenerated: number;
   readonly outputDirectory: string;
   readonly durationMs: number;
@@ -270,9 +286,13 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
   const env = loadEnvConfig();
   const booksPerFile = parseInt(process.env['BOOKS_PER_FILE'] ?? '', 10) || DEFAULT_BOOKS_PER_FILE;
   const translationTimeoutMs = parseInt(process.env['TRANSLATION_TIMEOUT_MS'] ?? '', 10) || DEFAULT_TRANSLATION_TIMEOUT_MS;
+  const concurrency = parseInt(process.env['TRANSLATION_CONCURRENCY'] ?? '', 10) || DEFAULT_TRANSLATION_CONCURRENCY;
+  const cachePath = process.env['TRANSLATION_CACHE_PATH'] ?? join(SOURCE_DIR, '.translation-cache.json');
 
   console.log(`Books per file: ${booksPerFile}`);
   console.log(`Translation timeout: ${translationTimeoutMs}ms`);
+  console.log(`Translation concurrency: ${concurrency}`);
+  console.log(`Translation cache: ${cachePath}`);
 
   // Initialize translation service
   const translationService = new OllamaTranslationService({
@@ -308,7 +328,6 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
     const booksToProcess: SourceBook[] = [];
     let totalBooksRead = 0;
     let duplicatesSkipped = 0;
-    let existingInDbSkipped = 0;
 
     // First pass: read and deduplicate all books
     console.log('\n--- Phase 1: Reading and deduplicating books ---');
@@ -343,52 +362,111 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
         duplicatesSkipped,
         translatedCount: 0,
         translationErrors: 0,
+        cacheHits: 0,
+        cacheMisses: 0,
+        concurrency,
         outputFilesGenerated: 0,
         outputDirectory: OUTPUT_DIR,
         durationMs: Date.now() - startTime,
       };
     }
 
-    // Second pass: translate descriptions
+    // Second pass: translate descriptions with cache + parallel batches
     console.log('\n--- Phase 2: Translating descriptions ---');
-    const consolidatedBooks: ConsolidatedBook[] = [];
+    const consolidatedBooks: ConsolidatedBook[] = new Array(booksToProcess.length) as ConsolidatedBook[];
     let translatedCount = 0;
     let translationErrors = 0;
+    let cacheHits = 0;
+    let cacheMisses = 0;
     const translationStartTime = Date.now();
 
-    for (let i = 0; i < booksToProcess.length; i++) {
-      const book = booksToProcess[i]!;
-      const progress = ((i + 1) / booksToProcess.length * 100).toFixed(1);
+    // Load translation cache (returns {} if missing or corrupted)
+    const cache: TranslationCache = await loadCache(cachePath);
+    console.log(`Cache loaded: ${Object.keys(cache).length} existing entries`);
 
-      // Calculate ETA
-      const elapsed = Date.now() - translationStartTime;
-      const avgTimePerBook = i > 0 ? elapsed / i : 0;
-      const remaining = booksToProcess.length - i - 1;
-      const eta = avgTimePerBook * remaining;
+    // Split books into batches of `concurrency` size
+    const totalBatches = Math.ceil(booksToProcess.length / concurrency);
 
-      const needsTranslation = book.language?.toLowerCase() !== 'es' && book.description.trim().length > 0;
-      const statusIcon = needsTranslation ? '🔄' : '✓';
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const batchStart = batchIndex * concurrency;
+      const batchEnd = Math.min(batchStart + concurrency, booksToProcess.length);
+      const batchBooks = booksToProcess.slice(batchStart, batchEnd);
 
-      console.log(
-        `[${progress}%] ${statusIcon} ${i + 1}/${booksToProcess.length} - "${book.title.substring(0, 50)}..." ` +
-        `(ETA: ${formatDuration(eta)})`
+      // Launch all translations in this batch simultaneously
+      const batchResults = await Promise.allSettled(
+        batchBooks.map(async (book) => {
+          const needsTranslation = book.language?.toLowerCase() !== 'es' && book.description.trim().length > 0;
+
+          if (!needsTranslation) {
+            return { book, translated: book.description, success: true, fromCache: false, needed: false };
+          }
+
+          const key = getCacheKey(book.description);
+          const cached = cacheGet(cache, key);
+
+          if (cached !== undefined) {
+            return { book, translated: cached, success: true, fromCache: true, needed: true };
+          }
+
+          // Cache miss: call Ollama
+          const { translated, success } = await translateDescription(
+            book.description,
+            book.language,
+            translationService,
+          );
+
+          if (success) {
+            cacheSet(cache, key, translated);
+          }
+
+          return { book, translated, success, fromCache: false, needed: true };
+        }),
       );
 
-      const { translated, success } = await translateDescription(
-        book.description,
-        book.language,
-        translationService,
-      );
+      // Collect results and update statistics
+      for (let localIndex = 0; localIndex < batchResults.length; localIndex++) {
+        const globalIndex = batchStart + localIndex;
+        const result = batchResults[localIndex]!;
 
-      if (needsTranslation) {
-        if (success) {
-          translatedCount++;
+        if (result.status === 'fulfilled') {
+          const { book, translated, success, fromCache, needed } = result.value;
+          consolidatedBooks[globalIndex] = transformBook(book, translated);
+          if (needed) {
+            if (fromCache) {
+              cacheHits++;
+            } else if (success) {
+              cacheMisses++;
+              translatedCount++;
+            } else {
+              cacheMisses++;
+              translationErrors++;
+            }
+          }
         } else {
+          // Promise itself rejected (unexpected error)
+          const book = booksToProcess[globalIndex]!;
+          consolidatedBooks[globalIndex] = transformBook(book, book.description);
           translationErrors++;
+          console.error(`  Unexpected error for "${book.title}": ${result.reason}`);
         }
       }
 
-      consolidatedBooks.push(transformBook(book, translated));
+      // Persist cache after each batch (tolerance to crashes)
+      await saveCache(cachePath, cache);
+
+      // Progress log
+      const processedSoFar = batchEnd;
+      const progress = ((processedSoFar / booksToProcess.length) * 100).toFixed(1);
+      const elapsed = Date.now() - translationStartTime;
+      const avgPerBook = elapsed / processedSoFar;
+      const remaining = booksToProcess.length - processedSoFar;
+      const eta = avgPerBook * remaining;
+
+      console.log(
+        `[${progress}%] Batch ${batchIndex + 1}/${totalBatches} | ` +
+        `Cache hits: ${cacheHits} | Translated: ${translatedCount} | ` +
+        `Errors: ${translationErrors} | ETA: ${formatDuration(eta)}`,
+      );
     }
 
     // Delete existing output directory and recreate
@@ -417,6 +495,9 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
       duplicatesSkipped,
       translatedCount,
       translationErrors,
+      cacheHits,
+      cacheMisses,
+      concurrency,
       outputFilesGenerated,
       outputDirectory: OUTPUT_DIR,
       durationMs,
@@ -429,6 +510,9 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
     console.log(`Duplicates skipped: ${result.duplicatesSkipped}`);
     console.log(`Translated: ${result.translatedCount}`);
     console.log(`Translation errors: ${result.translationErrors}`);
+    console.log(`Cache hits: ${result.cacheHits}`);
+    console.log(`Cache misses: ${result.cacheMisses}`);
+    console.log(`Concurrency: ${result.concurrency}`);
     console.log(`Output files generated: ${result.outputFilesGenerated}`);
     console.log(`Output directory: ${result.outputDirectory}`);
     console.log(`Total duration: ${formatDuration(result.durationMs)}`);

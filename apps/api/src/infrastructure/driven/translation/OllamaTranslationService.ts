@@ -2,7 +2,7 @@
  * OllamaTranslationService Adapter
  *
  * Implements the TranslationService port by connecting to Ollama's API
- * to translate text using the qwen2.5:3b model.
+ * to translate text using the llama3.2:1b model.
  *
  * This is a driven/output adapter in the hexagonal architecture.
  */

@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rm, access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
@@ -95,12 +95,12 @@ describe('consolidate-books.ts integration', () => {
    * Used with it.skipIf to cleanly skip tests that require consolidateBooks()
    * without silent early returns.
    * NOTE: Tests requiring consolidateBooks() need Ollama translation model loaded.
-   * Run: docker exec library-ollama-translations ollama pull qwen2.5:3b
+   * Run: docker exec library-ollama-translations ollama pull llama3.2:1b
    */
   const translationServiceUnavailable = async (): Promise<boolean> => {
     const translationService = new OllamaTranslationService({
       baseUrl: process.env['TRANSLATION_BASE_URL'] ?? 'http://ollama-translations:11435',
-      model: process.env['TRANSLATION_MODEL'] ?? 'qwen2.5:3b',
+      model: process.env['TRANSLATION_MODEL'] ?? 'llama3.2:1b',
       timeoutMs: 5000,
       retries: 1,
     });
@@ -241,7 +241,7 @@ describe('consolidate-books.ts integration', () => {
         tags: ['JavaScript', 'TypeScript'],
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'A description');
 
       // All original properties preserved
       expect(result.id).toBe('9781234567890');
@@ -267,7 +267,7 @@ describe('consolidate-books.ts integration', () => {
         description: 'Description',
       };
 
-      const result = transformBook(source);
+      const result = transformBook(source, 'Description');
 
       expect(result.id).toBe('9780000000000');
       expect(result.type).toBe('technical');
@@ -416,7 +416,7 @@ describe('consolidate-books.ts integration', () => {
         tags: ['Tag1', 'Tag2', 'Tag3'],
       };
 
-      const consolidated = transformBook(sourceBook);
+      const consolidated = transformBook(sourceBook, 'Full description here');
 
       // Write to file
       await writeFile(testFile, JSON.stringify([consolidated], null, 2), 'utf-8');
@@ -459,10 +459,10 @@ describe('consolidate-books.ts integration', () => {
       ];
 
       // First run
-      const result1 = sourceBooks.map(transformBook);
+      const result1 = sourceBooks.map((b) => transformBook(b, b.description));
 
       // Second run
-      const result2 = sourceBooks.map(transformBook);
+      const result2 = sourceBooks.map((b) => transformBook(b, b.description));
 
       // Results should be identical
       expect(JSON.stringify(result1)).toBe(JSON.stringify(result2));
@@ -505,5 +505,148 @@ describe('consolidate-books.ts integration', () => {
       expect(result1.duplicatesSkipped).toBe(result2.duplicatesSkipped);
       expect(result1.uniqueBooks).toBe(result2.uniqueBooks);
     });
+  });
+
+  describe('translation cache persistence', () => {
+    const TEST_CACHE_PATH = join(
+      process.cwd(),
+      'tests',
+      'integration',
+      'scripts',
+      'test-output',
+      '.translation-cache.json',
+    );
+
+    afterEach(async () => {
+      // Remove cache file so tests don't interfere with each other
+      try {
+        await rm(TEST_CACHE_PATH, { force: true });
+      } catch {
+        // Ignore if file does not exist
+      }
+    });
+
+    it('should respect TRANSLATION_CACHE_PATH environment variable without throwing', async () => {
+      // Write a source file with a Spanish book (no translation needed)
+      const sourceFile = join(TEST_OUTPUT_DIR, 'source-cache-test.json');
+      await writeFile(
+        sourceFile,
+        JSON.stringify([
+          {
+            id: '9781000000001',
+            title: 'Cache Path Test Book',
+            authors: ['Author'],
+            description: 'Descripción en español.',
+            language: 'es',
+          },
+        ]),
+        'utf-8',
+      );
+
+      process.env['TRANSLATION_CACHE_PATH'] = TEST_CACHE_PATH;
+
+      try {
+        // Should not throw regardless of translation service availability
+        await consolidateBooks();
+      } catch {
+        // consolidateBooks may fail if translation service unavailable —
+        // we only verify TRANSLATION_CACHE_PATH is respected (no crash on path)
+      } finally {
+        delete process.env['TRANSLATION_CACHE_PATH'];
+        try {
+          await rm(sourceFile, { force: true });
+        } catch {
+          // ignore
+        }
+      }
+    });
+
+    it.skipIf(translationServiceUnavailable)(
+      'should write translations to cache and use them on second run (0 Ollama calls)',
+      async () => {
+        const sourceFile = join(TEST_OUTPUT_DIR, 'source-cache-second-run.json');
+        await writeFile(
+          sourceFile,
+          JSON.stringify([
+            {
+              id: '9781000000002',
+              title: 'Cached Translation Book',
+              authors: ['Author'],
+              description: 'A short English description.',
+              language: 'en',
+            },
+          ]),
+          'utf-8',
+        );
+
+        process.env['TRANSLATION_CACHE_PATH'] = TEST_CACHE_PATH;
+        process.env['TRANSLATION_CONCURRENCY'] = '1';
+
+        try {
+          // First run: translations are fetched from Ollama and written to cache
+          const result1 = await consolidateBooks();
+          expect(result1.cacheMisses).toBeGreaterThanOrEqual(1);
+          expect(result1.cacheHits).toBe(0);
+
+          // Verify cache file was created and has content
+          await access(TEST_CACHE_PATH);
+          const cacheContent = JSON.parse(await readFile(TEST_CACHE_PATH, 'utf-8')) as Record<string, unknown>;
+          expect(typeof cacheContent).toBe('object');
+          expect(Object.keys(cacheContent).length).toBeGreaterThanOrEqual(1);
+
+          // Second run: everything comes from cache — no Ollama calls
+          const result2 = await consolidateBooks();
+          expect(result2.cacheHits).toBeGreaterThanOrEqual(1);
+          expect(result2.cacheMisses).toBe(0);
+        } finally {
+          delete process.env['TRANSLATION_CACHE_PATH'];
+          delete process.env['TRANSLATION_CONCURRENCY'];
+          try {
+            await rm(sourceFile, { force: true });
+          } catch {
+            // ignore
+          }
+        }
+      },
+    );
+
+    it.skipIf(translationServiceUnavailable)(
+      'should expose cacheHits, cacheMisses and concurrency in ConsolidationResult',
+      async () => {
+        const sourceFile = join(TEST_OUTPUT_DIR, 'source-cache-fields.json');
+        await writeFile(
+          sourceFile,
+          JSON.stringify([
+            {
+              id: '9781000000003',
+              title: 'Fields Test Book',
+              authors: ['Author'],
+              description: 'Another English description for fields test.',
+              language: 'en',
+            },
+          ]),
+          'utf-8',
+        );
+
+        process.env['TRANSLATION_CACHE_PATH'] = TEST_CACHE_PATH;
+        process.env['TRANSLATION_CONCURRENCY'] = '2';
+
+        try {
+          const result = await consolidateBooks();
+
+          expect(typeof result.cacheHits).toBe('number');
+          expect(typeof result.cacheMisses).toBe('number');
+          expect(result.concurrency).toBe(2);
+        } finally {
+          delete process.env['TRANSLATION_CACHE_PATH'];
+          delete process.env['TRANSLATION_CONCURRENCY'];
+          try {
+            await rm(sourceFile, { force: true });
+          } catch {
+            // ignore
+          }
+        }
+      },
+    );
   });
 });

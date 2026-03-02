@@ -39,7 +39,7 @@ import { createServer } from '../../../src/infrastructure/driver/http/server.js'
 import { noopLogger } from '../../../src/application/ports/Logger.js';
 
 const OLLAMA_URL = process.env['OLLAMA_BASE_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama:11434';
-const TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'qwen2.5:3b';
+const TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'llama3.2:1b';
 
 /**
  * Creates a server with a broken service URL to test 503 responses.

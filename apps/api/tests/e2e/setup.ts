@@ -45,7 +45,7 @@ export type TestDb = NodePgDatabase<typeof schema> & { $client: pg.Pool };
 const DEFAULT_DATABASE_URL = process.env['DATABASE_URL'] ?? 'postgresql://library:library@postgres:5432/library';
 const DEFAULT_OLLAMA_URL = process.env['OLLAMA_BASE_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama:11434';
 const DEFAULT_OLLAMA_MODEL = 'nomic-embed-text';
-const DEFAULT_TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'qwen2.5:3b';
+const DEFAULT_TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'llama3.2:1b';
 
 /**
  * Server configuration

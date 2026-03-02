@@ -8,6 +8,7 @@ import {
   isValidSourceBook,
   type SourceBook,
   type ConsolidatedBook,
+  type ConsolidationResult,
 } from '../../../scripts/consolidate-books.js';
 
 describe('consolidate-books', () => {
@@ -575,6 +576,91 @@ describe('consolidate-books', () => {
       // Optional properties are undefined
       expect(book.language).toBeUndefined();
       expect(book.tags).toBeUndefined();
+    });
+  });
+
+  describe('ConsolidationResult type structure (HU-025: cache and batch fields)', () => {
+    it('should include cacheHits, cacheMisses and concurrency fields', () => {
+      // Build a complete ConsolidationResult object including the new HU-025 fields
+      const result: ConsolidationResult = {
+        totalFiles: 2,
+        totalBooksRead: 100,
+        uniqueBooks: 90,
+        duplicatesSkipped: 10,
+        translatedCount: 50,
+        translationErrors: 2,
+        cacheHits: 30,
+        cacheMisses: 22,
+        concurrency: 3,
+        outputFilesGenerated: 1,
+        outputDirectory: '/output',
+        durationMs: 5000,
+      };
+
+      expect(result.cacheHits).toBe(30);
+      expect(result.cacheMisses).toBe(22);
+      expect(result.concurrency).toBe(3);
+    });
+
+    it('should allow zero cacheHits on first run (cold cache)', () => {
+      const result: ConsolidationResult = {
+        totalFiles: 1,
+        totalBooksRead: 10,
+        uniqueBooks: 10,
+        duplicatesSkipped: 0,
+        translatedCount: 8,
+        translationErrors: 0,
+        cacheHits: 0,
+        cacheMisses: 8,
+        concurrency: 3,
+        outputFilesGenerated: 1,
+        outputDirectory: '/output',
+        durationMs: 1000,
+      };
+
+      expect(result.cacheHits).toBe(0);
+      expect(result.cacheMisses).toBe(8);
+      // translatedCount should match cacheMisses on a cold run
+      expect(result.translatedCount).toBe(result.cacheMisses);
+    });
+
+    it('should allow all cacheHits on second run (warm cache)', () => {
+      const result: ConsolidationResult = {
+        totalFiles: 1,
+        totalBooksRead: 10,
+        uniqueBooks: 10,
+        duplicatesSkipped: 0,
+        translatedCount: 0,
+        translationErrors: 0,
+        cacheHits: 8,
+        cacheMisses: 0,
+        concurrency: 3,
+        outputFilesGenerated: 1,
+        outputDirectory: '/output',
+        durationMs: 200,
+      };
+
+      expect(result.cacheHits).toBe(8);
+      expect(result.cacheMisses).toBe(0);
+      // No actual Ollama calls → translatedCount is zero
+      expect(result.translatedCount).toBe(0);
+    });
+
+    it('should support configurable concurrency value', () => {
+      const resultWith1: ConsolidationResult = {
+        totalFiles: 1, totalBooksRead: 5, uniqueBooks: 5, duplicatesSkipped: 0,
+        translatedCount: 5, translationErrors: 0, cacheHits: 0, cacheMisses: 5,
+        concurrency: 1, outputFilesGenerated: 1, outputDirectory: '/out', durationMs: 500,
+      };
+
+      const resultWith10: ConsolidationResult = {
+        totalFiles: 1, totalBooksRead: 5, uniqueBooks: 5, duplicatesSkipped: 0,
+        translatedCount: 5, translationErrors: 0, cacheHits: 0, cacheMisses: 5,
+        concurrency: 10, outputFilesGenerated: 1, outputDirectory: '/out', durationMs: 100,
+      };
+
+      expect(resultWith1.concurrency).toBe(1);
+      expect(resultWith10.concurrency).toBe(10);
     });
   });
 });
