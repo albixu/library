@@ -252,14 +252,14 @@ describe('HttpErrorMapper', () => {
       });
 
       it('should map FieldTooLongError to 400', () => {
-        const error = new FieldTooLongError('description', 5000);
+        const error = new FieldTooLongError('description', 10000);
 
         const response = mapErrorToHttpResponse(error);
 
         expect(response.statusCode).toBe(400);
         expect(response.body.success).toBe(false);
         expect(response.body.error.message).toContain('description');
-        expect(response.body.error.message).toContain('5000');
+        expect(response.body.error.message).toContain('10000');
       });
 
       it('should map TooManyItemsError to 400', () => {
