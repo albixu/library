@@ -29,7 +29,7 @@ Cada objeto dentro del array debe o puede contener las siguientes propiedades:
 | **`language`** | `String` | Sí | El idioma del libro (e.g., `"es"`, `"en"`). |
 | **`pages`** | `String` | Sí | Número de páginas. Generalmente un string numérico, a veces puede venir con valores como `"star rating fill"`. El sistema asume string en ingesta. |
 | **`publication_date`** | `String` | Sí | Fecha de publicación en un formato textual inteligible (e.g., `"September 2024"`). |
-| **`description`** | `String` | Sí | La descripción o sinopsis del libro en el idioma original. |
+| **`description`** | `String` | Sí | La descripción o sinopsis del libro en el idioma original. Longitud máxima: 10.000 caracteres. |
 | **`tags`** | `Array<String>` | Sí | Lista de etiquetas, temáticas o categorías a las que pertenece el libro. |
 | **`type`** | `String` | Sí | El tipo general del contenido (e.g., `"technical"`). |
 | **`format`** | `String` | Sí | El formato distribuido o importado (e.g., `"epub"`). |
