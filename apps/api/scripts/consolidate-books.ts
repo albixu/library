@@ -394,8 +394,7 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
 
       // Launch all translations in this batch simultaneously
       const batchResults = await Promise.allSettled(
-        batchBooks.map(async (book, localIndex) => {
-          const globalIndex = batchStart + localIndex;
+        batchBooks.map(async (book) => {
           const needsTranslation = book.language?.toLowerCase() !== 'es' && book.description.trim().length > 0;
 
           if (!needsTranslation) {
@@ -406,7 +405,7 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
           const cached = cacheGet(cache, key);
 
           if (cached !== undefined) {
-            return { book, translated: cached, success: true, fromCache: true, needed: true, globalIndex };
+            return { book, translated: cached, success: true, fromCache: true, needed: true };
           }
 
           // Cache miss: call Ollama
@@ -420,7 +419,7 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
             cacheSet(cache, key, translated);
           }
 
-          return { book, translated, success, fromCache: false, needed: true, globalIndex };
+          return { book, translated, success, fromCache: false, needed: true };
         }),
       );
 
