@@ -484,6 +484,11 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
       );
     }
 
+    // Free memory: booksToProcess is no longer needed after Phase 2.
+    // consolidatedBooks (same size) is still in memory for writing, so releasing
+    // booksToProcess here halves peak heap usage before the write phase.
+    booksToProcess.length = 0;
+
     // Delete existing output directory and recreate
     console.log('\n--- Phase 3: Writing output files ---');
     try {
