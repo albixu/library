@@ -45,7 +45,8 @@ Este documento define la arquitectura y diseño del backend API para el sistema 
 | Testing | Vitest | Latest |
 | Logging | Pino | Latest |
 | Embeddings | Ollama Embeddings (nomic-embed-text) | Latest |
-| Traducción | Ollama Translations (llama3.2:1b) | Latest |
+| Traducción (API) | Ollama Translations (llama3.2:1b) | Latest |
+| Traducción (bulk) | LibreTranslate (self-hosted) | Latest |
 
 ### 2.2 Arquitectura Hexagonal (Ports & Adapters)
 
@@ -79,9 +80,10 @@ La API sigue una arquitectura hexagonal estricta con tres capas principales:
 │  ┌─────────────────────────────────────────────────────────────────┐    │
 │  │                    DRIVEN ADAPTERS (Output)                      │    │
 │  │  ┌───────────────┐  ┌─────────────────┐  ┌──────────────────┐   │    │
-│  │  │ Postgres      │  │ Ollama Embedd.  │  │ Ollama           │   │    │
-│  │  │ Repositories  │  │ Service         │  │ Translations     │   │    │
-│  │  │ (Drizzle)     │  │                 │  │ Service          │   │    │
+│  │  │ Postgres      │  │ Ollama Embedd.  │  │ Translation      │   │    │
+│  │  │ Repositories  │  │ Service         │  │ Service          │   │    │
+│  │  │ (Drizzle)     │  │                 │  │ (Ollama o        │   │    │
+│  │  │               │  │                 │  │  LibreTranslate) │   │    │
 │  │  └───────────────┘  └─────────────────┘  └──────────────────┘   │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                                                          │
@@ -802,6 +804,31 @@ class OllamaTranslationService implements TranslationService {
 - Si ya está en español, devuelve el texto original
 - Retry con backoff exponencial
 - Errores específicos: `TranslationServiceUnavailableError`, `TranslationError`
+- **Uso recomendado**: traducción individual en `POST /api/books` (sin contenedor extra en producción)
+
+#### LibreTranslateTranslationService
+
+```typescript
+class LibreTranslateTranslationService implements TranslationService {
+  // Configuración
+  baseUrl: string;           // Default: http://libretranslate:5000  (LIBRETRANSLATE_URL)
+  timeoutMs: number;         // Default: 10000                       (LIBRETRANSLATE_TIMEOUT_MS)
+  retries: number;           // Default: 3
+
+  async translateToSpanish(text: string, sourceLanguage: string): Promise<TranslationResult>;
+}
+```
+
+**Características:**
+
+- Llama a `POST {baseUrl}/translate` con `{ q, source, target: 'es', format: 'text' }`
+- Si el idioma de origen es `'es'`, devuelve el texto original sin llamar a la API
+- Retry con backoff exponencial (igual que `OllamaTranslationService`)
+- Errores específicos: `TranslationServiceUnavailableError`, `TranslationError`
+- Health check vía `GET /languages` (devuelve 200 si el servicio está disponible)
+- **Uso recomendado**: carga masiva (`consolidate-books`, `seed-database`) — ~120x más rápido que Ollama
+
+La implementación concreta se selecciona en el bootstrap según `TRANSLATION_PROVIDER` (ver sección 6.3).
 
 #### PinoLogger
 
@@ -880,6 +907,9 @@ interface EnvConfig {
     model: string;        // TRANSLATION_MODEL (llama3.2:1b)
     timeoutMs: number;    // TRANSLATION_TIMEOUT_MS (60000)
     retries: number;      // TRANSLATION_RETRIES (3)
+    provider: 'ollama' | 'libretranslate'; // TRANSLATION_PROVIDER (ollama)
+    libreTranslateUrl: string;             // LIBRETRANSLATE_URL (http://libretranslate:5000)
+    libreTranslateTimeoutMs: number;       // LIBRETRANSLATE_TIMEOUT_MS (10000)
   };
 }
 ```
@@ -1304,6 +1334,59 @@ ollama pull llama3.2:1b
 - **TypeScript**: Mejor soporte nativo
 - **Validación**: Integración natural con Zod
 - **Moderno**: Diseñado para async/await desde el inicio
+
+### 13.6 ¿Por qué LibreTranslate como proveedor alternativo de traducción? (HU-026)
+
+#### Contexto y problema
+
+El sistema de traducción inicial usaba exclusivamente Ollama con `llama3.2:1b` corriendo en CPU. Este enfoque funcionó bien para el caso de uso original: traducir libros uno a uno mediante `POST /api/books` (~2-3 segundos por libro, experiencia aceptable).
+
+Sin embargo, al necesitar pre-traducir el catálogo completo de 55.000 libros para la carga inicial de datos (requisito para que la búsqueda semántica funcione en español), el rendimiento de Ollama en CPU se reveló inviable:
+
+| Métrica | Resultado |
+|---------|-----------|
+| Velocidad observada | ~3 libros/minuto |
+| ETA estimada (55.000 libros) | ~610 horas (~25 días) |
+| Errores de timeout | Aparecieron desde el batch 13 |
+
+#### Alternativas evaluadas
+
+| Opción | Motivo de descarte |
+|--------|-------------------|
+| GPU para Ollama | Hardware sin GPU dedicada |
+| Modelo más pequeño | `llama3.2:1b` ya es el mínimo viable |
+| Traducción lazy (on-demand) | Incompatible con búsqueda semántica (requiere embeddings pre-generados) |
+| Traducción parcial | Experiencia degradada para libros menos populares |
+| DeepL API | ~$154/mes para 55.000 libros (~22M chars) |
+| MyMemory API gratuita | 50.000 chars/día → 440 días para el catálogo completo |
+| **LibreTranslate self-hosted** | ✅ Open source, sin límites, sin coste, Docker-native |
+
+#### Benchmark de LibreTranslate (2 de marzo de 2026)
+
+| Concurrencia | Throughput | ETA 55.000 libros |
+|---|---|---|
+| 1 | 4.2 req/s | ~3.7 horas |
+| **3** | **6.1 req/s** | **~2.5 horas** ✅ |
+| 5 | 5.5 req/s | ~2.8 horas |
+
+**0 errores en todos los tests. Calidad verificada manualmente.**  
+LibreTranslate es ~120x más rápido que Ollama para el mismo volumen.
+
+#### Decisión de diseño: mantener ambos proveedores (patrón Strategy)
+
+La decisión no es reemplazar Ollama, sino **mantener ambos con selección por variable de entorno**:
+
+- **`TRANSLATION_PROVIDER=ollama`** (default): óptimo para `POST /api/books`. Sin contenedor extra en producción, ~2-3s por libro, experiencia individual aceptable.
+- **`TRANSLATION_PROVIDER=libretranslate`**: óptimo para carga masiva (`consolidate-books`, `seed-database`). Velocidad máxima, sin llamadas a LLM costosas.
+
+El patrón **Strategy** encaja perfectamente con la arquitectura hexagonal existente: el puerto `TranslationService` ya define el contrato, y la implementación concreta se inyecta en el bootstrap. El dominio y los casos de uso no requieren ningún cambio.
+
+```
+TRANSLATION_PROVIDER=ollama          → OllamaTranslationService    (default)
+TRANSLATION_PROVIDER=libretranslate  → LibreTranslateTranslationService
+```
+
+Si `TRANSLATION_PROVIDER` tiene un valor desconocido, la aplicación lanza un error descriptivo en el arranque (fail-fast).
 
 ---
 
