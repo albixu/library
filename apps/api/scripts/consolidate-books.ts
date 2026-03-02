@@ -18,7 +18,7 @@
  *
  * Requirements:
  * - Database must be running (uses DATABASE_URL env var)
- * - Ollama service must be running with qwen2.5:1.5b model
+ * - Ollama service must be running with llama3.2:1b model
  *
  * Usage:
  *   npx tsx scripts/consolidate-books.ts
@@ -26,7 +26,7 @@
  *
  * Environment variables:
  *   OLLAMA_BASE_URL - Ollama service URL (default: http://ollama:11434)
- *   TRANSLATION_MODEL - Model for translation (default: qwen2.5:1.5b)
+ *   TRANSLATION_MODEL - Model for translation (default: llama3.2:1b)
  *   TRANSLATION_TIMEOUT_MS - Timeout for translation (default: 180000)
  *   BOOKS_PER_FILE - Number of books per output file (default: 1000)
  */

@@ -15,7 +15,7 @@
 export interface TranslationServiceConfig {
   /** Base URL of the translation service (e.g., 'http://ollama:11434') */
   baseUrl: string;
-  /** Model to use for translation (e.g., 'qwen2.5:3b') */
+  /** Model to use for translation (e.g., 'llama3.2:1b') */
   model: string;
   /** Request timeout in milliseconds (default: 60000) */
   timeoutMs?: number;

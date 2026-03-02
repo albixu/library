@@ -44,7 +44,7 @@ describe('CreateBookUseCase Integration', () => {
   // Configuration
   const DATABASE_URL = process.env['DATABASE_URL'] ?? 'postgresql://library:library@localhost:5432/library';
   const OLLAMA_BASE_URL = process.env['OLLAMA_BASE_URL'] ?? 'http://localhost:11434';
-  const TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'qwen2.5:3b';
+  const TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'llama3.2:1b';
 
   beforeAll(async () => {
     pool = new Pool({
@@ -502,8 +502,8 @@ describe('CreateBookUseCase Integration', () => {
   });
 
   // HU-013: Tests for translation functionality
-  // NOTE: These tests require the translation model (qwen2.5:3b) to be installed in Ollama.
-  // Run: docker exec library-ollama ollama pull qwen2.5:3b
+  // NOTE: These tests require the translation model (llama3.2:1b) to be installed in Ollama.
+  // Run: docker exec library-ollama-translations ollama pull llama3.2:1b
   // Tests will be skipped automatically if the model is not available.
   describe('translation handling (HU-013)', () => {
     /**

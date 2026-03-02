@@ -13,7 +13,7 @@ describe('OllamaTranslationService', () => {
 
   const defaultConfig: TranslationServiceConfig = {
     baseUrl: 'http://ollama:11434',
-    model: 'qwen2.5:3b',
+    model: 'llama3.2:1b',
     timeoutMs: 60000,
     retries: 1, // Use 1 retry for faster tests
   };
@@ -42,7 +42,7 @@ describe('OllamaTranslationService', () => {
 
       expect(result.translatedText).toBe('Código Limpio');
       expect(result.targetLanguage).toBe('es');
-      expect(result.model).toBe('qwen2.5:3b');
+      expect(result.model).toBe('llama3.2:1b');
     });
 
     it('should call Ollama API with correct parameters', async () => {
@@ -63,7 +63,7 @@ describe('OllamaTranslationService', () => {
 
       const callArgs = mockFetch.mock.calls[0];
       const body = JSON.parse(callArgs[1].body as string);
-      expect(body.model).toBe('qwen2.5:3b');
+      expect(body.model).toBe('llama3.2:1b');
       expect(body.stream).toBe(false);
       expect(body.options.temperature).toBe(0.3);
       expect(body.options.top_p).toBe(0.9);
@@ -348,7 +348,7 @@ describe('OllamaTranslationService', () => {
     it('should use default timeout when not specified', () => {
       const configWithoutTimeout: TranslationServiceConfig = {
         baseUrl: 'http://ollama:11434',
-        model: 'qwen2.5:3b',
+        model: 'llama3.2:1b',
       };
       const serviceWithDefaults = new OllamaTranslationService(configWithoutTimeout);
 
@@ -360,7 +360,7 @@ describe('OllamaTranslationService', () => {
       vi.useFakeTimers();
       const configWithoutRetries: TranslationServiceConfig = {
         baseUrl: 'http://ollama:11434',
-        model: 'qwen2.5:3b',
+        model: 'llama3.2:1b',
       };
       const serviceWithDefaults = new OllamaTranslationService(configWithoutRetries);
       mockFetch.mockRejectedValue(new Error('Error'));

@@ -95,12 +95,12 @@ describe('consolidate-books.ts integration', () => {
    * Used with it.skipIf to cleanly skip tests that require consolidateBooks()
    * without silent early returns.
    * NOTE: Tests requiring consolidateBooks() need Ollama translation model loaded.
-   * Run: docker exec library-ollama-translations ollama pull qwen2.5:3b
+   * Run: docker exec library-ollama-translations ollama pull llama3.2:1b
    */
   const translationServiceUnavailable = async (): Promise<boolean> => {
     const translationService = new OllamaTranslationService({
       baseUrl: process.env['TRANSLATION_BASE_URL'] ?? 'http://ollama-translations:11435',
-      model: process.env['TRANSLATION_MODEL'] ?? 'qwen2.5:3b',
+      model: process.env['TRANSLATION_MODEL'] ?? 'llama3.2:1b',
       timeoutMs: 5000,
       retries: 1,
     });
