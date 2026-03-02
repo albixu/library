@@ -126,9 +126,10 @@ Files processed: 74
 Total books read: 2500
 Unique books (after file dedup): 2100
 Excluded (already in DB): 150
-Books written to file: 1950
+Books written to files: 1950
 Duplicates between files: 400
-Output written to: docs/db/books.json
+Output files written: 2 (books_0001.json, books_0002.json)
+Books per file: 1000 (max)
 ```
 
 ---
@@ -347,7 +348,8 @@ interface ConsolidationResult {
 **Descripción**: Actualizar README y comentarios del script  
 **Archivos**:
 - `apps/api/scripts/consolidate-books.ts` (comentarios de cabecera)
-- `README.md` (si es necesario actualizar sección de carga de datos)
+- `README.md` (sección Fase 1 actualizada con LibreTranslate y ficheros particionados)
+- `docs/api/data-loading-schema.md` (límite de `description` actualizado a 10.000 chars)
 
 **Cambios en comentarios**:
 ```typescript
@@ -398,7 +400,7 @@ interface ConsolidationResult {
 |---------|-------|
 | `apps/api/scripts/seed-database.ts` | Ya tiene validación de ISBN ✅ |
 | `original_data/db_libros_*.json` | Archivos fuente (74 archivos) |
-| `docs/db/books.json` | Archivo de salida (será regenerado) |
+| `docs/db/initial_data/books_XXXX.json` | Archivos de salida particionados (máx. 1000 libros c/u, generados por el script) |
 
 ---
 
@@ -475,19 +477,21 @@ El script debe ser idempotente:
 
 ## 7. Checklist de Definición de Hecho (DoD)
 
-- [ ] Código limpio (Lint/Typecheck OK)
-- [ ] Mínimo 80% de tests unitarios nuevos/actualizados
-- [ ] 100% de tests de integración nuevos
-- [ ] Script elimina archivo existente antes de generar
-- [ ] Script lee de original_data/
-- [ ] Script conecta a BD para excluir ISBNs existentes
-- [ ] Script mantiene todas las propiedades originales
-- [ ] Script añade type: "technical" y format: "epub"
-- [ ] Script es idempotente
-- [ ] Commits con estándar Conventional Commits
-- [ ] 0 lint errors, 0 type errors
-- [ ] Todos los tests verdes
-- [ ] Build exitoso
+- [x] Código limpio (Lint/Typecheck OK)
+- [x] Mínimo 80% de tests unitarios nuevos/actualizados
+- [x] 100% de tests de integración nuevos
+- [x] Script elimina archivos existentes antes de generar
+- [x] Script lee de original_data/
+- [x] Script conecta a BD para excluir ISBNs existentes
+- [x] Script mantiene todas las propiedades originales
+- [x] Script añade type: "technical" y format: "epub"
+- [x] Script es idempotente
+- [x] Script genera ficheros particionados (`books_0001.json`, `books_0002.json`, ...) con máximo 1000 libros por fichero
+- [x] Traducción delegada a LibreTranslate (self-hosted)
+- [x] Commits con estándar Conventional Commits
+- [x] 0 lint errors, 0 type errors
+- [x] Todos los tests verdes
+- [x] Build exitoso
 
 ---
 
