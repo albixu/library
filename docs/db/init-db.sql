@@ -119,8 +119,9 @@ CREATE TABLE IF NOT EXISTS books (
     -- original_description: stores the description in the original language
     -- description: always contains Spanish text (translated if needed)
     -- language: ISO 639-1 code of the original language (e.g., 'en', 'es', 'fr')
-    original_description VARCHAR(5000) NOT NULL,
-    description VARCHAR(5000) NOT NULL,
+    -- HU-027: Changed from VARCHAR(5000) to TEXT to support descriptions up to 10000 chars
+    original_description TEXT NOT NULL,
+    description TEXT NOT NULL,
     language VARCHAR(10) NOT NULL,
     
     -- Optional fields

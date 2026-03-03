@@ -40,6 +40,8 @@ services:
       - ./apps/api/tsconfig.json:/app/tsconfig.json
       - ./apps/api/drizzle.config.ts:/app/drizzle.config.ts
       - ./apps/api/drizzle:/app/drizzle
+      # Cache directory for translation cache (persists between runs)
+      - ./apps/api/tmp/cache:/app/tmp/cache
       # Docs directory for consolidated output
       - ./docs:/app/docs
       # Original data directory (source JSON files)

@@ -443,8 +443,8 @@ describe('Book', () => {
           ).toThrow(RequiredFieldError);
         });
 
-        it('should throw FieldTooLongError for description exceeding 5000 chars', () => {
-          const longDescription = 'A'.repeat(5001);
+        it('should throw FieldTooLongError for description exceeding 10000 chars', () => {
+          const longDescription = 'A'.repeat(10001);
           expect(() =>
             Book.create(createValidBookProps({ description: longDescription }))
           ).toThrow(FieldTooLongError);
@@ -482,7 +482,7 @@ describe('Book', () => {
         });
 
         it('should validate translatedDescription max length', () => {
-          const longTranslation = 'A'.repeat(5001);
+          const longTranslation = 'A'.repeat(10001);
           expect(() =>
             Book.create(createValidBookProps({
               description: 'Valid original',

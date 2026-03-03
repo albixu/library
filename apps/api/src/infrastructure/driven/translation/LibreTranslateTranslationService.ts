@@ -26,7 +26,7 @@ import {
 /**
  * Maximum text length for translation (characters)
  */
-const MAX_TEXT_LENGTH = 5000;
+const MAX_TEXT_LENGTH = 10000;
 
 /**
  * Default timeout for translation requests (10 seconds)

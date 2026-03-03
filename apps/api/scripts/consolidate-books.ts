@@ -33,7 +33,7 @@
  *   LIBRETRANSLATE_URL       - LibreTranslate service URL (default: http://libretranslate:5000)
  *   TRANSLATION_TIMEOUT_MS   - Timeout for translation (default: 180000)
  *   TRANSLATION_CONCURRENCY  - Parallel translations per batch (default: 3)
- *   TRANSLATION_CACHE_PATH   - Path to translation cache JSON (default: <SOURCE_DIR>/.translation-cache.json)
+ *   TRANSLATION_CACHE_PATH   - Path to translation cache JSON (default: <APP_ROOT>/tmp/cache/translation-cache.json)
  *   BOOKS_PER_FILE           - Number of books per output file (default: 1000)
  */
 
@@ -290,7 +290,7 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
   const booksPerFile = parseInt(process.env['BOOKS_PER_FILE'] ?? '', 10) || DEFAULT_BOOKS_PER_FILE;
   const translationTimeoutMs = parseInt(process.env['TRANSLATION_TIMEOUT_MS'] ?? '', 10) || DEFAULT_TRANSLATION_TIMEOUT_MS;
   const concurrency = parseInt(process.env['TRANSLATION_CONCURRENCY'] ?? '', 10) || DEFAULT_TRANSLATION_CONCURRENCY;
-  const cachePath = process.env['TRANSLATION_CACHE_PATH'] ?? join(SOURCE_DIR, '.translation-cache.json');
+  const cachePath = process.env['TRANSLATION_CACHE_PATH'] ?? join(APP_ROOT, 'tmp', 'cache', 'translation-cache.json');
 
   console.log(`Books per file: ${booksPerFile}`);
   console.log(`Translation timeout: ${translationTimeoutMs}ms`);
@@ -396,6 +396,7 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
     const translationStartTime = Date.now();
 
     // Load translation cache (returns {} if missing or corrupted)
+    await mkdir(dirname(cachePath), { recursive: true });
     const cache: TranslationCache = await loadCache(cachePath);
     console.log(`Cache loaded: ${Object.keys(cache).length} existing entries`);
 
