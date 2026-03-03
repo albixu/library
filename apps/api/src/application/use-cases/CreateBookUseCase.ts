@@ -180,7 +180,7 @@ export class CreateBookUseCase {
    * @throws InvalidBookTypeError if the type does not exist in the database
    * @throws DuplicateISBNError if a book with the same ISBN already exists
    * @throws LevelTypeMismatchError if the level is not valid for the book's type
-   * @throws EmbeddingTextTooLongError if embedding text exceeds 7000 chars
+   * @throws EmbeddingTextTooLongError if embedding text exceeds 30000 chars
    * @throws EmbeddingServiceUnavailableError if embedding service is down
    * @throws DomainError for validation failures
    */
