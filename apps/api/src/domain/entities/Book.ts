@@ -41,7 +41,7 @@ import { validateId, isValidUUID } from '../validators/index.js';
  */
 const FIELD_CONSTRAINTS = {
   TITLE_MAX_LENGTH: 500,
-  DESCRIPTION_MAX_LENGTH: 10000,
+  DESCRIPTION_MAX_LENGTH: 25000,
   MAX_CATEGORIES: 10,
   MAX_AUTHORS: 10,
   PATH_MAX_LENGTH: 1000,

@@ -20,7 +20,7 @@ import {
 /**
  * Maximum text length for translation (characters)
  */
-const MAX_TEXT_LENGTH = 10000;
+const MAX_TEXT_LENGTH = 25000;
 
 /**
  * Default timeout for translation requests (60 seconds)
@@ -97,10 +97,10 @@ export class OllamaTranslationService implements TranslationService {
   /**
    * Translates text to the specified target language using Ollama
    *
-   * @param text - The text to translate (max 5000 characters)
+   * @param text - The text to translate (max 25000 characters)
    * @param targetLanguage - ISO 639-1 language code (e.g., 'es')
    * @returns Promise resolving to the translation result
-   * @throws TranslationError if text exceeds 5000 characters
+   * @throws TranslationError if text exceeds 25000 characters
    * @throws TranslationServiceUnavailableError if Ollama is not reachable
    */
   async translate(text: string, targetLanguage: string): Promise<TranslationResult> {

@@ -51,7 +51,7 @@ export interface TranslationService {
   /**
    * Translates text to the specified target language
    *
-   * @param text - The text to translate (max 5000 characters)
+   * @param text - The text to translate (max 25000 characters)
    * @param targetLanguage - ISO 639-1 language code (e.g., 'es', 'en')
    * @returns Promise resolving to the translation result
    * @throws TranslationServiceUnavailableError if the service is not reachable

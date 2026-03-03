@@ -45,20 +45,17 @@ import {
 /**
  * Maximum length for embedding text (concatenation of book fields)
  * 
- * Defense-in-depth guard: With current domain constraints (Book: title 500 + author 300 + 
- * description 5000 + max 10 categories × 100 chars each), the maximum possible embedding 
- * text is ~6812 characters, making this 7000-char limit currently unreachable.
+ * Defense-in-depth guard: the embedding text is a concatenation of title (max 500),
+ * authors (max 10 × 300), description (max 25000) and categories (max 10 × 100).
+ * In practice, embedding models have their own token limits and the text is truncated
+ * at the infrastructure layer if needed. This guard prevents unexpectedly large payloads
+ * from reaching the embedding service and provides a clear application-layer error.
  * 
- * This guard is intentionally kept as a safety mechanism to prevent future issues if:
- * - Domain constraints are relaxed (e.g., longer descriptions, more categories)
- * - New fields are added to the embedding text
- * - External integrations provide data that bypasses normal validation
- * 
- * This prevents expensive embedding service calls that would fail anyway, and provides
- * a clear error message at the application layer rather than propagating provider-specific
- * errors from the infrastructure layer.
+ * Note: description was raised to 25000 in HU-028, so the theoretical maximum embedding
+ * text now exceeds this guard. The guard is therefore raised to 30000 to remain a
+ * meaningful safety net while not blocking valid inputs.
  */
-const MAX_EMBEDDING_TEXT_LENGTH = 7000;
+const MAX_EMBEDDING_TEXT_LENGTH = 30000;
 
 /**
  * Input DTO for creating a book
