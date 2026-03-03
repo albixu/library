@@ -86,15 +86,15 @@ describe('OllamaTranslationService', () => {
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it('should throw TranslationError when text exceeds 10000 chars', async () => {
-      const longText = 'A'.repeat(10001);
+    it('should throw TranslationError when text exceeds 25000 chars', async () => {
+      const longText = 'A'.repeat(25001);
 
       await expect(service.translate(longText, 'es')).rejects.toThrow(TranslationError);
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it('should accept text exactly at 10000 chars limit', async () => {
-      const maxText = 'A'.repeat(10000);
+    it('should accept text exactly at 25000 chars limit', async () => {
+      const maxText = 'A'.repeat(25000);
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ response: 'Traducido', done: true }),
@@ -241,7 +241,7 @@ describe('OllamaTranslationService', () => {
     });
 
     it('should not retry on TranslationError (validation error)', async () => {
-      const longText = 'A'.repeat(5001);
+      const longText = 'A'.repeat(25001);
 
       await expect(service.translate(longText, 'es')).rejects.toThrow(TranslationError);
       expect(mockFetch).not.toHaveBeenCalled();
