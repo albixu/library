@@ -826,7 +826,7 @@ components:
         description:
           type: string
           minLength: 1
-          maxLength: 5000
+          maxLength: 25000
           description: |
             Descripción del contenido del libro en el idioma original.
             Si el idioma no es español, la descripción se traducirá automáticamente

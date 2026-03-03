@@ -54,8 +54,8 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | `isbn` | ISBN | No | ISBN del libro (único cuando presente) |
 | `title` | string | Sí | Título del libro (max 500) |
 | `authors` | Author[] | Sí | Lista de autores (mínimo 1) - Relación N:M |
-| `originalDescription` | string | Sí | Descripción en el idioma original (max 5000) |
-| `description` | string | Sí | Descripción siempre en español (max 5000) |
+| `originalDescription` | string | Sí | Descripción en el idioma original (max 25000) |
+| `description` | string | Sí | Descripción siempre en español (max 25000) |
 | `language` | string | Sí | Código ISO 639-1 del idioma original (ej: 'en', 'es') |
 | `type` | BookType | Sí | Referencia a entidad Type - Relación N:1 |
 | `categories` | Category[] | Sí | Lista de categorías (1-10) - Relación N:M |
