@@ -286,7 +286,7 @@ Crea un nuevo libro generando automáticamente:
 |-------|------|---------------|
 | `title` | string | 1-500 caracteres |
 | `authors` | string[] | 1-20 autores, 1-200 chars cada uno |
-| `description` | string | 1-5000 caracteres |
+| `description` | string | 1-25000 caracteres |
 | `language` | string | ISO 639-1 (2 letras, e.g., "en", "es") |
 | `type` | enum | technical, novel, essay, poetry, biography, reference, manual, other |
 | `format` | enum | pdf, epub, mobi, azw3 |
@@ -873,7 +873,7 @@ Validación de entrada con mensajes de error claros:
 const createBookSchema = z.object({
   title: z.string().min(1).max(500),
   authors: z.array(z.string().min(1).max(200)).min(1).max(20),
-  description: z.string().min(1).max(5000),
+  description: z.string().min(1).max(25000),
   language: z.string().length(2).regex(/^[a-z]{2}$/),
   type: z.enum(['technical', 'novel', 'essay', ...]),
   format: z.enum(['pdf', 'epub', 'mobi', 'azw3']),

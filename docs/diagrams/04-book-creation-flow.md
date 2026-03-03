@@ -108,7 +108,7 @@ sequenceDiagram
     else language != 'es' Y sin pre-traducción
         loop Hasta 3 intentos (backoff: 1s, 2s, 4s)
             UseCase->>Translation: translate(description, 'es')
-            Translation->>Translation: Validar longitud (max 5000 chars)
+            Translation->>Translation: Validar longitud (max 25000 chars)
             Translation->>DB: POST /api/generate\n{ model: llama3.2:1b,\nprompt, stream: false,\ntemperature: 0.3 }
             Note right of Translation: Timeout: 60s por intento
 
