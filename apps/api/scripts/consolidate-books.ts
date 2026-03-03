@@ -38,19 +38,18 @@
  */
 
 import { readdir, readFile, writeFile, mkdir, rm, access } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, dirname } from 'node:path';import { fileURLToPath } from 'node:url';
 import { loadEnvConfig } from '../src/infrastructure/config/env.js';
 import { OllamaTranslationService } from '../src/infrastructure/driven/translation/OllamaTranslationService.js';
 import { LibreTranslateTranslationService } from '../src/infrastructure/driven/translation/LibreTranslateTranslationService.js';
 import type { TranslationService } from '../src/application/ports/TranslationService.js';
 import {
-  loadCache,
-  saveCache,
+  openCache,
+  getAsync as cacheGetAsync,
+  setEntry as cacheSetEntry,
+  saveDirty,
   getCacheKey,
-  get as cacheGet,
-  set as cacheSet,
-  type TranslationCache,
+  type PartitionedCache,
 } from './translation-cache.js';
 
 // Get directory paths
@@ -290,12 +289,12 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
   const booksPerFile = parseInt(process.env['BOOKS_PER_FILE'] ?? '', 10) || DEFAULT_BOOKS_PER_FILE;
   const translationTimeoutMs = parseInt(process.env['TRANSLATION_TIMEOUT_MS'] ?? '', 10) || DEFAULT_TRANSLATION_TIMEOUT_MS;
   const concurrency = parseInt(process.env['TRANSLATION_CONCURRENCY'] ?? '', 10) || DEFAULT_TRANSLATION_CONCURRENCY;
-  const cachePath = process.env['TRANSLATION_CACHE_PATH'] ?? join(APP_ROOT, 'tmp', 'cache', 'translation-cache.json');
+  const cachePath = process.env['TRANSLATION_CACHE_PATH'] ?? join(APP_ROOT, 'tmp', 'cache');
 
   console.log(`Books per file: ${booksPerFile}`);
   console.log(`Translation timeout: ${translationTimeoutMs}ms`);
   console.log(`Translation concurrency: ${concurrency}`);
-  console.log(`Translation cache: ${cachePath}`);
+  console.log(`Translation cache dir: ${cachePath}`);
 
   // Initialize translation service — Strategy pattern via TRANSLATION_PROVIDER (HU-026)
   let translationService: TranslationService;
@@ -395,10 +394,9 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
     let cacheMisses = 0;
     const translationStartTime = Date.now();
 
-    // Load translation cache (returns {} if missing or corrupted)
-    await mkdir(dirname(cachePath), { recursive: true });
-    const cache: TranslationCache = await loadCache(cachePath);
-    console.log(`Cache loaded: ${Object.keys(cache).length} existing entries`);
+    // Load translation cache — partitioned layout, lazy per bucket
+    const cache: PartitionedCache = await openCache(cachePath);
+    console.log(`Cache loaded: ${cache.totalEntries} existing entries`);
 
     // Split books into batches of `concurrency` size
     const totalBatches = Math.ceil(booksToProcess.length / concurrency);
@@ -418,13 +416,13 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
           }
 
           const key = getCacheKey(book.description);
-          const cached = cacheGet(cache, key);
+          const cached = await cacheGetAsync(cache, key);
 
           if (cached !== undefined) {
             return { book, translated: cached, success: true, fromCache: true, needed: true };
           }
 
-          // Cache miss: call Ollama
+          // Cache miss: call translation service
           const { translated, success } = await translateDescription(
             book.description,
             book.language,
@@ -432,7 +430,7 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
           );
 
           if (success) {
-            cacheSet(cache, key, translated);
+            cacheSetEntry(cache, key, translated);
           }
 
           return { book, translated, success, fromCache: false, needed: true };
@@ -467,8 +465,9 @@ async function consolidateBooks(): Promise<ConsolidationResult> {
         }
       }
 
-      // Persist cache after each batch (tolerance to crashes)
-      await saveCache(cachePath, cache);
+      // Persist only dirty partitions after each batch.
+      // Each partition file is ~100KB (vs ~87MB monolithic), so I/O is fast even on slow volumes.
+      await saveDirty(cache);
 
       // Progress log
       const processedSoFar = batchEnd;

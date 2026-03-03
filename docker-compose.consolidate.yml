@@ -55,7 +55,7 @@ services:
       # LibreTranslate for bulk translations (fast, self-hosted)
       - TRANSLATION_PROVIDER=libretranslate
       - LIBRETRANSLATE_URL=http://libretranslate:5000
-      - LIBRETRANSLATE_TIMEOUT_MS=10000
+      - LIBRETRANSLATE_TIMEOUT_MS=30000
       # Books per output file
       - BOOKS_PER_FILE=1000
       # Monorepo root mapping
@@ -78,7 +78,8 @@ services:
     image: libretranslate/libretranslate:latest
     container_name: library-consolidate-libretranslate
     # Only load English and Spanish models for fast startup and low memory usage
-    command: --load-only en,es
+    # 4 threads = matches TRANSLATION_CONCURRENCY=3, leaving 1 thread free
+    command: --load-only en,es --threads 4
     networks:
       - consolidate-network
     restart: "no"

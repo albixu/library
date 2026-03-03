@@ -197,18 +197,28 @@ export class LibreTranslateTranslationService implements TranslationService {
       format: 'text',
     };
 
+    // Use AbortController with explicit setTimeout so the timeout starts counting
+    // from the moment fetch() is called, not from when the server starts processing.
+    // AbortSignal.timeout() only starts when the server begins responding, which
+    // means a saturated LibreTranslate (sync Gunicorn workers) can hang indefinitely
+    // by accepting the TCP connection but never sending a response.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+
     let response: Response;
     try {
       response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(this.timeoutMs),
+        signal: controller.signal,
       });
     } catch (error) {
       throw new TranslationServiceUnavailableError(this.getErrorMessage(error), {
         cause: error,
       });
+    } finally {
+      clearTimeout(timer);
     }
 
     if (!response.ok) {
