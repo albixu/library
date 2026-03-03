@@ -27,7 +27,7 @@
 
 import { readFile, writeFile, rename, mkdir, readdir, unlink } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { join, dirname, basename, extname } from 'node:path';
+import { join } from 'node:path';
 
 // ---------------------------------------------------------------------------
 // Public types

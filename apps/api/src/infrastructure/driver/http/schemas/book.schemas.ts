@@ -48,7 +48,7 @@ export const createBookSchema = z.object({
   description: z
     .string({ required_error: 'description is required' })
     .min(1, 'description cannot be empty')
-    .max(10000, 'description exceeds maximum length of 10000 characters')
+    .max(25000, 'description exceeds maximum length of 25000 characters')
     .transform((val) => val.trim()),
 
   // HU-013: Language code in ISO 639-1 format (2 lowercase letters)

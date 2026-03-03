@@ -518,14 +518,16 @@ describe('CreateBookUseCase', () => {
         });
       });
 
-      it('should throw EmbeddingTextTooLongError when text exceeds 7000 chars', async () => {
-        const longText = 'X'.repeat(7001);
+      it('should throw EmbeddingTextTooLongError when text exceeds 30000 chars', async () => {
+        const longText = 'X'.repeat(30001);
         
         const mockLongBook = {
           id: '550e8400-e29b-41d4-a716-446655440099',
           title: 'Test Book',
           author: 'Test Author',
           description: 'Test Description',
+          originalDescription: 'Test Description',
+          language: 'en',
           type: { value: 'technical', name: 'technical' },
           format: { value: 'pdf' },
           isbn: null,
@@ -541,9 +543,11 @@ describe('CreateBookUseCase', () => {
         
         const createSpy = vi.spyOn(Book, 'create').mockReturnValue(mockLongBook as unknown as Book);
 
-        await expect(useCase.execute(validInput)).rejects.toThrow(EmbeddingTextTooLongError);
-        
-        createSpy.mockRestore();
+        try {
+          await expect(useCase.execute(validInput)).rejects.toThrow(EmbeddingTextTooLongError);
+        } finally {
+          createSpy.mockRestore();
+        }
       });
 
       it('should propagate EmbeddingServiceUnavailableError', async () => {
