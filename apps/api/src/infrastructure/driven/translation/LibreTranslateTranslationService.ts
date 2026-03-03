@@ -26,7 +26,7 @@ import {
 /**
  * Maximum text length for translation (characters)
  */
-const MAX_TEXT_LENGTH = 10000;
+const MAX_TEXT_LENGTH = 25000;
 
 /**
  * Default timeout for translation requests (10 seconds)
@@ -102,11 +102,11 @@ export class LibreTranslateTranslationService implements TranslationService {
    * If the source language is already the target language, returns the original
    * text without making an API call (optimization for Spanish-to-Spanish).
    *
-   * @param text - The text to translate (max 5000 characters)
+   * @param text - The text to translate (max 25000 characters)
    * @param targetLanguage - ISO 639-1 language code of the target (e.g., 'es')
    * @param sourceLanguage - ISO 639-1 language code of the source (default: 'en')
    * @returns Promise resolving to the translation result
-   * @throws TranslationError if text exceeds 5000 characters or response is invalid
+   * @throws TranslationError if text exceeds 25000 characters or response is invalid
    * @throws TranslationServiceUnavailableError if LibreTranslate is not reachable
    */
   async translate(
