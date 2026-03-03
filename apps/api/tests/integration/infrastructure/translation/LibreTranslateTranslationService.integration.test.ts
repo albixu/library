@@ -82,8 +82,8 @@ describe('LibreTranslateTranslationService Integration', () => {
       expect(result.model).toBe('libretranslate');
     });
 
-    it('should throw TranslationError for text exceeding 10000 chars', async () => {
-      const longText = 'a'.repeat(10001);
+    it('should throw TranslationError for text exceeding 25000 chars', async () => {
+      const longText = 'a'.repeat(25001);
 
       await expect(service.translate(longText, 'es')).rejects.toThrow(TranslationError);
     });
