@@ -42,6 +42,7 @@ export {
   BOOK_FORMATS,
   type BookFormatValue,
   ISBN,
+  BookIdentifier,
 } from './value-objects/index.js';
 
 // Errors
@@ -54,6 +55,7 @@ export {
   InvalidBookTypeError,
   InvalidBookFormatError,
   InvalidISBNError,
+  InvalidBookIdentifierError,
   EmbeddingTextTooLongError,
 } from './errors/index.js';
 

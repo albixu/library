@@ -23,7 +23,7 @@
  */
 
 import { BookFormat, type BookFormatValue } from '../value-objects/BookFormat.js';
-import { ISBN } from '../value-objects/ISBN.js';
+import { BookIdentifier } from '../value-objects/BookIdentifier.js';
 import type { Author } from './Author.js';
 import type { BookType } from './BookType.js';
 import type { Category } from './Category.js';
@@ -134,7 +134,7 @@ export class Book {
     public readonly type: BookType,
     public readonly categories: readonly Category[],
     public readonly format: BookFormat,
-    public readonly isbn: ISBN | null,
+    public readonly isbn: BookIdentifier | null,
     public readonly levelId: string | null, // HU-008: UUID reference to Level entity
     public readonly originalDescription: string, // HU-013: Original language description
     public readonly description: string, // HU-013: Spanish description
@@ -171,7 +171,7 @@ export class Book {
     const format = BookFormat.create(props.format);
 
     // Validate optional fields
-    const isbn = props.isbn ? ISBN.create(props.isbn) : null;
+    const isbn = props.isbn ? BookIdentifier.create(props.isbn) : null;
     
     // HU-008: Validate levelId as UUID if provided
     const levelId = props.levelId ? Book.validateLevelId(props.levelId) : null;
@@ -221,7 +221,7 @@ export class Book {
       props.type,
       Object.freeze([...props.categories]),
       BookFormat.fromPersistence(props.format),
-      props.isbn ? ISBN.fromPersistence(props.isbn) : null,
+      props.isbn ? BookIdentifier.fromPersistence(props.isbn) : null,
       props.levelId, // HU-008: UUID is stored directly
       props.originalDescription, // HU-013
       props.description, // HU-013: Spanish description
@@ -260,7 +260,7 @@ export class Book {
       : this.format;
 
     const isbn = props.isbn !== undefined
-      ? (props.isbn ? ISBN.create(props.isbn) : null)
+      ? (props.isbn ? BookIdentifier.create(props.isbn) : null)
       : this.isbn;
 
     const available = props.available !== undefined
