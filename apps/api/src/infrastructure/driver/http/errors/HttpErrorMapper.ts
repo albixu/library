@@ -21,7 +21,7 @@ import {
   CategoryTypeMismatchError,
   LevelTypeMismatchError,
 } from '../../../../domain/errors/DomainErrors.js';
-import { InvalidISBNError } from '../../../../domain/value-objects/ISBN.js';
+import { InvalidBookIdentifierError } from '../../../../domain/value-objects/BookIdentifier.js';
 import { InvalidBookFormatError } from '../../../../domain/value-objects/BookFormat.js';
 import {
   EmbeddingServiceUnavailableError,
@@ -144,7 +144,7 @@ export function mapErrorToHttpResponse(error: unknown): HttpErrorResponse {
   }
 
   // Value object validation errors → 400
-  if (error instanceof InvalidISBNError) {
+  if (error instanceof InvalidBookIdentifierError) {
     return createErrorResponse(400, error.message);
   }
 

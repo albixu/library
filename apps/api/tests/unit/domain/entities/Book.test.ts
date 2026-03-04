@@ -16,7 +16,7 @@ import {
   InvalidLanguageCodeError,
 } from '../../../../src/domain/errors/DomainErrors.js';
 import { InvalidBookFormatError } from '../../../../src/domain/value-objects/BookFormat.js';
-import { InvalidISBNError } from '../../../../src/domain/value-objects/ISBN.js';
+import { InvalidBookIdentifierError } from '../../../../src/domain/value-objects/BookIdentifier.js';
 
 describe('Book', () => {
   // Valid test data
@@ -384,10 +384,10 @@ describe('Book', () => {
       });
 
       describe('isbn', () => {
-        it('should throw InvalidISBNError for invalid ISBN', () => {
+        it('should throw InvalidBookIdentifierError for invalid identifier', () => {
           expect(() =>
-            Book.create(createValidBookProps({ isbn: 'invalid' }))
-          ).toThrow(InvalidISBNError);
+            Book.create(createValidBookProps({ isbn: 'invalid identifier!' }))
+          ).toThrow(InvalidBookIdentifierError);
         });
 
         it('should accept null ISBN', () => {

@@ -23,7 +23,7 @@
 import { Book } from '../../domain/entities/Book.js';
 import { Level } from '../../domain/entities/Level.js';
 import { BookFormat } from '../../domain/value-objects/BookFormat.js';
-import { ISBN } from '../../domain/value-objects/ISBN.js';
+import { BookIdentifier } from '../../domain/value-objects/BookIdentifier.js';
 import { DEFAULT_BOOK_TYPES } from '../../domain/entities/BookType.js';
 import { generateUUID } from '../../shared/utils/uuid.js';
 import type { BookRepository } from '../ports/BookRepository.js';
@@ -196,7 +196,7 @@ export class CreateBookUseCase {
     // 1. Validate and normalize fields needed for duplicate detection
     //    This provides early validation and normalization without persisting anything
     BookFormat.create(input.format); // Validate format early (throws if invalid)
-    const bookIsbn = input.isbn ? ISBN.create(input.isbn) : null;
+    const bookIsbn = input.isbn ? BookIdentifier.create(input.isbn) : null;
 
     // 2. Validate type exists in database
     const bookType = await this.typeRepository.findByName(input.type);
