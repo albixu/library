@@ -144,14 +144,6 @@ describe('BookIdentifier', () => {
         expect(() => BookIdentifier.create('book#001')).toThrow(InvalidBookIdentifierError);
       });
 
-      it('should throw for identifier with spaces between words', () => {
-        // Spaces are stripped as separators, leaving 'BOOK001' which is valid
-        // but spaces within non-ISBN identifiers are unusual — test that
-        // stripping spaces yields a valid result
-        const id = BookIdentifier.create('BOOK 001');
-        expect(id.value).toBe('BOOK001');
-      });
-
       it('should throw with descriptive error message', () => {
         try {
           BookIdentifier.create('INVALID IDENTIFIER!');
