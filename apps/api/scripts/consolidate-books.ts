@@ -2,7 +2,7 @@
  * Script: consolidate-books.ts
  *
  * Consolidates multiple JSON files containing book data from original_data/
- * into multiple partitioned JSON files at docs/db/initial_data/.
+ * into multiple partitioned JSON files at initial_data/.
  *
  * Features:
  * - Reads all *.json files from original_data/ directory (monorepo root)
@@ -65,8 +65,8 @@ const APP_ROOT = join(__dirname, '..');
 const MONOREPO_ROOT = process.env['MONOREPO_ROOT'] ?? join(APP_ROOT, '..', '..');
 const SOURCE_DIR = join(MONOREPO_ROOT, 'original_data');
 
-// Output goes to docs/db/initial_data at monorepo root
-const OUTPUT_DIR = join(MONOREPO_ROOT, 'docs', 'db', 'initial_data');
+// Output goes to initial_data at monorepo root
+const OUTPUT_DIR = join(MONOREPO_ROOT, 'initial_data');
 
 // Configuration
 const DEFAULT_BOOKS_PER_FILE = 1000;

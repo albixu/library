@@ -1,11 +1,11 @@
 /**
  * Script: seed-database.ts
  *
- * Loads book data from docs/db/initial_data/*.json into the database using CreateBookUseCase.
+ * Loads book data from initial_data/*.json into the database using CreateBookUseCase.
  * This script is idempotent - running it multiple times will only add new books.
  *
  * Features:
- * - Reads partitioned book files from docs/db/initial_data/ (books_0001.json, etc.)
+ * - Reads partitioned book files from initial_data/ (books_0001.json, etc.)
  * - Uses pre-translated descriptions (translatedDescription field)
  * - Checks for existing books by ISBN before creating
  * - Creates authors and categories via the use case
@@ -50,7 +50,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Path resolution for both development and production:
-// - Development (tsx): scripts/ is at apps/api/scripts/, initial_data at monorepo/docs/db/initial_data/
+// - Development (tsx): scripts/ is at apps/api/scripts/, initial_data at monorepo/initial_data/
 // - Production (node): dist/scripts/ is at /app/dist/scripts/, initial_data at /app/data/initial_data/
 // Use INITIAL_DATA_DIR env var to override, or detect based on __dirname
 const getDefaultInitialDataDir = (): string => {
@@ -59,8 +59,8 @@ const getDefaultInitialDataDir = (): string => {
     // Production: /app/dist/scripts → /app/data/initial_data
     return join(__dirname, '..', '..', 'data', 'initial_data');
   }
-  // Development: apps/api/scripts → monorepo/docs/db/initial_data
-  return join(__dirname, '..', '..', '..', 'docs', 'db', 'initial_data');
+  // Development: apps/api/scripts → monorepo/initial_data
+  return join(__dirname, '..', '..', '..', 'initial_data');
 };
 
 const INITIAL_DATA_DIR = process.env['INITIAL_DATA_DIR'] ?? getDefaultInitialDataDir();

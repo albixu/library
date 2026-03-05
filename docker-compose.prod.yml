@@ -13,7 +13,7 @@
 #   docker exec library-api npm run seed:prod
 #
 # Add new books:
-#   1. Run consolidate-books.ts to generate partitioned files in docs/db/initial_data/
+#   1. Run consolidate-books.ts to generate partitioned files in initial_data/
 #   2. Run: docker exec library-api npm run seed:prod
 #   (Existing books are skipped, only new ones are added)
 # ================================
@@ -61,7 +61,7 @@ services:
       - TRANSLATION_MODEL=llama3.2:1b
     volumes:
       # Mount initial_data directory for seeding (run: docker exec library-api npm run seed:prod)
-      - ./docs/db/initial_data:/app/data/initial_data:ro
+      - ./initial_data:/app/data/initial_data:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,9 +89,8 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     container_name: library-postgres
-    # In production, don't expose port externally (only internal network)
-    # ports:
-    #   - "5432:5432"
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_DB=library
       - POSTGRES_USER=library
