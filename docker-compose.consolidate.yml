@@ -22,7 +22,7 @@
 #   4. Stop services when done:
 #      docker-compose -f docker-compose.consolidate.yml down
 #
-# Output: docs/db/initial_data/books_XXXX.json
+# Output: initial_data/books_XXXX.json
 # ================================
 
 services:
@@ -42,8 +42,8 @@ services:
       - ./apps/api/drizzle:/app/drizzle
       # Cache directory for translation cache (persists between runs)
       - ./apps/api/tmp/cache:/app/tmp/cache
-      # Docs directory for consolidated output
-      - ./docs:/app/docs
+      # Initial data directory for consolidated output
+      - ./initial_data:/app/initial_data
       # Original data directory (source JSON files)
       - ./original_data:/app/original_data
       # Reuse development node_modules volume

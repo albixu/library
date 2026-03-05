@@ -104,7 +104,7 @@ El proceso de carga de datos se divide en dos fases independientes, cada una con
 original_data/*.json
         │
         ▼ (Fase 1: Consolidación)
-docs/db/initial_data/books_XXXX.json
+initial_data/books_XXXX.json
         │
         ▼ (Fase 2: Seeding)
     Base de datos PostgreSQL
@@ -138,7 +138,7 @@ docker-compose -f docker-compose.consolidate.yml down
 > entorno `NODE_OPTIONS=--max-old-space-size=4096` o usa el script `consolidate:books` que ya
 > la incluye por defecto.
 
-**Resultado:** Ficheros `docs/db/initial_data/books_0001.json`, `books_0002.json`, etc. (máximo 1000 libros por fichero)
+**Resultado:** Ficheros `initial_data/books_0001.json`, `books_0002.json`, etc. (máximo 1000 libros por fichero)
 
 **Variables de entorno opcionales:**
 
@@ -153,7 +153,7 @@ Carga los ficheros particionados en PostgreSQL, generando embeddings para búsqu
 
 **Requisitos:**
 
-- Ficheros en `docs/db/initial_data/` (generados en Fase 1)
+- Ficheros en `initial_data/` (generados en Fase 1)
 - Ollama con modelo de embeddings `nomic-embed-text`
 - PostgreSQL con esquema migrado
 
