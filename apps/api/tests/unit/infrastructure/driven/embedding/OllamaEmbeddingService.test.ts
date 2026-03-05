@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { OllamaEmbeddingService } from '../../../../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
-import {
-  EmbeddingServiceUnavailableError,
-  EmbeddingTextTooLongError,
-} from '../../../../../src/application/errors/ApplicationErrors.js';
+import { EmbeddingServiceUnavailableError } from '../../../../../src/application/errors/ApplicationErrors.js';
 import type { EmbeddingServiceConfig } from '../../../../../src/application/ports/EmbeddingService.js';
 
 describe('OllamaEmbeddingService', () => {
@@ -17,8 +14,10 @@ describe('OllamaEmbeddingService', () => {
     timeoutMs: 30000,
   };
 
-  // Sample embedding vector (768 dimensions as nomic-embed-text produces)
-  const mockEmbedding = new Array(768).fill(0).map((_, i) => (i * 0.001) - 0.384);
+  // Sample embedding vector (768 dimensions as nomic-embed-text produces), L2-normalized
+  const rawEmbedding = new Array(768).fill(0).map((_, i) => (i * 0.001) - 0.384);
+  const norm = Math.sqrt(rawEmbedding.reduce((sum, v) => sum + v * v, 0));
+  const mockEmbedding = rawEmbedding.map(v => v / norm);
 
   beforeEach(() => {
     originalFetch = global.fetch;
@@ -33,7 +32,7 @@ describe('OllamaEmbeddingService', () => {
   });
 
   describe('generateEmbedding', () => {
-    it('should generate embedding successfully', async () => {
+    it('should generate embedding successfully for short text', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ embedding: mockEmbedding }),
@@ -66,25 +65,65 @@ describe('OllamaEmbeddingService', () => {
       );
     });
 
-    it('should throw EmbeddingTextTooLongError when text exceeds 7000 chars', async () => {
-      const longText = 'A'.repeat(7001);
+    it('should process text longer than CHUNK_SIZE by splitting into chunks', async () => {
+      // Text longer than 6500 chars (CHUNK_SIZE)
+      const longText = 'A'.repeat(7000);
 
-      await expect(service.generateEmbedding(longText)).rejects.toThrow(
-        EmbeddingTextTooLongError
-      );
-      expect(mockFetch).not.toHaveBeenCalled();
+      // Two chunks expected → two fetch calls
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ embedding: mockEmbedding }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ embedding: mockEmbedding }) });
+
+      const result = await service.generateEmbedding(longText);
+
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(result.embedding).toHaveLength(768);
+      expect(result.model).toBe('nomic-embed-text');
     });
 
-    it('should accept text exactly at 7000 chars limit', async () => {
-      const maxText = 'A'.repeat(7000);
+    it('should return a normalized (L2) vector when multiple chunks are averaged', async () => {
+      const longText = 'A'.repeat(7000);
+      const embeddingA = new Array(768).fill(0).map((_, i) => i * 0.001);
+      const embeddingB = new Array(768).fill(0).map((_, i) => i * 0.002);
+
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ embedding: embeddingA }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ embedding: embeddingB }) });
+
+      const result = await service.generateEmbedding(longText);
+
+      // L2 norm of the result should be ~1
+      const resultNorm = Math.sqrt(result.embedding.reduce((sum, v) => sum + v * v, 0));
+      expect(resultNorm).toBeCloseTo(1, 5);
+    });
+
+    it('should use a single chunk (no averaging) for text at or below CHUNK_SIZE', async () => {
+      const exactText = 'B'.repeat(6500);
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ embedding: mockEmbedding }),
       });
 
-      const result = await service.generateEmbedding(maxText);
+      const result = await service.generateEmbedding(exactText);
 
+      // Only one fetch call — no chunking needed
+      expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(result.embedding).toEqual(mockEmbedding);
+    });
+
+    it('should handle very long text requiring more than 2 chunks', async () => {
+      // 6500 chunk, 200 overlap → step = 6300. Need 3 chunks for ~13000 chars
+      const veryLongText = 'C'.repeat(13000);
+
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ embedding: mockEmbedding }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ embedding: mockEmbedding }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ embedding: mockEmbedding }) });
+
+      const result = await service.generateEmbedding(veryLongText);
+
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+      expect(result.embedding).toHaveLength(768);
     });
 
     it('should throw EmbeddingServiceUnavailableError on network error', async () => {
@@ -214,6 +253,81 @@ describe('OllamaEmbeddingService', () => {
           }),
         })
       );
+    });
+  });
+
+  describe('splitIntoChunks', () => {
+    it('should return single chunk when text fits within chunkSize', () => {
+      const text = 'Hello world';
+      // Access private method via type cast for unit testing
+      const chunks = (service as unknown as { splitIntoChunks: (t: string, s: number, o: number) => string[] })
+        .splitIntoChunks(text, 6500, 200);
+
+      expect(chunks).toHaveLength(1);
+      expect(chunks[0]).toBe(text);
+    });
+
+    it('should return single chunk when text equals chunkSize exactly', () => {
+      const text = 'A'.repeat(6500);
+      const chunks = (service as unknown as { splitIntoChunks: (t: string, s: number, o: number) => string[] })
+        .splitIntoChunks(text, 6500, 200);
+
+      expect(chunks).toHaveLength(1);
+      expect(chunks[0]).toBe(text);
+    });
+
+    it('should split text into 2 chunks when text is slightly longer than chunkSize', () => {
+      const text = 'A'.repeat(7000);
+      const chunks = (service as unknown as { splitIntoChunks: (t: string, s: number, o: number) => string[] })
+        .splitIntoChunks(text, 6500, 200);
+
+      expect(chunks).toHaveLength(2);
+      expect(chunks[0]).toHaveLength(6500);
+      // Second chunk starts at offset 6300 (6500 - 200 overlap)
+      expect(chunks[1]).toHaveLength(700); // 7000 - 6300 = 700
+    });
+
+    it('should produce chunks that overlap by the specified amount', () => {
+      const text = 'ABCDEFGHIJ'.repeat(1000); // 10000 chars
+      const chunkSize = 6500;
+      const overlap = 200;
+      const chunks = (service as unknown as { splitIntoChunks: (t: string, s: number, o: number) => string[] })
+        .splitIntoChunks(text, chunkSize, overlap);
+
+      // The end of chunk[0] and the start of chunk[1] should share `overlap` chars
+      const endOfFirst = chunks[0]!.slice(-overlap);
+      const startOfSecond = chunks[1]!.slice(0, overlap);
+      expect(endOfFirst).toBe(startOfSecond);
+    });
+
+    it('should cover the entire text across all chunks (no gaps)', () => {
+      const text = 'X'.repeat(20000);
+      const chunkSize = 6500;
+      const overlap = 200;
+      const chunks = (service as unknown as { splitIntoChunks: (t: string, s: number, o: number) => string[] })
+        .splitIntoChunks(text, chunkSize, overlap);
+
+      // Last chunk must end at the end of the text
+      expect(chunks[chunks.length - 1]).toBe(text.slice((chunks.length - 1) * (chunkSize - overlap)));
+      // First char of first chunk is the first char of the text
+      expect(chunks[0]![0]).toBe('X');
+      // Last char of last chunk is the last char of the text
+      expect(chunks[chunks.length - 1]!.slice(-1)).toBe('X');
+    });
+
+    it('should handle 3 chunks for ~13000 char text with 6500/200 settings', () => {
+      const text = 'Y'.repeat(13000);
+      const chunks = (service as unknown as { splitIntoChunks: (t: string, s: number, o: number) => string[] })
+        .splitIntoChunks(text, 6500, 200);
+
+      // step = 6500 - 200 = 6300
+      // chunk 0: [0, 6500)
+      // chunk 1: [6300, 12800)
+      // chunk 2: [12600, 13000) — last chunk is shorter
+      expect(chunks).toHaveLength(3);
+      expect(chunks[0]).toHaveLength(6500);
+      expect(chunks[1]).toHaveLength(6500);
+      expect(chunks[2]).toHaveLength(13000 - 2 * 6300); // 400
     });
   });
 
