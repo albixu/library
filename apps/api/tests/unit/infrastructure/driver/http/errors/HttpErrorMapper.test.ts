@@ -21,7 +21,7 @@ import {
   LevelTypeMismatchError,
   InvalidLanguageCodeError,
 } from '../../../../../../src/domain/errors/DomainErrors.js';
-import { InvalidISBNError } from '../../../../../../src/domain/value-objects/ISBN.js';
+import { InvalidBookIdentifierError } from '../../../../../../src/domain/value-objects/BookIdentifier.js';
 import { InvalidBookFormatError } from '../../../../../../src/domain/value-objects/BookFormat.js';
 import {
   EmbeddingServiceUnavailableError,
@@ -178,14 +178,14 @@ describe('HttpErrorMapper', () => {
     });
 
     describe('Value object validation errors (400)', () => {
-      it('should map InvalidISBNError to 400', () => {
-        const error = new InvalidISBNError('invalid-isbn');
+      it('should map InvalidBookIdentifierError to 400', () => {
+        const error = new InvalidBookIdentifierError('invalid identifier!');
 
         const response = mapErrorToHttpResponse(error);
 
         expect(response.statusCode).toBe(400);
         expect(response.body.success).toBe(false);
-        expect(response.body.error.message).toContain('invalid-isbn');
+        expect(response.body.error.message).toContain('invalid identifier!');
       });
 
       it('should map InvalidBookTypeError to 400', () => {
