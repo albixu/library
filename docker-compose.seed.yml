@@ -86,6 +86,8 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     container_name: library-seed-postgres
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_DB=library
       - POSTGRES_USER=library
