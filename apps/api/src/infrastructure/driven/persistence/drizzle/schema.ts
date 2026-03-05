@@ -139,7 +139,7 @@ export const categories = pgTable('categories', {
  */
 export const books = pgTable('books', {
   id: uuid('id').primaryKey(),
-  isbn: varchar('isbn', { length: 13 }),
+  isbn: varchar('isbn', { length: 32 }),
   title: varchar('title', { length: 500 }).notNull(),
   originalDescription: text('original_description').notNull(),
   description: text('description').notNull(),
