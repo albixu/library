@@ -89,9 +89,8 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     container_name: library-postgres
-    # In production, don't expose port externally (only internal network)
-    # ports:
-    #   - "5432:5432"
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_DB=library
       - POSTGRES_USER=library
