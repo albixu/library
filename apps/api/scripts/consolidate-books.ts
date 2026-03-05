@@ -123,16 +123,32 @@ interface ConsolidationResult {
 }
 
 /**
+ * Deduplicates an array of author names by trimmed, case-insensitive name.
+ * Keeps the first occurrence of each name.
+ */
+function deduplicateAuthors(authors: readonly string[]): string[] {
+  const seen = new Set<string>();
+  return authors.filter(name => {
+    const key = name.trim().toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
  * Enhances a source book with type, format, and translated description.
  * - If source.type exists and has value -> use source.type
  * - If source.type is undefined -> use 'technical'
  * - If source.format exists and has value -> use source.format
  * - If source.format is undefined -> use 'epub'
  * - translatedDescription is added by the translation process
+ * - authors are deduplicated (case-insensitive) to clean dirty source data
  */
 function transformBook(source: SourceBook, translatedDescription: string): ConsolidatedBook {
   return Object.freeze({
     ...source,
+    authors: deduplicateAuthors(source.authors),
     type: source.type ?? 'technical',
     format: source.format ?? 'epub',
     translatedDescription,

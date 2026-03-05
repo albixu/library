@@ -163,14 +163,30 @@ function isValidSourceBook(obj: unknown): obj is SourceBook {
 }
 
 /**
+ * Deduplicates an array of author names by trimmed, case-insensitive name.
+ * Keeps the first occurrence of each name.
+ * Acts as a defensive guard before passing data to the domain layer.
+ */
+function deduplicateAuthors(authors: readonly string[]): readonly string[] {
+  const seen = new Set<string>();
+  return authors.filter(name => {
+    const key = name.trim().toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
  * Transforms a SourceBook to ConsolidatedBook (internal format)
  * Maps: id→isbn, tags→categories, adds available=true default
+ * Deduplicates authors to handle dirty source data
  */
 function transformSourceBook(source: SourceBook): ConsolidatedBook {
   return {
     isbn: source.id,
     title: source.title,
-    authors: source.authors,
+    authors: deduplicateAuthors(source.authors),
     description: source.description,
     translatedDescription: source.translatedDescription,
     language: source.language,
