@@ -291,7 +291,7 @@ describe('Book', () => {
           ).toThrow(TooManyItemsError);
         });
 
-        it('should throw DuplicateItemError for duplicate author IDs', () => {
+        it('should throw DuplicateItemError for authors with duplicate IDs but different names', () => {
           const duplicateAuthor = createAuthor(
             '880e8400-e29b-41d4-a716-446655440001', // Same ID as robertMartin
             'Different Name'
@@ -301,6 +301,66 @@ describe('Book', () => {
               authors: [robertMartin, duplicateAuthor],
             }))
           ).toThrow(DuplicateItemError);
+        });
+
+        it('should deduplicate authors with the same name (case-insensitive), keeping first occurrence', () => {
+          const authorA = createAuthor('880e8400-e29b-41d4-a716-446655440010', 'Robert Martin');
+          const authorB = createAuthor('880e8400-e29b-41d4-a716-446655440011', 'Robert Martin');
+          const book = Book.create(createValidBookProps({ authors: [authorA, authorB] }));
+          expect(book.authors).toHaveLength(1);
+          expect(book.authors[0]!.id).toBe(authorA.id);
+        });
+
+        it('should deduplicate authors with the same name ignoring case differences', () => {
+          const authorA = createAuthor('880e8400-e29b-41d4-a716-446655440012', 'robert martin');
+          const authorB = createAuthor('880e8400-e29b-41d4-a716-446655440013', 'Robert Martin');
+          const book = Book.create(createValidBookProps({ authors: [authorA, authorB] }));
+          expect(book.authors).toHaveLength(1);
+          expect(book.authors[0]!.id).toBe(authorA.id);
+        });
+
+        it('should deduplicate authors with the same name ignoring surrounding whitespace', () => {
+          const authorA = createAuthor('880e8400-e29b-41d4-a716-446655440014', 'Robert Martin');
+          const authorB = createAuthor('880e8400-e29b-41d4-a716-446655440015', '  Robert Martin  ');
+          const book = Book.create(createValidBookProps({ authors: [authorA, authorB] }));
+          expect(book.authors).toHaveLength(1);
+        });
+
+        it('should throw RequiredFieldError when all authors are duplicates (resulting empty array)', () => {
+          const authorA = createAuthor('880e8400-e29b-41d4-a716-446655440016', 'Robert Martin');
+          const authorB = createAuthor('880e8400-e29b-41d4-a716-446655440017', 'Robert Martin');
+          // Both have same name → deduplicated to 1 author, which is valid (≥ 1)
+          const book = Book.create(createValidBookProps({ authors: [authorA, authorB] }));
+          expect(book.authors).toHaveLength(1);
+        });
+
+        it('should throw TooManyItemsError when more than 10 unique authors after deduplication', () => {
+          // 11 authors with unique names → should still throw TooManyItemsError
+          const tooManyAuthors = Array.from({ length: 11 }, (_, i) =>
+            createAuthor(
+              `550e8400-e29b-41d4-a716-4466554400${i.toString().padStart(2, '0')}`,
+              `Unique Author ${i}`
+            )
+          );
+          expect(() =>
+            Book.create(createValidBookProps({ authors: tooManyAuthors }))
+          ).toThrow(TooManyItemsError);
+        });
+
+        it('should not throw TooManyItemsError when 11 authors deduplicate down to 10', () => {
+          // 10 unique names + 1 duplicate → deduplicates to 10 → valid
+          const authors = Array.from({ length: 10 }, (_, i) =>
+            createAuthor(
+              `550e8400-e29b-41d4-a716-4466554400${i.toString().padStart(2, '0')}`,
+              `Author ${i}`
+            )
+          );
+          const duplicateOfFirst = createAuthor(
+            '880e8400-e29b-41d4-a716-446655440099',
+            'Author 0' // same name as first
+          );
+          const book = Book.create(createValidBookProps({ authors: [...authors, duplicateOfFirst] }));
+          expect(book.authors).toHaveLength(10);
         });
 
         it('should accept exactly 10 authors', () => {

@@ -338,20 +338,31 @@ export class Book {
       throw new RequiredFieldError('authors');
     }
 
-    if (authors.length > FIELD_CONSTRAINTS.MAX_AUTHORS) {
+    // Deduplicate by name (case-insensitive, trimmed) — keeps first occurrence.
+    // This makes the domain resilient to dirty input data where the same author
+    // appears more than once in the source (e.g. catalog JSON files).
+    const seenNames = new Set<string>();
+    const deduplicated = authors.filter(author => {
+      const key = author.name.trim().toLowerCase();
+      if (seenNames.has(key)) return false;
+      seenNames.add(key);
+      return true;
+    });
+
+    if (deduplicated.length > FIELD_CONSTRAINTS.MAX_AUTHORS) {
       throw new TooManyItemsError('authors', FIELD_CONSTRAINTS.MAX_AUTHORS);
     }
 
-    const seen = new Set<string>();
+    const seenIds = new Set<string>();
 
-    for (const author of authors) {
-      if (seen.has(author.id)) {
+    for (const author of deduplicated) {
+      if (seenIds.has(author.id)) {
         throw new DuplicateItemError('authors', author.name);
       }
-      seen.add(author.id);
+      seenIds.add(author.id);
     }
 
-    return Object.freeze([...authors]);
+    return Object.freeze([...deduplicated]);
   }
 
   private static validateType(type: BookType): BookType {
