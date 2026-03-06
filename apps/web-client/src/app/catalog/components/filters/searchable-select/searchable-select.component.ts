@@ -1,4 +1,12 @@
-import { Component, input, output, signal, effect, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  input,
+  output,
+  signal,
+  effect,
+  computed,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Select } from 'primeng/select';
 import { SelectOption } from '../../../../core/models/index.js';

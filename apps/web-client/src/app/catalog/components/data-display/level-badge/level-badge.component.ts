@@ -9,7 +9,11 @@ import { BookLevelName } from '../../../../core/models/index.js';
   imports: [],
   template: `
     @if (level()) {
-      <span class="level-badge" [class]="levelClass()" [attr.aria-label]="'Nivel del libro: ' + level()">
+      <span
+        class="level-badge"
+        [class]="levelClass()"
+        [attr.aria-label]="'Nivel del libro: ' + level()"
+      >
         {{ level() }}
       </span>
     }

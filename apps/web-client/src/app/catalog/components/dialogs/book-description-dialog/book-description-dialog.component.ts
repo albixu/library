@@ -41,6 +41,7 @@ import { ButtonModule } from 'primeng/button';
           pButton
           type="button"
           label="Cerrar"
+          aria-label="Cerrar"
           class="p-button-text"
           (click)="onClose()"
         ></button>
