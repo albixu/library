@@ -22,7 +22,7 @@ import { ListBookTypesUseCase } from '../../src/application/use-cases/ListBookTy
 import { ListCategoriesUseCase } from '../../src/application/use-cases/ListCategoriesUseCase.js';
 import { ListBookLevelsUseCase } from '../../src/application/use-cases/ListBookLevelsUseCase.js';
 import { OllamaEmbeddingService } from '../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
-import { OllamaTranslationService } from '../../src/infrastructure/driven/translation/OllamaTranslationService.js';
+import { LibreTranslateTranslationService } from '../../src/infrastructure/driven/translation/LibreTranslateTranslationService.js';
 import { PostgresBookRepository } from '../../src/infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from '../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { PostgresTypeRepository } from '../../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
@@ -44,9 +44,8 @@ export type TestDb = NodePgDatabase<typeof schema> & { $client: pg.Pool };
  */
 const DEFAULT_DATABASE_URL = process.env['DATABASE_URL'] ?? 'postgresql://library:library@postgres:5432/library';
 const DEFAULT_OLLAMA_URL = process.env['OLLAMA_EMBEDDING_URL'] ?? process.env['OLLAMA_BASE_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama-embeddings:11434';
-const DEFAULT_OLLAMA_TRANSLATION_URL = process.env['OLLAMA_TRANSLATION_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama-translations:11434';
+const DEFAULT_LIBRETRANSLATE_URL = process.env['LIBRETRANSLATE_URL'] ?? 'http://libretranslate-test:5000';
 const DEFAULT_OLLAMA_MODEL = 'nomic-embed-text';
-const DEFAULT_TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'llama3.2:1b';
 
 /**
  * Server configuration
@@ -99,9 +98,8 @@ export async function clearTestData(db: TestDb): Promise<void> {
  */
 export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
   const ollamaUrl = DEFAULT_OLLAMA_URL;
-  const ollamaTranslationUrl = DEFAULT_OLLAMA_TRANSLATION_URL;
+  const libretranslateUrl = DEFAULT_LIBRETRANSLATE_URL;
   const ollamaModel = process.env['OLLAMA_MODEL'] ?? DEFAULT_OLLAMA_MODEL;
-  const translationModel = process.env['TRANSLATION_MODEL'] ?? DEFAULT_TRANSLATION_MODEL;
 
   // Create adapters
   const embeddingService = new OllamaEmbeddingService({
@@ -110,11 +108,10 @@ export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
     timeoutMs: 30000,
   });
 
-  // HU-013: Translation service for description translation
-  const translationService = new OllamaTranslationService({
-    baseUrl: ollamaTranslationUrl,
-    model: translationModel,
-    timeoutMs: 60000,
+  // HU-013: Translation service for description translation (LibreTranslate)
+  const translationService = new LibreTranslateTranslationService({
+    baseUrl: libretranslateUrl,
+    timeoutMs: 30000,
     retries: 3,
   });
 

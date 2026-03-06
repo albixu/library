@@ -24,7 +24,7 @@ import {
   e2eFixtures,
 } from '../setup.js';
 import { OllamaEmbeddingService } from '../../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
-import { OllamaTranslationService } from '../../../src/infrastructure/driven/translation/OllamaTranslationService.js';
+import { LibreTranslateTranslationService } from '../../../src/infrastructure/driven/translation/LibreTranslateTranslationService.js';
 import { PostgresBookRepository } from '../../../src/infrastructure/driven/persistence/PostgresBookRepository.js';
 import { PostgresCategoryRepository } from '../../../src/infrastructure/driven/persistence/PostgresCategoryRepository.js';
 import { PostgresTypeRepository } from '../../../src/infrastructure/driven/persistence/PostgresTypeRepository.js';
@@ -39,8 +39,39 @@ import { createServer } from '../../../src/infrastructure/driver/http/server.js'
 import { noopLogger } from '../../../src/application/ports/Logger.js';
 
 const OLLAMA_EMBEDDING_URL = process.env['OLLAMA_EMBEDDING_URL'] ?? process.env['OLLAMA_BASE_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama-embeddings:11434';
-const OLLAMA_TRANSLATION_URL = process.env['OLLAMA_TRANSLATION_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama-translations:11434';
-const TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'llama3.2:1b';
+const LIBRETRANSLATE_URL = process.env['LIBRETRANSLATE_URL'] ?? 'http://libretranslate-test:5000';
+
+/**
+ * Returns true (skip) when LibreTranslate OR Ollama embedding service is NOT available.
+ * Used with it.skipIf to cleanly skip tests that require both services.
+ */
+const translationOrEmbeddingUnavailable = async (): Promise<boolean> => {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    let libreTranslateOk = false;
+    try {
+      const res = await fetch(`${LIBRETRANSLATE_URL}/languages`, { signal: controller.signal });
+      libreTranslateOk = res.ok;
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!libreTranslateOk) return true;
+
+    const controller2 = new AbortController();
+    const timer2 = setTimeout(() => controller2.abort(), 5000);
+    let ollamaOk = false;
+    try {
+      const res2 = await fetch(`${OLLAMA_EMBEDDING_URL}/api/tags`, { signal: controller2.signal });
+      ollamaOk = res2.ok;
+    } finally {
+      clearTimeout(timer2);
+    }
+    return !ollamaOk;
+  } catch {
+    return true;
+  }
+};
 
 /**
  * Creates a server with a broken service URL to test 503 responses.
@@ -62,9 +93,8 @@ async function createBrokenServiceServer(options: {
     timeoutMs: 2000, // Short timeout for faster tests
   });
 
-  const translationService = new OllamaTranslationService({
-    baseUrl: options.brokenTranslation ? invalidUrl : OLLAMA_TRANSLATION_URL,
-    model: TRANSLATION_MODEL,
+  const translationService = new LibreTranslateTranslationService({
+    baseUrl: options.brokenTranslation ? invalidUrl : LIBRETRANSLATE_URL,
     timeoutMs: 2000,
     retries: 1, // Fewer retries for faster tests
   });
@@ -593,7 +623,7 @@ describe('POST /api/books (E2E)', () => {
    * - Response includes originalDescription, description, and language fields
    *
    * NOTE: Tests that require actual translation are skipped when the model is unavailable.
-   */
+    */
   describe('Translation Handling (HU-013)', () => {
     it('should return originalDescription same as description for Spanish input', async () => {
       const spanishDescription = 'Esta es una descripción en español para el libro de prueba.';
@@ -705,14 +735,15 @@ describe('POST /api/books (E2E)', () => {
       expect(body.error).toHaveProperty('message');
     });
 
-    // NOTE: Tests requiring actual translation use skipIf when the model is unavailable.
-    // To run these tests, ensure the translation model is pulled in Ollama.
-    it.skipIf(
-      async () => {
-        const svc = new OllamaTranslationService({ baseUrl: OLLAMA_TRANSLATION_URL, model: TRANSLATION_MODEL, timeoutMs: 5000, retries: 1 });
-        return !(await svc.isAvailable());
-      },
-    )('should translate English description to Spanish', async () => {
+    // NOTE: This test requires both LibreTranslate AND Ollama embedding to be available.
+    // It uses test.skipIf with a runtime check inside the test body for async conditions,
+    // since Vitest 2.x skipIf only supports synchronous boolean conditions.
+    it('should translate English description to Spanish', async ({ skip }) => {
+      const shouldSkip = await translationOrEmbeddingUnavailable();
+      if (shouldSkip) {
+        skip();
+        return;
+      }
       const englishDescription = 'A comprehensive guide to clean code principles and practices.';
       const bookData = {
         title: 'Clean Code Guide',

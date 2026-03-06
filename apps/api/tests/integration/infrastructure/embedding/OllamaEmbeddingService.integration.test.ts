@@ -16,7 +16,7 @@ describe('OllamaEmbeddingService Integration', () => {
   let service: OllamaEmbeddingService;
 
   // Configuration for the Docker Compose Ollama instance
-  const OLLAMA_BASE_URL = process.env['OLLAMA_BASE_URL'] ?? 'http://localhost:11434';
+  const OLLAMA_BASE_URL = process.env['OLLAMA_EMBEDDING_URL'] ?? 'http://localhost:11434';
   const EMBEDDING_MODEL = 'nomic-embed-text';
   const EMBEDDING_DIMENSIONS = 768;
 
@@ -32,7 +32,7 @@ describe('OllamaEmbeddingService Integration', () => {
    * Returns true (skip) when Ollama embedding service is NOT available.
    * Used with it.skipIf to cleanly skip tests without failing the suite.
    * NOTE: Tests require Ollama running with nomic-embed-text model loaded.
-   * Run: docker exec library-ollama ollama pull nomic-embed-text
+   * Run: docker exec library-ollama-embeddings-test ollama pull nomic-embed-text
    */
   const embeddingServiceUnavailable = async (): Promise<boolean> => {
     try {

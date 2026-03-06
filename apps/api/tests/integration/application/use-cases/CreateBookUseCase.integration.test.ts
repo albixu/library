@@ -4,7 +4,7 @@
  * Tests the complete book creation flow with real infrastructure:
  * - PostgreSQL for persistence
  * - Ollama for embeddings
- * - Ollama for translation (HU-013)
+ * - LibreTranslate for translation (HU-013)
  *
  * Requires Docker containers: docker-compose up -d
  *
@@ -21,9 +21,10 @@ import { PostgresTypeRepository } from '../../../../src/infrastructure/driven/pe
 import { PostgresAuthorRepository } from '../../../../src/infrastructure/driven/persistence/PostgresAuthorRepository.js';
 import { PostgresLevelRepository } from '../../../../src/infrastructure/driven/persistence/PostgresLevelRepository.js';
 import { OllamaEmbeddingService } from '../../../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
-import { OllamaTranslationService } from '../../../../src/infrastructure/driven/translation/OllamaTranslationService.js';
+import { LibreTranslateTranslationService } from '../../../../src/infrastructure/driven/translation/LibreTranslateTranslationService.js';
 import { DuplicateISBNError, InvalidBookTypeError } from '../../../../src/domain/errors/DomainErrors.js';
-import { InvalidISBNError, InvalidBookFormatError } from '../../../../src/domain/errors/DomainErrors.js';
+import { InvalidBookFormatError } from '../../../../src/domain/value-objects/BookFormat.js';
+import { InvalidBookIdentifierError } from '../../../../src/domain/value-objects/BookIdentifier.js';
 import * as schema from '../../../../src/infrastructure/driven/persistence/drizzle/schema.js';
 
 const { Pool } = pg;
@@ -39,12 +40,12 @@ describe('CreateBookUseCase Integration', () => {
   let authorRepository: PostgresAuthorRepository;
   let levelRepository: PostgresLevelRepository;
   let embeddingService: OllamaEmbeddingService;
-  let translationService: OllamaTranslationService;
+  let translationService: LibreTranslateTranslationService;
 
   // Configuration
   const DATABASE_URL = process.env['DATABASE_URL'] ?? 'postgresql://library:library@localhost:5432/library';
-  const OLLAMA_BASE_URL = process.env['OLLAMA_BASE_URL'] ?? 'http://localhost:11434';
-  const TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'llama3.2:1b';
+  const OLLAMA_EMBEDDING_URL = process.env['OLLAMA_EMBEDDING_URL'] ?? 'http://localhost:11434';
+  const LIBRETRANSLATE_URL = process.env['LIBRETRANSLATE_URL'] ?? 'http://localhost:5000';
 
   beforeAll(async () => {
     pool = new Pool({
@@ -68,16 +69,15 @@ describe('CreateBookUseCase Integration', () => {
     levelRepository = new PostgresLevelRepository(db as any);
 
     embeddingService = new OllamaEmbeddingService({
-      baseUrl: OLLAMA_BASE_URL,
+      baseUrl: OLLAMA_EMBEDDING_URL,
       model: 'nomic-embed-text',
       timeoutMs: 60000,
     });
 
-    // HU-013: Add translation service
-    translationService = new OllamaTranslationService({
-      baseUrl: OLLAMA_BASE_URL,
-      model: TRANSLATION_MODEL,
-      timeoutMs: 120000,
+    // HU-013: Add translation service (LibreTranslate — faster than Ollama for tests)
+    translationService = new LibreTranslateTranslationService({
+      baseUrl: LIBRETRANSLATE_URL,
+      timeoutMs: 30000,
       retries: 2,
     });
 
@@ -304,9 +304,10 @@ describe('CreateBookUseCase Integration', () => {
 
   describe('validation errors', () => {
     it('should reject invalid ISBN format', async () => {
-      const input = createValidInput({ isbn: 'invalid-isbn' });
+      // Use a value with characters BookIdentifier rejects (! is not alphanumeric/hyphen/underscore)
+      const input = createValidInput({ isbn: 'invalid isbn!' });
 
-      await expect(useCase.execute(input)).rejects.toThrow(InvalidISBNError);
+      await expect(useCase.execute(input)).rejects.toThrow(InvalidBookIdentifierError);
     });
 
     it('should reject invalid book type', async () => {
@@ -502,22 +503,19 @@ describe('CreateBookUseCase Integration', () => {
   });
 
   // HU-013: Tests for translation functionality
-  // NOTE: These tests require the translation model (llama3.2:1b) to be installed in Ollama.
-  // Run: docker exec library-ollama-translations ollama pull llama3.2:1b
-  // Tests will be skipped automatically if the model is not available.
+  // NOTE: These tests require LibreTranslate to be running and loaded with en/es models.
+  // Tests will be skipped automatically if the service is not available.
   describe('translation handling (HU-013)', () => {
     /**
-     * Returns true (skip) when the translation model is NOT available.
+     * Returns true (skip) when the translation service is NOT available.
      * Used with it.skipIf to cleanly skip tests without silent early returns.
      */
     const translationModelUnavailable = async (): Promise<boolean> => {
       try {
-        await translationService.isAvailable();
-        // isAvailable only checks the service; we need to verify the model works
-        await translationService.translate('test', 'es');
-        return false; // model works → do NOT skip
+        const available = await translationService.isAvailable();
+        return !available;
       } catch {
-        return true; // model not available → skip
+        return true; // service not available → skip
       }
     };
 
@@ -551,7 +549,7 @@ describe('CreateBookUseCase Integration', () => {
 
         expect(hasSpanishIndicators).toBe(true);
       },
-      180000, // 3 minute timeout
+      30000, // 30 second timeout for LibreTranslate
     );
 
     it.skipIf(embeddingServiceUnavailable)('should create book without translation (Spanish)', async () => {
@@ -588,7 +586,7 @@ describe('CreateBookUseCase Integration', () => {
         expect(found!.description).toBeDefined();
         expect(found!.description.length).toBeGreaterThan(0);
       },
-      180000,
+      30000,
     );
 
     it.skipIf(translationModelUnavailable)(
@@ -612,7 +610,7 @@ describe('CreateBookUseCase Integration', () => {
         const found = await bookRepository.findById(result.id);
         expect(found).not.toBeNull();
       },
-      180000,
+      30000,
     );
   });
 });

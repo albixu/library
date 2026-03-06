@@ -19,7 +19,7 @@ import {
   isValidSourceBook,
   type SourceBook,
 } from '../../../scripts/consolidate-books.js';
-import { OllamaTranslationService } from '../../../src/infrastructure/driven/translation/OllamaTranslationService.js';
+import { LibreTranslateTranslationService } from '../../../src/infrastructure/driven/translation/LibreTranslateTranslationService.js';
 
 const { Pool } = pg;
 const { books, bookCategories, bookAuthors, authors, categories, types } = schema;
@@ -94,13 +94,12 @@ describe('consolidate-books.ts integration', () => {
    * Returns true (skip) when the translation service is NOT available.
    * Used with it.skipIf to cleanly skip tests that require consolidateBooks()
    * without silent early returns.
-   * NOTE: Tests requiring consolidateBooks() need Ollama translation model loaded.
-   * Run: docker exec library-ollama-translations ollama pull llama3.2:1b
+   * NOTE: Tests requiring consolidateBooks() need LibreTranslate running with en/es models.
+   * Start with: docker-compose -f docker-compose.test.yml up -d libretranslate-test
    */
   const translationServiceUnavailable = async (): Promise<boolean> => {
-    const translationService = new OllamaTranslationService({
-      baseUrl: process.env['TRANSLATION_BASE_URL'] ?? 'http://ollama-translations:11435',
-      model: process.env['TRANSLATION_MODEL'] ?? 'llama3.2:1b',
+    const translationService = new LibreTranslateTranslationService({
+      baseUrl: process.env['LIBRETRANSLATE_URL'] ?? 'http://localhost:5000',
       timeoutMs: 5000,
       retries: 1,
     });

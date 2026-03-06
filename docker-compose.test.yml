@@ -81,15 +81,14 @@ services:
       - LOG_LEVEL=debug
       - DATABASE_URL=postgresql://library:library_test@postgres-test:5432/library_test
       - OLLAMA_EMBEDDING_URL=http://ollama-embeddings-test:11434
-      - OLLAMA_TRANSLATION_URL=http://ollama-translations-test:11434
       - OLLAMA_MODEL=nomic-embed-text
-      - TRANSLATION_MODEL=llama3.2:1b
+      - LIBRETRANSLATE_URL=http://libretranslate-test:5000
     depends_on:
       postgres-test:
         condition: service_healthy
       ollama-embeddings-test:
         condition: service_started
-      ollama-translations-test:
+      libretranslate-test:
         condition: service_started
     networks:
       - library-test-network
@@ -159,29 +158,20 @@ services:
         reservations:
           memory: 1G
 
-  # ----- Ollama Translations Test -----
-  ollama-translations-test:
-    image: ollama/ollama:latest
-    container_name: library-ollama-translations-test
-    ports:
-      - "11436:11434"
-    volumes:
-      - ollama_translations_test_data:/root/.ollama
+  # ----- LibreTranslate Test -----
+  libretranslate-test:
+    image: libretranslate/libretranslate:latest
+    container_name: library-libretranslate-test
+    command: --load-only en,es --threads 4
     networks:
       - library-test-network
     restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "ollama", "list" ]
-      interval: 30s
-      timeout: 10s
-      start_period: 30s
-      retries: 3
     deploy:
       resources:
         limits:
-          memory: 4G
-        reservations:
           memory: 2G
+        reservations:
+          memory: 1G
 
 # ----- Networks -----
 networks:
@@ -194,8 +184,6 @@ volumes:
     name: library-postgres-data-test
   ollama_embeddings_test_data:
     name: library-ollama-embeddings-data-test
-  ollama_translations_test_data:
-    name: library-ollama-translations-data-test
   api_test_node_modules:
     name: library-api-test-node-modules
   web_client_test_node_modules:
