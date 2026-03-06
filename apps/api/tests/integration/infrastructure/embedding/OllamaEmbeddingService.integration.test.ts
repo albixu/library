@@ -10,10 +10,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { OllamaEmbeddingService } from '../../../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
-import {
-  EmbeddingServiceUnavailableError,
-  EmbeddingTextTooLongError,
-} from '../../../../src/application/errors/ApplicationErrors.js';
+import { EmbeddingServiceUnavailableError } from '../../../../src/application/errors/ApplicationErrors.js';
 
 describe('OllamaEmbeddingService Integration', () => {
   let service: OllamaEmbeddingService;
@@ -160,12 +157,18 @@ describe('OllamaEmbeddingService Integration', () => {
       expect(result.model).toBe(EMBEDDING_MODEL);
     });
 
-    it('should throw EmbeddingTextTooLongError for text exceeding 7000 characters', async () => {
+    it.skipIf(embeddingServiceUnavailable)('should handle text exceeding 7000 characters via chunking', async () => {
+      // OllamaEmbeddingService uses a sliding-window chunking strategy (CHUNK_SIZE=6500)
+      // for long texts instead of throwing EmbeddingTextTooLongError.
+      // EmbeddingTextTooLongError is only thrown at the application layer (CreateBookUseCase)
+      // when the full embedding text exceeds MAX_EMBEDDING_TEXT_LENGTH (30000 chars).
       const longText = 'a'.repeat(7001);
 
-      await expect(service.generateEmbedding(longText)).rejects.toThrow(
-        EmbeddingTextTooLongError
-      );
+      const result = await service.generateEmbedding(longText);
+
+      expect(result.embedding).toBeInstanceOf(Array);
+      expect(result.embedding.length).toBe(EMBEDDING_DIMENSIONS);
+      expect(result.model).toBe(EMBEDDING_MODEL);
     });
 
     it.skipIf(embeddingServiceUnavailable)('should handle text at a reasonable length', async () => {
