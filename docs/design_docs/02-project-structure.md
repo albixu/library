@@ -6,6 +6,7 @@
 |-------|-------|
 | **Estado** | Aprobado |
 | **Fecha** | 2026-01-31 |
+| **Última actualización** | 2026-03-06 (HU-032: estructura real, Angular 21, LibreTranslate, HU-001–HU-032) |
 | **Autor** | - |
 
 ---
@@ -74,26 +75,61 @@ El proyecto sigue una estructura **monorepo** con múltiples aplicaciones bajo e
 library/
 ├── docs/
 │   ├── api/
-│   │   └── openapi.yaml
+│   │   ├── openapi.yaml
+│   │   └── data-loading-schema.md
 │   ├── db/
-│   │   ├── init-db.sql                  # Script de inicialización BD
-│   │   └── books.json                   # Datos consolidados para seeding
+│   │   └── init-db.sql                  # Script de inicialización BD (referencia)
 │   ├── design_docs/
 │   │   ├── 01-project-overview.md
 │   │   ├── 02-project-structure.md
-│   │   └── 03-web-client-design.md
-│   └── user_stories/
-│       ├── 00-hu-001-create-book.md
-│       ├── 01-hu-002-initial-data-load.md
-│       ├── 02-hu-003-book-level.md          # Superseded by HU-008
-│       ├── 03-hu-004-standardize-api-responses.md
-│       ├── 04-hu-005-list-book-types.md
-│       ├── 05-hu-008-type-category-level-relationships.md
-│       ├── 06-hu-009-list-categories.md
-│       ├── 07-hu-010-list-book-levels.md
-│       ├── 08-hu-011-consolidate-books.md
-│       ├── 09-hu-012-search-books.md
-│       └── 10-hu-013-book-description-translation.md
+│   │   ├── 03-web-client-design.md
+│   │   ├── 04-api-design.md
+│   │   └── 05-migration-material-to-tailwind.md
+│   ├── diagrams/
+│   │   ├── README.md
+│   │   ├── 01-infrastructure.md
+│   │   ├── 02-api-architecture.md
+│   │   ├── 03-webclient-architecture.md
+│   │   └── 04-book-creation-flow.md
+│   ├── user_stories/
+│   │   ├── 00-hu-001-create-book.md
+│   │   ├── 01-hu-002-initial-data-load.md
+│   │   ├── 02-hu-003-book-level.md
+│   │   ├── 03-hu-004-standardize-api-responses.md
+│   │   ├── 04-hu-005-list-book-types.md
+│   │   ├── 05-hu-008-type-category-level-relationships.md
+│   │   ├── 06-hu-009-list-categories.md
+│   │   ├── 07-hu-010-list-book-levels.md
+│   │   ├── 08-hu-011-consolidate-books.md
+│   │   ├── 09-hu-012-search-books.md
+│   │   ├── 10-hu-013-book-description-translation.md
+│   │   ├── 11-hu-014-web-client-setup.md
+│   │   ├── 12-hu-015-book-list-page.md
+│   │   ├── 13-hu-016-layout-theme.md
+│   │   ├── 14-hu-017-web-client-docker.md
+│   │   ├── 15-hu-018-production-docker.md
+│   │   ├── 16-hu-019-initial-data-load-production.md
+│   │   ├── 17-hu-020-migrate-to-tailwind.md
+│   │   ├── 18-hu-021-ia-models-separation.md
+│   │   ├── 19-hu-022-data-loading-structure.md
+│   │   ├── 20-hu-023-architecture-diagrams.md
+│   │   ├── 21-hu-024-bug-fixes-and-test-coverage.md
+│   │   ├── 22-hu-025-translation-optimization.md
+│   │   ├── 23-hu-026-libretranslate-provider.md
+│   │   ├── 24-hu-027-catalog-consolidation-improvements.md
+│   │   ├── 25-hu-028-increase-description-max-length.md
+│   │   ├── 26-hu-029-flexible-book-identifier.md
+│   │   ├── 27-hu-030-infra-housekeeping.md
+│   │   ├── 28-hu-031-fix-book-creation-errors.md
+│   │   └── 29-hu-032-documentation-update-and-swagger-ui.md
+│   └── web/
+│       ├── designs/
+│       └── story_books/
+│           ├── data-display-components.md
+│           ├── dialog-components.md
+│           ├── filter-components.md
+│           ├── layout-components.md
+│           └── table-components.md
 │
 ├── apps/
 │   ├── api/                                  # 🖥️ Backend: API REST
@@ -108,22 +144,23 @@ library/
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── value-objects/
 │   │   │   │   │   ├── BookFormat.ts
-│   │   │   │   │   ├── ISBN.ts
+│   │   │   │   │   ├── BookIdentifier.ts    # HU-029: reemplaza ISBN (1-32 chars)
+│   │   │   │   │   ├── ISBN.ts              # Mantenido por compatibilidad interna
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── criteria/                # HU-012: Patrón Criteria para consultas
-│   │   │   │   │   ├── Criteria.ts          # Clase principal de criterio
-│   │   │   │   │   ├── Filter.ts            # Filtro individual
-│   │   │   │   │   ├── Filters.ts           # Colección de filtros
-│   │   │   │   │   ├── FilterField.ts       # Campo del filtro
-│   │   │   │   │   ├── FilterOperator.ts    # Operadores (EQUALS, CONTAINS, etc.)
-│   │   │   │   │   ├── FilterValue.ts       # Valor del filtro
-│   │   │   │   │   ├── Order.ts             # Ordenamiento
-│   │   │   │   │   ├── OrderBy.ts           # Campo de ordenamiento
-│   │   │   │   │   ├── OrderType.ts         # Dirección (ASC/DESC)
-│   │   │   │   │   ├── constants.ts         # Constantes del dominio
+│   │   │   │   │   ├── Criteria.ts
+│   │   │   │   │   ├── Filter.ts
+│   │   │   │   │   ├── Filters.ts
+│   │   │   │   │   ├── FilterField.ts
+│   │   │   │   │   ├── FilterOperator.ts
+│   │   │   │   │   ├── FilterValue.ts
+│   │   │   │   │   ├── Order.ts
+│   │   │   │   │   ├── OrderBy.ts
+│   │   │   │   │   ├── OrderType.ts
+│   │   │   │   │   ├── constants.ts
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── validators/
-│   │   │   │   │   ├── uuid.ts              # Validación UUID compartida
+│   │   │   │   │   ├── uuid.ts
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── errors/
 │   │   │   │   │   ├── DomainErrors.ts
@@ -133,19 +170,19 @@ library/
 │   │   │   ├── application/                 # 🔄 CASOS DE USO
 │   │   │   │   ├── use-cases/
 │   │   │   │   │   ├── CreateBookUseCase.ts
-│   │   │   │   │   ├── SearchBooksUseCase.ts    # HU-012: Búsqueda con criterios
+│   │   │   │   │   ├── SearchBooksUseCase.ts
 │   │   │   │   │   ├── ListBookTypesUseCase.ts
-│   │   │   │   │   ├── ListCategoriesUseCase.ts # HU-009: Listar categorías
-│   │   │   │   │   ├── ListBookLevelsUseCase.ts # HU-010: Listar niveles
+│   │   │   │   │   ├── ListCategoriesUseCase.ts
+│   │   │   │   │   ├── ListBookLevelsUseCase.ts
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── ports/
 │   │   │   │   │   ├── BookRepository.ts
 │   │   │   │   │   ├── AuthorRepository.ts
 │   │   │   │   │   ├── TypeRepository.ts
 │   │   │   │   │   ├── CategoryRepository.ts
-│   │   │   │   │   ├── LevelRepository.ts   # Puerto Level (N:M con Type)
+│   │   │   │   │   ├── LevelRepository.ts
 │   │   │   │   │   ├── EmbeddingService.ts
-│   │   │   │   │   ├── TranslationService.ts # Puerto para traducciones (HU-013)
+│   │   │   │   │   ├── TranslationService.ts
 │   │   │   │   │   ├── Logger.ts
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── errors/
@@ -160,9 +197,9 @@ library/
 │   │   │   │   │   │   ├── PostgresAuthorRepository.ts
 │   │   │   │   │   │   ├── PostgresTypeRepository.ts
 │   │   │   │   │   │   ├── PostgresCategoryRepository.ts
-│   │   │   │   │   │   ├── PostgresLevelRepository.ts  # Implementa LevelRepository
-│   │   │   │   │   │   ├── types.ts              # DatabaseClient type
-│   │   │   │   │   │   ├── utils.ts              # Utilidades (isDuplicateKeyError)
+│   │   │   │   │   │   ├── PostgresLevelRepository.ts
+│   │   │   │   │   │   ├── types.ts
+│   │   │   │   │   │   ├── utils.ts
 │   │   │   │   │   │   ├── drizzle/
 │   │   │   │   │   │   │   └── schema.ts
 │   │   │   │   │   │   ├── mappers/
@@ -170,14 +207,15 @@ library/
 │   │   │   │   │   │   │   ├── AuthorMapper.ts
 │   │   │   │   │   │   │   ├── CategoryMapper.ts
 │   │   │   │   │   │   │   ├── TypeMapper.ts
-│   │   │   │   │   │   │   ├── LevelMapper.ts    # Mapper Level <-> DB
+│   │   │   │   │   │   │   ├── LevelMapper.ts
 │   │   │   │   │   │   │   └── index.ts
 │   │   │   │   │   │   └── index.ts
 │   │   │   │   │   ├── embedding/
-│   │   │   │   │   │   ├── OllamaEmbeddingService.ts
+│   │   │   │   │   │   ├── OllamaEmbeddingService.ts  # Chunking con solapamiento (HU-031)
 │   │   │   │   │   │   └── index.ts
-│   │   │   │   │   ├── translation/          # HU-013: Servicio de traducción
-│   │   │   │   │   │   ├── OllamaTranslationService.ts
+│   │   │   │   │   ├── translation/
+│   │   │   │   │   │   ├── OllamaTranslationService.ts      # Proveedor secundario
+│   │   │   │   │   │   ├── LibreTranslateTranslationService.ts  # Proveedor primario (HU-026)
 │   │   │   │   │   │   └── index.ts
 │   │   │   │   │   └── logging/
 │   │   │   │   │       ├── PinoLogger.ts
@@ -187,21 +225,21 @@ library/
 │   │   │   │   │   └── http/
 │   │   │   │   │       ├── server.ts
 │   │   │   │   │       ├── routes/
-│   │   │   │   │       │   ├── books.routes.ts       # POST /books, GET /books
-│   │   │   │   │       │   ├── book-types.routes.ts  # GET /book-types
-│   │   │   │   │       │   ├── categories.routes.ts  # GET /book-categories
-│   │   │   │   │       │   └── book-levels.routes.ts # GET /book-levels
+│   │   │   │   │       │   ├── books.routes.ts
+│   │   │   │   │       │   ├── book-types.routes.ts
+│   │   │   │   │       │   ├── categories.routes.ts
+│   │   │   │   │       │   └── book-levels.routes.ts
 │   │   │   │   │       ├── controllers/
-│   │   │   │   │       │   ├── BooksController.ts         # Crear libro
-│   │   │   │   │       │   ├── SearchBooksController.ts   # Buscar libros
-│   │   │   │   │       │   ├── BookTypesController.ts     # Listar tipos
-│   │   │   │   │       │   ├── CategoriesController.ts    # Listar categorías
-│   │   │   │   │       │   └── BookLevelsController.ts    # Listar niveles
+│   │   │   │   │       │   ├── BooksController.ts
+│   │   │   │   │       │   ├── SearchBooksController.ts
+│   │   │   │   │       │   ├── BookTypesController.ts
+│   │   │   │   │       │   ├── CategoriesController.ts
+│   │   │   │   │       │   └── BookLevelsController.ts
 │   │   │   │   │       ├── errors/
 │   │   │   │   │       │   └── HttpErrorMapper.ts
 │   │   │   │   │       ├── schemas/
 │   │   │   │   │       │   ├── book.schemas.ts
-│   │   │   │   │       │   ├── search-books.schemas.ts    # HU-012: Schemas de búsqueda
+│   │   │   │   │       │   ├── search-books.schemas.ts
 │   │   │   │   │       │   ├── category.schemas.ts
 │   │   │   │   │       │   ├── book-level.schemas.ts
 │   │   │   │   │       │   └── common.schemas.ts
@@ -220,13 +258,6 @@ library/
 │   │   │   │   └── index.ts
 │   │   │   │
 │   │   │   └── server.ts                    # Entry point HTTP server
-│   │   │
-│   │   ├── scripts/                         # 📜 Scripts de utilidad
-│   │   │   ├── consolidate-books.ts         # Consolida JSONs de origen
-│   │   │   └── seed-database.ts             # Carga datos en BD
-│   │   │
-│   │   ├── data/
-│   │   │   └── source/                      # Ficheros JSON de origen
 │   │   │
 │   │   ├── tests/
 │   │   │   ├── unit/
@@ -260,56 +291,46 @@ library/
 │   └── web-client/                          # 🌐 Frontend: Cliente Web (Angular)
 │       ├── src/
 │       │   ├── app/
-│       │   │   ├── core/                    # Singleton services, guards, interceptors
-│       │   │   │   ├── services/            # API services, theme service
-│       │   │   │   ├── interceptors/        # HTTP interceptors
-│       │   │   │   └── models/              # Domain models/interfaces
+│       │   │   ├── catalog/                 # Feature principal: catálogo de libros
+│       │   │   │   ├── components/
+│       │   │   │   │   ├── data-display/    # category-chips, format-icon, language-flag, etc.
+│       │   │   │   │   ├── dialogs/         # book-description-dialog, send-to-kindle-dialog
+│       │   │   │   │   ├── filters/         # filter-panel, multi-select-chips, semantic-search, etc.
+│       │   │   │   │   └── table/           # book-card, book-table, empty-state, paginator, etc.
+│       │   │   │   ├── pages/
+│       │   │   │   │   └── book-list/
+│       │   │   │   └── services/            # BookCatalogStore, BookService
 │       │   │   │
-│       │   │   ├── features/                # Feature modules (lazy loaded)
-│       │   │   │   ├── book-search/         # Búsqueda de libros
-│       │   │   │   │   ├── components/
-│       │   │   │   │   ├── pages/
-│       │   │   │   │   ├── services/
-│       │   │   │   │   └── book-search.routes.ts
-│       │   │   │   │
-│       │   │   │   └── book-detail/         # Detalle de libro + envío Kindle
-│       │   │   │       ├── components/
-│       │   │   │       ├── pages/
-│       │   │   │       └── book-detail.routes.ts
+│       │   │   ├── core/                    # Servicios singleton
+│       │   │   │   ├── services/
+│       │   │   │   ├── interceptors/
+│       │   │   │   └── models/
 │       │   │   │
-│       │   │   ├── shared/                  # Componentes y utilidades compartidas
-│       │   │   │   ├── ui/                  # Design System Components
-│       │   │   │   │   ├── atoms/           # Button, Input, Badge, Icon, Spinner
-│       │   │   │   │   ├── molecules/       # SearchInput, Select, Pagination
-│       │   │   │   │   ├── organisms/       # DataTable, FilterPanel, Header
-│       │   │   │   │   └── index.ts
+│       │   │   ├── kindle/                  # Feature: envío a Kindle
+│       │   │   │   ├── components/
+│       │   │   │   └── services/
+│       │   │   │
+│       │   │   ├── layout/                  # Componentes de layout
+│       │   │   │   ├── header/
+│       │   │   │   ├── footer/
+│       │   │   │   └── main-layout/
+│       │   │   │
+│       │   │   ├── shared/                  # Utilidades y componentes transversales
+│       │   │   │   ├── components/
+│       │   │   │   │   └── theme-toggle/
 │       │   │   │   ├── directives/
 │       │   │   │   ├── pipes/
 │       │   │   │   └── utils/
 │       │   │   │
-│       │   │   ├── layouts/                 # Layout components
-│       │   │   │   └── main-layout/
-│       │   │   │
 │       │   │   └── app.routes.ts
 │       │   │
-│       │   ├── assets/                      # Recursos estáticos
-│       │   ├── styles/                      # Estilos globales
-│       │   │   ├── tokens/                  # Design tokens (colors, typography, spacing)
-│       │   │   ├── themes/                  # Temas light/dark
-│       │   │   ├── base/                    # Reset, typography base
-│       │   │   └── styles.scss
-│       │   │
-│       │   └── environments/                # Configuración por entorno
+│       │   ├── assets/
+│       │   └── environments/
 │       │
-│       ├── .storybook/                      # Configuración Storybook
+│       ├── .storybook/
 │       │   ├── main.ts
 │       │   ├── preview.ts
 │       │   └── manager.ts
-│       │
-│       ├── tests/                           # Tests separados del código fuente
-│       │   ├── unit/
-│       │   ├── integration/
-│       │   └── e2e/
 │       │
 │       ├── docker/
 │       │   └── Dockerfile
@@ -319,8 +340,21 @@ library/
 │       ├── tsconfig.json
 │       └── vitest.config.ts
 │
-├── docker-compose.yml                       # 🐳 Orquestación desarrollo
-├── docker-compose.prod.yml                  # 🐳 Orquestación producción
+├── scripts/                                 # 📜 Scripts de utilidad (raíz)
+│   ├── consolidate-books.ts                 # Consolida JSONs de origen
+│   ├── seed-database.ts                     # Carga datos en BD
+│   ├── translation-cache.ts                 # Caché de traducciones
+│   └── setup-ollama-models.sh               # Descarga modelos Ollama
+│
+├── initial_data/                            # 📦 Datos consolidados listos para seed (HU-030)
+├── original_data/                           # 📂 Ficheros JSON de origen sin procesar
+│
+├── docker-compose.yml                       # 🐳 Entorno desarrollo
+├── docker-compose.prod.yml                  # 🐳 Entorno producción
+├── docker-compose.test.yml                  # 🐳 Entorno test
+├── docker-compose.consolidate.yml           # 🐳 Entorno consolidación de datos
+├── docker-compose.seed.yml                  # 🐳 Entorno seed de producción
+├── .env.example                             # Variables de entorno de referencia
 ├── AGENTS.md                                # 📋 Guías para agentes IA
 ├── .gitignore
 └── README.md
@@ -625,11 +659,10 @@ El Web Client sigue una arquitectura de capas similar a la API, aplicando princi
 
 | Categoría | Tecnología | Versión |
 |-----------|------------|---------|
-| Framework | Angular | 19.x |
+| Framework | Angular | 21.x |
 | Lenguaje | TypeScript | 5.x |
 | State Management | Angular Signals | Built-in |
-| Estilos | SCSS + CSS Variables | - |
-| UI Components | Design System propio (Atomic Design) | - |
+| Estilos | Tailwind CSS | 3.x |
 | Component Docs | Storybook | 8.x |
 | Testing Unit | Vitest + Angular Testing Library | Latest |
 | Testing E2E | Playwright | Latest |
@@ -638,23 +671,36 @@ El Web Client sigue una arquitectura de capas similar a la API, aplicando princi
 
 ```
 src/app/
+├── catalog/                 # 📦 FEATURE PRINCIPAL: Catálogo de libros
+│   ├── components/
+│   │   ├── data-display/    # Visualización de datos (CategoryChips, FormatIcon, etc.)
+│   │   ├── dialogs/         # Diálogos modales (BookDescriptionDialog, SendToKindleDialog)
+│   │   ├── filters/         # Panel de filtros (FilterPanel, SemanticSearch, etc.)
+│   │   └── table/           # Tabla de libros (BookTable, BookCard, Paginator, etc.)
+│   ├── pages/
+│   │   └── book-list/       # Página principal del catálogo
+│   └── services/            # BookCatalogStore (state con Signals), BookService
+│
 ├── core/                    # 🔧 SERVICIOS SINGLETON
-│   ├── services/            # API services, theme service
-│   ├── interceptors/        # HTTP interceptors (error handling, loading)
+│   ├── services/            # ApiService, ThemeService
+│   ├── interceptors/        # HTTP interceptors (error handling)
 │   └── models/              # Domain models/interfaces
 │
-├── features/                # 📦 MÓDULOS DE FEATURE (lazy loaded)
-│   ├── book-search/         # Feature: Búsqueda de libros
-│   └── book-detail/         # Feature: Detalle + envío Kindle
+├── kindle/                  # 📱 FEATURE: Envío a Kindle
+│   ├── components/
+│   └── services/
 │
-├── shared/                  # 🎨 DESIGN SYSTEM
-│   └── ui/                  # Componentes UI reutilizables
-│       ├── atoms/           # Elementos básicos (Button, Input, Badge)
-│       ├── molecules/       # Grupos de átomos (SearchInput, Select)
-│       └── organisms/       # Componentes complejos (DataTable, Header)
+├── layout/                  # 📐 LAYOUTS
+│   ├── header/
+│   ├── footer/
+│   └── main-layout/
 │
-└── layouts/                 # 📐 LAYOUTS
-    └── main-layout/         # Header, footer, contenedor principal
+└── shared/                  # 🛠️ UTILIDADES Y COMPONENTES TRANSVERSALES
+    ├── components/
+    │   └── theme-toggle/
+    ├── directives/
+    ├── pipes/
+    └── utils/
 ```
 
 ### 6.3 Core (`src/app/core/`)
@@ -1064,8 +1110,11 @@ server {
 
 | Archivo | Propósito |
 |---------|-----------|
-| `docker-compose.yml` | Desarrollo - Monta código por volumen, hot reload |
-| `docker-compose.prod.yml` | Producción - Código copiado en imagen, optimizado |
+| `docker-compose.yml` | **Desarrollo** — Monta código por volumen, hot reload, todos los servicios |
+| `docker-compose.prod.yml` | **Producción** — Código copiado en imagen, optimizado |
+| `docker-compose.test.yml` | **Test** — Entorno aislado para tests de integración y e2e |
+| `docker-compose.consolidate.yml` | **Consolidación** — Procesamiento y consolidación de ficheros JSON origen |
+| `docker-compose.seed.yml` | **Seed** — Carga masiva de datos en la BD de producción |
 
 ### 7.3 Desarrollo vs Producción
 
@@ -1142,8 +1191,9 @@ server {
 - [Hexagonal Architecture - Alistair Cockburn](https://alistair.cockburn.us/hexagonal-architecture/)
 - [Ports & Adapters Pattern](https://herbertograca.com/2017/09/14/ports-adapters-architecture/)
 - [Clean Architecture - Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [Angular 19 Documentation](https://angular.dev)
+- [Angular 21 Documentation](https://angular.dev)
 - [Angular Signals Guide](https://angular.dev/guide/signals)
+- [Tailwind CSS](https://tailwindcss.com/docs)
 - [Storybook](https://storybook.js.org/)
 - [Atomic Design - Brad Frost](https://bradfrost.com/blog/post/atomic-web-design/)
 - [Playwright](https://playwright.dev)
