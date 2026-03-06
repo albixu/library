@@ -99,15 +99,10 @@ describe('HeaderComponent', () => {
   });
 
   describe('Action Buttons', () => {
-    it('should have avatar with account_circle icon', () => {
+    // TODO: Restore this test when user profile management is implemented (HU-035)
+    it('should not render avatar until user management is implemented', () => {
       const avatar = fixture.nativeElement.querySelector('.header__avatar');
-      expect(avatar).toBeTruthy();
-      expect(avatar.getAttribute('role')).toBe('img');
-      expect(avatar.getAttribute('aria-label')).toBe('Perfil de usuario');
-
-      const icon = avatar.querySelector('.material-symbols-outlined');
-      expect(icon).toBeTruthy();
-      expect(icon.textContent.trim()).toBe('account_circle');
+      expect(avatar).toBeFalsy();
     });
   });
 

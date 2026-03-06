@@ -37,7 +37,9 @@ import { Book } from '../../../../core/models/index.js';
                   <th>Nivel</th>
                   <th>Formato</th>
                   <th>Descripción</th>
+                  <!-- TODO: Descomentar cuando se integre el flujo de Kindle en la MVP (HU-035)
                   <th class="text-right">Acciones</th>
+                  -->
                 </tr>
               </thead>
               <tbody>
@@ -86,17 +88,19 @@ import { Book } from '../../../../core/models/index.js';
                         <span class="description-text">-</span>
                       }
                     </td>
+                    <!-- TODO: Descomentar cuando se integre el flujo de Kindle en la MVP (HU-035)
                     <td class="actions-column text-right">
                       <button
                         class="action-button"
                         type="button"
-                        aria-label="Enviar a Kindle"
+                        aria-label="Send to Kindle"
                         title="Enviar a Kindle"
                         (click)="onSendToKindle($event, book)"
                       >
                         <span class="material-symbols-outlined">send_to_mobile</span>
                       </button>
                     </td>
+                    -->
                   </tr>
                 }
               </tbody>
@@ -281,6 +285,41 @@ import { Book } from '../../../../core/models/index.js';
     .description-column {
       width: 80px;
     }
+
+    /* TODO: Descomentar cuando se integre el flujo de Kindle en la MVP (HU-035)
+    .actions-column {
+      width: 80px;
+    }
+
+    .action-button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-secondary);
+      transition: all 0.15s ease;
+
+      &:hover {
+        background-color: var(--color-bg-elevated);
+        color: var(--color-accent);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+      }
+
+      .material-symbols-outlined {
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+    }
+    */
 
     .description-button {
       background: transparent;
