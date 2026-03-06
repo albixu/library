@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input, output, viewChild } from '@a
 import { CategoryChipsComponent } from '../../data-display/category-chips/category-chips.component.js';
 import { LevelBadgeComponent } from '../../data-display/level-badge/level-badge.component.js';
 import { LanguageFlagComponent } from '../../data-display/language-flag/language-flag.component.js';
+import { TruncatedTextComponent } from '../../data-display/truncated-text/truncated-text.component.js';
 import { EmptyStateComponent } from '../empty-state/empty-state.component.js';
 import { LoadingOverlayComponent } from '../loading-overlay/loading-overlay.component.js';
 import { BookDescriptionDialogComponent } from '../../dialogs/book-description-dialog/book-description-dialog.component.js';
@@ -14,6 +15,7 @@ import { Book } from '../../../../core/models/index.js';
     CategoryChipsComponent,
     LevelBadgeComponent,
     LanguageFlagComponent,
+    TruncatedTextComponent,
     EmptyStateComponent,
     LoadingOverlayComponent,
     BookDescriptionDialogComponent,
@@ -25,7 +27,7 @@ import { Book } from '../../../../core/models/index.js';
       @if (books().length > 0) {
         <div class="book-table-container">
           <div class="table-scroll">
-            <table aria-label="Libros" class="book-table">
+            <table aria-label="Books" class="book-table">
               <thead>
                 <tr>
                   <th>ISBN</th>
@@ -75,15 +77,11 @@ import { Book } from '../../../../core/models/index.js';
                     </td>
                     <td class="description-column text-center">
                       @if (book.description) {
-                        <button
-                          class="description-button"
-                          type="button"
-                          aria-label="Ver descripción"
-                          title="Ver descripción"
-                          (click)="onShowDescription($event, book)"
-                        >
-                          <span class="material-symbols-outlined">menu_book</span>
-                        </button>
+                        <app-truncated-text
+                          [text]="book.description"
+                          [maxLines]="2"
+                          [showTooltip]="true"
+                        />
                       } @else {
                         <span class="description-text">-</span>
                       }
@@ -92,8 +90,8 @@ import { Book } from '../../../../core/models/index.js';
                       <button
                         class="action-button"
                         type="button"
-                        aria-label="Enviar a Kindle"
-                        title="Enviar a Kindle"
+                        aria-label="Send to Kindle"
+                        title="Send to Kindle"
                         (click)="onSendToKindle($event, book)"
                       >
                         <span class="material-symbols-outlined">send_to_mobile</span>
