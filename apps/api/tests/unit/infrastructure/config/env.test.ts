@@ -198,6 +198,9 @@ describe('Environment Configuration', () => {
 
     it('should return default Ollama configuration when no env vars set', () => {
       process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
+      delete process.env['OLLAMA_EMBEDDING_URL'];
+      delete process.env['OLLAMA_MODEL'];
+      delete process.env['OLLAMA_TIMEOUT_MS'];
 
       const config = getOllamaConfig();
 
@@ -365,6 +368,9 @@ describe('Environment Configuration', () => {
 
     it('should return default Ollama configuration when no env vars set', () => {
       process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
+      delete process.env['OLLAMA_EMBEDDING_URL'];
+      delete process.env['OLLAMA_MODEL'];
+      delete process.env['OLLAMA_TIMEOUT_MS'];
 
       const config = getOllamaConfig();
 

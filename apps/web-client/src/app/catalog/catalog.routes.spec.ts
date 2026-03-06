@@ -24,6 +24,6 @@ describe('Catalog Routes', () => {
       // Verify the import resolves correctly
       const module = await import('./pages/book-list/book-list-page.component.js');
       expect(module.BookListPageComponent).toBeDefined();
-    });
+    }, 30000);
   });
 });

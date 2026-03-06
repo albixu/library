@@ -43,7 +43,8 @@ export type TestDb = NodePgDatabase<typeof schema> & { $client: pg.Pool };
  * When running inside Docker, use service names; when running locally, use localhost
  */
 const DEFAULT_DATABASE_URL = process.env['DATABASE_URL'] ?? 'postgresql://library:library@postgres:5432/library';
-const DEFAULT_OLLAMA_URL = process.env['OLLAMA_BASE_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama:11434';
+const DEFAULT_OLLAMA_URL = process.env['OLLAMA_EMBEDDING_URL'] ?? process.env['OLLAMA_BASE_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama-embeddings:11434';
+const DEFAULT_OLLAMA_TRANSLATION_URL = process.env['OLLAMA_TRANSLATION_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama-translations:11434';
 const DEFAULT_OLLAMA_MODEL = 'nomic-embed-text';
 const DEFAULT_TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'llama3.2:1b';
 
@@ -97,7 +98,8 @@ export async function clearTestData(db: TestDb): Promise<void> {
  * Creates a fully configured Fastify server for E2E testing
  */
 export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
-  const ollamaUrl = process.env['OLLAMA_URL'] ?? DEFAULT_OLLAMA_URL;
+  const ollamaUrl = DEFAULT_OLLAMA_URL;
+  const ollamaTranslationUrl = DEFAULT_OLLAMA_TRANSLATION_URL;
   const ollamaModel = process.env['OLLAMA_MODEL'] ?? DEFAULT_OLLAMA_MODEL;
   const translationModel = process.env['TRANSLATION_MODEL'] ?? DEFAULT_TRANSLATION_MODEL;
 
@@ -110,7 +112,7 @@ export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
 
   // HU-013: Translation service for description translation
   const translationService = new OllamaTranslationService({
-    baseUrl: ollamaUrl,
+    baseUrl: ollamaTranslationUrl,
     model: translationModel,
     timeoutMs: 60000,
     retries: 3,

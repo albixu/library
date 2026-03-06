@@ -38,7 +38,8 @@ import { ListBookLevelsUseCase } from '../../../src/application/use-cases/ListBo
 import { createServer } from '../../../src/infrastructure/driver/http/server.js';
 import { noopLogger } from '../../../src/application/ports/Logger.js';
 
-const OLLAMA_URL = process.env['OLLAMA_BASE_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama:11434';
+const OLLAMA_EMBEDDING_URL = process.env['OLLAMA_EMBEDDING_URL'] ?? process.env['OLLAMA_BASE_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama-embeddings:11434';
+const OLLAMA_TRANSLATION_URL = process.env['OLLAMA_TRANSLATION_URL'] ?? process.env['OLLAMA_URL'] ?? 'http://ollama-translations:11434';
 const TRANSLATION_MODEL = process.env['TRANSLATION_MODEL'] ?? 'llama3.2:1b';
 
 /**
@@ -56,13 +57,13 @@ async function createBrokenServiceServer(options: {
   const invalidUrl = 'http://localhost:19999'; // Non-existent port
 
   const embeddingService = new OllamaEmbeddingService({
-    baseUrl: options.brokenEmbedding ? invalidUrl : OLLAMA_URL,
+    baseUrl: options.brokenEmbedding ? invalidUrl : OLLAMA_EMBEDDING_URL,
     model: 'nomic-embed-text',
     timeoutMs: 2000, // Short timeout for faster tests
   });
 
   const translationService = new OllamaTranslationService({
-    baseUrl: options.brokenTranslation ? invalidUrl : OLLAMA_URL,
+    baseUrl: options.brokenTranslation ? invalidUrl : OLLAMA_TRANSLATION_URL,
     model: TRANSLATION_MODEL,
     timeoutMs: 2000,
     retries: 1, // Fewer retries for faster tests
@@ -477,10 +478,10 @@ describe('POST /api/books (E2E)', () => {
       expect(body.error).toHaveProperty('message');
     });
 
-    it('should return 400 when ISBN format is invalid', async () => {
+    it('should return 400 when book identifier exceeds maximum length', async () => {
       const bookData = {
         ...e2eFixtures.validBook,
-        isbn: 'invalid-isbn',
+        isbn: 'A'.repeat(33), // BookIdentifier max is 32 chars
       };
 
       const response = await fetch(`${E2E_BASE_URL}/api/books`, {
@@ -708,7 +709,7 @@ describe('POST /api/books (E2E)', () => {
     // To run these tests, ensure the translation model is pulled in Ollama.
     it.skipIf(
       async () => {
-        const svc = new OllamaTranslationService({ baseUrl: OLLAMA_URL, model: TRANSLATION_MODEL, timeoutMs: 5000, retries: 1 });
+        const svc = new OllamaTranslationService({ baseUrl: OLLAMA_TRANSLATION_URL, model: TRANSLATION_MODEL, timeoutMs: 5000, retries: 1 });
         return !(await svc.isAvailable());
       },
     )('should translate English description to Spanish', async () => {
