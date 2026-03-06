@@ -84,15 +84,15 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
                 "
                 [formControl]="emailControl"
                 placeholder="tu-email@kindle.com"
-                aria-label="Dirección de email de Kindle"
+                aria-label="Kindle email address"
                 [attr.aria-describedby]="'email-hint'"
               />
             </div>
             @if (emailControl.hasError('required') && emailControl.touched) {
-              <span class="error-message">El email es requerido</span>
+              <span class="error-message">Email is required</span>
             }
             @if (emailControl.hasError('email') && !emailControl.hasError('required')) {
-              <span class="error-message">Por favor ingresa una dirección de email válida</span>
+              <span class="error-message">Please enter a valid email</span>
             }
             <span id="email-hint" class="hint-text">Ingresa la dirección de email de tu dispositivo Kindle</span>
           </div>
@@ -139,7 +139,7 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
             (click)="onCancel()"
             [disabled]="state() === 'sending'"
           >
-            Cancelar
+            Cancel
           </button>
           <button
             type="button"
@@ -149,10 +149,10 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
             (click)="onSend()"
           >
             @if (state() === 'sending') {
-              <span>Enviando...</span>
+              <span>Sending...</span>
             } @else {
               <span class="material-symbols-outlined btn-icon">send</span>
-              <span>Enviar a Kindle</span>
+              <span>Send to Kindle</span>
             }
           </button>
         }

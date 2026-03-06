@@ -15,11 +15,11 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
   standalone: true,
   imports: [],
   template: `
-    <nav class="paginator" aria-label="Paginación">
+    <nav class="paginator" aria-label="Pagination">
       <!-- Center: Load more button -->
       <div class="paginator-controls">
         @if (loading()) {
-          <div class="spinner" role="status" aria-label="Cargando más elementos">
+          <div class="spinner" role="status" aria-label="Loading more items">
             <span class="spinner-icon"></span>
           </div>
         } @else if (hasNextPage()) {
@@ -27,7 +27,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
             class="btn-load-more"
             type="button"
             data-testid="load-more-button"
-            aria-label="Cargar más elementos"
+            aria-label="Load more items"
             (click)="onLoadMore()"
           >
             <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
@@ -171,10 +171,10 @@ export class PaginatorComponent {
     const current = this.currentCount();
 
     if (total === 0) {
-      return 'Mostrando 0 de 0 elementos';
+      return 'Showing 0 of 0 items';
     }
 
-    return `Mostrando ${current} de ${total} elementos`;
+    return `Showing ${current} of ${total} items`;
   });
 
   onLoadMore(): void {
