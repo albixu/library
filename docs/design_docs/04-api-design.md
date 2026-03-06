@@ -82,7 +82,7 @@ La API sigue una arquitectura hexagonal estricta con tres capas principales:
 │  │  ┌───────────────┐  ┌─────────────────┐  ┌──────────────────┐   │    │
 │  │  │ Postgres      │  │ Ollama Embedd.  │  │ Translation      │   │    │
 │  │  │ Repositories  │  │ Service         │  │ Service          │   │    │
-│  │  │ (Drizzle)     │  │                 │  │ (Ollama o        │   │    │
+│  │  │ (Drizzle)     │  │ (chunking+avg)  │  │ (Ollama o        │   │    │
 │  │  │               │  │                 │  │  LibreTranslate) │   │    │
 │  │  └───────────────┘  └─────────────────┘  └──────────────────┘   │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
@@ -91,8 +91,8 @@ La API sigue una arquitectura hexagonal estricta con tres capas principales:
 │  │                      DOMAIN LAYER (Core)                         │    │
 │  │  ┌──────────────┐  ┌───────────────┐  ┌───────────────────┐     │    │
 │  │  │   Entities   │  │ Value Objects │  │  Criteria Pattern │     │    │
-│  │  │ Book, Author │  │ ISBN, Format  │  │  Filters, Order   │     │    │
-│  │  │ Category...  │  │               │  │                   │     │    │
+│  │  │ Book, Author │  │ BookIdentifier│  │  Filters, Order   │     │    │
+│  │  │ Category...  │  │ BookFormat    │  │                   │     │    │
 │  │  └──────────────┘  └───────────────┘  └───────────────────┘     │    │
 │  │  ┌──────────────────────────────────────────────────────────┐   │    │
 │  │  │                    Domain Errors                          │   │    │
@@ -114,7 +114,7 @@ apps/api/
 │   │   │   ├── Category.ts
 │   │   │   └── Level.ts
 │   │   ├── value-objects/         # Value Objects
-│   │   │   ├── ISBN.ts
+│   │   │   ├── BookIdentifier.ts
 │   │   │   └── BookFormat.ts
 │   │   ├── criteria/              # Patrón Criteria para queries
 │   │   │   ├── Criteria.ts
@@ -132,7 +132,8 @@ apps/api/
 │   │   │   ├── SearchBooksUseCase.ts
 │   │   │   ├── ListBookTypesUseCase.ts
 │   │   │   ├── ListCategoriesUseCase.ts
-│   │   │   └── ListBookLevelsUseCase.ts
+│   │   │   ├── ListBookLevelsUseCase.ts
+│   │   │   └── GetBookUseCase.ts
 │   │   ├── ports/                 # Interfaces (contratos)
 │   │   │   ├── BookRepository.ts
 │   │   │   ├── AuthorRepository.ts
@@ -156,7 +157,8 @@ apps/api/
 │   │   │   ├── embedding/         # Servicio de embeddings
 │   │   │   │   └── OllamaEmbeddingService.ts
 │   │   │   ├── translation/       # Servicio de traducción
-│   │   │   │   └── OllamaTranslationService.ts
+│   │   │   │   ├── OllamaTranslationService.ts
+│   │   │   │   └── LibreTranslateTranslationService.ts
 │   │   │   └── logging/           # Logger
 │   │   │       └── PinoLogger.ts
 │   │   └── driver/                # Adaptadores de entrada
@@ -203,7 +205,7 @@ Busca libros con múltiples filtros combinados con lógica AND y paginación cur
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `isbn` | string | Búsqueda exacta por ISBN |
+| `isbn` | string | Búsqueda exacta por BookIdentifier (ISBN u otro código) |
 | `title` | string | Búsqueda parcial en título (case-insensitive) |
 | `author` | string | Búsqueda parcial en autor (case-insensitive) |
 | `types` | string[] | Filtro por tipos (OR entre valores) |
@@ -285,21 +287,21 @@ Crea un nuevo libro generando automáticamente:
 | Campo | Tipo | Restricciones |
 |-------|------|---------------|
 | `title` | string | 1-500 caracteres |
-| `authors` | string[] | 1-20 autores, 1-200 chars cada uno |
+| `authors` | string[] | 1-10 autores, 1-300 chars cada uno |
 | `description` | string | 1-25000 caracteres |
 | `language` | string | ISO 639-1 (2 letras, e.g., "en", "es") |
-| `type` | enum | technical, novel, essay, poetry, biography, reference, manual, other |
-| `format` | enum | pdf, epub, mobi, azw3 |
+| `type` | string | Nombre de tipo existente en BD (e.g., "technical", "novel") |
+| `format` | enum | `epub`, `pdf`, `mobi`, `azw3`, `djvu`, `cbz`, `cbr`, `txt`, `other` |
 | `categories` | string[] | 1-10 categorías |
 
 #### Campos Opcionales
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `level` | string | Nivel de dificultad (debe existir para el tipo) |
-| `isbn` | string | ISBN-10 o ISBN-13 válido |
+| `level` | string | Nombre de nivel (debe existir y ser válido para el tipo) |
+| `isbn` | string | Identificador de libro: ISBN-10/13 u otros códigos (1-32 chars alfanuméricos, normalizado a mayúsculas) |
 | `available` | boolean | Default: true |
-| `path` | string | Ruta al archivo físico |
+| `path` | string | Ruta al archivo físico (max 1000 chars) |
 
 #### Response (201 Created)
 
@@ -355,7 +357,7 @@ Lista categorías, opcionalmente filtradas por tipo.
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `typeId` | string | Filtrar por tipo de libro (opcional) |
+| `type` | string | Filtrar por nombre de tipo de libro (opcional, case-insensitive) |
 
 ```json
 {
@@ -365,7 +367,7 @@ Lista categorías, opcionalmente filtradas por tipo.
       "id": "uuid",
       "name": "programming",
       "typeId": "uuid",
-      "typeName": "technical"
+      "description": null
     }
   ],
   "error": null
@@ -378,7 +380,7 @@ Lista niveles de dificultad, opcionalmente filtrados por tipo.
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `typeId` | string | Filtrar por tipo de libro (opcional) |
+| `type` | string | Filtrar por nombre de tipo de libro (opcional, case-insensitive) |
 
 ```json
 {
@@ -407,24 +409,25 @@ Lista niveles de dificultad, opcionalmente filtrados por tipo.
 class Book {
   readonly id: string;                    // UUID
   readonly title: string;                 // 1-500 chars
-  readonly authors: Author[];             // 1-20 authors
+  readonly authors: readonly Author[];    // 1-10 authors
   readonly originalDescription: string;  // Description in original language
   readonly description: string;           // Spanish description
   readonly language: string;              // ISO 639-1 code
   readonly type: BookType;
-  readonly categories: Category[];        // 1-10 categories
-  readonly level: Level | null;
+  readonly categories: readonly Category[]; // 1-10 categories
+  readonly levelId: string | null;        // UUID reference to Level entity
   readonly format: BookFormat;            // Value Object
-  readonly isbn: ISBN | null;             // Value Object
+  readonly isbn: BookIdentifier | null;   // Value Object (1-32 chars)
   readonly available: boolean;
   readonly path: string | null;
-  readonly embedding: number[];           // 768 dimensions
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
   // Factory methods
   static create(props: CreateBookProps): Book;
-  static fromPersistence(data: BookData): Book;
+  static fromPersistence(data: BookPersistenceProps): Book;
+  update(props: UpdateBookProps): Book;
+  getTextForEmbedding(): string;
 }
 ```
 
@@ -433,10 +436,13 @@ class Book {
 ```typescript
 class Author {
   readonly id: string;
-  readonly name: string;  // 1-200 chars
+  readonly name: string;  // 1-300 chars
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
 
-  static create(props: { id?: string; name: string }): Author;
-  static fromPersistence(data: AuthorData): Author;
+  static create(props: CreateAuthorProps): Author;
+  static fromPersistence(data: AuthorPersistenceProps): Author;
+  update(props: UpdateAuthorProps): Author;
 }
 ```
 
@@ -459,6 +465,7 @@ class Category {
   readonly id: string;
   readonly name: string;
   readonly typeId: string;
+  readonly description: string | null;
 
   static create(props: CreateCategoryProps): Category;
   static fromPersistence(data: CategoryData): Category;
@@ -471,7 +478,6 @@ class Category {
 class Level {
   readonly id: string;
   readonly name: string;
-  readonly typeId: string;
 
   static fromPersistence(data: LevelData): Level;
 }
@@ -479,34 +485,43 @@ class Level {
 
 ### 4.2 Value Objects
 
-#### ISBN
+#### BookIdentifier
 
 ```typescript
-class ISBN {
-  readonly value: string;  // Normalized (no hyphens)
+class BookIdentifier {
+  readonly value: string;  // Normalized (uppercase, hyphens/spaces stripped)
 
   private constructor(value: string);
-  static create(value: string): ISBN;  // Validates format + checksum
-  
-  get isbn10(): string | null;
-  get isbn13(): string;
+  static create(value: string): BookIdentifier;        // Validates + normalizes
+  static fromPersistence(value: string): BookIdentifier; // No validation (trusted source)
+
+  equals(other: BookIdentifier): boolean;
+  toString(): string;
 }
 ```
 
 Validaciones:
 
-- ISBN-10: 10 dígitos, último puede ser 'X'
-- ISBN-13: 13 dígitos, empieza con 978 o 979
-- Checksum válido
+- Longitud: 1-32 caracteres (tras normalizar)
+- Caracteres permitidos: alfanuméricos (A-Z, 0-9) y guión bajo (`_`)
+- Guiones e espacios se eliminan antes de validar (separadores ISBN)
+- Normalizado a mayúsculas
+
+Soporta:
+- ISBN-10 y ISBN-13 estándar
+- Identificadores propietarios de distribuidores (e.g. códigos alfanuméricos MIT Sloan, códigos institucionales)
 
 #### BookFormat
 
 ```typescript
 class BookFormat {
-  readonly value: 'pdf' | 'epub' | 'mobi' | 'azw3';
+  readonly value: 'epub' | 'pdf' | 'mobi' | 'azw3' | 'djvu' | 'cbz' | 'cbr' | 'txt' | 'other';
 
   private constructor(value: string);
   static create(value: string): BookFormat;
+  static fromPersistence(value: BookFormatValue): BookFormat;
+  static isValid(value: string): boolean;
+  static getAllFormats(): readonly BookFormatValue[];
 }
 ```
 
@@ -561,7 +576,11 @@ class RequiredFieldError extends DomainError { }
 class FieldTooLongError extends DomainError { }
 class InvalidUUIDError extends DomainError { }
 class TooManyItemsError extends DomainError { }
-class DuplicateItemError extends DomainError { }
+class DuplicateItemError extends DomainError { }    // Solo para IDs duplicados (no para nombres de autor)
+
+// Value Object errors
+class InvalidBookIdentifierError extends DomainError { }  // BookIdentifier inválido
+class InvalidBookFormatError extends DomainError { }      // BookFormat inválido
 
 // Business rule errors
 class BookNotFoundError extends DomainError { }
@@ -571,10 +590,17 @@ class InvalidBookTypeError extends DomainError { }
 class CategoryTypeMismatchError extends DomainError { }
 class LevelTypeMismatchError extends DomainError { }
 class InvalidLanguageCodeError extends DomainError { }
+class CategoryNotFoundError extends DomainError { }
+class AuthorAlreadyExistsError extends DomainError { }
+class CategoryAlreadyExistsError extends DomainError { }
 
-// Data constraint errors
+// Legacy (no se lanza activamente — ver nota)
 class EmbeddingTextTooLongError extends DomainError { }
 ```
+
+> **Nota sobre autores duplicados:** `Book.validateAuthors()` **no lanza `DuplicateItemError` para nombres de autor duplicados**. En su lugar, aplica **deduplicación silenciosa** (case-insensitive, conserva la primera ocurrencia) para ser resiliente ante datos sucios del catálogo. `DuplicateItemError` sí se lanza si se detectan authors con el mismo `id`.
+
+> **Nota sobre `EmbeddingTextTooLongError`:** Este error existe en el código pero **no se lanza en producción** porque `OllamaEmbeddingService` implementa chunking automático con solapamiento para textos largos. Textos de hasta cualquier longitud se procesan correctamente mediante ventana deslizante (chunk_size=6500, overlap=200).
 
 ---
 
@@ -771,17 +797,18 @@ class OllamaEmbeddingService implements EmbeddingService {
   baseUrl: string;           // Default: http://ollama-embeddings:11434
   model: string;             // Default: nomic-embed-text
   timeoutMs: number;         // Default: 30000
-  maxTextLength: number;     // 7000 chars
-
-  async generateEmbedding(text: string): Promise<EmbeddingResult>;
 }
+
+// Constantes de chunking
+const CHUNK_SIZE = 6500;    // Máx chars por chunk (margen bajo límite del modelo de 7000)
+const CHUNK_OVERLAP = 200;  // Chars compartidos entre chunks consecutivos
 ```
 
 **Características:**
 
 - Genera embeddings de 768 dimensiones
-- Validación de longitud máxima (7000 chars)
-- Retry con backoff exponencial
+- **Textos cortos** (≤ 6500 chars): llamada única a la API
+- **Textos largos** (> 6500 chars): chunking automático con ventana deslizante → embeddings por chunk → promediado + normalización L2
 - Errores específicos: `EmbeddingServiceUnavailableError`
 
 #### OllamaTranslationService
@@ -872,11 +899,11 @@ Validación de entrada con mensajes de error claros:
 ```typescript
 const createBookSchema = z.object({
   title: z.string().min(1).max(500),
-  authors: z.array(z.string().min(1).max(200)).min(1).max(20),
+  authors: z.array(z.string().min(1).max(300)).min(1).max(10),
   description: z.string().min(1).max(25000),
   language: z.string().length(2).regex(/^[a-z]{2}$/),
-  type: z.enum(['technical', 'novel', 'essay', ...]),
-  format: z.enum(['pdf', 'epub', 'mobi', 'azw3']),
+  type: z.string().min(1).max(100),
+  format: z.enum(['epub', 'pdf', 'mobi', 'azw3', 'djvu', 'cbz', 'cbr', 'txt', 'other']),
   categories: z.array(z.string()).min(1).max(10),
   level: z.string().optional(),
   isbn: z.string().optional(),
@@ -1061,19 +1088,20 @@ interface EnvConfig {
 ```
 Error
 ├── DomainError (business rules)
-│   ├── RequiredFieldError         → 400
-│   ├── FieldTooLongError          → 400
-│   ├── InvalidUUIDError           → 400
-│   ├── TooManyItemsError          → 400
-│   ├── DuplicateItemError         → 400
-│   ├── BookNotFoundError          → 404
-│   ├── DuplicateISBNError         → 409
-│   ├── DuplicateBookError         → 409
-│   ├── InvalidBookTypeError       → 400
-│   ├── CategoryTypeMismatchError  → 400
-│   ├── LevelTypeMismatchError     → 400
-│   ├── InvalidLanguageCodeError   → 400
-│   └── EmbeddingTextTooLongError  → 400
+│   ├── RequiredFieldError              → 400
+│   ├── FieldTooLongError               → 400
+│   ├── InvalidUUIDError                → 400
+│   ├── TooManyItemsError               → 400
+│   ├── DuplicateItemError              → 400
+│   ├── InvalidBookIdentifierError      → 400
+│   ├── InvalidBookFormatError          → 400
+│   ├── InvalidLanguageCodeError        → 400
+│   ├── InvalidBookTypeError            → 400
+│   ├── CategoryTypeMismatchError       → 400
+│   ├── LevelTypeMismatchError          → 400
+│   ├── BookNotFoundError               → 404
+│   ├── DuplicateISBNError              → 409
+│   └── DuplicateBookError              → 409
 │
 ├── EmbeddingServiceError (infrastructure)
 │   └── EmbeddingServiceUnavailableError → 503
@@ -1152,68 +1180,86 @@ interface ApiErrorResponse {
 CREATE TABLE types (
   id UUID PRIMARY KEY,
   name VARCHAR(50) UNIQUE NOT NULL,
-  description TEXT
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Levels (HU-008: tabla independiente, sin FK directa a types)
+CREATE TABLE levels (
+  id UUID PRIMARY KEY,
+  name VARCHAR(100) UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Type-Levels junction (HU-008: N:N entre types y levels)
+CREATE TABLE type_levels (
+  type_id UUID NOT NULL REFERENCES types(id) ON DELETE CASCADE,
+  level_id UUID NOT NULL REFERENCES levels(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (type_id, level_id)
 );
 
 -- Categories
 CREATE TABLE categories (
   id UUID PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
-  type_id UUID REFERENCES types(id),
-  UNIQUE(name, type_id)
-);
-
--- Levels
-CREATE TABLE levels (
-  id UUID PRIMARY KEY,
-  name VARCHAR(50) NOT NULL,
-  type_id UUID REFERENCES types(id),
+  type_id UUID NOT NULL REFERENCES types(id) ON DELETE RESTRICT,
+  description VARCHAR(500),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(name, type_id)
 );
 
 -- Authors
 CREATE TABLE authors (
   id UUID PRIMARY KEY,
-  name VARCHAR(200) UNIQUE NOT NULL
+  name VARCHAR(300) UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Books
 CREATE TABLE books (
   id UUID PRIMARY KEY,
+  isbn VARCHAR(32) UNIQUE,                         -- BookIdentifier (no solo ISBN-13)
   title VARCHAR(500) NOT NULL,
+  normalized_title VARCHAR(500) NOT NULL,           -- Lowercase, para deduplicación
   original_description TEXT NOT NULL,
   description TEXT NOT NULL,
-  language CHAR(2) NOT NULL,
-  type_id UUID REFERENCES types(id) NOT NULL,
-  level_id UUID REFERENCES levels(id),
-  format VARCHAR(10) NOT NULL,
-  isbn VARCHAR(13) UNIQUE,
-  available BOOLEAN DEFAULT true,
-  path TEXT,
-  embedding VECTOR(768) NOT NULL,
+  language VARCHAR(10) NOT NULL,
+  type_id UUID NOT NULL REFERENCES types(id),
+  level_id UUID REFERENCES levels(id) ON DELETE SET NULL,
+  format VARCHAR(50) NOT NULL,
+  available BOOLEAN NOT NULL DEFAULT true,
+  path VARCHAR(1000),
+  embedding VECTOR(768),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Book-Author relationship
 CREATE TABLE book_authors (
-  book_id UUID REFERENCES books(id),
-  author_id UUID REFERENCES authors(id),
+  book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  author_id UUID NOT NULL REFERENCES authors(id) ON DELETE RESTRICT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
   PRIMARY KEY (book_id, author_id)
 );
 
 -- Book-Category relationship
 CREATE TABLE book_categories (
-  book_id UUID REFERENCES books(id),
-  category_id UUID REFERENCES categories(id),
+  book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  category_id UUID NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
   PRIMARY KEY (book_id, category_id)
 );
 
 -- Indexes for search performance
-CREATE INDEX idx_books_embedding ON books USING ivfflat (embedding vector_cosine_ops);
-CREATE INDEX idx_books_title ON books (title);
-CREATE INDEX idx_books_type ON books (type_id);
-CREATE INDEX idx_books_level ON books (level_id);
+CREATE INDEX ON books USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX ON books (title);
+CREATE INDEX ON books (type_id);
+CREATE INDEX ON books (level_id);
+CREATE INDEX ON books (isbn) WHERE isbn IS NOT NULL;
 ```
 
 ### 10.2 Búsqueda Vectorial
