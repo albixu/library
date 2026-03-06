@@ -8,15 +8,15 @@ interface LanguageInfo {
 }
 
 const LANGUAGE_MAP: Record<string, LanguageInfo> = {
-  en: { flag: '🇬🇧', name: 'Inglés' },
-  es: { flag: '🇪🇸', name: 'Español' },
-  fr: { flag: '🇫🇷', name: 'Francés' },
-  de: { flag: '🇩🇪', name: 'Alemán' },
-  it: { flag: '🇮🇹', name: 'Italiano' },
-  pt: { flag: '🇵🇹', name: 'Portugués' },
+  en: { flag: '🇬🇧', name: 'English' },
+  es: { flag: '🇪🇸', name: 'Spanish' },
+  fr: { flag: '🇫🇷', name: 'French' },
+  de: { flag: '🇩🇪', name: 'German' },
+  it: { flag: '🇮🇹', name: 'Italian' },
+  pt: { flag: '🇵🇹', name: 'Portuguese' },
 };
 
-const DEFAULT_LANGUAGE: LanguageInfo = { flag: '🌐', name: 'Desconocido' };
+const DEFAULT_LANGUAGE: LanguageInfo = { flag: '🌐', name: 'Unknown' };
 
 @Component({
   selector: 'app-language-flag',
@@ -27,7 +27,7 @@ const DEFAULT_LANGUAGE: LanguageInfo = { flag: '🌐', name: 'Desconocido' };
       <span
         class="language-flag"
         [title]="languageName()"
-        [attr.aria-label]="'Idioma: ' + languageName()"
+        [attr.aria-label]="'Language: ' + languageName()"
       >
         <span class="flag-emoji" role="img" [attr.aria-label]="languageName()">
           {{ flagEmoji() }}

@@ -15,11 +15,11 @@ import { ThemeService } from '@core/services/theme.service';
   standalone: true,
   imports: [],
   template: `
-    <div class="theme-switch" role="group" aria-label="Selección de tema">
+    <div class="theme-switch" role="group" aria-label="Theme selection">
       <button
         class="theme-switch__button"
         [class.theme-switch__button--active]="themeService.theme() === 'light'"
-        aria-label="Modo claro"
+        aria-label="Light mode"
         [attr.aria-pressed]="themeService.theme() === 'light'"
         (click)="themeService.setTheme('light')"
       >
@@ -28,7 +28,7 @@ import { ThemeService } from '@core/services/theme.service';
       <button
         class="theme-switch__button"
         [class.theme-switch__button--active]="themeService.theme() === 'dark'"
-        aria-label="Modo oscuro"
+        aria-label="Dark mode"
         [attr.aria-pressed]="themeService.theme() === 'dark'"
         (click)="themeService.setTheme('dark')"
       >
