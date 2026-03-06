@@ -38,7 +38,7 @@ import { Subject, debounceTime } from 'rxjs';
           [placeholder]="placeholder()"
           [value]="internalValue()"
           [disabled]="disabled()"
-          aria-label="Búsqueda semántica"
+          aria-label="Semantic search"
           [attr.maxlength]="maxLength() || null"
           (input)="onInput($event)"
         ></textarea>
@@ -47,7 +47,7 @@ import { Subject, debounceTime } from 'rxjs';
             type="button"
             class="btn-clear clear-top-right"
             data-testid="clear-button"
-            aria-label="Limpiar búsqueda"
+            aria-label="Clear search"
             (click)="onClear()"
           >
             <span class="material-symbols-outlined icon-sm">close</span>

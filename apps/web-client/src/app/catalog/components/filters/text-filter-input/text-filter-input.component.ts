@@ -49,7 +49,7 @@ import { Subject, debounceTime } from 'rxjs';
             type="button"
             class="btn-clear"
             data-testid="clear-button"
-            aria-label="Limpiar filtro"
+            aria-label="Clear filter"
             (click)="onClear()"
           >
             <span class="material-symbols-outlined icon-sm">close</span>

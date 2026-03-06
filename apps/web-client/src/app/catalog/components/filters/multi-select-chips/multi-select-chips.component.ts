@@ -44,7 +44,7 @@ export type { SelectOption };
                   type="button"
                   class="chip-remove"
                   data-testid="remove-chip"
-                  [attr.aria-label]="'Eliminar ' + option.name"
+                  [attr.aria-label]="'Remove ' + option.name"
                   (click)="removeOption(option.name)"
                 >
                   <span class="material-symbols-outlined">close</span>
