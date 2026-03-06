@@ -15,7 +15,7 @@
  * - Multiple filter types (ISBN, title, author, types, categories, levels, text)
  * - Filters combined with AND logic
  * - List filters (types, categories, levels) use OR between values
- * - Semantic search with 70% similarity threshold
+ * - Semantic search with 55% similarity threshold (calibrated for nomic-embed-text)
  * - Cursor-based pagination
  * - Order by title (A-Z) or by similarity (desc) when using text filter
  */
