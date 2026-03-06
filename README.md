@@ -16,6 +16,7 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 
 - 🔍 **Búsqueda semántica**: Encuentra libros describiendo lo que buscas en lenguaje natural
 - 🌐 **API REST**: Integra con cualquier cliente web
+- 📖 **Swagger UI**: Interfaz interactiva de la API disponible en `/docs` (entornos de desarrollo y test)
 - 📦 **Carga de datos automática**: Importa libros desde archivos JSON
 - 🐳 **Dockerizado**: Todo el sistema corre en contenedores
 - 💰 **Costo $0**: Usa tecnologías 100% gratuitas y open source
@@ -30,7 +31,7 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 | Traducciones | LibreTranslate (self-hosted) |
 | API | Fastify |
 | ORM | Drizzle ORM |
-| Frontend | Angular 21 + Angular Material |
+| Frontend | Angular 21 + Tailwind CSS |
 | Testing API | Vitest |
 | Testing Web | Vitest + Playwright |
 | Documentación UI | Storybook |
@@ -94,7 +95,7 @@ docker exec -it library-api-dev sh
 npm run db:migrate
 ```
 
-¡Listo! La API está disponible en `http://localhost:3000`
+¡Listo! La API está disponible en `http://localhost:3000` y la documentación interactiva en `http://localhost:3000/docs`
 
 ## Carga de Datos Inicial
 
@@ -208,6 +209,18 @@ AUTO_SEED=true
 ## Uso
 
 ### API REST
+
+#### Swagger UI (Documentación Interactiva)
+
+En entornos de desarrollo y test, la API expone una interfaz gráfica interactiva generada a partir del spec OpenAPI:
+
+```
+http://localhost:3000/docs
+```
+
+Desde ahí podés explorar todos los endpoints, ver los esquemas de request/response y ejecutar llamadas directamente desde el navegador. En producción, la ruta `/docs` no está disponible.
+
+> El spec OpenAPI completo se encuentra en [`docs/api/openapi.yaml`](./docs/api/openapi.yaml).
 
 #### Endpoints disponibles
 
@@ -470,6 +483,7 @@ npm start -- --port 4300
 
 - **Desarrollo:** <http://localhost:4200>
 - **API (backend):** <http://localhost:3000>
+- **Swagger UI:** <http://localhost:3000/docs> *(solo en desarrollo/test)*
 
 #### Tests del Web Client
 
@@ -851,7 +865,7 @@ docker-compose -f docker-compose.prod.yml up -d
 Los modelos de IA requieren memoria significativa:
 
 - `nomic-embed-text`: ~500MB
-- `qwen2.5:1.5b`: ~1GB
+- `llama3.2:1b`: ~1GB
 
 ```bash
 # Verificar memoria disponible en el contenedor
