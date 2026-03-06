@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS books (
     language VARCHAR(10) NOT NULL,
     
     -- Optional fields
-    isbn VARCHAR(13) UNIQUE,
+    isbn VARCHAR(32) UNIQUE,
     path VARCHAR(1000),
     
     -- HU-008: Level is now a FK to levels table instead of enum
