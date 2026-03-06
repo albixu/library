@@ -6,9 +6,17 @@
  * for production, development, and testing.
  *
  * HU-012: Added SearchBooksController and GET /api/books endpoint
+ * HU-032: Added optional Swagger UI (disabled in production)
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parse as parseYaml } from 'yaml';
+import type { OpenAPIV3 } from 'openapi-types';
 import Fastify, { type FastifyInstance } from 'fastify';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUi from '@fastify/swagger-ui';
 import type { Logger } from '../../../application/ports/Logger.js';
 import { noopLogger } from '../../../application/ports/Logger.js';
 import { BooksController } from './controllers/BooksController.js';
@@ -44,6 +52,8 @@ export interface ServerDeps {
 export interface ServerOptions {
   /** API prefix for all routes (default: '/api') */
   prefix?: string;
+  /** Node environment — Swagger UI is only registered outside production (default: 'production') */
+  nodeEnv?: string;
 }
 
 /**
@@ -58,7 +68,7 @@ export async function createServer(
   options: ServerOptions = {},
 ): Promise<FastifyInstance> {
   const { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, logger = noopLogger } = deps;
-  const { prefix = '/api' } = options;
+  const { prefix = '/api', nodeEnv = 'production' } = options;
 
   const serverLogger = logger.child({ name: 'FastifyServer' });
 
@@ -66,6 +76,31 @@ export async function createServer(
   const fastify = Fastify({
     logger: false, // We use our own logger
   });
+
+  // Register Swagger UI only in development and test environments
+  const enableSwagger = nodeEnv === 'development' || nodeEnv === 'test';
+  if (enableSwagger) {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const openapiSpecPath = resolve(__dirname, '../../../../../../docs/api/openapi.yaml');
+    const openapiSpec = parseYaml(readFileSync(openapiSpecPath, 'utf-8')) as OpenAPIV3.Document;
+
+    await fastify.register(fastifySwagger, {
+      mode: 'static',
+      specification: {
+        document: openapiSpec,
+      },
+    });
+
+    await fastify.register(fastifySwaggerUi, {
+      routePrefix: '/docs',
+      uiConfig: {
+        docExpansion: 'list',
+        deepLinking: true,
+      },
+    });
+
+    serverLogger.info('Swagger UI enabled', { url: '/docs' });
+  }
 
   // Create controllers with dependencies
   const booksController = new BooksController({
@@ -117,16 +152,17 @@ export async function createServer(
 
   // Log server ready
   fastify.addHook('onReady', async () => {
-    serverLogger.info('Server routes registered', {
-      prefix,
-      routes: [
-        { method: 'GET', path: `${prefix}/books` },
-        { method: 'POST', path: `${prefix}/books` },
-        { method: 'GET', path: `${prefix}/book-types` },
-        { method: 'GET', path: `${prefix}/book-categories` },
-        { method: 'GET', path: `${prefix}/book-levels` },
-      ],
-    });
+    const routes = [
+      { method: 'GET', path: `${prefix}/books` },
+      { method: 'POST', path: `${prefix}/books` },
+      { method: 'GET', path: `${prefix}/book-types` },
+      { method: 'GET', path: `${prefix}/book-categories` },
+      { method: 'GET', path: `${prefix}/book-levels` },
+    ];
+    if (enableSwagger) {
+      routes.push({ method: 'GET', path: '/docs' });
+    }
+    serverLogger.info('Server routes registered', { prefix, routes });
   });
 
   return fastify;

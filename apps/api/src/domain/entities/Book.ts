@@ -344,7 +344,7 @@ export class Book {
     const seenNames = new Set<string>();
     const deduplicated = authors.filter(author => {
       const key = author.name.trim().toLowerCase();
-      if (seenNames.has(key)) return false;
+      if (seenNames.has(key)) {return false;}
       seenNames.add(key);
       return true;
     });

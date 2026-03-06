@@ -125,7 +125,7 @@ async function bootstrap(): Promise<void> {
     // Create and start server
     const server = await createServer(
       { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, logger },
-      { prefix: '/api' },
+      { prefix: '/api', nodeEnv: env.app.nodeEnv },
     );
 
     // Add health endpoint for Docker healthcheck
@@ -137,6 +137,7 @@ async function bootstrap(): Promise<void> {
       url: `http://localhost:${env.app.port}`,
       healthUrl: `http://localhost:${env.app.port}/health`,
       apiUrl: `http://localhost:${env.app.port}/api`,
+      ...(env.app.nodeEnv !== 'production' && { swaggerUrl: `http://localhost:${env.app.port}/docs` }),
     });
 
     // Graceful shutdown

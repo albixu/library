@@ -6,6 +6,7 @@
 |-------|-------|
 | **Estado** | Aprobado |
 | **Fecha** | 2026-02-22 |
+| **Última actualización** | 2026-03-06 (HU-032: Angular 21, LibreTranslate, BookIdentifier) |
 | **Autor** | - |
 
 ---
@@ -51,7 +52,7 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `id` | UUID | Sí | Identificador único generado por el sistema |
-| `isbn` | ISBN | No | ISBN del libro (único cuando presente) |
+| `isbn` | BookIdentifier | No | Identificador flexible del libro (ISBN-10, ISBN-13, ASIN, etc. — max 32 chars, único cuando presente) |
 | `title` | string | Sí | Título del libro (max 500) |
 | `authors` | Author[] | Sí | Lista de autores (mínimo 1) - Relación N:M |
 | `originalDescription` | string | Sí | Descripción en el idioma original (max 25000) |
@@ -67,7 +68,7 @@ Gestionar una colección grande de libros digitales presenta varios desafíos:
 | `createdAt` | timestamp | Sí | Fecha de creación |
 | `updatedAt` | timestamp | Sí | Fecha de modificación |
 
-> **Nota HU-013**: Las descripciones de libros se almacenan tanto en su idioma original (`originalDescription`) como traducidas al español (`description`). El campo `language` indica el idioma original usando códigos ISO 639-1. Las traducciones se realizan automáticamente usando Ollama (llama3.2:1b) durante la creación del libro.
+> **Nota HU-013 / HU-026**: Las descripciones de libros se almacenan tanto en su idioma original (`originalDescription`) como traducidas al español (`description`). El campo `language` indica el idioma original usando códigos ISO 639-1. Las traducciones se realizan automáticamente durante la creación del libro usando **LibreTranslate** como proveedor primario (velocidad, carga masiva) y **Ollama + llama3.2:1b** como proveedor secundario (calidad, disponibilidad offline).
 
 ### 3.2 Entidad: Author
 
@@ -117,7 +118,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 ### 3.6 Value Objects
 
 - **BookFormat**: `epub` | `pdf` | `mobi` | `azw3` | `djvu` | `cbz` | `cbr` | `txt` | `other`
-- **ISBN**: Validado (ISBN-10 o ISBN-13), normalizado sin guiones
+- **BookIdentifier**: Cadena alfanumérica de 1–32 caracteres (identificador flexible: ISBN-10, ISBN-13, ASIN, o cualquier otro identificador de libro). Introducido en HU-029 reemplazando el antiguo Value Object `ISBN`.
 
 ### 3.7 Relaciones
 
@@ -180,7 +181,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 │                                                                               │
 │   ┌─────────────────────┐         ┌─────────────────────────────────────┐   │
 │   │     Web Client      │         │              API                     │   │
-│   │     (Angular 19)    │ ◄─────► │         (Node.js/Fastify)            │   │
+│   │     (Angular 21)    │ ◄─────► │         (Node.js/Fastify)            │   │
 │   │                     │  HTTP   │                                      │   │
 │   │  • Búsqueda libros  │  REST   │  • Búsqueda semántica               │   │
 │   │  • Filtros          │         │  • CRUD libros                       │   │
@@ -193,13 +194,20 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 │                                   ┌───────────────┼───────────────┐          │
 │                                   │               │               │          │
 │                                   ▼               ▼               ▼          │
-│                           ┌───────────┐   ┌───────────┐   ┌───────────┐     │
-│                           │PostgreSQL │   │  Ollama   │   │  Ollama   │     │
-│                           │+ pgvector │   │(embeddings)│  │(translate)│     │
-│                           │           │   │           │   │           │     │
-│                           │ Puerto:   │   │ nomic-    │   │ aya-      │     │
-│                           │ 5432      │   │ embed-text│   │ expanse:8b│     │
-│                           └───────────┘   └───────────┘   └───────────┘     │
+│                           ┌───────────┐   ┌───────────┐   ┌───────────────┐  │
+│                           │PostgreSQL │   │  Ollama   │   │ LibreTranslate│  │
+│                           │+ pgvector │   │(embeddings)│  │  (traducciones│  │
+│                           │           │   │           │   │   primario)   │  │
+│                           │ Puerto:   │   │ nomic-    │   │ Puerto: 5000  │  │
+│                           │ 5432      │   │ embed-text│   └───────────────┘  │
+│                           └───────────┘   └───────────┘                      │
+│                                                           ┌───────────────┐  │
+│                                                           │    Ollama     │  │
+│                                                           │ (traducciones │  │
+│                                                           │  secundario)  │  │
+│                                                           │ llama3.2:1b   │  │
+│                                                           │ Puerto: 11435 │  │
+│                                                           └───────────────┘  │
 │                                                                               │
 │                           ┌───────────────────────────────────────────┐      │
 │                           │              Scripts                       │      │
@@ -215,10 +223,11 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 | Componente | Tecnología | Descripción | Design Doc |
 |------------|------------|-------------|------------|
 | **API** | Node.js 20, Fastify, TypeScript | Backend REST con arquitectura hexagonal y DDD | `02-project-structure.md` |
-| **Web Client** | Angular 19, Signals, SCSS | Interfaz web responsive con Design System propio | `03-web-client-design.md` |
+| **Web Client** | Angular 21, Signals, Tailwind CSS | Interfaz web responsive con Tailwind CSS | `03-web-client-design.md` |
 | **Base de Datos** | PostgreSQL 16 + pgvector | Almacenamiento de datos y búsqueda vectorial | - |
 | **Embeddings** | Ollama Embeddings + nomic-embed-text | Generación de embeddings para búsqueda semántica | - |
-| **Traducciones** | Ollama Translations + llama3.2:1b | Traducción automática de descripciones al español | - |
+| **Traducciones (primario)** | LibreTranslate | Traducción automática rápida, usada en carga masiva | - |
+| **Traducciones (secundario)** | Ollama Translations + llama3.2:1b | Traducción de calidad, disponibilidad offline | - |
 
 ### 4.3 Flujo de Datos Principal
 
@@ -347,7 +356,8 @@ Usuario                Web Client               API                    PostgreSQ
 | **Runtime** | Node.js 20 LTS |
 | **Base de datos** | PostgreSQL 16 + pgvector |
 | **Embeddings** | Ollama Embeddings + nomic-embed-text |
-| **Traducciones** | Ollama Translations + llama3.2:1b |
+| **Traducciones (primario)** | LibreTranslate |
+| **Traducciones (secundario)** | Ollama Translations + llama3.2:1b |
 | **Framework HTTP** | Fastify 4.x |
 | **ORM** | Drizzle ORM |
 | **Validación** | Zod |
@@ -358,11 +368,11 @@ Usuario                Web Client               API                    PostgreSQ
 
 | Componente | Tecnología |
 |------------|------------|
-| **Framework** | Angular 19.x |
+| **Framework** | Angular 21.x |
 | **Lenguaje** | TypeScript 5.x |
 | **State Management** | Angular Signals |
-| **Estilos** | SCSS + CSS Variables (Design Tokens) |
-| **UI Components** | Design System propio (Atomic Design) |
+| **Estilos** | Tailwind CSS |
+| **UI Components** | Componentes propios con Tailwind |
 | **Component Docs** | Storybook 8.x |
 | **Testing Unit** | Vitest + Angular Testing Library |
 | **Testing E2E** | Playwright |
@@ -377,6 +387,7 @@ Usuario                Web Client               API                    PostgreSQ
 |------------|-------------------|------------------------|
 | PostgreSQL + pgvector | $0 | $0 (incluido en VPS) |
 | Ollama + nomic-embed-text | $0 | $0 |
+| LibreTranslate (self-hosted) | $0 | $0 |
 | Node.js + TypeScript | $0 | $0 |
 | Docker | $0 | $0 |
 | **VPS** | N/A | ~$5-10/mes (Hetzner/Contabo) |
@@ -417,7 +428,7 @@ Usuario                Web Client               API                    PostgreSQ
 
 ### Frontend
 
-- [Angular 19 Documentation](https://angular.dev)
+- [Angular 21 Documentation](https://angular.dev)
 - [Angular Signals Guide](https://angular.dev/guide/signals)
 - [Storybook](https://storybook.js.org/)
 - [Playwright](https://playwright.dev)

@@ -82,7 +82,7 @@ export class OllamaEmbeddingService implements EmbeddingService {
 
     // Multi-chunk path: generate one embedding per chunk then average + normalize
     const embeddings = await Promise.all(
-      chunks.map(chunk => this.generateSingleEmbedding(chunk).then(r => r.embedding))
+      chunks.map(chunk => this.generateSingleEmbedding(chunk).then(r => r.embedding)),
     );
 
     const averaged = this.averageVectors(embeddings);
@@ -210,7 +210,7 @@ export class OllamaEmbeddingService implements EmbeddingService {
    */
   private normalizeL2(vector: number[]): number[] {
     const norm = Math.sqrt(vector.reduce((sum, v) => sum + v * v, 0));
-    if (norm === 0) return vector;
+    if (norm === 0) {return vector;}
     return vector.map(v => v / norm);
   }
 

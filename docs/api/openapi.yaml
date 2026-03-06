@@ -453,11 +453,11 @@ paths:
             Solicitud inválida. Posibles causas:
             - Campos requeridos faltantes o vacíos
             - Campos que exceden longitud máxima
-            - Tipo o formato de libro inválido
-            - Nivel de dificultad inválido
-            - ISBN con formato o checksum inválido
-            - Más de 10 categorías
-            - Texto de embedding excede 7000 caracteres
+            - Formato de libro inválido
+            - Nivel de dificultad inválido para el tipo de libro
+            - BookIdentifier inválido (vacío o más de 32 caracteres alfanuméricos)
+            - Más de 10 categorías o más de 10 autores
+            - Categoría no pertenece al tipo de libro indicado
           content:
             application/json:
               schema:
@@ -472,22 +472,22 @@ paths:
                       message: "Validation failed"
                       details:
                         - "title is required"
-                invalid_type:
-                  summary: Tipo de libro inválido
+                invalid_format:
+                  summary: Formato de libro inválido
                   value:
                     success: false
                     data: null
                     error:
                       message: "Validation failed"
                       details:
-                        - "type: Invalid enum value. Expected 'technical' | 'novel' | 'essay' | 'poetry' | 'biography' | 'reference' | 'manual' | 'other', received 'invalid'"
-                invalid_isbn:
-                  summary: ISBN inválido
+                        - "format: Invalid enum value. Expected 'epub' | 'pdf' | 'mobi' | 'azw3' | 'djvu' | 'cbz' | 'cbr' | 'txt' | 'other', received 'doc'"
+                invalid_identifier:
+                  summary: BookIdentifier inválido
                   value:
                     success: false
                     data: null
                     error:
-                      message: "Invalid ISBN: \"1234567890\". Must be a valid ISBN-10 or ISBN-13 with correct checksum."
+                      message: "Invalid book identifier: \"!!invalid!!\". Must be 1-32 alphanumeric characters (hyphens and underscores allowed)."
                 too_many_categories:
                   summary: Demasiadas categorías
                   value:
@@ -497,22 +497,13 @@ paths:
                       message: "Validation failed"
                       details:
                         - "categories: Array must contain at most 10 element(s)"
-                embedding_too_long:
-                  summary: Texto de embedding muy largo
-                  value:
-                    success: false
-                    data: null
-                    error:
-                      message: "Embedding text too long (7500 characters). Maximum allowed: 7000 characters"
                 invalid_level:
-                  summary: Nivel de dificultad inválido
+                  summary: Nivel no válido para el tipo de libro
                   value:
                     success: false
                     data: null
                     error:
-                      message: "Validation failed"
-                      details:
-                        - "level: Invalid enum value. Expected 'Beginner' | 'Intermediate' | 'Advanced' | 'Beginner to Intermediate' | 'Intermediate to Advanced', received 'expert'"
+                      message: "Level \"Expert\" is not valid for type \"technical\""
         '409':
           description: |
             Conflicto - Libro duplicado detectado.
@@ -528,12 +519,14 @@ paths:
                   message: "A book with ISBN \"9780132350884\" already exists"
         '503':
           description: |
-            Servicio no disponible - El servicio de embeddings o traducción (Ollama) no está accesible.
+            Servicio no disponible - El servicio de embeddings o traducción no está accesible.
             El libro NO se crea en la base de datos.
             
             Posibles causas:
-            - Servicio de embeddings (modelo nomic-embed-text) no disponible
-            - Servicio de traducción (modelo llama3.2:1b) no disponible (solo si language != 'es')
+            - Servicio de embeddings (modelo nomic-embed-text en Ollama) no disponible
+            - Servicio de traducción no disponible (solo si language != 'es'):
+              - Ollama (`TRANSLATION_PROVIDER=ollama`, modelo llama3.2:1b)
+              - LibreTranslate (`TRANSLATION_PROVIDER=libretranslate`)
           content:
             application/json:
               schema:
@@ -880,8 +873,9 @@ components:
         isbn:
           type: [string, 'null']
           description: |
-            ISBN del libro (opcional). Acepta formato ISBN-10 o ISBN-13.
-            Se valida el checksum. Puede incluir guiones que serán ignorados.
+            Identificador del libro (opcional). Acepta ISBN-10, ISBN-13, u otros códigos
+            de identificación propietarios de hasta 32 caracteres alfanuméricos.
+            Los guiones e espacios se eliminan antes de la validación. Se normaliza a mayúsculas.
           example: "9780132350884"
         available:
           type: boolean
@@ -973,7 +967,7 @@ components:
           description: Categorías asignadas al libro
         isbn:
           type: [string, 'null']
-          description: ISBN del libro (null si no se proporcionó)
+          description: Identificador del libro (ISBN u otro código, null si no se proporcionó)
           example: "9780132350884"
         available:
           type: boolean
@@ -1196,7 +1190,7 @@ components:
           example: "550e8400-e29b-41d4-a716-446655440000"
         isbn:
           type: [string, 'null']
-          description: ISBN del libro (null si no se proporcionó)
+          description: Identificador del libro (ISBN u otro código, null si no se proporcionó)
           example: "9780132350884"
         title:
           type: string
