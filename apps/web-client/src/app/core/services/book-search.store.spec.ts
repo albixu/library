@@ -293,6 +293,43 @@ describe('BookSearchStore', () => {
         timeout: 100,
       });
     });
+
+    it('should set error and stop loading when loadNextPage http request errors', async () => {
+      // First search to get a cursor
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
+      store.searchBooks();
+      await vi.waitFor(() => expect(store.pagination().nextCursor).toBe('abc123'));
+
+      // Load next page with error
+      bookServiceMock.searchBooks.mockReturnValue(throwError(() => new Error('Network error')));
+      store.loadNextPage();
+
+      await vi.waitFor(() => {
+        expect(store.loading()).toBe(false);
+        expect(store.error()).toBe('Network error');
+      });
+    });
+
+    it('should set error when loadNextPage response is not successful', async () => {
+      // First search to get a cursor
+      bookServiceMock.searchBooks.mockReturnValue(of(mockSearchResponse));
+      store.searchBooks();
+      await vi.waitFor(() => expect(store.pagination().nextCursor).toBe('abc123'));
+
+      // Load next page with failure response
+      const failureResponse: BookSearchResponse = {
+        success: false,
+        data: null,
+        error: { message: 'Page load failed' },
+      };
+      bookServiceMock.searchBooks.mockReturnValue(of(failureResponse));
+      store.loadNextPage();
+
+      await vi.waitFor(() => {
+        expect(store.loading()).toBe(false);
+        expect(store.error()).toBe('Page load failed');
+      });
+    });
   });
 
   describe('setPageSize', () => {
@@ -348,6 +385,14 @@ describe('BookSearchStore', () => {
         ])
       );
     });
+
+    it('should set typesLoading to false when http request errors', async () => {
+      bookServiceMock.getBookTypes.mockReturnValue(throwError(() => new Error('Network error')));
+
+      store.loadTypes();
+
+      await vi.waitFor(() => expect(store.typesLoading()).toBe(false));
+    });
   });
 
   describe('loadCategories', () => {
@@ -390,6 +435,14 @@ describe('BookSearchStore', () => {
       store.loadCategories('');
       await vi.waitFor(() => expect(store.categories()).toEqual([]));
     });
+
+    it('should set categoriesLoading to false when http request errors', async () => {
+      bookServiceMock.getCategories.mockReturnValue(throwError(() => new Error('Network error')));
+
+      store.loadCategories('technical');
+
+      await vi.waitFor(() => expect(store.categoriesLoading()).toBe(false));
+    });
   });
 
   describe('loadLevels', () => {
@@ -429,6 +482,14 @@ describe('BookSearchStore', () => {
       // Clear levels
       store.loadLevels('');
       await vi.waitFor(() => expect(store.levels()).toEqual([]));
+    });
+
+    it('should set levelsLoading to false when http request errors', async () => {
+      bookServiceMock.getLevels.mockReturnValue(throwError(() => new Error('Network error')));
+
+      store.loadLevels('technical');
+
+      await vi.waitFor(() => expect(store.levelsLoading()).toBe(false));
     });
   });
 

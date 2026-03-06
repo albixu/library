@@ -234,6 +234,13 @@ describe('BookListPageComponent', () => {
 
       expect(component.emptyStateType()).toBe('no-results');
     });
+
+    it('should show empty (non-empty) state when books are present', () => {
+      (mockStore.isEmpty as ReturnType<typeof signal>).set(false);
+      fixture.detectChanges();
+
+      expect(component.emptyStateType()).toBe('empty');
+    });
   });
 
   describe('Loading state', () => {
@@ -262,6 +269,15 @@ describe('BookListPageComponent', () => {
 
       expect(component.isMobileDrawerOpen()).toBe(!initialState);
     });
+
+    it('should toggle mobile drawer back to original state when called twice', () => {
+      const initialState = component.isMobileDrawerOpen();
+
+      component.toggleMobileDrawer();
+      component.toggleMobileDrawer();
+
+      expect(component.isMobileDrawerOpen()).toBe(initialState);
+    });
   });
 
   describe('Accessibility', () => {
@@ -273,6 +289,59 @@ describe('BookListPageComponent', () => {
     it('should have proper aria-label on filter panel region', () => {
       const filterRegion = fixture.nativeElement.querySelector('[role="complementary"]');
       expect(filterRegion).toBeTruthy();
+    });
+  });
+
+  describe('Retry search', () => {
+    it('should call store.searchBooks when onRetrySearch is called', () => {
+      (mockStore.searchBooks as ReturnType<typeof vi.fn>).mockClear();
+
+      component.onRetrySearch();
+
+      expect(mockStore.searchBooks).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('activeFilterCount computed', () => {
+    it('should return 0 when no filters are set', () => {
+      (mockStore.filters as ReturnType<typeof signal>).set({});
+      expect(component.activeFilterCount()).toBe(0);
+    });
+
+    it('should count each active scalar filter', () => {
+      (mockStore.filters as ReturnType<typeof signal>).set({
+        isbn: '978-0-13',
+        title: 'Clean',
+        author: 'Martin',
+        type: 'technical',
+        text: 'software',
+      });
+      expect(component.activeFilterCount()).toBe(5);
+    });
+
+    it('should count array filters only when non-empty', () => {
+      (mockStore.filters as ReturnType<typeof signal>).set({
+        categories: ['fiction', 'technical'],
+        levels: ['Beginner'],
+      });
+      expect(component.activeFilterCount()).toBe(2);
+    });
+
+    it('should not count empty array filters', () => {
+      (mockStore.filters as ReturnType<typeof signal>).set({
+        categories: [],
+        levels: [],
+      });
+      expect(component.activeFilterCount()).toBe(0);
+    });
+
+    it('should count all filter types combined', () => {
+      (mockStore.filters as ReturnType<typeof signal>).set({
+        title: 'Clean',
+        categories: ['fiction'],
+        levels: ['Beginner'],
+      });
+      expect(component.activeFilterCount()).toBe(3);
     });
   });
 });
