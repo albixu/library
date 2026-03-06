@@ -27,7 +27,7 @@ import { Book } from '../../../../core/models/index.js';
       @if (books().length > 0) {
         <div class="book-table-container">
           <div class="table-scroll">
-            <table aria-label="Books" class="book-table">
+            <table aria-label="Libros" class="book-table">
               <thead>
                 <tr>
                   <th>ISBN</th>
@@ -90,8 +90,8 @@ import { Book } from '../../../../core/models/index.js';
                       <button
                         class="action-button"
                         type="button"
-                        aria-label="Send to Kindle"
-                        title="Send to Kindle"
+                        aria-label="Enviar a Kindle"
+                        title="Enviar a Kindle"
                         (click)="onSendToKindle($event, book)"
                       >
                         <span class="material-symbols-outlined">send_to_mobile</span>

@@ -132,7 +132,7 @@ describe('LoadingOverlayComponent', () => {
       fixture.detectChanges();
 
       const overlay = fixture.nativeElement.querySelector('.loading-overlay');
-      expect(overlay.getAttribute('aria-label')).toBe('Loading');
+      expect(overlay.getAttribute('aria-label')).toBe('Cargando');
     });
 
     it('should use custom message as aria-label when provided', () => {

@@ -34,7 +34,7 @@ import { Book } from '../../../../core/models/index.js';
         </div>
         <button
           type="button"
-          aria-label="Send to Kindle"
+          aria-label="Enviar a Kindle"
           class="book-card-action"
           (click)="onSendToKindle($event)"
         >

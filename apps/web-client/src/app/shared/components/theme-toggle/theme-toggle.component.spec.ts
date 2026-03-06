@@ -50,8 +50,8 @@ describe('ThemeToggleComponent', () => {
 
   it('should have correct aria-labels for accessibility', () => {
     const buttons = fixture.nativeElement.querySelectorAll('.theme-switch__button');
-    expect(buttons[0].getAttribute('aria-label')).toBe('Light mode');
-    expect(buttons[1].getAttribute('aria-label')).toBe('Dark mode');
+    expect(buttons[0].getAttribute('aria-label')).toBe('Modo claro');
+    expect(buttons[1].getAttribute('aria-label')).toBe('Modo oscuro');
   });
 
   it('should mark light button as active when theme is light', () => {
@@ -109,6 +109,6 @@ describe('ThemeToggleComponent', () => {
   it('should have role="group" with aria-label on container', () => {
     const container = fixture.nativeElement.querySelector('.theme-switch');
     expect(container.getAttribute('role')).toBe('group');
-    expect(container.getAttribute('aria-label')).toBe('Theme selection');
+    expect(container.getAttribute('aria-label')).toBe('Selección de tema');
   });
 });

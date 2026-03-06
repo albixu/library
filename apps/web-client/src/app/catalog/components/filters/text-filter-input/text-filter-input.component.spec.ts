@@ -202,7 +202,7 @@ describe('TextFilterInputComponent', () => {
 
       const clearButton = fixture.nativeElement.querySelector('[data-testid="clear-button"]');
       const ariaLabel = clearButton.getAttribute('aria-label');
-      expect(ariaLabel).toBe('Clear filter');
+      expect(ariaLabel).toBe('Limpiar filtro');
     });
   });
 

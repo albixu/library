@@ -11,23 +11,23 @@ interface StateConfig {
 const STATE_CONFIGS: Record<EmptyStateType, StateConfig> = {
   empty: {
     icon: 'inbox',
-    title: 'No books yet',
-    description: 'Start by adding your first book to your library.',
+    title: 'Sin libros todavía',
+    description: 'Comienza añadiendo tu primer libro a tu biblioteca.',
   },
   'no-results': {
     icon: 'search_off',
-    title: 'No results found',
-    description: 'Try adjusting your filters or search query.',
+    title: 'Sin resultados',
+    description: 'Intenta ajustar tus filtros o la búsqueda.',
   },
   initial: {
     icon: 'auto_stories',
-    title: 'Search your library',
-    description: 'Use the filters above to find books in your collection.',
+    title: 'Busca en tu biblioteca',
+    description: 'Usa los filtros de arriba para encontrar libros en tu colección.',
   },
   error: {
     icon: 'error_outline',
-    title: 'Something went wrong',
-    description: 'An error occurred while loading books. Please try again.',
+    title: 'Algo salió mal',
+    description: 'Ocurrió un error al cargar los libros. Por favor, inténtalo de nuevo.',
   },
 };
 
