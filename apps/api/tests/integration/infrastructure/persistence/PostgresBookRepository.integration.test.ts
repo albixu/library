@@ -1197,10 +1197,10 @@ describe('PostgresBookRepository Integration', () => {
         const criteria = Criteria.empty().withSimilarTo('embedding', 'query text');
         const result = await bookRepository.search(criteria, baseEmbedding);
 
-        // Only the similar book should be returned (similarity >= 70%)
+        // Only the similar book should be returned (similarity >= 55%)
         expect(result.items.length).toBeGreaterThanOrEqual(1);
         expect(result.items[0].similarityScore).not.toBeNull();
-        expect(result.items[0].similarityScore!).toBeGreaterThanOrEqual(0.7);
+        expect(result.items[0].similarityScore!).toBeGreaterThanOrEqual(0.55);
       });
 
       it('should order by similarity score descending when embedding provided', async () => {

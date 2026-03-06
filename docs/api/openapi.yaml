@@ -45,7 +45,7 @@ paths:
         - **types**: Lista de tipos de libro (OR entre valores, case-insensitive)
         - **categories**: Lista de categorías (OR entre valores, case-insensitive)
         - **levels**: Lista de niveles de dificultad (OR entre valores, case-insensitive)
-        - **text**: Búsqueda semántica - genera un embedding y encuentra libros similares (≥70% similaridad)
+        - **text**: Búsqueda semántica - genera un embedding y encuentra libros similares (≥55% similaridad, calibrado para nomic-embed-text)
         
         ## Paginación
         
@@ -63,8 +63,8 @@ paths:
         
         Cuando se proporciona el parámetro `text`:
         1. Se genera un embedding vectorial del texto
-        2. Se buscan libros con similaridad ≥70%
-        3. Los resultados incluyen `similarityScore` (0.7 - 1.0)
+        2. Se buscan libros con similaridad ≥55%
+        3. Los resultados incluyen `similarityScore` (0.55 - 1.0)
         4. Los resultados se ordenan por similaridad descendente
       operationId: searchBooks
       parameters:
@@ -136,7 +136,7 @@ paths:
           required: false
           description: |
             Texto para búsqueda semántica. Se genera un embedding y se buscan libros
-            con similaridad ≥70%. Los resultados se ordenan por similaridad.
+            con similaridad ≥55%. Los resultados se ordenan por similaridad.
           schema:
             type: string
             minLength: 1
@@ -1248,7 +1248,7 @@ components:
           minimum: 0
           maximum: 1
           description: |
-            Score de similaridad semántica (0.7 - 1.0).
+            Score de similaridad semántica (0.55 - 1.0).
             Solo presente cuando se usa el parámetro `text` para búsqueda semántica.
             `null` para búsquedas sin filtro `text`.
           example: 0.87
