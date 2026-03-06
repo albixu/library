@@ -201,7 +201,7 @@ describe('MultiSelectChipsComponent', () => {
 
       const removeButton = fixture.nativeElement.querySelector('[data-testid="remove-chip"]');
       const ariaLabel = removeButton.getAttribute('aria-label');
-      expect(ariaLabel).toContain('Remove');
+      expect(ariaLabel).toContain('Eliminar');
     });
 
     it('should generate unique input id', () => {

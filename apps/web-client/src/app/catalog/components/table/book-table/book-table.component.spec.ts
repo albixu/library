@@ -174,7 +174,9 @@ describe('BookTableComponent', () => {
       fixture.componentRef.setInput('books', mockBooks);
       fixture.detectChanges();
 
-      const kindleButtons = fixture.nativeElement.querySelectorAll('[aria-label="Send to Kindle"]');
+      const kindleButtons = fixture.nativeElement.querySelectorAll(
+        '[aria-label="Enviar a Kindle"]'
+      );
       expect(kindleButtons.length).toBe(2);
     });
 
@@ -194,7 +196,7 @@ describe('BookTableComponent', () => {
       fixture.componentRef.setInput('books', mockBooks);
       fixture.detectChanges();
 
-      const kindleButton = fixture.nativeElement.querySelector('[aria-label="Send to Kindle"]');
+      const kindleButton = fixture.nativeElement.querySelector('[aria-label="Enviar a Kindle"]');
       kindleButton.click();
 
       expect(kindleSpy).toHaveBeenCalledWith(mockBooks[0]);
@@ -222,7 +224,7 @@ describe('BookTableComponent', () => {
       fixture.componentRef.setInput('books', mockBooks);
       fixture.detectChanges();
 
-      const kindleButton = fixture.nativeElement.querySelector('[aria-label="Send to Kindle"]');
+      const kindleButton = fixture.nativeElement.querySelector('[aria-label="Enviar a Kindle"]');
       kindleButton.click();
 
       // Should only emit sendToKindle, not rowClick
@@ -266,7 +268,7 @@ describe('BookTableComponent', () => {
       fixture.detectChanges();
 
       const table = fixture.nativeElement.querySelector('table');
-      expect(table.getAttribute('aria-label')).toBe('Books');
+      expect(table.getAttribute('aria-label')).toBe('Libros');
     });
 
     it('should have clickable rows with proper tabindex', () => {

@@ -39,7 +39,7 @@ describe('EmptyStateComponent', () => {
       fixture.detectChanges();
 
       const title = fixture.nativeElement.querySelector('.empty-state-title');
-      expect(title.textContent).toContain('No books yet');
+      expect(title.textContent).toContain('Sin libros todavía');
     });
 
     it('should display empty description', () => {
@@ -47,7 +47,7 @@ describe('EmptyStateComponent', () => {
       fixture.detectChanges();
 
       const description = fixture.nativeElement.querySelector('.empty-state-description');
-      expect(description.textContent).toContain('Start by adding your first book');
+      expect(description.textContent).toContain('Comienza añadiendo tu primer libro');
     });
   });
 
@@ -65,7 +65,7 @@ describe('EmptyStateComponent', () => {
       fixture.detectChanges();
 
       const title = fixture.nativeElement.querySelector('.empty-state-title');
-      expect(title.textContent).toContain('No results found');
+      expect(title.textContent).toContain('Sin resultados');
     });
 
     it('should display no results description', () => {
@@ -73,7 +73,7 @@ describe('EmptyStateComponent', () => {
       fixture.detectChanges();
 
       const description = fixture.nativeElement.querySelector('.empty-state-description');
-      expect(description.textContent).toContain('Try adjusting your filters');
+      expect(description.textContent).toContain('Intenta ajustar tus filtros');
     });
   });
 
@@ -91,7 +91,7 @@ describe('EmptyStateComponent', () => {
       fixture.detectChanges();
 
       const title = fixture.nativeElement.querySelector('.empty-state-title');
-      expect(title.textContent).toContain('Search your library');
+      expect(title.textContent).toContain('Busca en tu biblioteca');
     });
   });
 
@@ -109,7 +109,7 @@ describe('EmptyStateComponent', () => {
       fixture.detectChanges();
 
       const title = fixture.nativeElement.querySelector('.empty-state-title');
-      expect(title.textContent).toContain('Something went wrong');
+      expect(title.textContent).toContain('Algo salió mal');
     });
   });
 
