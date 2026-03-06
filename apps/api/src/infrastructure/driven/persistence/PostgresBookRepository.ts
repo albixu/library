@@ -377,7 +377,7 @@ export class PostgresBookRepository implements BookRepository {
    *
    * Supports filtering, ordering, and cursor-based pagination.
    * When an embedding is provided, it enables semantic similarity search
-   * with a minimum threshold of 70% similarity.
+   * with a minimum threshold of 55% similarity (calibrated for nomic-embed-text).
    *
    * @param criteria - Domain criteria object with filters, order, limit, cursor
    * @param embedding - Optional embedding vector for semantic search (SIMILAR_TO filter)

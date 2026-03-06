@@ -27,5 +27,5 @@ export const SEMANTIC_SEARCH = {
    * Results with similarity score below this value are filtered out.
    * Value range: 0.0 to 1.0 (0% to 100%)
    */
-  SIMILARITY_THRESHOLD: 0.7,
+  SIMILARITY_THRESHOLD: 0.55,
 } as const;

@@ -609,11 +609,11 @@ describe('GET /api/books (E2E)', () => {
       expect(status).toBe(200);
       const items = (body.data as { items: { title: string; similarityScore: number }[] }).items;
 
-      // Semantic search may return 0 results if similarity is below 70% threshold
+      // Semantic search may return 0 results if similarity is below 55% threshold
       // This is expected behavior - the test validates the endpoint works correctly
       if (items.length > 0) {
         // First result should be most relevant if any results returned
-        expect(items[0].similarityScore).toBeGreaterThan(0.7);
+        expect(items[0].similarityScore).toBeGreaterThan(0.55);
       }
     });
 
@@ -637,7 +637,7 @@ describe('GET /api/books (E2E)', () => {
       if (items.length > 0) {
         expect(items[0].similarityScore).not.toBeNull();
         expect(typeof items[0].similarityScore).toBe('number');
-        expect(items[0].similarityScore).toBeGreaterThanOrEqual(0.7);
+        expect(items[0].similarityScore).toBeGreaterThanOrEqual(0.55);
         expect(items[0].similarityScore).toBeLessThanOrEqual(1);
       }
     });
