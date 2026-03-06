@@ -211,7 +211,7 @@ Busca libros con múltiples filtros combinados con lógica AND y paginación cur
 | `types` | string[] | Filtro por tipos (OR entre valores) |
 | `categories` | string[] | Filtro por categorías (OR entre valores) |
 | `levels` | string[] | Filtro por niveles (OR entre valores) |
-| `text` | string | Búsqueda semántica (≥70% similaridad) |
+| `text` | string | Búsqueda semántica (≥55% similaridad, calibrado para nomic-embed-text) |
 | `limit` | number | Resultados por página (1-100, default: 50) |
 | `cursor` | string | Token de paginación |
 
@@ -1062,7 +1062,7 @@ interface EnvConfig {
                     │ PostgreSQL + pgvector│
                     │ - Apply filters     │
                     │ - Cosine similarity │
-                    │ - Threshold ≥ 0.70  │
+                     │ - Threshold ≥ 0.55  │
                     │ - Sort by similarity│
                     └────────┬────────────┘
                               │
@@ -1270,10 +1270,12 @@ pgvector permite búsqueda semántica eficiente:
 -- Búsqueda por similaridad (cosine distance)
 SELECT *, 1 - (embedding <=> $1) as similarity
 FROM books
-WHERE 1 - (embedding <=> $1) >= 0.70
+WHERE 1 - (embedding <=> $1) >= 0.55
 ORDER BY embedding <=> $1
 LIMIT 50;
 ```
+
+> **Nota sobre calibración del umbral:** El umbral de `0.55` está calibrado específicamente para el modelo `nomic-embed-text` (usado vía Ollama). Este modelo produce similitudes coseno estructuralmente más bajas que otros modelos como `text-embedding-ada-002` de OpenAI. Con `nomic-embed-text`, textos semánticamente relacionados pero no idénticos generan similitudes típicas de `0.55–0.65`, por lo que un umbral de `0.70` filtraría resultados legítimamente relevantes. El valor se define en `SEMANTIC_SEARCH.SIMILARITY_THRESHOLD` (`apps/api/src/domain/criteria/constants.ts`).
 
 ---
 
