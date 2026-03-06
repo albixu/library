@@ -13,7 +13,6 @@ Este documento es la fuente de verdad para los agentes de IA que trabajan en est
 ## 2. Project Overview
 **Library** es un sistema de gestión de biblioteca digital personal compuesto por:
 - **API (Node.js 20+ / Fastify)**: Lógica central y persistencia.
-- **CLI (Commander.js)**: Herramientas de terminal.
 - **Client Web (Angular)**: Interfaz de usuario (Última versión estable).
 - **Core Técnico**: TypeScript (ESM), PostgreSQL 16 + pgvector, Drizzle ORM, Zod, Vitest.
 - **Arquitectura**: Hexagonal (Ports & Adapters) y estrictamente **Domain-Driven Design (DDD)**.
@@ -23,15 +22,39 @@ Se debe seguir esta estructura de ramas jerárquica para cada desarrollo:
 1. **Dev:** Rama de desarrollo que sale desde `main`. Esta rama existirá siempre, y es desde donde saldran las ramas de nuevos desarrollos y donde se mergearan para ser probados antes de pasarlos a `main` para ponerlos en producción
 2. **Historia de Usuario:** Rama base desde `dev` (ej. `feature/US-123-titulo`). Es la rama que representa la historia de usuario. Cada historia de usuario tendrá su rama
 3. **Subtareas:** Ramas técnicas desde la rama de historia (ej. `task/US-123-db-schema`).
-4. **Integración:** Cada tarea se integra en la rama de historia mediante **Pull Request**.
+4. **Integración:** Cada subtarea se integra en la rama de historia mediante **merge**. La rama de la historia se integra con la rama `dev` mediante una **Pull request**
 5. **Commits:** Seguir el estándar de **Conventional Commits**:
    - `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `style:`.
 6. **Pase a producción:** Tras probar la funcionalidades completas en la rama `dev` se mergearán a `main` mediante un **Pull Request**
 
-### 3.1 Cosas a evitar en el git workflow.
-El agente no aprobará ningún pull request de forma automática.
+### 3.1 Cosas trabajar con las tareas y las ramas.
+Una vez que se genere el documento de la historia de usuario se creará una rama de la  historia de usuario y se comiteará y pusheara esa nueva rama con el nuevo documento de la historia.
 
-## 4. Build/Lint/Test Commands (apps/api-cli/)
+Una vez hecho esto, se generara una issue en github para la historia de usuario, y sub-issues con las tareas correspondientes a la historia de usuario.
+
+Cuando se hayan creado la issue y las sub-issues en github indicarmelo para una verificación manual antes de empezar con la implementación.
+
+Preguntar si la verificación manual ha sido exitosa. En este caso se iniciará la implementación de la historia de usuario siguiendo las tareas en orden de definición.
+
+Por cada tarea se creará una rama a partir de la rama de la historia, se implementará la tarea, se comiteará y se pusheara a github. Una vez esté tarea completada y pusheada a github, se mergeará la rama de la tarea a la rama de la  historia, se marcará el sub-issue correspondiente de github como completada, y se eliminará la rama de la tarea.
+
+Una vez realizado este proceso, se actualizará la rama de la historia en local, y se continuará con la siguiente tarea siguiendo exactamente los mismos pasos.
+
+Una vez finalizadas todas las tareas, y estando todas mergeadas en la rama de la historia, se actuara como un reviewer para indentificar problemas o posibles mejoras del código y se refactorizará. Todo esto manteniendo la covertura de los test, y cubriendo todos los casos de uso y casuísticas definidas.
+
+Tras esto, se ejecutará el EsLint y en caso de que aparezcan errores o warnings se corregiran.
+
+Para terminar nos aseguraremos que los test siguen pasando correctamente.
+
+Y por último se realizará un PR de la rama de la historia de usuario en la de dev para que lo revise manualmente.
+
+Acontinuación defino los paso a seguir:
+
+**Importante**
+Ten en cuenta que SI tienes permisos para mergear las ramas de las subtareas en las ramas de las historias.
+NO tienes permisos para aprobar ni mergear PR de historias que van a la rama dev.
+
+## 4. Build/Lint/Test Commands (apps/api/)
 
 ```bash
 # Desarrollo y Build
@@ -59,7 +82,7 @@ npm run db:generate && npm run db:migrate
 ```
 /
 ├── apps/
-│   ├── api-cli/             # Backend & Terminal Tools
+│   ├── api/                 # Backend API REST
 │   │   ├── src/
 │   │   │   ├── domain/      # Business Logic (Pure TS, NO dependencies)
 │   │   │   └── shared/      # Utilities
@@ -67,8 +90,9 @@ npm run db:generate && npm run db:migrate
 │   └── web-client/          # Angular Application (DDD structure)
 ├── docs/                    
 |   |__ api                  # API Documentation (OpenAPI)
-|   |__ desing_docs          # Design docs & Architecture
-|   |__ bd                   # DB structure and initial data
+|   |__ design_docs          # Design docs & Architecture
+|   |__ user_stories         # User Stories documentation
+|   |__ db                   # DB structure and initial data
 |
 └── docker/
 

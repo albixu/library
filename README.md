@@ -15,8 +15,9 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 ## Características
 
 - 🔍 **Búsqueda semántica**: Encuentra libros describiendo lo que buscas en lenguaje natural
-- 🖥️ **CLI**: Gestiona tu biblioteca desde la terminal
 - 🌐 **API REST**: Integra con cualquier cliente web
+- 📖 **Swagger UI**: Interfaz interactiva de la API disponible en `/docs` (entornos de desarrollo y test)
+- 📦 **Carga de datos automática**: Importa libros desde archivos JSON
 - 🐳 **Dockerizado**: Todo el sistema corre en contenedores
 - 💰 **Costo $0**: Usa tecnologías 100% gratuitas y open source
 
@@ -27,10 +28,13 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 | Lenguaje | TypeScript + Node.js 20 |
 | Base de datos | PostgreSQL 16 + pgvector |
 | Embeddings | Ollama + nomic-embed-text |
+| Traducciones | LibreTranslate (self-hosted) |
 | API | Fastify |
-| CLI | Commander.js |
 | ORM | Drizzle ORM |
-| Testing | Vitest |
+| Frontend | Angular 21 + Tailwind CSS |
+| Testing API | Vitest |
+| Testing Web | Vitest + Playwright |
+| Documentación UI | Storybook |
 
 ## Requisitos Previos
 
@@ -51,7 +55,7 @@ cd library
 
 ```bash
 # Copiar el archivo de ejemplo
-cp apps/api-cli/.env.example apps/api-cli/.env
+cp apps/api/.env.example apps/api/.env
 
 # Editar si es necesario (los valores por defecto funcionan para desarrollo)
 ```
@@ -66,11 +70,19 @@ docker-compose up -d
 docker-compose ps
 ```
 
-### 4. Descargar el modelo de embeddings
+### 4. Descargar los modelos de Ollama
 
 ```bash
 # Esto solo es necesario la primera vez
-docker exec library-ollama ollama pull nomic-embed-text
+# Usar el script automático (recomendado)
+./scripts/setup-ollama-models.sh
+
+# O descargar manualmente:
+# Modelo para embeddings (búsqueda semántica)
+docker exec library-ollama-embeddings ollama pull nomic-embed-text
+
+# Modelo para traducciones (descripción de libros)
+docker exec library-ollama-translations ollama pull llama3.2:1b
 ```
 
 ### 5. Ejecutar migraciones de base de datos
@@ -83,87 +95,233 @@ docker exec -it library-api-dev sh
 npm run db:migrate
 ```
 
-¡Listo! La API está disponible en `http://localhost:3000`
+¡Listo! La API está disponible en `http://localhost:3000` y la documentación interactiva en `http://localhost:3000/docs`
+
+## Carga de Datos Inicial
+
+El proceso de carga de datos se divide en dos fases independientes, cada una con su propio entorno Docker optimizado:
+
+```
+original_data/*.json
+        │
+        ▼ (Fase 1: Consolidación)
+initial_data/books_XXXX.json
+        │
+        ▼ (Fase 2: Seeding)
+    Base de datos PostgreSQL
+```
+
+### Fase 1: Consolidar archivos JSON
+
+Consolida múltiples archivos JSON de `original_data/` en ficheros particionados, traduciendo las descripciones al español mediante **LibreTranslate** (self-hosted, sin coste ni límite de uso).
+
+**Requisitos:**
+
+- Archivos JSON en `original_data/` (raíz del proyecto)
+- LibreTranslate en ejecución (incluido en `docker-compose.consolidate.yml`)
+
+```bash
+# 1. Iniciar entorno de consolidación (incluye LibreTranslate)
+docker-compose -f docker-compose.consolidate.yml up -d
+
+# 2. Verificar que los servicios están corriendo
+docker-compose -f docker-compose.consolidate.yml ps
+
+# 3. Ejecutar script de consolidación
+docker exec library-consolidate-api npm run consolidate:books
+
+# 4. Detener servicios cuando termine
+docker-compose -f docker-compose.consolidate.yml down
+```
+
+> **⚠️ Aviso de memoria (OOM):** Con catálogos grandes (~55.000 libros), el proceso puede ser
+> terminado por el sistema operativo por falta de memoria. Si ocurre, establece la variable de
+> entorno `NODE_OPTIONS=--max-old-space-size=4096` o usa el script `consolidate:books` que ya
+> la incluye por defecto.
+
+**Resultado:** Ficheros `initial_data/books_0001.json`, `books_0002.json`, etc. (máximo 1000 libros por fichero)
+
+**Variables de entorno opcionales:**
+
+- `BOOKS_PER_FILE=1000` - Libros por fichero de salida
+- `TRANSLATION_TIMEOUT_MS=60000` - Timeout para traducciones (1 min)
+- `LIBRETRANSLATE_URL=http://libretranslate:5000` - URL de LibreTranslate
+- `LIBRETRANSLATE_API_KEY=` - API key de LibreTranslate (vacío para instancias locales sin auth)
+
+### Fase 2: Sembrar la base de datos
+
+Carga los ficheros particionados en PostgreSQL, generando embeddings para búsqueda semántica.
+
+**Requisitos:**
+
+- Ficheros en `initial_data/` (generados en Fase 1)
+- Ollama con modelo de embeddings `nomic-embed-text`
+- PostgreSQL con esquema migrado
+
+```bash
+# 1. Iniciar entorno de seeding
+docker-compose -f docker-compose.seed.yml up -d
+
+# 2. Verificar que los servicios están healthy
+docker-compose -f docker-compose.seed.yml ps
+
+# 3. Descargar modelo de embeddings (solo la primera vez)
+docker exec library-seed-ollama-embeddings ollama pull nomic-embed-text
+
+# 4. Ejecutar migraciones de base de datos (si es necesario)
+docker exec library-seed-api npm run db:migrate
+
+# 5. Ejecutar script de seeding
+docker exec library-seed-api npm run seed:database
+
+# 6. Detener servicios cuando termine
+docker-compose -f docker-compose.seed.yml down
+```
+
+**Resultado:** Libros cargados en PostgreSQL con embeddings vectoriales
+
+**Variables de entorno opcionales:**
+
+- `BATCH_SIZE=50` - Libros a procesar por lote
+- `MAX_RETRIES=3` - Reintentos en caso de error de embedding
+
+### Verificar carga de datos
+
+```bash
+# Verificar número de libros en base de datos
+docker exec library-postgres psql -U library -d library -c "SELECT COUNT(*) FROM books;"
+
+# O usando la API (si está corriendo)
+curl http://localhost:3000/api/books?limit=1 | jq '.meta.total'
+```
+
+### Carga automática al iniciar (Desarrollo)
+
+Para entornos de desarrollo, puedes habilitar la carga automática:
+
+```bash
+# En docker-compose.yml o .env
+AUTO_SEED=true
+
+# Solo cargará datos si la base de datos está vacía
+```
 
 ## Uso
 
 ### API REST
 
+#### Swagger UI (Documentación Interactiva)
+
+En entornos de desarrollo y test, la API expone una interfaz gráfica interactiva generada a partir del spec OpenAPI:
+
+```
+http://localhost:3000/docs
+```
+
+Desde ahí podés explorar todos los endpoints, ver los esquemas de request/response y ejecutar llamadas directamente desde el navegador. En producción, la ruta `/docs` no está disponible.
+
+> El spec OpenAPI completo se encuentra en [`docs/api/openapi.yaml`](./docs/api/openapi.yaml).
+
+#### Endpoints disponibles
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `POST` | `/api/books` | Crear un nuevo libro |
+| `GET` | `/api/books` | Buscar libros (filtros, paginación, búsqueda semántica) |
+| `GET` | `/api/book-types` | Listar tipos de libro |
+| `GET` | `/api/book-categories` | Listar categorías (filtrable por tipo) |
+| `GET` | `/api/book-levels` | Listar niveles de dificultad (filtrable por tipo) |
+
 #### Crear un libro
 
 ```bash
-curl -X POST http://localhost:3000/books \
+curl -X POST http://localhost:3000/api/books \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Clean Code",
-    "author": "Robert C. Martin",
+    "authors": ["Robert C. Martin"],
     "description": "A handbook of agile software craftsmanship",
     "type": "technical",
-    "category": "programming",
-    "format": "pdf"
+    "categories": ["programming"],
+    "format": "pdf",
+    "level": "Intermediate"
   }'
 ```
 
-#### Buscar libros (búsqueda semántica)
+#### Listar tipos de libro
 
 ```bash
-curl "http://localhost:3000/books/search?q=libros%20sobre%20buenas%20practicas%20de%20programacion"
+curl http://localhost:3000/api/book-types
 ```
 
-#### Obtener un libro por ID
+#### Listar categorías
 
 ```bash
-curl http://localhost:3000/books/{id}
+# Todas las categorías
+curl http://localhost:3000/api/book-categories
+
+# Filtrar por tipo de libro
+curl "http://localhost:3000/api/book-categories?type=technical"
 ```
 
-#### Listar todos los libros
+#### Listar niveles de dificultad
 
 ```bash
-curl http://localhost:3000/books
+# Todos los niveles
+curl http://localhost:3000/api/book-levels
+
+# Filtrar por tipo de libro
+curl "http://localhost:3000/api/book-levels?type=technical"
 ```
 
-#### Actualizar un libro
+#### Buscar libros
 
 ```bash
-curl -X PUT http://localhost:3000/books/{id} \
-  -H "Content-Type: application/json" \
-  -d '{
-    "description": "Nueva descripción actualizada"
-  }'
+# Búsqueda por título (parcial, case-insensitive)
+curl "http://localhost:3000/api/books?title=Clean"
+
+# Búsqueda por autor
+curl "http://localhost:3000/api/books?author=Martin"
+
+# Filtrar por tipo y categoría
+curl "http://localhost:3000/api/books?types=technical&categories=programming"
+
+# Búsqueda semántica (lenguaje natural)
+curl "http://localhost:3000/api/books?text=libros+sobre+arquitectura+de+software"
+
+# Paginación
+curl "http://localhost:3000/api/books?limit=20"
+curl "http://localhost:3000/api/books?limit=20&cursor=<token_de_pagina_anterior>"
+
+# Combinando filtros
+curl "http://localhost:3000/api/books?types=technical&levels=Intermediate&limit=10"
 ```
 
-#### Eliminar un libro
+> **Nota**: La búsqueda semántica (`text`) genera embeddings del texto y encuentra libros con similaridad ≥70%. Los resultados incluyen `similarityScore`.
 
-```bash
-curl -X DELETE http://localhost:3000/books/{id}
+#### Formato de respuesta
+
+Todas las respuestas siguen el formato estandarizado:
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "error": null
+}
 ```
 
-### CLI
+En caso de error:
 
-```bash
-# Entrar al contenedor
-docker exec -it library-api-dev sh
-
-# Ver comandos disponibles
-npm run cli -- --help
-
-# Añadir un libro
-npm run cli -- add
-
-# Buscar libros
-npm run cli -- search "novelas de misterio"
-
-# Listar libros
-npm run cli -- list
-
-# Obtener un libro
-npm run cli -- get <id>
-
-# Actualizar un libro
-npm run cli -- update <id>
-
-# Eliminar un libro
-npm run cli -- delete <id>
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "message": "Error description",
+    "details": ["field: validation error"]
+  }
+}
 ```
 
 ## Desarrollo
@@ -173,120 +331,250 @@ npm run cli -- delete <id>
 ```
 library/
 ├── apps/
-│   ├── api-cli/          # Backend: API REST + CLI
+│   ├── api/              # Backend: API REST + Scripts
 │   │   ├── src/
 │   │   │   ├── domain/           # Lógica de negocio pura
 │   │   │   ├── application/      # Casos de uso
-│   │   │   ├── infrastructure/   # Adaptadores (DB, HTTP, CLI)
+│   │   │   ├── infrastructure/   # Adaptadores (DB, HTTP)
 │   │   │   └── shared/           # Utilidades compartidas
+│   │   ├── scripts/              # Consolidación y seeding
 │   │   ├── tests/
 │   │   └── docker/
 │   │
-│   └── web-client/       # Frontend (futuro)
+│   └── web-client/       # Frontend: Angular 21 + Material
+│       └── docker/
+│
+├── scripts/
+│   └── setup-ollama-models.sh    # Setup de modelos de IA
 │
 ├── docker-compose.yml        # Desarrollo
 ├── docker-compose.prod.yml   # Producción
+├── docker-compose.test.yml   # Testing (aislado)
+├── .env.example              # Variables de entorno
+│
 └── docs/
-    └── design_docs/          # Documentación de diseño
+    ├── api/                  # OpenAPI spec
+    ├── design_docs/          # Documentación de diseño
+    └── user_stories/         # Historias de usuario
 ```
 
 ### Comandos de desarrollo
 
+#### Docker
+
 ```bash
-# Iniciar en modo desarrollo (con hot reload)
+# Iniciar todos los contenedores
 docker-compose up -d
 
 # Ver logs en tiempo real
 docker-compose logs -f api
 
+# Ver logs de todos los servicios
+docker-compose logs -f
+
 # Reiniciar solo la API
 docker-compose restart api
-
-# Ejecutar tests
-docker exec -it library-api-dev npm test
-
-# Ejecutar linter
-docker exec -it library-api-dev npm run lint
-
-# Generar nueva migración
-docker exec -it library-api-dev npm run db:generate
 
 # Detener todo
 docker-compose down
 
-# Detener y eliminar volúmenes (⚠️ borra datos)
+# Detener y eliminar volúmenes (⚠️ borra datos de BD)
 docker-compose down -v
+
+# Reconstruir imagen de la API
+docker-compose build api
+```
+
+#### Tests
+
+```bash
+# Tests unitarios
+docker exec library-api-dev npm test
+
+# Tests en modo watch (re-ejecuta al detectar cambios)
+docker exec library-api-dev npm run test:watch
+
+# Tests de integración (requiere PostgreSQL + Ollama)
+docker exec library-api-dev npm run test:integration
+
+# Tests end-to-end (HTTP)
+docker exec library-api-dev npm run test:e2e
+
+# TODOS los tests (unit + integration + e2e)
+docker exec library-api-dev npm run test:all
+
+# Tests con reporte de cobertura
+docker exec library-api-dev npm run test:coverage
+
+# Tests con interfaz gráfica
+docker exec library-api-dev npm run test:ui
+
+# Test específico
+docker exec library-api-dev npx vitest run tests/unit/domain/entities/Book.test.ts
+```
+
+#### Lint y TypeScript
+
+```bash
+# Ejecutar linter
+docker exec library-api-dev npm run lint
+
+# Ejecutar linter con auto-fix
+docker exec library-api-dev npm run lint:fix
+
+# Verificar tipos TypeScript (sin emitir archivos)
+docker exec library-api-dev npm run typecheck
+```
+
+#### Base de Datos (Drizzle)
+
+```bash
+# Ejecutar migraciones pendientes
+docker exec library-api-dev npm run db:migrate
+
+# Generar nueva migración desde cambios en schema
+docker exec library-api-dev npm run db:generate
+
+# Ver estado de migraciones
+docker exec library-api-dev npx drizzle-kit check
+```
+
+#### Carga de Datos
+
+```bash
+# Consolidar archivos JSON de libros
+docker exec library-api-dev npm run consolidate:books
+
+# Sembrar la base de datos con libros consolidados
+docker exec library-api-dev npm run seed:database
+```
+
+#### Modelos de Ollama
+
+```bash
+# Descargar modelo de embeddings
+docker exec library-ollama-embeddings ollama pull nomic-embed-text
+
+# Listar modelos descargados
+docker exec library-ollama-embeddings ollama list
+
+# Verificar estado
+curl http://localhost:11434/api/tags
+```
+
+#### Web Client (Angular)
+
+```bash
+# Ir al directorio del cliente web
+cd apps/web-client
+
+# Instalar dependencias (primera vez)
+npm install
+
+# Iniciar servidor de desarrollo
+npm start
+# La aplicación estará disponible en http://localhost:4200
+
+# Iniciar con puerto específico
+npm start -- --port 4300
+```
+
+**Acceso desde el navegador:**
+
+- **Desarrollo:** <http://localhost:4200>
+- **API (backend):** <http://localhost:3000>
+- **Swagger UI:** <http://localhost:3000/docs> *(solo en desarrollo/test)*
+
+#### Tests del Web Client
+
+```bash
+cd apps/web-client
+
+# Tests unitarios
+npm test
+
+# Tests en modo watch (re-ejecuta al detectar cambios)
+npm run test:watch
+
+# Tests con reporte de cobertura
+npm run test:coverage
+
+# Tests end-to-end con Playwright
+npm run test:e2e
+
+# Tests E2E en modo interactivo (con UI de Playwright)
+npm run test:e2e:ui
+
+# Tests E2E con navegador visible
+npm run test:e2e:headed
+```
+
+#### Storybook
+
+Storybook permite desarrollar y documentar componentes de forma aislada.
+
+```bash
+cd apps/web-client
+
+# Iniciar Storybook en modo desarrollo
+npm run storybook
+# Storybook estará disponible en http://localhost:6006
+
+# Compilar Storybook para producción
+npm run build-storybook
+```
+
+**Acceso desde el navegador:**
+
+- **Storybook:** <http://localhost:6006>
+
+#### Lint del Web Client
+
+```bash
+cd apps/web-client
+
+# Ejecutar linter
+npm run lint
+
+# Ejecutar linter con auto-fix
+npm run lint:fix
 ```
 
 ### Testing
 
-El proyecto utiliza [Vitest](https://vitest.dev/) como framework de testing.
+El proyecto utiliza [Vitest](https://vitest.dev/) como framework de testing con tres niveles:
 
-#### Ejecutar tests con Docker
-
-```bash
-# Ejecutar todos los tests
-docker exec -it library-api-dev npm test
-
-# Tests en modo watch (re-ejecuta al detectar cambios)
-docker exec -it library-api-dev npm run test:watch
-
-# Tests con reporte de cobertura
-docker exec -it library-api-dev npm run test:coverage
-
-# Tests con interfaz gráfica
-docker exec -it library-api-dev npm run test:ui
-```
-
-#### Ejecutar tests sin Docker
-
-```bash
-cd apps/api-cli
-
-# Ejecutar todos los tests
-npm test
-
-# Tests en modo watch
-npm run test:watch
-
-# Tests con cobertura
-npm run test:coverage
-
-# Tests con UI (abre en navegador)
-npm run test:ui
-```
+| Nivel | Descripción | Comando |
+|-------|-------------|---------|
+| **Unit** | Tests de dominio y aplicación en aislamiento | `npm test` |
+| **Integration** | Tests de adaptadores con PostgreSQL/Ollama reales | `npm run test:integration` |
+| **E2E** | Tests del sistema completo vía HTTP | `npm run test:e2e` |
 
 #### Estructura de tests
 
 ```
-apps/api-cli/tests/
-├── unit/                    # Tests unitarios
-│   ├── domain/              # Tests de la capa de dominio
-│   │   ├── entities/        # Tests de entidades
-│   │   └── value-objects/   # Tests de value objects
-│   └── application/         # Tests de casos de uso
-├── integration/             # Tests de integración
-│   └── infrastructure/      # Tests de adaptadores con deps reales
-└── e2e/                     # Tests end-to-end
-    ├── cli/                 # Tests del CLI
-    └── http/                # Tests de la API HTTP
+apps/api/tests/
+├── unit/                    # Tests unitarios (~345 tests)
+│   ├── domain/              # Entidades, Value Objects, Criteria
+│   ├── application/         # Casos de uso
+│   ├── infrastructure/      # Mappers, configuración
+│   └── scripts/             # Scripts de consolidación/seeding
+├── integration/             # Tests de integración (~63 tests)
+│   ├── application/         # Use cases con repos reales
+│   ├── infrastructure/      # Repositorios, servicios externos
+│   └── scripts/             # Scripts con BD real
+└── e2e/                     # Tests end-to-end (~30 tests)
+    └── http/                # API REST completa
 ```
 
-#### Comandos útiles
-
-| Comando | Descripción |
-|---------|-------------|
-| `npm test` | Ejecuta todos los tests una vez |
-| `npm run test:watch` | Ejecuta tests en modo watch |
-| `npm run test:coverage` | Genera reporte de cobertura en `coverage/` |
-| `npm run test:ui` | Abre interfaz web interactiva de Vitest |
+Ver sección [Comandos de desarrollo](#comandos-de-desarrollo) para todos los comandos de testing.
 
 ### Desarrollo sin Docker
 
 Si preferís desarrollar sin Docker:
 
 ```bash
-cd apps/api-cli
+cd apps/api
 
 # Instalar dependencias
 npm install
@@ -297,36 +585,298 @@ cp .env.example .env
 
 # Iniciar en modo desarrollo
 npm run dev
-
-# Ejecutar CLI
-npm run cli -- --help
 ```
+
+## Docker Compose Environments
+
+El proyecto incluye cinco configuraciones de Docker Compose:
+
+| Archivo | Propósito | Uso |
+|---------|-----------|-----|
+| `docker-compose.yml` | Desarrollo | Hot reload, debug, desarrollo local |
+| `docker-compose.prod.yml` | Producción | Optimizado, seguro, listo para VPS |
+| `docker-compose.test.yml` | Testing | E2E tests, CI/CD, aislado |
+| `docker-compose.consolidate.yml` | Consolidación | Generar ficheros JSON particionados |
+| `docker-compose.seed.yml` | Seeding | Cargar datos en base de datos |
+
+### Puertos por entorno
+
+| Servicio | Desarrollo | Producción | Testing |
+|----------|------------|------------|---------|
+| Web Client | 4200 | 80 | 4200 |
+| API | 3000 | 3000 | 3001 |
+| PostgreSQL | 5432 | (interno) | 5433 |
+| Ollama Embeddings | 11434 | (interno) | 11435 |
+| Ollama Translations | 11435 | (interno) | 11436 |
+
+> **Nota:** Los entornos de consolidación y seeding no exponen puertos externos. Son tareas de un solo uso que reutilizan los volúmenes de datos existentes.
 
 ## Producción
 
 ### Desplegar en producción
 
 ```bash
-# Crear archivo de secretos
-echo "POSTGRES_PASSWORD=tu_password_seguro" > .env
+# 1. Clonar y configurar
+git clone <repository-url>
+cd library
 
-# Iniciar en modo producción
-docker-compose -f docker-compose.prod.yml up -d
+# 2. Crear archivo de variables de entorno
+cp .env.example .env
+# Editar .env y configurar POSTGRES_PASSWORD con una contraseña segura
 
-# Descargar modelo de embeddings
-docker exec library-ollama ollama pull nomic-embed-text
+# 3. Construir e iniciar servicios
+docker-compose -f docker-compose.prod.yml up -d --build
 
-# Ejecutar migraciones
+# 4. Descargar modelos de IA (primera vez)
+./scripts/setup-ollama-models.sh
+
+# 5. Ejecutar migraciones de base de datos
 docker exec library-api npm run db:migrate
+
+# 6. (Opcional) Cargar datos iniciales
+docker exec library-api npm run seed:database
 ```
+
+### Inicialización de la base de datos
+
+La inicialización de la base de datos en producción ocurre en dos fases:
+
+#### Fase 1: Schema (Automático)
+
+El archivo `docs/db/init-db.sql` está montado en `/docker-entrypoint-initdb.d/` del contenedor PostgreSQL. Esto significa que:
+
+- PostgreSQL ejecuta automáticamente este script **la primera vez** que se crea el volumen
+- Si el volumen ya existe (con datos), el script **NO se ejecuta**
+- Este comportamiento es nativo de PostgreSQL Docker
+
+```bash
+# Para forzar la reinicialización del schema (⚠️ BORRA TODOS LOS DATOS):
+docker-compose -f docker-compose.prod.yml down -v
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+#### Fase 2: Datos iniciales (Manual o Automático)
+
+Los datos de libros se cargan desde `docs/db/books.json` usando el script `seed:database`:
+
+```bash
+# Ejecución manual (recomendado para producción)
+docker exec library-api npm run seed:database
+```
+
+El script es **idempotente**: verifica cada libro por ISBN antes de insertarlo. Si el libro ya existe, lo salta. Esto permite ejecutarlo múltiples veces sin duplicar datos.
+
+**Carga automática (opcional):**
+
+Para ambientes de staging o desarrollo, puedes habilitar la carga automática al iniciar el contenedor añadiendo esta variable de entorno:
+
+```bash
+# En .env o docker-compose
+AUTO_SEED=true
+```
+
+Con `AUTO_SEED=true`, el seeding se ejecuta automáticamente al arrancar la API. Como es idempotente, si los libros ya existen no se duplican.
+
+#### Verificar estado de la base de datos
+
+```bash
+# Verificar que hay libros cargados
+curl http://localhost:3000/api/books?limit=1
+
+# Contar libros en la base de datos
+docker exec library-postgres psql -U library -d library -c "SELECT COUNT(*) FROM books;"
+```
+
+### Comandos de producción
+
+```bash
+# Ver estado de los servicios
+docker-compose -f docker-compose.prod.yml ps
+
+# Ver logs en tiempo real
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Ver logs de un servicio específico
+docker-compose -f docker-compose.prod.yml logs -f api
+
+# Reiniciar servicios
+docker-compose -f docker-compose.prod.yml restart
+
+# Detener servicios
+docker-compose -f docker-compose.prod.yml down
+
+# Reconstruir después de cambios
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+### Verificar salud de servicios
+
+```bash
+# Health check del API
+curl http://localhost:3000/health
+
+# Health check del Web Client
+curl http://localhost/health
+
+# Verificar que Ollama tiene los modelos
+curl http://localhost:11434/api/tags
+```
+
+### Variables de entorno de producción
+
+| Variable | Requerida | Descripción | Ejemplo |
+|----------|-----------|-------------|---------|
+| `POSTGRES_PASSWORD` | ✅ | Contraseña de PostgreSQL | `secure_password_123` |
+| `API_URL` | ❌ | URL del API para el web client | `http://192.168.1.100:3000` |
 
 ### Consideraciones de producción
 
-- 🔒 Cambiar las contraseñas por defecto
-- 🔒 No exponer puertos de PostgreSQL y Ollama externamente
+- 🔒 Cambiar `POSTGRES_PASSWORD` por una contraseña segura
+- 🔒 Los puertos de PostgreSQL y Ollama NO se exponen externamente
 - 📊 Configurar monitoreo y alertas
-- 💾 Configurar backups de PostgreSQL
+- 💾 Configurar backups de PostgreSQL (ver sección Backup/Restore)
 - 🔄 Usar un reverse proxy (nginx, traefik) con HTTPS
+
+## Entorno de Testing
+
+El entorno de testing está completamente aislado de producción con su propia base de datos y volúmenes.
+
+### Comandos de testing
+
+```bash
+# Levantar entorno de testing
+docker-compose -f docker-compose.test.yml up -d
+
+# Descargar modelos de Ollama en testing (primera vez)
+OLLAMA_HOST=http://localhost:11435 ./scripts/setup-ollama-models.sh
+
+# Ejecutar tests E2E contra el entorno
+docker exec library-api-test npm run test:e2e
+
+# Ver logs
+docker-compose -f docker-compose.test.yml logs -f
+
+# Destruir entorno (incluyendo volúmenes)
+docker-compose -f docker-compose.test.yml down -v
+```
+
+## Backup y Restore
+
+### Backup de la base de datos
+
+```bash
+# Producción
+docker exec library-postgres pg_dump -U library library > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Con compresión
+docker exec library-postgres pg_dump -U library library | gzip > backup_$(date +%Y%m%d_%H%M%S).sql.gz
+```
+
+### Restore de la base de datos
+
+```bash
+# Desde archivo SQL
+docker exec -i library-postgres psql -U library library < backup.sql
+
+# Desde archivo comprimido
+gunzip -c backup.sql.gz | docker exec -i library-postgres psql -U library library
+```
+
+## Troubleshooting
+
+### Problemas comunes
+
+#### Los modelos de Ollama no se descargan
+
+```bash
+# Verificar que Ollama está corriendo
+docker-compose -f docker-compose.prod.yml logs ollama-embeddings
+
+# Verificar conectividad
+curl http://localhost:11434/api/tags
+
+# Descargar modelo manualmente
+docker exec library-ollama-embeddings ollama pull nomic-embed-text
+```
+
+#### LibreTranslate no está disponible (consolidación)
+
+```bash
+# Verificar que el servicio está corriendo
+docker-compose -f docker-compose.consolidate.yml ps libretranslate
+docker-compose -f docker-compose.consolidate.yml logs libretranslate
+
+# Verificar conectividad
+curl http://localhost:5000/languages
+```
+
+#### Error de conexión a la base de datos
+
+```bash
+# Verificar que PostgreSQL está corriendo y saludable
+docker-compose -f docker-compose.prod.yml ps postgres
+docker-compose -f docker-compose.prod.yml logs postgres
+
+# Verificar conectividad
+docker exec library-postgres pg_isready -U library -d library
+```
+
+#### El API no arranca
+
+```bash
+# Verificar logs del API
+docker-compose -f docker-compose.prod.yml logs api
+
+# Verificar que las migraciones se ejecutaron
+docker exec library-api npm run db:migrate
+
+# Verificar variables de entorno
+docker exec library-api env | grep -E "(DATABASE|OLLAMA|NODE)"
+```
+
+#### El Web Client no puede conectar con el API
+
+```bash
+# Verificar que el API responde
+curl http://localhost:3000/health
+
+# Verificar CORS headers
+curl -I http://localhost:3000/api/books
+
+# Verificar la URL del API en la build del web client
+# Si cambió, hay que reconstruir la imagen:
+docker-compose -f docker-compose.prod.yml build web-client
+docker-compose -f docker-compose.prod.yml up -d web-client
+```
+
+#### Problemas de permisos en volúmenes (Linux)
+
+```bash
+# Si hay problemas de permisos con volúmenes
+sudo chown -R $(id -u):$(id -g) ./
+
+# O reiniciar con volúmenes limpios
+docker-compose -f docker-compose.prod.yml down -v
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+#### Memoria insuficiente para Ollama
+
+Los modelos de IA requieren memoria significativa:
+
+- `nomic-embed-text`: ~500MB
+- `llama3.2:1b`: ~1GB
+
+```bash
+# Verificar memoria disponible en el contenedor
+docker stats library-ollama
+
+# Aumentar límites si es necesario (editar docker-compose.prod.yml)
+# deploy:
+#   resources:
+#     limits:
+#       memory: 6G  # Aumentar si es necesario
+```
 
 ## Arquitectura
 

@@ -8,11 +8,19 @@
 .DS_Store
 Thumbs.db
 
+# Environment (contains secrets)
+.env
+
 # Dependencies
 node_modules/
-package-lock.json
+# Note: package-lock.json files ARE tracked for reproducible builds
+# Each app (api, web-client) has its own lock file
 
 # Build artifacts
 dist/
 build/
 *.tsbuildinfo
+
+
+# Original raw data (not processed)
+original_data/

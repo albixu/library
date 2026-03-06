@@ -1,0 +1,137 @@
+/**
+ * Books Controller
+ *
+ * HTTP request handlers for book-related endpoints.
+ * Follows the thin controller pattern - delegates business logic to use cases.
+ *
+ * Updated for HU-004: Standardized API response structure
+ */
+
+import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { CreateBookUseCase } from '../../../../application/use-cases/CreateBookUseCase.js';
+import type { Logger } from '../../../../application/ports/Logger.js';
+import { noopLogger } from '../../../../application/ports/Logger.js';
+import { createBookSchema } from '../schemas/book.schemas.js';
+import { successResponse } from '../schemas/common.schemas.js';
+import { mapErrorToHttpResponse } from '../errors/HttpErrorMapper.js';
+
+/**
+ * Dependencies required by BooksController
+ */
+export interface BooksControllerDeps {
+  createBookUseCase: CreateBookUseCase;
+  logger?: Logger;
+}
+
+/**
+ * BooksController
+ *
+ * Handles HTTP requests for book operations.
+ * Responsibilities:
+ * - Parse and validate request body (Zod)
+ * - Call appropriate use case
+ * - Map responses to standardized API format
+ * - Handle errors with appropriate status codes
+ */
+export class BooksController {
+  private readonly createBookUseCase: CreateBookUseCase;
+  private readonly logger: Logger;
+
+  constructor(deps: BooksControllerDeps) {
+    this.createBookUseCase = deps.createBookUseCase;
+    this.logger = deps.logger?.child({ name: 'BooksController' }) ?? noopLogger;
+  }
+
+  /**
+   * POST /api/books
+   *
+   * Creates a new book in the catalog.
+   *
+   * Response format: { success: true, data: BookResponse, error: null }
+   *
+   * @returns 201 Created with book data (without embedding)
+   * @returns 400 Bad Request for validation errors
+   * @returns 409 Conflict for duplicate ISBN or book
+   * @returns 503 Service Unavailable if embedding service is down
+   */
+  async create(
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ): Promise<FastifyReply> {
+    this.logger.debug('Received create book request', {
+      contentType: request.headers['content-type'],
+    });
+
+    try {
+      // 1. Parse and validate request body
+      const parseResult = createBookSchema.safeParse(request.body);
+
+      if (!parseResult.success) {
+        const errorResponse = mapErrorToHttpResponse(parseResult.error);
+        this.logger.debug('Request validation failed', {
+          errors: parseResult.error.errors.map((e) => e.message),
+        });
+        return reply.status(errorResponse.statusCode).send(errorResponse.body);
+      }
+
+      const input = parseResult.data;
+
+      // 2. Execute use case
+      const result = await this.createBookUseCase.execute({
+        title: input.title,
+        authors: input.authors,
+        description: input.description,
+        language: input.language, // HU-013
+        type: input.type,
+        format: input.format,
+        categoryNames: input.categories,
+        isbn: input.isbn,
+        level: input.level,
+        available: input.available,
+        path: input.path,
+      });
+
+      // 3. Return created book with standardized response structure
+      this.logger.info('Book created via API', {
+        bookId: result.id,
+        title: result.title,
+      });
+
+      const bookData = {
+        id: result.id,
+        title: result.title,
+        authors: result.authors,
+        originalDescription: result.originalDescription, // HU-013
+        description: result.description, // HU-013: Spanish description
+        language: result.language, // HU-013
+        type: result.type,
+        format: result.format,
+        level: result.level,
+        categories: result.categories,
+        isbn: result.isbn,
+        available: result.available,
+        path: result.path,
+        createdAt: result.createdAt.toISOString(),
+        updatedAt: result.updatedAt.toISOString(),
+      };
+
+      return reply.status(201).send(successResponse(bookData));
+    } catch (error) {
+      const errorResponse = mapErrorToHttpResponse(error);
+
+      if (errorResponse.statusCode >= 500) {
+        this.logger.error('Unexpected error creating book', {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+      } else {
+        this.logger.debug('Book creation rejected', {
+          statusCode: errorResponse.statusCode,
+          error: errorResponse.body.error?.message,
+        });
+      }
+
+      return reply.status(errorResponse.statusCode).send(errorResponse.body);
+    }
+  }
+}

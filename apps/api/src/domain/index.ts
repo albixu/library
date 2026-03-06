@@ -1,0 +1,80 @@
+/**
+ * Domain module barrel export
+ *
+ * This is the public API of the domain layer.
+ * Only export what should be accessible from outside the domain.
+ */
+
+// Entities
+export {
+  Book,
+  type CreateBookProps,
+  type BookPersistenceProps,
+  type UpdateBookProps,
+} from './entities/index.js';
+
+export {
+  Author,
+  type CreateAuthorProps,
+  type AuthorPersistenceProps,
+  type UpdateAuthorProps,
+} from './entities/index.js';
+
+export {
+  BookType as BookTypeEntity,
+  DEFAULT_BOOK_TYPES,
+  type DefaultBookTypeName,
+  type CreateBookTypeProps,
+  type BookTypePersistenceProps,
+  type UpdateBookTypeProps,
+} from './entities/index.js';
+
+export {
+  Category,
+  type CreateCategoryProps,
+  type CategoryPersistenceProps,
+  type UpdateCategoryProps,
+} from './entities/index.js';
+
+// Value Objects
+export {
+  BookFormat,
+  BOOK_FORMATS,
+  type BookFormatValue,
+  ISBN,
+  BookIdentifier,
+} from './value-objects/index.js';
+
+// Errors
+export {
+  DomainError,
+  BookNotFoundError,
+  RequiredFieldError,
+  FieldTooLongError,
+  InvalidUUIDError,
+  InvalidBookTypeError,
+  InvalidBookFormatError,
+  InvalidISBNError,
+  InvalidBookIdentifierError,
+  EmbeddingTextTooLongError,
+} from './errors/index.js';
+
+// Criteria Pattern (for filtering, ordering, pagination)
+export {
+  Criteria,
+  type CriteriaProps,
+  Filter,
+  Filters,
+  FilterField,
+  FilterOperator,
+  FilterValue,
+  type FilterOperatorValue,
+  type FilterValueType,
+  type FilterPrimitiveValue,
+  FILTER_OPERATORS,
+  Order,
+  OrderBy,
+  OrderType,
+  type OrderTypeValue,
+  ORDER_TYPES,
+} from './criteria/index.js';

@@ -1,0 +1,1449 @@
+# Design Doc: API (Backend)
+
+## 1. Resumen Ejecutivo
+
+Este documento define la arquitectura y diseño del backend API para el sistema Library. La API es una aplicación Node.js/Fastify que implementa la lógica de negocio principal del sistema de gestión de biblioteca digital.
+
+### 1.1 Objetivos
+
+- Proporcionar una API REST para gestión de libros digitales
+- Implementar búsqueda semántica mediante embeddings vectoriales (pgvector)
+- Traducir automáticamente descripciones de libros al español
+- Mantener una arquitectura limpia siguiendo principios DDD y Hexagonal Architecture
+
+### 1.2 Alcance
+
+**Incluido:**
+
+- Creación de libros con generación automática de embeddings
+- Búsqueda de libros con filtros múltiples y búsqueda semántica
+- Traducción automática de descripciones (inglés → español)
+- Gestión de tipos, categorías y niveles de dificultad
+- Paginación cursor-based
+
+**Excluido:**
+
+- Autenticación/autorización de usuarios
+- Actualización y eliminación de libros
+- Gestión de archivos físicos (upload/download)
+- Envío a Kindle (futuro)
+
+---
+
+## 2. Arquitectura
+
+### 2.1 Stack Tecnológico
+
+| Categoría | Tecnología | Versión |
+|-----------|------------|---------|
+| Runtime | Node.js | 20+ |
+| Framework | Fastify | 4.x |
+| Lenguaje | TypeScript (ESM) | 5.x |
+| Base de Datos | PostgreSQL + pgvector | 16+ |
+| ORM | Drizzle ORM | Latest |
+| Validación | Zod | Latest |
+| Testing | Vitest | Latest |
+| Logging | Pino | Latest |
+| Embeddings | Ollama Embeddings (nomic-embed-text) | Latest |
+| Traducción (API) | Ollama Translations (llama3.2:1b) | Latest |
+| Traducción (bulk) | LibreTranslate (self-hosted) | Latest |
+
+### 2.2 Arquitectura Hexagonal (Ports & Adapters)
+
+La API sigue una arquitectura hexagonal estricta con tres capas principales:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           INFRASTRUCTURE                                 │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │                    DRIVER ADAPTERS (Input)                       │    │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │    │
+│  │  │ HTTP Server │  │ Controllers │  │ Zod Schemas (Validation)│  │    │
+│  │  │  (Fastify)  │  │   (Routes)  │  │                         │  │    │
+│  │  └──────┬──────┘  └──────┬──────┘  └───────────┬─────────────┘  │    │
+│  └─────────┼────────────────┼─────────────────────┼────────────────┘    │
+│            │                │                     │                      │
+│            ▼                ▼                     ▼                      │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │                      APPLICATION LAYER                           │    │
+│  │  ┌─────────────────────────────────────────────────────────┐    │    │
+│  │  │                      USE CASES                           │    │    │
+│  │  │  CreateBookUseCase  │  SearchBooksUseCase  │  List*...  │    │    │
+│  │  └─────────────────────────────────────────────────────────┘    │    │
+│  │  ┌─────────────────────────────────────────────────────────┐    │    │
+│  │  │                    PORTS (Interfaces)                    │    │    │
+│  │  │  BookRepository │ EmbeddingService │ TranslationService │    │    │
+│  │  └─────────────────────────────────────────────────────────┘    │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+│            │                │                     │                      │
+│            ▼                ▼                     ▼                      │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │                    DRIVEN ADAPTERS (Output)                      │    │
+│  │  ┌───────────────┐  ┌─────────────────┐  ┌──────────────────┐   │    │
+│  │  │ Postgres      │  │ Ollama Embedd.  │  │ Translation      │   │    │
+│  │  │ Repositories  │  │ Service         │  │ Service          │   │    │
+│  │  │ (Drizzle)     │  │ (chunking+avg)  │  │ (Ollama o        │   │    │
+│  │  │               │  │                 │  │  LibreTranslate) │   │    │
+│  │  └───────────────┘  └─────────────────┘  └──────────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+│                                                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │                      DOMAIN LAYER (Core)                         │    │
+│  │  ┌──────────────┐  ┌───────────────┐  ┌───────────────────┐     │    │
+│  │  │   Entities   │  │ Value Objects │  │  Criteria Pattern │     │    │
+│  │  │ Book, Author │  │ BookIdentifier│  │  Filters, Order   │     │    │
+│  │  │ Category...  │  │ BookFormat    │  │                   │     │    │
+│  │  └──────────────┘  └───────────────┘  └───────────────────┘     │    │
+│  │  ┌──────────────────────────────────────────────────────────┐   │    │
+│  │  │                    Domain Errors                          │   │    │
+│  │  └──────────────────────────────────────────────────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.3 Estructura de Directorios
+
+```
+apps/api/
+├── src/
+│   ├── domain/                    # Capa de Dominio (sin dependencias)
+│   │   ├── entities/              # Entidades de dominio
+│   │   │   ├── Book.ts
+│   │   │   ├── Author.ts
+│   │   │   ├── BookType.ts
+│   │   │   ├── Category.ts
+│   │   │   └── Level.ts
+│   │   ├── value-objects/         # Value Objects
+│   │   │   ├── BookIdentifier.ts
+│   │   │   └── BookFormat.ts
+│   │   ├── criteria/              # Patrón Criteria para queries
+│   │   │   ├── Criteria.ts
+│   │   │   ├── Filter.ts
+│   │   │   ├── Filters.ts
+│   │   │   └── Order.ts
+│   │   ├── errors/                # Errores de dominio
+│   │   │   └── DomainErrors.ts
+│   │   └── validators/            # Validadores puros
+│   │       └── uuid.ts
+│   │
+│   ├── application/               # Capa de Aplicación
+│   │   ├── use-cases/             # Casos de uso
+│   │   │   ├── CreateBookUseCase.ts
+│   │   │   ├── SearchBooksUseCase.ts
+│   │   │   ├── ListBookTypesUseCase.ts
+│   │   │   ├── ListCategoriesUseCase.ts
+│   │   │   ├── ListBookLevelsUseCase.ts
+│   │   │   └── GetBookUseCase.ts
+│   │   ├── ports/                 # Interfaces (contratos)
+│   │   │   ├── BookRepository.ts
+│   │   │   ├── AuthorRepository.ts
+│   │   │   ├── TypeRepository.ts
+│   │   │   ├── CategoryRepository.ts
+│   │   │   ├── LevelRepository.ts
+│   │   │   ├── EmbeddingService.ts
+│   │   │   ├── TranslationService.ts
+│   │   │   └── Logger.ts
+│   │   └── errors/                # Errores de aplicación
+│   │       └── ApplicationErrors.ts
+│   │
+│   ├── infrastructure/            # Capa de Infraestructura
+│   │   ├── config/                # Configuración
+│   │   │   └── env.ts
+│   │   ├── driven/                # Adaptadores de salida
+│   │   │   ├── persistence/       # Repositorios PostgreSQL
+│   │   │   │   ├── drizzle/       # Schema y migrations
+│   │   │   │   ├── mappers/       # Entity ↔ DB mappers
+│   │   │   │   └── Postgres*Repository.ts
+│   │   │   ├── embedding/         # Servicio de embeddings
+│   │   │   │   └── OllamaEmbeddingService.ts
+│   │   │   ├── translation/       # Servicio de traducción
+│   │   │   │   ├── OllamaTranslationService.ts
+│   │   │   │   └── LibreTranslateTranslationService.ts
+│   │   │   └── logging/           # Logger
+│   │   │       └── PinoLogger.ts
+│   │   └── driver/                # Adaptadores de entrada
+│   │       └── http/
+│   │           ├── server.ts
+│   │           ├── controllers/   # Controladores HTTP
+│   │           ├── routes/        # Definición de rutas
+│   │           ├── schemas/       # Zod schemas
+│   │           └── errors/        # Error handlers
+│   │
+│   └── shared/                    # Utilidades compartidas
+│       └── utils/
+│
+├── tests/
+│   ├── unit/                      # Tests unitarios
+│   ├── integration/               # Tests de integración
+│   └── e2e/                       # Tests end-to-end
+│
+├── drizzle/                       # Migraciones de base de datos
+└── scripts/                       # Scripts de utilidad
+    ├── seed-database.ts
+    └── consolidate-books.ts
+```
+
+---
+
+## 3. API Endpoints
+
+### 3.1 Resumen de Endpoints
+
+| Método | Endpoint | Descripción | Estado |
+|--------|----------|-------------|--------|
+| GET | `/api/books` | Buscar libros con filtros | ✅ |
+| POST | `/api/books` | Crear nuevo libro | ✅ |
+| GET | `/api/book-types` | Listar tipos de libro | ✅ |
+| GET | `/api/book-categories` | Listar categorías | ✅ |
+| GET | `/api/book-levels` | Listar niveles | ✅ |
+
+### 3.2 GET /api/books - Buscar Libros
+
+Busca libros con múltiples filtros combinados con lógica AND y paginación cursor-based.
+
+#### Parámetros de Query
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `isbn` | string | Búsqueda exacta por BookIdentifier (ISBN u otro código) |
+| `title` | string | Búsqueda parcial en título (case-insensitive) |
+| `author` | string | Búsqueda parcial en autor (case-insensitive) |
+| `types` | string[] | Filtro por tipos (OR entre valores) |
+| `categories` | string[] | Filtro por categorías (OR entre valores) |
+| `levels` | string[] | Filtro por niveles (OR entre valores) |
+| `text` | string | Búsqueda semántica (≥55% similaridad, calibrado para nomic-embed-text) |
+| `limit` | number | Resultados por página (1-100, default: 50) |
+| `cursor` | string | Token de paginación |
+
+#### Ordenamiento
+
+- **Sin filtro `text`**: Ordenado por título (A-Z)
+- **Con filtro `text`**: Ordenado por similaridad (descendente)
+
+#### Response (200 OK)
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "isbn": "9780132350884",
+        "title": "Clean Code",
+        "authors": [
+          { "id": "uuid", "name": "Robert C. Martin" }
+        ],
+        "type": "technical",
+        "categories": [
+          { "id": "uuid", "name": "programming" }
+        ],
+        "level": "Intermediate",
+        "format": "pdf",
+        "originalDescription": "A handbook of agile software craftsmanship",
+        "description": "Un manual de artesanía de software ágil",
+        "language": "en",
+        "similarityScore": 0.87
+      }
+    ],
+    "pagination": {
+      "limit": 50,
+      "hasNextPage": false,
+      "nextCursor": null,
+      "totalCount": 1
+    }
+  },
+  "error": null
+}
+```
+
+### 3.3 POST /api/books - Crear Libro
+
+Crea un nuevo libro generando automáticamente:
+
+1. Embedding vectorial (768 dimensiones) para búsqueda semántica
+2. Traducción al español de la descripción (si el idioma original no es español)
+
+#### Request Body
+
+```json
+{
+  "title": "Clean Code",
+  "authors": ["Robert C. Martin"],
+  "description": "A handbook of agile software craftsmanship",
+  "language": "en",
+  "type": "technical",
+  "format": "pdf",
+  "categories": ["programming", "software engineering"],
+  "level": "Intermediate",
+  "isbn": "9780132350884",
+  "available": true,
+  "path": "/books/clean-code.pdf"
+}
+```
+
+#### Campos Requeridos
+
+| Campo | Tipo | Restricciones |
+|-------|------|---------------|
+| `title` | string | 1-500 caracteres |
+| `authors` | string[] | 1-10 autores, 1-300 chars cada uno |
+| `description` | string | 1-25000 caracteres |
+| `language` | string | ISO 639-1 (2 letras, e.g., "en", "es") |
+| `type` | string | Nombre de tipo existente en BD (e.g., "technical", "novel") |
+| `format` | enum | `epub`, `pdf`, `mobi`, `azw3`, `djvu`, `cbz`, `cbr`, `txt`, `other` |
+| `categories` | string[] | 1-10 categorías |
+
+#### Campos Opcionales
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `level` | string | Nombre de nivel (debe existir y ser válido para el tipo) |
+| `isbn` | string | Identificador de libro: ISBN-10/13 u otros códigos (1-32 chars alfanuméricos, normalizado a mayúsculas) |
+| `available` | boolean | Default: true |
+| `path` | string | Ruta al archivo físico (max 1000 chars) |
+
+#### Response (201 Created)
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "title": "Clean Code",
+    "authors": [
+      { "id": "uuid", "name": "Robert C. Martin" }
+    ],
+    "originalDescription": "A handbook of agile software craftsmanship",
+    "description": "Un manual de artesanía de software ágil",
+    "language": "en",
+    "type": "technical",
+    "format": "pdf",
+    "level": "Intermediate",
+    "categories": [
+      { "id": "uuid", "name": "programming" }
+    ],
+    "isbn": "9780132350884",
+    "available": true,
+    "path": "/books/clean-code.pdf",
+    "createdAt": "2026-02-09T12:00:00.000Z",
+    "updatedAt": "2026-02-09T12:00:00.000Z"
+  },
+  "error": null
+}
+```
+
+### 3.4 GET /api/book-types - Listar Tipos
+
+Lista todos los tipos de libro disponibles.
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "name": "technical",
+      "description": "Technical and programming books"
+    }
+  ],
+  "error": null
+}
+```
+
+### 3.5 GET /api/book-categories - Listar Categorías
+
+Lista categorías, opcionalmente filtradas por tipo.
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `type` | string | Filtrar por nombre de tipo de libro (opcional, case-insensitive) |
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "name": "programming",
+      "typeId": "uuid",
+      "description": null
+    }
+  ],
+  "error": null
+}
+```
+
+### 3.6 GET /api/book-levels - Listar Niveles
+
+Lista niveles de dificultad, opcionalmente filtrados por tipo.
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `type` | string | Filtrar por nombre de tipo de libro (opcional, case-insensitive) |
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "name": "Beginner",
+      "typeId": "uuid",
+      "typeName": "technical"
+    }
+  ],
+  "error": null
+}
+```
+
+---
+
+## 4. Modelo de Dominio
+
+### 4.1 Entidades
+
+#### Book (Aggregate Root)
+
+```typescript
+class Book {
+  readonly id: string;                    // UUID
+  readonly title: string;                 // 1-500 chars
+  readonly authors: readonly Author[];    // 1-10 authors
+  readonly originalDescription: string;  // Description in original language
+  readonly description: string;           // Spanish description
+  readonly language: string;              // ISO 639-1 code
+  readonly type: BookType;
+  readonly categories: readonly Category[]; // 1-10 categories
+  readonly levelId: string | null;        // UUID reference to Level entity
+  readonly format: BookFormat;            // Value Object
+  readonly isbn: BookIdentifier | null;   // Value Object (1-32 chars)
+  readonly available: boolean;
+  readonly path: string | null;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+
+  // Factory methods
+  static create(props: CreateBookProps): Book;
+  static fromPersistence(data: BookPersistenceProps): Book;
+  update(props: UpdateBookProps): Book;
+  getTextForEmbedding(): string;
+}
+```
+
+#### Author
+
+```typescript
+class Author {
+  readonly id: string;
+  readonly name: string;  // 1-300 chars
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+
+  static create(props: CreateAuthorProps): Author;
+  static fromPersistence(data: AuthorPersistenceProps): Author;
+  update(props: UpdateAuthorProps): Author;
+}
+```
+
+#### BookType
+
+```typescript
+class BookType {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string | null;
+
+  static fromPersistence(data: BookTypeData): BookType;
+}
+```
+
+#### Category
+
+```typescript
+class Category {
+  readonly id: string;
+  readonly name: string;
+  readonly typeId: string;
+  readonly description: string | null;
+
+  static create(props: CreateCategoryProps): Category;
+  static fromPersistence(data: CategoryData): Category;
+}
+```
+
+#### Level
+
+```typescript
+class Level {
+  readonly id: string;
+  readonly name: string;
+
+  static fromPersistence(data: LevelData): Level;
+}
+```
+
+### 4.2 Value Objects
+
+#### BookIdentifier
+
+```typescript
+class BookIdentifier {
+  readonly value: string;  // Normalized (uppercase, hyphens/spaces stripped)
+
+  private constructor(value: string);
+  static create(value: string): BookIdentifier;        // Validates + normalizes
+  static fromPersistence(value: string): BookIdentifier; // No validation (trusted source)
+
+  equals(other: BookIdentifier): boolean;
+  toString(): string;
+}
+```
+
+Validaciones:
+
+- Longitud: 1-32 caracteres (tras normalizar)
+- Caracteres permitidos: alfanuméricos (A-Z, 0-9) y guión bajo (`_`)
+- Guiones e espacios se eliminan antes de validar (separadores ISBN)
+- Normalizado a mayúsculas
+
+Soporta:
+- ISBN-10 y ISBN-13 estándar
+- Identificadores propietarios de distribuidores (e.g. códigos alfanuméricos MIT Sloan, códigos institucionales)
+
+#### BookFormat
+
+```typescript
+class BookFormat {
+  readonly value: 'epub' | 'pdf' | 'mobi' | 'azw3' | 'djvu' | 'cbz' | 'cbr' | 'txt' | 'other';
+
+  private constructor(value: string);
+  static create(value: string): BookFormat;
+  static fromPersistence(value: BookFormatValue): BookFormat;
+  static isValid(value: string): boolean;
+  static getAllFormats(): readonly BookFormatValue[];
+}
+```
+
+### 4.3 Patrón Criteria (Query Builder)
+
+El patrón Criteria encapsula la lógica de búsqueda de forma agnóstica a la infraestructura:
+
+```typescript
+// Criteria
+class Criteria {
+  readonly filters: Filters;
+  readonly order: Order | null;
+  readonly limit: number;
+  readonly cursor: string | null;
+
+  static create(options: CriteriaOptions): Criteria;
+  withFilters(filters: Filter[]): Criteria;
+  withOrder(order: Order): Criteria;
+  hasSimilarityFilter(): boolean;
+}
+
+// Filter
+class Filter {
+  readonly field: FilterField;
+  readonly operator: FilterOperator;
+  readonly value: FilterValue;
+
+  static equals(field: string, value: string): Filter;
+  static contains(field: string, value: string): Filter;
+  static in(field: string, values: string[]): Filter;
+  static similarTo(field: string, text: string): Filter;
+}
+
+// Order
+class Order {
+  readonly orderBy: OrderBy;
+  readonly orderType: OrderType;
+
+  static asc(field: string): Order;
+  static desc(field: string): Order;
+}
+```
+
+### 4.4 Errores de Dominio
+
+```typescript
+// Base class
+abstract class DomainError extends Error { }
+
+// Validation errors
+class RequiredFieldError extends DomainError { }
+class FieldTooLongError extends DomainError { }
+class InvalidUUIDError extends DomainError { }
+class TooManyItemsError extends DomainError { }
+class DuplicateItemError extends DomainError { }    // Solo para IDs duplicados (no para nombres de autor)
+
+// Value Object errors
+class InvalidBookIdentifierError extends DomainError { }  // BookIdentifier inválido
+class InvalidBookFormatError extends DomainError { }      // BookFormat inválido
+
+// Business rule errors
+class BookNotFoundError extends DomainError { }
+class DuplicateISBNError extends DomainError { }
+class DuplicateBookError extends DomainError { }
+class InvalidBookTypeError extends DomainError { }
+class CategoryTypeMismatchError extends DomainError { }
+class LevelTypeMismatchError extends DomainError { }
+class InvalidLanguageCodeError extends DomainError { }
+class CategoryNotFoundError extends DomainError { }
+class AuthorAlreadyExistsError extends DomainError { }
+class CategoryAlreadyExistsError extends DomainError { }
+
+// Legacy (no se lanza activamente — ver nota)
+class EmbeddingTextTooLongError extends DomainError { }
+```
+
+> **Nota sobre autores duplicados:** `Book.validateAuthors()` **no lanza `DuplicateItemError` para nombres de autor duplicados**. En su lugar, aplica **deduplicación silenciosa** (case-insensitive, conserva la primera ocurrencia) para ser resiliente ante datos sucios del catálogo. `DuplicateItemError` sí se lanza si se detectan authors con el mismo `id`.
+
+> **Nota sobre `EmbeddingTextTooLongError`:** Este error existe en el código pero **no se lanza en producción** porque `OllamaEmbeddingService` implementa chunking automático con solapamiento para textos largos. Textos de hasta cualquier longitud se procesan correctamente mediante ventana deslizante (chunk_size=6500, overlap=200).
+
+---
+
+## 5. Capa de Aplicación
+
+### 5.1 Use Cases
+
+#### CreateBookUseCase
+
+Orquesta la creación de un libro:
+
+```
+1. Validar datos de entrada
+2. Obtener/validar BookType
+3. Obtener/validar Level (si aplica, debe pertenecer al tipo)
+4. Obtener/crear categorías (validar que pertenecen al tipo)
+5. Obtener/crear autores
+6. Traducir descripción al español (si no es español)
+7. Generar embedding del contenido
+8. Crear entidad Book
+9. Persistir en base de datos
+10. Retornar libro creado
+```
+
+#### SearchBooksUseCase
+
+Orquesta la búsqueda de libros:
+
+```
+1. Validar parámetros de entrada
+2. Generar embedding si hay filtro de texto (búsqueda semántica)
+3. Construir Criteria con filtros
+4. Ejecutar búsqueda en repositorio
+5. Mapear resultados a DTOs
+6. Retornar resultados paginados
+```
+
+#### ListBookTypesUseCase
+
+Lista todos los tipos de libro disponibles.
+
+#### ListCategoriesUseCase
+
+Lista categorías, opcionalmente filtradas por tipo.
+
+#### ListBookLevelsUseCase
+
+Lista niveles, opcionalmente filtrados por tipo.
+
+### 5.2 Ports (Interfaces)
+
+#### BookRepository
+
+```typescript
+interface BookRepository {
+  save(book: Book): Promise<void>;
+  findById(id: string): Promise<Book | null>;
+  findByISBN(isbn: ISBN): Promise<Book | null>;
+  search(criteria: Criteria, embedding?: number[]): Promise<SearchBooksResult>;
+  existsByAuthorTitleFormat(author: string, title: string, format: string): Promise<boolean>;
+}
+
+interface SearchBooksResult {
+  items: SearchResultItem[];
+  hasNextPage: boolean;
+  nextCursor: string | null;
+  totalCount: number;
+}
+```
+
+#### AuthorRepository
+
+```typescript
+interface AuthorRepository {
+  findByName(name: string): Promise<Author | null>;
+  findByNames(names: string[]): Promise<Author[]>;
+  save(author: Author): Promise<void>;
+}
+```
+
+#### TypeRepository
+
+```typescript
+interface TypeRepository {
+  findAll(): Promise<BookType[]>;
+  findByName(name: string): Promise<BookType | null>;
+  findById(id: string): Promise<BookType | null>;
+}
+```
+
+#### CategoryRepository
+
+```typescript
+interface CategoryRepository {
+  findByName(name: string): Promise<Category | null>;
+  findByNames(names: string[]): Promise<Category[]>;
+  findByTypeId(typeId: string): Promise<Category[]>;
+  findAll(): Promise<Category[]>;
+  save(category: Category): Promise<void>;
+}
+```
+
+#### LevelRepository
+
+```typescript
+interface LevelRepository {
+  findByName(name: string): Promise<Level | null>;
+  findByTypeId(typeId: string): Promise<Level[]>;
+  findAll(): Promise<Level[]>;
+}
+```
+
+#### EmbeddingService
+
+```typescript
+interface EmbeddingService {
+  generateEmbedding(text: string): Promise<EmbeddingResult>;
+}
+
+interface EmbeddingResult {
+  embedding: number[];
+  model: string;
+  dimensions: number;
+}
+```
+
+#### TranslationService
+
+```typescript
+interface TranslationService {
+  translateToSpanish(text: string, sourceLanguage: string): Promise<TranslationResult>;
+}
+
+interface TranslationResult {
+  translatedText: string;
+  sourceLanguage: string;
+  targetLanguage: string;
+}
+```
+
+#### Logger
+
+```typescript
+interface Logger {
+  debug(message: string, context?: object): void;
+  info(message: string, context?: object): void;
+  warn(message: string, context?: object): void;
+  error(message: string, context?: object): void;
+  child(bindings: object): Logger;
+}
+```
+
+### 5.3 Errores de Aplicación
+
+```typescript
+// Embedding service errors
+abstract class EmbeddingServiceError extends Error { }
+class EmbeddingServiceUnavailableError extends EmbeddingServiceError { }
+
+// Translation service errors
+abstract class TranslationServiceError extends Error { }
+class TranslationServiceUnavailableError extends TranslationServiceError { }
+class TranslationError extends TranslationServiceError { }
+```
+
+---
+
+## 6. Capa de Infraestructura
+
+### 6.1 Driven Adapters (Output)
+
+#### PostgreSQL Repositories
+
+Implementan los puertos de repositorio usando Drizzle ORM:
+
+- **PostgresBookRepository**: Búsqueda con pgvector, filtros, paginación cursor-based
+- **PostgresAuthorRepository**: CRUD de autores con búsqueda case-insensitive
+- **PostgresTypeRepository**: Consulta de tipos (solo lectura)
+- **PostgresCategoryRepository**: CRUD de categorías con filtro por tipo
+- **PostgresLevelRepository**: Consulta de niveles con filtro por tipo
+
+**Características:**
+
+- Transacciones para operaciones compuestas
+- Búsqueda vectorial con pgvector (`<=>` cosine distance)
+- Paginación cursor-based eficiente
+- Mappers para convertir DB rows ↔ Domain entities
+
+#### OllamaEmbeddingService
+
+```typescript
+class OllamaEmbeddingService implements EmbeddingService {
+  // Configuración
+  baseUrl: string;           // Default: http://ollama-embeddings:11434
+  model: string;             // Default: nomic-embed-text
+  timeoutMs: number;         // Default: 30000
+}
+
+// Constantes de chunking
+const CHUNK_SIZE = 6500;    // Máx chars por chunk (margen bajo límite del modelo de 7000)
+const CHUNK_OVERLAP = 200;  // Chars compartidos entre chunks consecutivos
+```
+
+**Características:**
+
+- Genera embeddings de 768 dimensiones
+- **Textos cortos** (≤ 6500 chars): llamada única a la API
+- **Textos largos** (> 6500 chars): chunking automático con ventana deslizante → embeddings por chunk → promediado + normalización L2
+- Errores específicos: `EmbeddingServiceUnavailableError`
+
+#### OllamaTranslationService
+
+```typescript
+class OllamaTranslationService implements TranslationService {
+  // Configuración
+  baseUrl: string;           // Default: http://ollama-translations:11434
+  model: string;             // Default: llama3.2:1b
+  timeoutMs: number;         // Default: 60000
+  retries: number;           // Default: 3
+
+  async translateToSpanish(text: string, sourceLanguage: string): Promise<TranslationResult>;
+}
+```
+
+**Características:**
+
+- Traduce cualquier idioma al español
+- Si ya está en español, devuelve el texto original
+- Retry con backoff exponencial
+- Errores específicos: `TranslationServiceUnavailableError`, `TranslationError`
+- **Uso recomendado**: traducción individual en `POST /api/books` (sin contenedor extra en producción)
+
+#### LibreTranslateTranslationService
+
+```typescript
+class LibreTranslateTranslationService implements TranslationService {
+  // Configuración
+  baseUrl: string;           // Default: http://libretranslate:5000  (LIBRETRANSLATE_URL)
+  timeoutMs: number;         // Default: 10000                       (LIBRETRANSLATE_TIMEOUT_MS)
+  retries: number;           // Default: 3
+
+  async translateToSpanish(text: string, sourceLanguage: string): Promise<TranslationResult>;
+}
+```
+
+**Características:**
+
+- Llama a `POST {baseUrl}/translate` con `{ q, source, target: 'es', format: 'text' }`
+- Si el idioma de origen es `'es'`, devuelve el texto original sin llamar a la API
+- Retry con backoff exponencial (igual que `OllamaTranslationService`)
+- Errores específicos: `TranslationServiceUnavailableError`, `TranslationError`
+- Health check vía `GET /languages` (devuelve 200 si el servicio está disponible)
+- **Uso recomendado**: carga masiva (`consolidate-books`, `seed-database`) — ~120x más rápido que Ollama
+
+La implementación concreta se selecciona en el bootstrap según `TRANSLATION_PROVIDER` (ver sección 6.3).
+
+#### PinoLogger
+
+Logger estructurado con niveles configurables y contexto.
+
+### 6.2 Driver Adapters (Input)
+
+#### HTTP Server (Fastify)
+
+```typescript
+// server.ts
+const server = Fastify({
+  logger: pinoLogger,
+});
+
+// Plugins
+server.register(cors);
+server.register(fastifySwagger);
+
+// Routes
+server.register(bookRoutes, { prefix: '/api' });
+server.register(typeRoutes, { prefix: '/api' });
+server.register(categoryRoutes, { prefix: '/api' });
+server.register(levelRoutes, { prefix: '/api' });
+```
+
+#### Controllers
+
+Cada controller:
+
+1. Recibe la request HTTP
+2. Valida con Zod schema
+3. Ejecuta el use case correspondiente
+4. Mapea errores a respuestas HTTP
+5. Retorna respuesta estandarizada
+
+#### Zod Schemas
+
+Validación de entrada con mensajes de error claros:
+
+```typescript
+const createBookSchema = z.object({
+  title: z.string().min(1).max(500),
+  authors: z.array(z.string().min(1).max(300)).min(1).max(10),
+  description: z.string().min(1).max(25000),
+  language: z.string().length(2).regex(/^[a-z]{2}$/),
+  type: z.string().min(1).max(100),
+  format: z.enum(['epub', 'pdf', 'mobi', 'azw3', 'djvu', 'cbz', 'cbr', 'txt', 'other']),
+  categories: z.array(z.string()).min(1).max(10),
+  level: z.string().optional(),
+  isbn: z.string().optional(),
+  available: z.boolean().optional().default(true),
+  path: z.string().optional(),
+});
+```
+
+### 6.3 Configuración (env.ts)
+
+```typescript
+interface EnvConfig {
+  app: {
+    nodeEnv: string;      // NODE_ENV (development)
+    port: number;         // PORT (3000)
+    logLevel: string;     // LOG_LEVEL (debug)
+  };
+  database: {
+    url: string;          // DATABASE_URL (required)
+  };
+  ollama: {
+    baseUrl: string;      // OLLAMA_BASE_URL (http://ollama:11434)
+    model: string;        // OLLAMA_MODEL (nomic-embed-text)
+    timeoutMs: number;    // OLLAMA_TIMEOUT_MS (30000)
+  };
+  translation: {
+    baseUrl: string;      // Same as ollama.baseUrl
+    model: string;        // TRANSLATION_MODEL (llama3.2:1b)
+    timeoutMs: number;    // TRANSLATION_TIMEOUT_MS (60000)
+    retries: number;      // TRANSLATION_RETRIES (3)
+    provider: 'ollama' | 'libretranslate'; // TRANSLATION_PROVIDER (ollama)
+    libreTranslateUrl: string;             // LIBRETRANSLATE_URL (http://libretranslate:5000)
+    libreTranslateTimeoutMs: number;       // LIBRETRANSLATE_TIMEOUT_MS (10000)
+  };
+}
+```
+
+---
+
+## 7. Flujos Principales
+
+### 7.1 Flujo de Creación de Libro
+
+```
+┌────────┐     ┌──────────────┐     ┌─────────────────┐
+│ Client │────▶│ POST /books  │────▶│ Zod Validation  │
+└────────┘     └──────────────┘     └────────┬────────┘
+                                              │
+                                              ▼
+                                    ┌─────────────────┐
+                                    │ BookController  │
+                                    └────────┬────────┘
+                                              │
+                                              ▼
+                                    ┌─────────────────────┐
+                                    │ CreateBookUseCase   │
+                                    └────────┬────────────┘
+                                              │
+               ┌──────────────────────────────┼──────────────────────────────┐
+               │                              │                              │
+               ▼                              ▼                              ▼
+     ┌─────────────────┐           ┌─────────────────┐           ┌─────────────────┐
+     │ TypeRepository  │           │ LevelRepository │           │CategoryRepository│
+     │ findByName()    │           │ findByName()    │           │ findByNames()   │
+     └────────┬────────┘           └────────┬────────┘           └────────┬────────┘
+               │                              │                              │
+               └──────────────────────────────┼──────────────────────────────┘
+                                              │
+                                              ▼
+                                    ┌─────────────────┐
+                                    │ AuthorRepository│
+                                    │ findByNames()   │
+                                    │ + save() new    │
+                                    └────────┬────────┘
+                                              │
+                                              ▼
+                                   ┌──────────────────────┐
+                                   │ TranslationService   │
+                                   │ translateToSpanish() │
+                                   │ (if language != 'es')│
+                                   └──────────┬───────────┘
+                                              │
+                                              ▼
+                                   ┌──────────────────────┐
+                                   │ EmbeddingService     │
+                                   │ generateEmbedding()  │
+                                   │ (768 dimensions)     │
+                                   └──────────┬───────────┘
+                                              │
+                                              ▼
+                                    ┌─────────────────┐
+                                    │ Book.create()   │
+                                    │ Domain Entity   │
+                                    └────────┬────────┘
+                                              │
+                                              ▼
+                                    ┌─────────────────┐
+                                    │ BookRepository  │
+                                    │ save()          │
+                                    └────────┬────────┘
+                                              │
+                                              ▼
+                                    ┌─────────────────┐
+                                    │ Response 201    │
+                                    │ Created Book    │
+                                    └─────────────────┘
+```
+
+### 7.2 Flujo de Búsqueda de Libros (Semántica)
+
+```
+┌────────┐     ┌──────────────────────────┐
+│ Client │────▶│ GET /books?text=software │
+└────────┘     │     architecture         │
+               └────────────┬─────────────┘
+                            │
+                            ▼
+                  ┌─────────────────┐
+                  │ Zod Validation  │
+                  └────────┬────────┘
+                            │
+                            ▼
+                  ┌─────────────────────┐
+                  │ SearchBooksUseCase  │
+                  └────────┬────────────┘
+                            │
+         ┌──────────────────┴──────────────────┐
+         │ Has text filter?                     │
+         │ Yes ─────────────────────────────────┤
+         ▼                                      │
+┌─────────────────────┐                         │
+│ EmbeddingService    │                         │
+│ generateEmbedding() │                         │
+│ (query → 768 dims)  │                         │
+└──────────┬──────────┘                         │
+           │                                    │
+           └──────────────────┬─────────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │ Build Criteria  │
+                    │ - Filters       │
+                    │ - Order         │
+                    │ - Pagination    │
+                    └────────┬────────┘
+                              │
+                              ▼
+                    ┌─────────────────────┐
+                    │ BookRepository      │
+                    │ search(criteria,    │
+                    │        embedding)   │
+                    └────────┬────────────┘
+                              │
+                              ▼
+                    ┌─────────────────────┐
+                    │ PostgreSQL + pgvector│
+                    │ - Apply filters     │
+                    │ - Cosine similarity │
+                     │ - Threshold ≥ 0.55  │
+                    │ - Sort by similarity│
+                    └────────┬────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │ Map to DTOs     │
+                    │ + similarityScore│
+                    └────────┬────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │ Response 200    │
+                    │ Paginated results│
+                    └─────────────────┘
+```
+
+---
+
+## 8. Manejo de Errores
+
+### 8.1 Jerarquía de Errores
+
+```
+Error
+├── DomainError (business rules)
+│   ├── RequiredFieldError              → 400
+│   ├── FieldTooLongError               → 400
+│   ├── InvalidUUIDError                → 400
+│   ├── TooManyItemsError               → 400
+│   ├── DuplicateItemError              → 400
+│   ├── InvalidBookIdentifierError      → 400
+│   ├── InvalidBookFormatError          → 400
+│   ├── InvalidLanguageCodeError        → 400
+│   ├── InvalidBookTypeError            → 400
+│   ├── CategoryTypeMismatchError       → 400
+│   ├── LevelTypeMismatchError          → 400
+│   ├── BookNotFoundError               → 404
+│   ├── DuplicateISBNError              → 409
+│   └── DuplicateBookError              → 409
+│
+├── EmbeddingServiceError (infrastructure)
+│   └── EmbeddingServiceUnavailableError → 503
+│
+└── TranslationServiceError (infrastructure)
+    ├── TranslationServiceUnavailableError → 503
+    └── TranslationError                   → 500
+```
+
+### 8.2 Formato de Respuesta de Error
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "message": "Category \"programming\" belongs to type \"technical\" but book type is \"novel\"",
+    "details": []
+  }
+}
+```
+
+Para errores de validación Zod:
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "message": "Validation failed",
+    "details": [
+      "title: String must contain at least 1 character(s)",
+      "authors: Array must contain at least 1 element(s)"
+    ]
+  }
+}
+```
+
+---
+
+## 9. Formato de Respuesta API
+
+Todas las respuestas siguen un formato estandarizado:
+
+### Success Response
+
+```typescript
+interface ApiSuccessResponse<T> {
+  success: true;
+  data: T;
+  error: null;
+}
+```
+
+### Error Response
+
+```typescript
+interface ApiErrorResponse {
+  success: false;
+  data: null;
+  error: {
+    message: string;
+    details?: string[];
+  };
+}
+```
+
+---
+
+## 10. Base de Datos
+
+### 10.1 Schema Principal
+
+```sql
+-- Types (seeded)
+CREATE TABLE types (
+  id UUID PRIMARY KEY,
+  name VARCHAR(50) UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Levels (HU-008: tabla independiente, sin FK directa a types)
+CREATE TABLE levels (
+  id UUID PRIMARY KEY,
+  name VARCHAR(100) UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Type-Levels junction (HU-008: N:N entre types y levels)
+CREATE TABLE type_levels (
+  type_id UUID NOT NULL REFERENCES types(id) ON DELETE CASCADE,
+  level_id UUID NOT NULL REFERENCES levels(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (type_id, level_id)
+);
+
+-- Categories
+CREATE TABLE categories (
+  id UUID PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  type_id UUID NOT NULL REFERENCES types(id) ON DELETE RESTRICT,
+  description VARCHAR(500),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(name, type_id)
+);
+
+-- Authors
+CREATE TABLE authors (
+  id UUID PRIMARY KEY,
+  name VARCHAR(300) UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Books
+CREATE TABLE books (
+  id UUID PRIMARY KEY,
+  isbn VARCHAR(32) UNIQUE,                         -- BookIdentifier (no solo ISBN-13)
+  title VARCHAR(500) NOT NULL,
+  normalized_title VARCHAR(500) NOT NULL,           -- Lowercase, para deduplicación
+  original_description TEXT NOT NULL,
+  description TEXT NOT NULL,
+  language VARCHAR(10) NOT NULL,
+  type_id UUID NOT NULL REFERENCES types(id),
+  level_id UUID REFERENCES levels(id) ON DELETE SET NULL,
+  format VARCHAR(50) NOT NULL,
+  available BOOLEAN NOT NULL DEFAULT true,
+  path VARCHAR(1000),
+  embedding VECTOR(768),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Book-Author relationship
+CREATE TABLE book_authors (
+  book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  author_id UUID NOT NULL REFERENCES authors(id) ON DELETE RESTRICT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (book_id, author_id)
+);
+
+-- Book-Category relationship
+CREATE TABLE book_categories (
+  book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  category_id UUID NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (book_id, category_id)
+);
+
+-- Indexes for search performance
+CREATE INDEX ON books USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX ON books (title);
+CREATE INDEX ON books (type_id);
+CREATE INDEX ON books (level_id);
+CREATE INDEX ON books (isbn) WHERE isbn IS NOT NULL;
+```
+
+### 10.2 Búsqueda Vectorial
+
+pgvector permite búsqueda semántica eficiente:
+
+```sql
+-- Búsqueda por similaridad (cosine distance)
+SELECT *, 1 - (embedding <=> $1) as similarity
+FROM books
+WHERE 1 - (embedding <=> $1) >= 0.55
+ORDER BY embedding <=> $1
+LIMIT 50;
+```
+
+> **Nota sobre calibración del umbral:** El umbral de `0.55` está calibrado específicamente para el modelo `nomic-embed-text` (usado vía Ollama). Este modelo produce similitudes coseno estructuralmente más bajas que otros modelos como `text-embedding-ada-002` de OpenAI. Con `nomic-embed-text`, textos semánticamente relacionados pero no idénticos generan similitudes típicas de `0.55–0.65`, por lo que un umbral de `0.70` filtraría resultados legítimamente relevantes. El valor se define en `SEMANTIC_SEARCH.SIMILARITY_THRESHOLD` (`apps/api/src/domain/criteria/constants.ts`).
+
+---
+
+## 11. Testing
+
+### 11.1 Estrategia
+
+| Nivel | Herramienta | Cobertura | Responsabilidad |
+|-------|-------------|-----------|-----------------|
+| Unit | Vitest | 100% domain | Entidades, Value Objects, Criteria |
+| Unit | Vitest | 100% use cases | Lógica de aplicación con mocks |
+| Integration | Vitest | 80%+ | Repositorios con DB real, Ollama |
+| E2E | Vitest | Flujos críticos | API HTTP completa |
+
+### 11.2 Test Counts Esperados
+
+- **Unit**: ~345 tests
+- **Integration**: ~63 tests
+- **E2E**: ~30 tests (+ 2 skipped para escenarios 503)
+
+### 11.3 Comandos de Test
+
+```bash
+# En Docker (recomendado)
+docker exec library-api-dev npm test              # Unitarios
+docker exec library-api-dev npm run test:integration
+docker exec library-api-dev npm run test:e2e
+docker exec library-api-dev npm run test:coverage
+```
+
+---
+
+## 12. Docker
+
+### 12.1 Servicios
+
+```yaml
+services:
+  api:
+    build: ./apps/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - ollama
+    environment:
+      - DATABASE_URL=postgresql://...
+      - OLLAMA_BASE_URL=http://ollama:11434
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+```
+
+### 12.2 Modelos Ollama Requeridos
+
+```bash
+# Embeddings (768 dimensiones)
+ollama pull nomic-embed-text
+
+# Traducción
+ollama pull llama3.2:1b
+```
+
+---
+
+## 13. Decisiones de Diseño
+
+### 13.1 ¿Por qué Hexagonal Architecture?
+
+- **Testabilidad**: Dominio puro sin dependencias externas
+- **Flexibilidad**: Cambiar infraestructura sin tocar lógica de negocio
+- **Claridad**: Separación clara de responsabilidades
+
+### 13.2 ¿Por qué pgvector?
+
+- **Integración nativa**: Embeddings en la misma DB que los datos
+- **Performance**: Índices especializados (IVFFlat, HNSW)
+- **Simplicidad**: Sin necesidad de base de datos vectorial separada
+
+### 13.3 ¿Por qué cursor-based pagination?
+
+- **Eficiencia**: No requiere COUNT(*) ni OFFSET
+- **Consistencia**: Resultados estables si hay inserciones/eliminaciones
+- **Escalabilidad**: Rendimiento constante independiente de la página
+
+### 13.4 ¿Por qué traducción automática?
+
+- **UX**: Usuarios hispanohablantes ven descripciones en español
+- **Búsqueda**: Embeddings generados del texto español para consistencia
+- **Fallback**: Si falla traducción, se usa descripción original
+
+### 13.5 ¿Por qué Fastify sobre Express?
+
+- **Performance**: 2-3x más rápido que Express
+- **TypeScript**: Mejor soporte nativo
+- **Validación**: Integración natural con Zod
+- **Moderno**: Diseñado para async/await desde el inicio
+
+### 13.6 ¿Por qué LibreTranslate como proveedor alternativo de traducción? (HU-026)
+
+#### Contexto y problema
+
+El sistema de traducción inicial usaba exclusivamente Ollama con `llama3.2:1b` corriendo en CPU. Este enfoque funcionó bien para el caso de uso original: traducir libros uno a uno mediante `POST /api/books` (~2-3 segundos por libro, experiencia aceptable).
+
+Sin embargo, al necesitar pre-traducir el catálogo completo de 55.000 libros para la carga inicial de datos (requisito para que la búsqueda semántica funcione en español), el rendimiento de Ollama en CPU se reveló inviable:
+
+| Métrica | Resultado |
+|---------|-----------|
+| Velocidad observada | ~3 libros/minuto |
+| ETA estimada (55.000 libros) | ~610 horas (~25 días) |
+| Errores de timeout | Aparecieron desde el batch 13 |
+
+#### Alternativas evaluadas
+
+| Opción | Motivo de descarte |
+|--------|-------------------|
+| GPU para Ollama | Hardware sin GPU dedicada |
+| Modelo más pequeño | `llama3.2:1b` ya es el mínimo viable |
+| Traducción lazy (on-demand) | Incompatible con búsqueda semántica (requiere embeddings pre-generados) |
+| Traducción parcial | Experiencia degradada para libros menos populares |
+| DeepL API | ~$154/mes para 55.000 libros (~22M chars) |
+| MyMemory API gratuita | 50.000 chars/día → 440 días para el catálogo completo |
+| **LibreTranslate self-hosted** | ✅ Open source, sin límites, sin coste, Docker-native |
+
+#### Benchmark de LibreTranslate (2 de marzo de 2026)
+
+| Concurrencia | Throughput | ETA 55.000 libros |
+|---|---|---|
+| 1 | 4.2 req/s | ~3.7 horas |
+| **3** | **6.1 req/s** | **~2.5 horas** ✅ |
+| 5 | 5.5 req/s | ~2.8 horas |
+
+**0 errores en todos los tests. Calidad verificada manualmente.**  
+LibreTranslate es ~120x más rápido que Ollama para el mismo volumen.
+
+#### Decisión de diseño: mantener ambos proveedores (patrón Strategy)
+
+La decisión no es reemplazar Ollama, sino **mantener ambos con selección por variable de entorno**:
+
+- **`TRANSLATION_PROVIDER=ollama`** (default): óptimo para `POST /api/books`. Sin contenedor extra en producción, ~2-3s por libro, experiencia individual aceptable.
+- **`TRANSLATION_PROVIDER=libretranslate`**: óptimo para carga masiva (`consolidate-books`, `seed-database`). Velocidad máxima, sin llamadas a LLM costosas.
+
+El patrón **Strategy** encaja perfectamente con la arquitectura hexagonal existente: el puerto `TranslationService` ya define el contrato, y la implementación concreta se inyecta en el bootstrap. El dominio y los casos de uso no requieren ningún cambio.
+
+```
+TRANSLATION_PROVIDER=ollama          → OllamaTranslationService    (default)
+TRANSLATION_PROVIDER=libretranslate  → LibreTranslateTranslationService
+```
+
+Si `TRANSLATION_PROVIDER` tiene un valor desconocido, la aplicación lanza un error descriptivo en el arranque (fail-fast).
+
+---
+
+## 14. Referencias
+
+- [Fastify Documentation](https://fastify.dev/)
+- [Drizzle ORM](https://orm.drizzle.team/)
+- [pgvector](https://github.com/pgvector/pgvector)
+- [Ollama API](https://ollama.ai/docs/api)
+- [Zod](https://zod.dev/)
+- [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
+- [DDD Reference](https://www.domainlanguage.com/ddd/reference/)

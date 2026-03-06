@@ -1,0 +1,264 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+import { of, delay, throwError } from 'rxjs';
+
+import { SendToKindleDialogComponent } from './send-to-kindle-dialog.component.js';
+import { KindleService, SendToKindleResult } from '../../../../core/services/kindle.service.js';
+import { Book } from '../../../../core/models/index.js';
+
+describe('SendToKindleDialogComponent', () => {
+  let component: SendToKindleDialogComponent;
+  let fixture: ComponentFixture<SendToKindleDialogComponent>;
+  let mockDialogRef: { close: ReturnType<typeof vi.fn> };
+  let mockKindleService: {
+    sendToKindle: ReturnType<typeof vi.fn>;
+    isKindleEmail: ReturnType<typeof vi.fn>;
+  };
+
+  const mockBook: Book = {
+    id: '123e4567-e89b-12d3-a456-426614174000',
+    isbn: '978-0-13-468599-1',
+    title: 'Clean Code',
+    authors: [{ id: '1', name: 'Robert C. Martin' }],
+    type: 'technical',
+    categories: [{ id: '1', name: 'Software Engineering' }],
+    level: 'Intermediate',
+    format: 'epub',
+    originalDescription: 'A handbook of agile software craftsmanship',
+    description: 'A handbook of agile software craftsmanship',
+    language: 'en',
+    available: true,
+    similarityScore: null,
+  };
+
+  const mockUnavailableBook: Book = {
+    ...mockBook,
+    id: '223e4567-e89b-12d3-a456-426614174001',
+    available: false,
+  };
+
+  /**
+   * Helper function to configure TestBed with given book
+   */
+  const configureTestBed = async (book: Book) => {
+    mockDialogRef = {
+      close: vi.fn(),
+    };
+
+    mockKindleService = {
+      sendToKindle: vi.fn(),
+      isKindleEmail: vi.fn(),
+    };
+
+    mockKindleService.isKindleEmail.mockImplementation((email: string) =>
+      email.toLowerCase().endsWith('@kindle.com')
+    );
+
+    await TestBed.configureTestingModule({
+      imports: [SendToKindleDialogComponent],
+      providers: [
+        { provide: DialogRef, useValue: mockDialogRef },
+        { provide: DIALOG_DATA, useValue: book },
+        { provide: KindleService, useValue: mockKindleService },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(SendToKindleDialogComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  };
+
+  /**
+   * Helper function to set email and trigger change detection
+   */
+  const setEmailValue = async (email: string) => {
+    component.emailControl.setValue(email);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+  };
+
+  beforeEach(async () => {
+    await configureTestBed(mockBook);
+  });
+
+  describe('Creation', () => {
+    it('should create', () => {
+      expect(component).toBeTruthy();
+    });
+  });
+
+  describe('Dialog content', () => {
+    it('should display the book title', () => {
+      const title = fixture.nativeElement.querySelector('[data-testid="book-title"]');
+      expect(title.textContent).toContain('Clean Code');
+    });
+
+    it('should display email input field', () => {
+      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
+      expect(emailInput).toBeTruthy();
+    });
+
+    it('should display cancel button', () => {
+      const cancelButton = fixture.nativeElement.querySelector('[data-testid="cancel-button"]');
+      expect(cancelButton).toBeTruthy();
+      expect(cancelButton.textContent.trim()).toBe('Cancelar');
+    });
+
+    it('should display send button', () => {
+      const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
+      expect(sendButton).toBeTruthy();
+      expect(sendButton.textContent.trim()).toContain('Enviar');
+    });
+  });
+
+  describe('Email validation', () => {
+    it('should show error for empty email when touched', async () => {
+      component.emailControl.markAsTouched();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const error = fixture.nativeElement.querySelector('.error-message');
+      expect(error).toBeTruthy();
+      expect(error.textContent).toContain('El email es requerido');
+    });
+
+    it('should show error for invalid email format', async () => {
+      component.emailControl.setValue('invalid-email');
+      component.emailControl.markAsTouched();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const error = fixture.nativeElement.querySelector('.error-message');
+      expect(error).toBeTruthy();
+      expect(error.textContent).toContain('Por favor ingresa una dirección de email válida');
+    });
+
+    it('should show warning for non-kindle email', async () => {
+      await setEmailValue('user@gmail.com');
+
+      const warning = fixture.nativeElement.querySelector('[data-testid="kindle-warning"]');
+      expect(warning).toBeTruthy();
+      expect(warning.textContent).toContain('@kindle.com');
+    });
+
+    it('should not show warning for kindle email', async () => {
+      await setEmailValue('user@kindle.com');
+
+      const warning = fixture.nativeElement.querySelector('[data-testid="kindle-warning"]');
+      expect(warning).toBeFalsy();
+    });
+  });
+
+  describe('Send button state', () => {
+    it('should disable send button when email is invalid', () => {
+      const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
+      expect(sendButton.disabled).toBe(true);
+    });
+
+    it('should enable send button when email is valid', async () => {
+      await setEmailValue('user@kindle.com');
+
+      const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
+      expect(sendButton.disabled).toBe(false);
+    });
+
+    it('should disable send button while sending', async () => {
+      const successResult: SendToKindleResult = {
+        success: true,
+        message: 'Book sent successfully',
+      };
+      mockKindleService.sendToKindle.mockReturnValue(of(successResult).pipe(delay(100)));
+
+      await setEmailValue('user@kindle.com');
+
+      const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
+      sendButton.click();
+      fixture.detectChanges();
+
+      // Button should be disabled while sending
+      expect(sendButton.disabled).toBe(true);
+
+      // Wait for the success state - the send button will be replaced by close button
+      await vi.waitFor(
+        () => {
+          fixture.detectChanges();
+          const closeButton = fixture.nativeElement.querySelector('[data-testid="close-button"]');
+          expect(closeButton).toBeTruthy();
+        },
+        { timeout: 1000 }
+      );
+    });
+
+    it('should close dialog with result when close button is clicked after success', async () => {
+      const successResult: SendToKindleResult = {
+        success: true,
+        message: 'Book sent successfully',
+      };
+      mockKindleService.sendToKindle.mockReturnValue(of(successResult).pipe(delay(10)));
+
+      await setEmailValue('user@kindle.com');
+
+      const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
+      sendButton.click();
+
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        const closeButton = fixture.nativeElement.querySelector('[data-testid="close-button"]');
+        expect(closeButton).toBeTruthy();
+        closeButton.click();
+      });
+
+      expect(mockDialogRef.close).toHaveBeenCalledWith({
+        success: true,
+        email: 'user@kindle.com',
+      });
+    });
+
+    it('should handle send error gracefully', async () => {
+      mockKindleService.sendToKindle.mockReturnValue(throwError(() => new Error('Network error')));
+
+      await setEmailValue('user@kindle.com');
+
+      const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
+      sendButton.click();
+
+      await vi.waitFor(
+        () => {
+          fixture.detectChanges();
+          const errorMessage = fixture.nativeElement.querySelector('[data-testid="error-message"]');
+          expect(errorMessage).toBeTruthy();
+          expect(errorMessage.textContent).toContain('unexpected error occurred');
+        },
+        { timeout: 1000 }
+      );
+    });
+  });
+
+  describe('Unavailable book', () => {
+    beforeEach(async () => {
+      await TestBed.resetTestingModule();
+      await configureTestBed(mockUnavailableBook);
+    });
+
+    it('should show unavailable warning for unavailable books', () => {
+      const unavailableWarning = fixture.nativeElement.querySelector(
+        '[data-testid="unavailable-warning"]'
+      );
+      expect(unavailableWarning).toBeTruthy();
+    });
+  });
+
+  describe('Accessibility', () => {
+    it('should have proper aria-label on email input', () => {
+      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
+      expect(emailInput.getAttribute('aria-label')).toBe('Dirección de email de Kindle');
+    });
+
+    it('should have proper aria-describedby for email hints', () => {
+      const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
+      expect(emailInput.hasAttribute('aria-describedby')).toBe(true);
+    });
+  });
+});

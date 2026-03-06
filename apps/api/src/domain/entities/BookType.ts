@@ -1,0 +1,199 @@
+/**
+ * BookType Entity
+ *
+ * Represents the type/genre classification of a book.
+ * This is a high-level categorization (technical, novel, biography, etc.)
+ *
+ * BookType was converted from a Value Object to an Entity to support:
+ * - Persistence in database with unique ID
+ * - N:1 relationship with Books
+ * - Future extensibility (adding new types without code changes)
+ *
+ * HU-008: Each BookType is now associated with multiple Levels (N:M relationship).
+ * Different types can have different applicable difficulty levels.
+ *
+ * Entities are:
+ * - Identified by a unique ID (not by their attributes)
+ * - Mutable through controlled methods
+ * - Responsible for maintaining their own invariants
+ *
+ * This entity follows an immutable pattern - all "mutations" return new instances.
+ */
+
+import {
+  RequiredFieldError,
+  FieldTooLongError,
+} from '../errors/DomainErrors.js';
+import { validateId } from '../validators/index.js';
+
+/**
+ * Field length constraints
+ */
+const FIELD_CONSTRAINTS = {
+  NAME_MAX_LENGTH: 50,
+} as const;
+
+/**
+ * Default book types that should be seeded in the database
+ */
+export const DEFAULT_BOOK_TYPES = ['technical', 'novel', 'biography'] as const;
+
+export type DefaultBookTypeName = (typeof DEFAULT_BOOK_TYPES)[number];
+
+/**
+ * Props required to create a new BookType
+ */
+export interface CreateBookTypeProps {
+  id: string;
+  name: string;
+  levelIds?: string[]; // HU-008: Optional array of Level UUIDs associated with this type
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+/**
+ * Props for reconstructing a BookType from persistence
+ */
+export interface BookTypePersistenceProps {
+  id: string;
+  name: string;
+  levelIds: readonly string[]; // HU-008: Array of Level UUIDs associated with this type
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Props that can be updated on a BookType
+ */
+export interface UpdateBookTypeProps {
+  name?: string;
+  levelIds?: string[]; // HU-008: Can update the associated levels
+}
+
+/**
+ * BookType Entity
+ */
+export class BookType {
+  private constructor(
+    public readonly id: string,
+    public readonly name: string,
+    public readonly levelIds: readonly string[], // HU-008: Associated Level UUIDs
+    public readonly createdAt: Date,
+    public readonly updatedAt: Date,
+  ) {
+    Object.freeze(this);
+  }
+
+  /**
+   * Creates a new BookType instance with full validation
+   * Use this when creating a book type from user input
+   */
+  static create(props: CreateBookTypeProps): BookType {
+    const id = validateId(props.id);
+    const name = BookType.validateName(props.name);
+    const levelIds = BookType.validateLevelIds(props.levelIds ?? []);
+
+    const now = new Date();
+    const createdAt = props.createdAt ?? now;
+    const updatedAt = props.updatedAt ?? now;
+
+    return new BookType(id, name, levelIds, createdAt, updatedAt);
+  }
+
+  /**
+   * Reconstructs a BookType from persistence without validation
+   * Use this when loading a book type from the database
+   */
+  static fromPersistence(props: BookTypePersistenceProps): BookType {
+    return new BookType(
+      props.id,
+      props.name,
+      props.levelIds,
+      props.createdAt,
+      props.updatedAt,
+    );
+  }
+
+  /**
+   * Updates the book type with new values, returning a new instance
+   */
+  update(props: UpdateBookTypeProps): BookType {
+    const name = props.name !== undefined
+      ? BookType.validateName(props.name)
+      : this.name;
+
+    const levelIds = props.levelIds !== undefined
+      ? BookType.validateLevelIds(props.levelIds)
+      : this.levelIds;
+
+    return new BookType(
+      this.id,
+      name,
+      levelIds,
+      this.createdAt,
+      new Date(), // Update timestamp
+    );
+  }
+
+  /**
+   * Compares two BookType instances by ID (Entity comparison)
+   */
+  equals(other: BookType): boolean {
+    return this.id === other.id;
+  }
+
+  /**
+   * Checks if the book type has the given name
+   */
+  hasName(name: string): boolean {
+    return this.name.toLowerCase() === name.toLowerCase();
+  }
+
+  /**
+   * HU-008: Checks if the given level is valid for this type
+   */
+  hasLevel(levelId: string): boolean {
+    return this.levelIds.includes(levelId);
+  }
+
+  /**
+   * Returns string representation
+   */
+  toString(): string {
+    return this.name;
+  }
+
+  // ==================== Private Validators ====================
+
+  private static validateName(name: string): string {
+    if (!name || name.trim().length === 0) {
+      throw new RequiredFieldError('name');
+    }
+
+    const trimmedName = name.trim().toLowerCase();
+
+    if (trimmedName.length > FIELD_CONSTRAINTS.NAME_MAX_LENGTH) {
+      throw new FieldTooLongError('name', FIELD_CONSTRAINTS.NAME_MAX_LENGTH);
+    }
+
+    return trimmedName;
+  }
+
+  /**
+   * HU-008: Validates levelIds array
+   * - Each levelId must be a valid UUID
+   * - Duplicates are removed
+   * - Returns a frozen array for immutability
+   */
+  private static validateLevelIds(levelIds: string[]): readonly string[] {
+    // Remove duplicates while preserving order
+    const uniqueLevelIds = Array.from(new Set(levelIds));
+
+    // Validate each levelId as UUID
+    const validatedIds = uniqueLevelIds.map((levelId, index) =>
+      validateId(levelId, `levelIds[${index}]`),
+    );
+
+    return Object.freeze(validatedIds);
+  }
+}
