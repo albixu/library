@@ -97,7 +97,8 @@ describe('BookTableComponent', () => {
       fixture.detectChanges();
 
       const headers = fixture.nativeElement.querySelectorAll('th');
-      expect(headers.length).toBe(8); // ISBN, Book Details, Type/Category, Lang, Level, Format, Description, Actions
+      // TODO: Update to 8 when Actions column is re-enabled (HU-035)
+      expect(headers.length).toBe(7); // ISBN, Book Details, Type/Category, Lang, Level, Format, Description
     });
 
     it('should display book title in cell', () => {
@@ -169,37 +170,14 @@ describe('BookTableComponent', () => {
     });
   });
 
+  // TODO: Restore these tests when the Kindle flow is integrated in the MVP (HU-035)
   describe('Actions', () => {
-    it('should render send to kindle button for each row', () => {
+    it('should not render send to kindle button while Kindle flow is not implemented', () => {
       fixture.componentRef.setInput('books', mockBooks);
       fixture.detectChanges();
 
-      const kindleButtons = fixture.nativeElement.querySelectorAll(
-        '[aria-label="Enviar a Kindle"]'
-      );
-      expect(kindleButtons.length).toBe(2);
-    });
-
-    it('should render Material Symbols icon in action button', () => {
-      fixture.componentRef.setInput('books', mockBooks);
-      fixture.detectChanges();
-
-      const icon = fixture.nativeElement.querySelector('.action-button .material-symbols-outlined');
-      expect(icon).toBeTruthy();
-      expect(icon.textContent.trim()).toBe('send_to_mobile');
-    });
-
-    it('should emit sendToKindle event when kindle button is clicked', () => {
-      const kindleSpy = vi.fn();
-      component.sendToKindle.subscribe(kindleSpy);
-
-      fixture.componentRef.setInput('books', mockBooks);
-      fixture.detectChanges();
-
-      const kindleButton = fixture.nativeElement.querySelector('[aria-label="Enviar a Kindle"]');
-      kindleButton.click();
-
-      expect(kindleSpy).toHaveBeenCalledWith(mockBooks[0]);
+      const kindleButtons = fixture.nativeElement.querySelectorAll('[aria-label="Send to Kindle"]');
+      expect(kindleButtons.length).toBe(0);
     });
 
     it('should emit rowClick event when row is clicked', () => {
@@ -213,23 +191,6 @@ describe('BookTableComponent', () => {
       row.click();
 
       expect(rowClickSpy).toHaveBeenCalledWith(mockBooks[0]);
-    });
-
-    it('should stop propagation when action button is clicked', () => {
-      const kindleSpy = vi.fn();
-      const rowClickSpy = vi.fn();
-      component.sendToKindle.subscribe(kindleSpy);
-      component.rowClick.subscribe(rowClickSpy);
-
-      fixture.componentRef.setInput('books', mockBooks);
-      fixture.detectChanges();
-
-      const kindleButton = fixture.nativeElement.querySelector('[aria-label="Enviar a Kindle"]');
-      kindleButton.click();
-
-      // Should only emit sendToKindle, not rowClick
-      expect(kindleSpy).toHaveBeenCalledWith(mockBooks[0]);
-      expect(rowClickSpy).not.toHaveBeenCalled();
     });
   });
 
