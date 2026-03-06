@@ -160,7 +160,7 @@ describe('SemanticSearchComponent', () => {
 
       const textarea = fixture.nativeElement.querySelector('textarea');
       const ariaLabel = textarea.getAttribute('aria-label');
-      expect(ariaLabel).toBe('Semantic search');
+      expect(ariaLabel).toBe('Búsqueda semántica');
     });
 
     it('should have proper aria-label on clear button', async () => {
@@ -170,7 +170,7 @@ describe('SemanticSearchComponent', () => {
 
       const clearButton = fixture.nativeElement.querySelector('[data-testid="clear-button"]');
       const ariaLabel = clearButton.getAttribute('aria-label');
-      expect(ariaLabel).toBe('Clear search');
+      expect(ariaLabel).toBe('Limpiar búsqueda');
     });
   });
 

@@ -100,7 +100,7 @@ describe('FormatIconComponent', () => {
       fixture.detectChanges();
 
       const container = fixture.nativeElement.querySelector('.format-icon');
-      expect(container.getAttribute('aria-label')).toBe('Format: pdf');
+      expect(container.getAttribute('aria-label')).toBe('Formato: pdf');
     });
 
     it('should have aria-hidden on icon', () => {

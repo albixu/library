@@ -94,14 +94,17 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
             @if (emailControl.hasError('email') && !emailControl.hasError('required')) {
               <span class="error-message">Por favor ingresa una dirección de email válida</span>
             }
-            <span id="email-hint" class="hint-text">Ingresa la dirección de email de tu dispositivo Kindle</span>
+            <span id="email-hint" class="hint-text"
+              >Ingresa la dirección de email de tu dispositivo Kindle</span
+            >
           </div>
 
           @if (showKindleWarning()) {
             <div class="warning-banner kindle-warning" data-testid="kindle-warning">
               <span class="material-symbols-outlined">info</span>
               <span>
-                Para mejores resultados, usa tu dirección de email @kindle.com. Otros emails pueden funcionar pero no están garantizados.
+                Para mejores resultados, usa tu dirección de email @kindle.com. Otros emails pueden
+                funcionar pero no están garantizados.
               </span>
             </div>
           }

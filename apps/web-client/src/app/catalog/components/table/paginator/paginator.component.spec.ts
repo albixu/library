@@ -51,7 +51,7 @@ describe('PaginatorComponent', () => {
       fixture.detectChanges();
 
       const rangeLabel = fixture.nativeElement.textContent;
-      expect(rangeLabel).toContain('Showing 25 of 100 items');
+      expect(rangeLabel).toContain('Mostrando 25 de 100 elementos');
     });
 
     it('should display 0 of 0 items when no items', () => {
@@ -60,7 +60,7 @@ describe('PaginatorComponent', () => {
       fixture.detectChanges();
 
       const rangeLabel = fixture.nativeElement.textContent;
-      expect(rangeLabel).toContain('Showing 0 of 0 items');
+      expect(rangeLabel).toContain('Mostrando 0 de 0 elementos');
     });
 
     it('should display all items loaded correctly', () => {
@@ -69,7 +69,7 @@ describe('PaginatorComponent', () => {
       fixture.detectChanges();
 
       const rangeLabel = fixture.nativeElement.textContent;
-      expect(rangeLabel).toContain('Showing 45 of 45 items');
+      expect(rangeLabel).toContain('Mostrando 45 de 45 elementos');
     });
   });
 
@@ -157,7 +157,7 @@ describe('PaginatorComponent', () => {
       fixture.detectChanges();
 
       const nav = fixture.nativeElement.querySelector('nav');
-      expect(nav.getAttribute('aria-label')).toBe('Pagination');
+      expect(nav.getAttribute('aria-label')).toBe('Paginación');
     });
 
     it('should have aria-label on load more button', () => {
@@ -170,7 +170,7 @@ describe('PaginatorComponent', () => {
       const loadMoreButton = fixture.nativeElement.querySelector(
         '[data-testid="load-more-button"]'
       );
-      expect(loadMoreButton.getAttribute('aria-label')).toBe('Load more items');
+      expect(loadMoreButton.getAttribute('aria-label')).toBe('Cargar más elementos');
     });
   });
 });

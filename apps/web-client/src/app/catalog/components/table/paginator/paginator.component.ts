@@ -19,7 +19,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
       <!-- Center: Load more button -->
       <div class="paginator-controls">
         @if (loading()) {
-          <div class="spinner" role="status" aria-label="Cargando más elementos">
+          <div class="spinner" role="status" aria-label="Loading more items">
             <span class="spinner-icon"></span>
           </div>
         } @else if (hasNextPage()) {

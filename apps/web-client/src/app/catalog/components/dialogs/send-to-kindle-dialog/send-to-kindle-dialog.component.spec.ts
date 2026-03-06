@@ -103,13 +103,13 @@ describe('SendToKindleDialogComponent', () => {
     it('should display cancel button', () => {
       const cancelButton = fixture.nativeElement.querySelector('[data-testid="cancel-button"]');
       expect(cancelButton).toBeTruthy();
-      expect(cancelButton.textContent.trim()).toBe('Cancel');
+      expect(cancelButton.textContent.trim()).toBe('Cancelar');
     });
 
     it('should display send button', () => {
       const sendButton = fixture.nativeElement.querySelector('[data-testid="send-button"]');
       expect(sendButton).toBeTruthy();
-      expect(sendButton.textContent.trim()).toContain('Send');
+      expect(sendButton.textContent.trim()).toContain('Enviar');
     });
   });
 
@@ -121,7 +121,7 @@ describe('SendToKindleDialogComponent', () => {
 
       const error = fixture.nativeElement.querySelector('.error-message');
       expect(error).toBeTruthy();
-      expect(error.textContent).toContain('Email is required');
+      expect(error.textContent).toContain('El email es requerido');
     });
 
     it('should show error for invalid email format', async () => {
@@ -132,7 +132,7 @@ describe('SendToKindleDialogComponent', () => {
 
       const error = fixture.nativeElement.querySelector('.error-message');
       expect(error).toBeTruthy();
-      expect(error.textContent).toContain('Please enter a valid email');
+      expect(error.textContent).toContain('Por favor ingresa una dirección de email válida');
     });
 
     it('should show warning for non-kindle email', async () => {
@@ -253,7 +253,7 @@ describe('SendToKindleDialogComponent', () => {
   describe('Accessibility', () => {
     it('should have proper aria-label on email input', () => {
       const emailInput = fixture.nativeElement.querySelector('input[type="email"]');
-      expect(emailInput.getAttribute('aria-label')).toBe('Kindle email address');
+      expect(emailInput.getAttribute('aria-label')).toBe('Dirección de email de Kindle');
     });
 
     it('should have proper aria-describedby for email hints', () => {

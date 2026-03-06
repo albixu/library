@@ -135,7 +135,7 @@ describe('BookCardComponent', () => {
       fixture.componentRef.setInput('book', mockBook);
       fixture.detectChanges();
 
-      const kindleButton = fixture.nativeElement.querySelector('[aria-label="Send to Kindle"]');
+      const kindleButton = fixture.nativeElement.querySelector('[aria-label="Enviar a Kindle"]');
       kindleButton.click();
 
       expect(kindleSpy).toHaveBeenCalledWith(mockBook);
@@ -148,7 +148,7 @@ describe('BookCardComponent', () => {
       fixture.componentRef.setInput('book', mockBook);
       fixture.detectChanges();
 
-      const kindleButton = fixture.nativeElement.querySelector('[aria-label="Send to Kindle"]');
+      const kindleButton = fixture.nativeElement.querySelector('[aria-label="Enviar a Kindle"]');
       kindleButton.click();
 
       // Select should not be called

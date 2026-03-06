@@ -78,7 +78,7 @@ describe('LanguageFlagComponent', () => {
 
       const name = fixture.nativeElement.querySelector('.language-name');
       expect(name).toBeTruthy();
-      expect(name.textContent.trim()).toBe('English');
+      expect(name.textContent.trim()).toBe('Inglés');
     });
 
     it('should not show language name when showName is false', () => {
@@ -99,12 +99,12 @@ describe('LanguageFlagComponent', () => {
     });
 
     const languageNameTests: { code: LanguageCode; expectedName: string }[] = [
-      { code: 'en', expectedName: 'English' },
-      { code: 'es', expectedName: 'Spanish' },
-      { code: 'fr', expectedName: 'French' },
-      { code: 'de', expectedName: 'German' },
-      { code: 'it', expectedName: 'Italian' },
-      { code: 'pt', expectedName: 'Portuguese' },
+      { code: 'en', expectedName: 'Inglés' },
+      { code: 'es', expectedName: 'Español' },
+      { code: 'fr', expectedName: 'Francés' },
+      { code: 'de', expectedName: 'Alemán' },
+      { code: 'it', expectedName: 'Italiano' },
+      { code: 'pt', expectedName: 'Portugués' },
     ];
 
     languageNameTests.forEach(({ code, expectedName }) => {
@@ -126,7 +126,7 @@ describe('LanguageFlagComponent', () => {
 
       const container = fixture.nativeElement.querySelector('.language-flag');
       const tooltipText = container.getAttribute('title') || container.getAttribute('matTooltip');
-      expect(tooltipText).toBe('English');
+      expect(tooltipText).toBe('Inglés');
     });
 
     it('should show "Spanish" in tooltip for es code', () => {
@@ -135,7 +135,7 @@ describe('LanguageFlagComponent', () => {
 
       const container = fixture.nativeElement.querySelector('.language-flag');
       const tooltipText = container.getAttribute('title') || container.getAttribute('matTooltip');
-      expect(tooltipText).toBe('Spanish');
+      expect(tooltipText).toBe('Español');
     });
   });
 
@@ -145,7 +145,7 @@ describe('LanguageFlagComponent', () => {
       fixture.detectChanges();
 
       const container = fixture.nativeElement.querySelector('.language-flag');
-      expect(container.getAttribute('aria-label')).toBe('Language: English');
+      expect(container.getAttribute('aria-label')).toBe('Idioma: Inglés');
     });
 
     it('should have role img on flag emoji', () => {
