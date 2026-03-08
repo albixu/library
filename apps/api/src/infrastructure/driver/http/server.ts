@@ -79,7 +79,8 @@ export async function createServer(
   // Register Swagger UI only in development and test environments
   const enableSwagger = nodeEnv === 'development' || nodeEnv === 'test';
   if (enableSwagger) {
-    const openapiSpecPath = resolve('/app/docs/api/openapi.yaml');
+    const docsBasePath = process.env['DOCS_PATH'] ?? '/docs';
+    const openapiSpecPath = resolve(docsBasePath, 'api/openapi.yaml');
     const openapiSpec = parseYaml(readFileSync(openapiSpecPath, 'utf-8')) as OpenAPIV3.Document;
 
     await fastify.register(fastifySwagger, {
