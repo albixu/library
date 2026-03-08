@@ -30,7 +30,7 @@ Representa la arquitectura interna de la API REST, construida con **Arquitectura
 
 ### [03 — Arquitectura de Software: Web Client Angular](./03-webclient-architecture.md)
 
-Representa la arquitectura interna del cliente web Angular 21. Muestra la organización por **features** (Screaming Architecture), los servicios singleton del módulo `core`, el patrón de estado reactivo con **Angular Signals** (`BookSearchStore`) y la comunicación con la API REST.
+Representa la arquitectura interna del cliente web Angular 21.2. Muestra la organización por **features** (Screaming Architecture), los servicios singleton del módulo `core`, el patrón de estado reactivo con **Angular Signals** (`BookSearchStore`) y la comunicación con la API REST.
 
 - **Tipo**: `graph TD`
 - **Features**: `core`, `catalog`, `kindle`, `layout`, `shared`

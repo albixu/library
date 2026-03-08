@@ -11,7 +11,7 @@
 
 ### Current State
 
-The web client (Angular 21) currently uses **Angular Material** as the primary UI framework. While Material provides a robust component library, we're facing significant challenges in aligning our UI with the approved Stitch/Figma designs.
+The web client (Angular 21.2) currently uses **Angular Material** as the primary UI framework. While Material provides a robust component library, we're facing significant challenges in aligning our UI with the approved Stitch/Figma designs.
 
 **Key Issues:**
 - **Design Misalignment**: Angular Material enforces its own design system (Material Design 3), which conflicts with our custom Stitch designs
@@ -140,7 +140,7 @@ We will perform a **radical migration** (not incremental) to completely remove A
 | Category | Technology | Reason |
 |----------|-----------|--------|
 | **Styling Framework** | TailwindCSS 3.x | Matches Stitch, utility-first approach |
-| **Angular Core** | Angular 21 | No change - core framework |
+| **Angular Core** | Angular 21.2 | No change - core framework |
 | **Forms** | Reactive Forms | No change - keep existing logic |
 | **Overlay System** | Angular CDK (Overlay, Dialog) | Battle-tested, complex to reimplement |
 | **Icons** | Material Symbols (Google Fonts CDN) | Matches Stitch exactly |

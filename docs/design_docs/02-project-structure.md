@@ -6,7 +6,7 @@
 |-------|-------|
 | **Estado** | Aprobado |
 | **Fecha** | 2026-01-31 |
-| **Última actualización** | 2026-03-06 (HU-032: estructura real, Angular 21, LibreTranslate, HU-001–HU-032) |
+| **Última actualización** | 2026-03-08 (Angular 21.2, estructura real, LibreTranslate, HU-001–HU-032) |
 | **Autor** | - |
 
 ---
@@ -1191,7 +1191,7 @@ server {
 - [Hexagonal Architecture - Alistair Cockburn](https://alistair.cockburn.us/hexagonal-architecture/)
 - [Ports & Adapters Pattern](https://herbertograca.com/2017/09/14/ports-adapters-architecture/)
 - [Clean Architecture - Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [Angular 21 Documentation](https://angular.dev)
+- [Angular 21.2 Documentation](https://angular.dev)
 - [Angular Signals Guide](https://angular.dev/guide/signals)
 - [Tailwind CSS](https://tailwindcss.com/docs)
 - [Storybook](https://storybook.js.org/)

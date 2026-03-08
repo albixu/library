@@ -6,7 +6,7 @@
 |-------|-------|
 | **Estado** | Aprobado |
 | **Fecha** | 2026-02-22 |
-| **Última actualización** | 2026-03-06 (HU-032: Angular 21, LibreTranslate, BookIdentifier) |
+| **Última actualización** | 2026-03-08 (Angular 21.2, LibreTranslate, BookIdentifier) |
 | **Autor** | - |
 
 ---
@@ -181,7 +181,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 │                                                                               │
 │   ┌─────────────────────┐         ┌─────────────────────────────────────┐   │
 │   │     Web Client      │         │              API                     │   │
-│   │     (Angular 21)    │ ◄─────► │         (Node.js/Fastify)            │   │
+│   │     (Angular 21.2)    │ ◄─────► │         (Node.js/Fastify)            │   │
 │   │                     │  HTTP   │                                      │   │
 │   │  • Búsqueda libros  │  REST   │  • Búsqueda semántica               │   │
 │   │  • Filtros          │         │  • CRUD libros                       │   │
@@ -223,7 +223,7 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 | Componente | Tecnología | Descripción | Design Doc |
 |------------|------------|-------------|------------|
 | **API** | Node.js 20, Fastify, TypeScript | Backend REST con arquitectura hexagonal y DDD | `02-project-structure.md` |
-| **Web Client** | Angular 21, Signals, Tailwind CSS | Interfaz web responsive con Tailwind CSS | `03-web-client-design.md` |
+| **Web Client** | Angular 21.2, Signals, Tailwind CSS | Interfaz web responsive con Tailwind CSS | `03-web-client-design.md` |
 | **Base de Datos** | PostgreSQL 16 + pgvector | Almacenamiento de datos y búsqueda vectorial | - |
 | **Embeddings** | Ollama Embeddings + nomic-embed-text | Generación de embeddings para búsqueda semántica | - |
 | **Traducciones (primario)** | LibreTranslate | Traducción automática rápida, usada en carga masiva | - |
@@ -368,7 +368,7 @@ Usuario                Web Client               API                    PostgreSQ
 
 | Componente | Tecnología |
 |------------|------------|
-| **Framework** | Angular 21.x |
+| **Framework** | Angular 21.2.x |
 | **Lenguaje** | TypeScript 5.x |
 | **State Management** | Angular Signals |
 | **Estilos** | Tailwind CSS |
@@ -428,7 +428,7 @@ Usuario                Web Client               API                    PostgreSQ
 
 ### Frontend
 
-- [Angular 21 Documentation](https://angular.dev)
+- [Angular 21.2 Documentation](https://angular.dev)
 - [Angular Signals Guide](https://angular.dev/guide/signals)
 - [Storybook](https://storybook.js.org/)
 - [Playwright](https://playwright.dev)
