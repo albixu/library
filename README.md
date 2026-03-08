@@ -666,7 +666,7 @@ docker compose -f docker-compose.prod.yml up -d
 
 #### Fase 2: Datos iniciales (Manual o Automático)
 
-Los datos de libros se cargan desde `docs/db/books.json` usando el script `seed:database`:
+Los datos de libros se cargan desde `initial_data/*` usando el script `seed:database`:
 
 ```bash
 # Ejecución manual (recomendado para producción)
