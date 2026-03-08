@@ -27,7 +27,7 @@
     "db:studio": "drizzle-kit studio",
     "consolidate:books": "NODE_OPTIONS=--max-old-space-size=4096 tsx scripts/consolidate-books.ts",
     "seed:database": "tsx scripts/seed-database.ts",
-    "seed:prod": "node dist/scripts/seed-database.js"
+    "seed:prod": "NODE_OPTIONS=--max-old-space-size=1024 node dist/scripts/seed-database.js"
   },
   "dependencies": {
     "@fastify/swagger": "^9.7.0",
