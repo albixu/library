@@ -161,12 +161,20 @@ describe('BookTableComponent', () => {
       expect(categoryChips.length).toBe(2);
     });
 
-    it('should render truncated text for descriptions', () => {
+    it('should render description icon button for books with description', () => {
       fixture.componentRef.setInput('books', mockBooks);
       fixture.detectChanges();
 
-      const truncatedTexts = fixture.nativeElement.querySelectorAll('app-truncated-text');
-      expect(truncatedTexts.length).toBe(2);
+      const descriptionButtons = fixture.nativeElement.querySelectorAll('[aria-label="Ver descripción"]');
+      expect(descriptionButtons.length).toBe(2);
+    });
+
+    it('should render book description dialog component', () => {
+      fixture.componentRef.setInput('books', mockBooks);
+      fixture.detectChanges();
+
+      const dialog = fixture.nativeElement.querySelector('app-book-description-dialog');
+      expect(dialog).toBeTruthy();
     });
   });
 
@@ -178,6 +186,30 @@ describe('BookTableComponent', () => {
 
       const kindleButtons = fixture.nativeElement.querySelectorAll('[aria-label="Send to Kindle"]');
       expect(kindleButtons.length).toBe(0);
+    });
+
+    it('should open description dialog when description button is clicked', () => {
+      fixture.componentRef.setInput('books', mockBooks);
+      fixture.detectChanges();
+
+      const dialogSpy = vi.spyOn(component.descriptionDialog(), 'open');
+      const descriptionButton = fixture.nativeElement.querySelector('[aria-label="Ver descripción"]');
+      descriptionButton.click();
+
+      expect(dialogSpy).toHaveBeenCalledWith(mockBooks[0].title, mockBooks[0].description);
+    });
+
+    it('should not propagate click event when description button is clicked', () => {
+      fixture.componentRef.setInput('books', mockBooks);
+      fixture.detectChanges();
+
+      const rowClickSpy = vi.fn();
+      component.rowClick.subscribe(rowClickSpy);
+
+      const descriptionButton = fixture.nativeElement.querySelector('[aria-label="Ver descripción"]');
+      descriptionButton.click();
+
+      expect(rowClickSpy).not.toHaveBeenCalled();
     });
 
     it('should emit rowClick event when row is clicked', () => {

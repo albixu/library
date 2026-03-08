@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, input, output, viewChild } from '@a
 import { CategoryChipsComponent } from '../../data-display/category-chips/category-chips.component.js';
 import { LevelBadgeComponent } from '../../data-display/level-badge/level-badge.component.js';
 import { LanguageFlagComponent } from '../../data-display/language-flag/language-flag.component.js';
-import { TruncatedTextComponent } from '../../data-display/truncated-text/truncated-text.component.js';
 import { EmptyStateComponent } from '../empty-state/empty-state.component.js';
 import { LoadingOverlayComponent } from '../loading-overlay/loading-overlay.component.js';
 import { BookDescriptionDialogComponent } from '../../dialogs/book-description-dialog/book-description-dialog.component.js';
@@ -15,7 +14,6 @@ import { Book } from '../../../../core/models/index.js';
     CategoryChipsComponent,
     LevelBadgeComponent,
     LanguageFlagComponent,
-    TruncatedTextComponent,
     EmptyStateComponent,
     LoadingOverlayComponent,
     BookDescriptionDialogComponent,
@@ -79,11 +77,15 @@ import { Book } from '../../../../core/models/index.js';
                     </td>
                     <td class="description-column text-center">
                       @if (book.description) {
-                        <app-truncated-text
-                          [text]="book.description"
-                          [maxLines]="2"
-                          [showTooltip]="true"
-                        />
+                        <button
+                          class="description-button"
+                          type="button"
+                          aria-label="Ver descripción"
+                          title="Ver descripción"
+                          (click)="onShowDescription($event, book)"
+                        >
+                          <span class="material-symbols-outlined">menu_book</span>
+                        </button>
                       } @else {
                         <span class="description-text">-</span>
                       }
