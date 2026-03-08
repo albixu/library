@@ -196,7 +196,7 @@ curl http://localhost:3000/api/books?limit=1 | jq '.meta.total'
 Para entornos de desarrollo o staging, puedes habilitar la carga automática:
 
 ```bash
-# En docker-compose.yml, docker-compose.prod.yml o .env
+# En docker-compose.yml o en variables de entorno (.env)
 AUTO_SEED=true
 
 # Solo cargará datos si la base de datos está vacía (idempotente)
