@@ -118,6 +118,8 @@ services:
   ollama-embeddings:
     image: ollama/ollama:latest
     container_name: library-ollama-embeddings
+    ports:
+      - "11434:11434"
     volumes:
       - ollama_embeddings_data:/root/.ollama
     networks:
@@ -140,6 +142,8 @@ services:
   ollama-translations:
     image: ollama/ollama:latest
     container_name: library-ollama-translations
+    ports:
+      - "11435:11434"
     volumes:
       - ollama_translations_data:/root/.ollama
     networks:
