@@ -643,7 +643,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 docker exec library-api npm run db:migrate
 
 # 5. (Opcional) Cargar datos iniciales
-docker exec library-api npm run seed:database
+docker exec library-api npm run seed:prod
 ```
 
 ### Inicialización de la base de datos
@@ -666,11 +666,11 @@ docker compose -f docker-compose.prod.yml up -d
 
 #### Fase 2: Datos iniciales (Manual o Automático)
 
-Los datos de libros se cargan desde `initial_data/*` usando el script `seed:database`:
+Los datos de libros se cargan desde `initial_data/*` usando el script `seed:prod`:
 
 ```bash
 # Ejecución manual (recomendado para producción)
-docker exec library-api npm run seed:database
+docker exec library-api npm run seed:prod
 ```
 
 El script es **idempotente**: verifica cada libro por ISBN antes de insertarlo. Si el libro ya existe, lo salta. Esto permite ejecutarlo múltiples veces sin duplicar datos.
