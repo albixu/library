@@ -86,7 +86,7 @@ docker exec library-ollama-translations ollama pull llama3.2:1b       # Traducci
 ### 5. Ejecutar migraciones de base de datos
 
 ```bash
-docker exec -it library-api-dev sh -c "npm run db:migrate"
+docker exec -it library-api-dev bash -c "npm run db:migrate"
 ```
 
 > Para producción usar `docker exec library-api npm run db:migrate`. Ver [referencia de comandos de BD](#base-de-datos-drizzle).
