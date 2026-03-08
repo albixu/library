@@ -87,7 +87,7 @@ check_ollama_running() {
     
     log_error "Ollama ${container} is not responding at ${host}"
     log_error "Make sure the Ollama container is running:"
-    log_error "  docker-compose -f docker-compose.prod.yml up -d ${container}"
+    log_error "  docker compose -f docker-compose.prod.yml up -d ${container}"
     return 1
 }
 
@@ -273,7 +273,7 @@ main() {
         log_success "All models installed successfully!"
         echo ""
         log_info "You can now start the API service:"
-        log_info "  docker-compose -f docker-compose.prod.yml up -d api"
+        log_info "  docker compose -f docker-compose.prod.yml up -d api"
         echo ""
     else
         log_error "Some models failed to install: ${failed_models[*]}"
