@@ -6,7 +6,7 @@
 |-------|-------|
 | **Estado** | Aprobado |
 | **Fecha** | 2026-01-31 |
-| **Última actualización** | 2026-03-06 (HU-032: Angular 21, Tailwind CSS — reemplaza Angular Material completo) |
+| **Última actualización** | 2026-03-06 (HU-032: Angular 21.2, Tailwind CSS — reemplaza Angular Material completo) |
 | **Autor** | - |
 
 > **Nota HU-020**: El web client fue migrado completamente de Angular Material a **Tailwind CSS** en HU-020. Este documento refleja el estado post-migración. El documento de referencia de la migración se encuentra en `05-migration-material-to-tailwind.md`.
@@ -15,7 +15,7 @@
 
 ## 1. Introducción
 
-El Web Client es la interfaz de usuario del sistema **Library**. Es una **Single Page Application (SPA)** construida con Angular 21 que consume la API REST.
+El Web Client es la interfaz de usuario del sistema **Library**. Es una **Single Page Application (SPA)** construida con Angular 21.2 que consume la API REST.
 
 ### Objetivos de diseño
 
@@ -534,7 +534,7 @@ server {
 
 ## 12. Referencias
 
-- [Angular 21 Documentation](https://angular.dev)
+- [Angular 21.2 Documentation](https://angular.dev)
 - [Angular Signals Guide](https://angular.dev/guide/signals)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 - [Storybook for Angular](https://storybook.js.org/docs/angular/get-started/introduction)

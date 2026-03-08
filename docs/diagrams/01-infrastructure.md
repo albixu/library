@@ -12,7 +12,7 @@ graph TD
     subgraph Docker["🐳 Docker — library-network (bridge)"]
 
         subgraph WebClient["library-web-client"]
-            WC["📦 Angular 21\nNode 20 (dev server)\n──────────────\n:4200 → Angular App\n:6006 → Storybook"]
+            WC["📦 Angular 21.2\nNode 20 (dev server)\n──────────────\n:4200 → Angular App\n:6006 → Storybook"]
         end
 
         subgraph API["library-api-dev"]

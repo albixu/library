@@ -165,7 +165,7 @@ El proyecto define utility classes en `styles.scss` para patrones comunes:
 
 ## Testing
 
-- **Framework**: Vitest (default en Angular 21)
+- **Framework**: Vitest (default en Angular 21.2)
 - **Coverage**: `@vitest/coverage-v8`
 - **E2E**: Playwright
 
