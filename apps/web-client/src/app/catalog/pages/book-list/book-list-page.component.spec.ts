@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { DialogRef } from '@angular/cdk/dialog';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { BookListPageComponent } from './book-list-page.component.js';
 import { BookSearchStore } from '../../../core/services/book-search.store.js';
@@ -292,6 +293,40 @@ describe('BookListPageComponent', () => {
     });
   });
 
+  describe('Error state', () => {
+    it('should show error state when store.error() is non-null', () => {
+      (mockStore.error as ReturnType<typeof signal>).set('Network error');
+      fixture.detectChanges();
+
+      const errorState = fixture.nativeElement.querySelector('[role="alert"]');
+      expect(errorState).toBeTruthy();
+    });
+
+    it('should display error message text', () => {
+      (mockStore.error as ReturnType<typeof signal>).set('Something went wrong');
+      fixture.detectChanges();
+
+      const errorMsg = fixture.nativeElement.querySelector('.error-message');
+      expect(errorMsg?.textContent).toContain('Something went wrong');
+    });
+
+    it('should show retry button in error state', () => {
+      (mockStore.error as ReturnType<typeof signal>).set('Failed');
+      fixture.detectChanges();
+
+      const retryBtn = fixture.nativeElement.querySelector('.error-state .btn-primary');
+      expect(retryBtn).toBeTruthy();
+    });
+
+    it('should not show error state when store.error() is null', () => {
+      (mockStore.error as ReturnType<typeof signal>).set(null);
+      fixture.detectChanges();
+
+      const errorState = fixture.nativeElement.querySelector('[role="alert"]');
+      expect(errorState).toBeFalsy();
+    });
+  });
+
   describe('Retry search', () => {
     it('should call store.searchBooks when onRetrySearch is called', () => {
       (mockStore.searchBooks as ReturnType<typeof vi.fn>).mockClear();
@@ -343,5 +378,237 @@ describe('BookListPageComponent', () => {
       });
       expect(component.activeFilterCount()).toBe(3);
     });
+  });
+
+  describe('onFiltersChange closes mobile drawer', () => {
+    it('should close mobile drawer after applying filters when in mobile mode', () => {
+      // Open the drawer first
+      component.isMobileDrawerOpen.set(true);
+
+      // Simulate mobile state by spying on isMobile
+      vi.spyOn(component, 'isMobile').mockReturnValue(true);
+
+      const filters: SearchFilters = {
+        isbn: '',
+        title: 'Test',
+        author: '',
+        type: '',
+        categories: [],
+        levels: [],
+        text: '',
+      };
+
+      component.onFiltersChange(filters);
+
+      expect(component.isMobileDrawerOpen()).toBe(false);
+    });
+
+    it('should NOT close mobile drawer after applying filters when in desktop mode', () => {
+      // Open the drawer first
+      component.isMobileDrawerOpen.set(true);
+
+      // isMobile returns false by default (desktop)
+      vi.spyOn(component, 'isMobile').mockReturnValue(false);
+
+      const filters: SearchFilters = {
+        isbn: '',
+        title: 'Test',
+        author: '',
+        type: '',
+        categories: [],
+        levels: [],
+        text: '',
+      };
+
+      component.onFiltersChange(filters);
+
+      expect(component.isMobileDrawerOpen()).toBe(true);
+    });
+  });
+});
+
+// ─── Mobile layout suite (separate TestBed with BreakpointObserver mocked as mobile) ───
+describe('BookListPageComponent – Mobile layout', () => {
+  let component: BookListPageComponent;
+  let fixture: ComponentFixture<BookListPageComponent>;
+  let mockStore: Partial<BookSearchStore>;
+  let mockDialogService: { open: ReturnType<typeof vi.fn> };
+  let breakpointSubject: Subject<BreakpointState>;
+
+  const mockBooks: Book[] = [
+    {
+      id: '1',
+      isbn: '978-0-13-468599-1',
+      title: 'Clean Code',
+      authors: [{ id: '1', name: 'Robert C. Martin' }],
+      type: 'technical',
+      categories: [{ id: '1', name: 'Software Engineering' }],
+      level: 'Intermediate',
+      format: 'epub',
+      originalDescription: 'A handbook',
+      description: 'A handbook',
+      language: 'en',
+      available: true,
+      similarityScore: null,
+    },
+  ];
+
+  const mockPagination: PaginationInfo = {
+    limit: 50,
+    hasNextPage: false,
+    nextCursor: null,
+    totalCount: 1,
+  };
+
+  beforeEach(async () => {
+    breakpointSubject = new Subject<BreakpointState>();
+
+    mockStore = {
+      books: signal(mockBooks),
+      loading: signal(false),
+      error: signal(null),
+      pagination: signal(mockPagination),
+      filters: signal({}),
+      types: signal([]),
+      categories: signal([]),
+      levels: signal([]),
+      typesLoading: signal(false),
+      categoriesLoading: signal(false),
+      levelsLoading: signal(false),
+      isEmpty: signal(false),
+      hasFilters: signal(false),
+      searchBooks: vi.fn(),
+      loadNextPage: vi.fn(),
+      setFilters: vi.fn(),
+      loadTypes: vi.fn(),
+      loadCategories: vi.fn(),
+      loadLevels: vi.fn(),
+      reset: vi.fn(),
+    };
+
+    mockDialogService = {
+      open: vi.fn().mockReturnValue({
+        closed: of(undefined),
+      } as unknown as DialogRef<unknown>),
+    };
+
+    const mockBreakpointObserver = {
+      observe: vi.fn().mockReturnValue(
+        // Emit mobile=true immediately
+        of({ matches: true, breakpoints: {} } as BreakpointState)
+      ),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [BookListPageComponent],
+      providers: [
+        { provide: BookSearchStore, useValue: mockStore },
+        { provide: DialogService, useValue: mockDialogService },
+        { provide: BreakpointObserver, useValue: mockBreakpointObserver },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(BookListPageComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should report isMobile as true', () => {
+    expect(component.isMobile()).toBe(true);
+  });
+
+  it('should render mobile filter toggle button', () => {
+    const toggle = fixture.nativeElement.querySelector('[data-testid="mobile-filter-toggle"]');
+    expect(toggle).toBeTruthy();
+  });
+
+  it('should render mobile title in toolbar', () => {
+    const title = fixture.nativeElement.querySelector('.mobile-title');
+    expect(title).toBeTruthy();
+  });
+
+  it('should show filter badge when there are active filters', () => {
+    (mockStore.hasFilters as ReturnType<typeof signal>).set(true);
+    (mockStore.filters as ReturnType<typeof signal>).set({ title: 'Clean' });
+    fixture.detectChanges();
+
+    const badge = fixture.nativeElement.querySelector('.filter-badge');
+    expect(badge).toBeTruthy();
+    expect(badge.textContent.trim()).toBe('1');
+  });
+
+  it('should NOT show filter badge when there are no active filters', () => {
+    (mockStore.hasFilters as ReturnType<typeof signal>).set(false);
+    fixture.detectChanges();
+
+    const badge = fixture.nativeElement.querySelector('.filter-badge');
+    expect(badge).toBeFalsy();
+  });
+
+  it('should render book cards instead of table in mobile', () => {
+    const cards = fixture.nativeElement.querySelectorAll('app-book-card');
+    const table = fixture.nativeElement.querySelector('app-book-table');
+
+    expect(cards.length).toBeGreaterThan(0);
+    expect(table).toBeFalsy();
+  });
+
+  it('should show backdrop when drawer is open in mobile', () => {
+    component.isMobileDrawerOpen.set(true);
+    fixture.detectChanges();
+
+    const backdrop = fixture.nativeElement.querySelector('.backdrop');
+    expect(backdrop).toBeTruthy();
+  });
+
+  it('should NOT show backdrop when drawer is closed in mobile', () => {
+    component.isMobileDrawerOpen.set(false);
+    fixture.detectChanges();
+
+    const backdrop = fixture.nativeElement.querySelector('.backdrop');
+    expect(backdrop).toBeFalsy();
+  });
+
+  it('should close drawer when onFiltersChange is called in mobile', () => {
+    component.isMobileDrawerOpen.set(true);
+
+    component.onFiltersChange({
+      isbn: '',
+      title: 'Test',
+      author: '',
+      type: '',
+      categories: [],
+      levels: [],
+      text: '',
+    });
+
+    expect(component.isMobileDrawerOpen()).toBe(false);
+  });
+
+  it('should open/close drawer via toggleMobileDrawer', () => {
+    expect(component.isMobileDrawerOpen()).toBe(false);
+
+    component.toggleMobileDrawer();
+    expect(component.isMobileDrawerOpen()).toBe(true);
+
+    component.toggleMobileDrawer();
+    expect(component.isMobileDrawerOpen()).toBe(false);
+  });
+
+  it('should show paginator in mobile when books are present', () => {
+    (mockStore.isEmpty as ReturnType<typeof signal>).set(false);
+    fixture.detectChanges();
+
+    const paginator = fixture.nativeElement.querySelector('app-paginator');
+    expect(paginator).toBeTruthy();
+  });
+
+  it('should NOT show paginator in mobile when isEmpty is true', () => {
+    (mockStore.isEmpty as ReturnType<typeof signal>).set(true);
+    (mockStore.books as ReturnType<typeof signal>).set([]);
+    fixture.detectChanges();
+
+    const paginator = fixture.nativeElement.querySelector('app-paginator');
+    expect(paginator).toBeFalsy();
   });
 });
