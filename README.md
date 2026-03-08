@@ -70,30 +70,26 @@ docker-compose up -d
 docker-compose ps
 ```
 
-### 4. Descargar los modelos de Ollama
+### 4. Descargar los modelos de IA
 
 ```bash
-# Esto solo es necesario la primera vez
 # Usar el script automático (recomendado)
 ./scripts/setup-ollama-models.sh
 
 # O descargar manualmente:
-# Modelo para embeddings (búsqueda semántica)
-docker exec library-ollama-embeddings ollama pull nomic-embed-text
-
-# Modelo para traducciones (descripción de libros)
-docker exec library-ollama-translations ollama pull llama3.2:1b
+docker exec library-ollama-embeddings ollama pull nomic-embed-text    # Embeddings
+docker exec library-ollama-translations ollama pull llama3.2:1b       # Traducciones
 ```
+
+> Para otros entornos, ajustar los nombres de contenedor y puertos según la [tabla de entornos](#docker-compose-environments).
 
 ### 5. Ejecutar migraciones de base de datos
 
 ```bash
-# Entrar al contenedor de la API
-docker exec -it library-api-dev sh
-
-# Ejecutar migraciones
-npm run db:migrate
+docker exec -it library-api-dev bash -c "npm run db:migrate"
 ```
+
+> Para producción usar `docker exec library-api npm run db:migrate`. Ver [referencia de comandos de BD](#base-de-datos-drizzle).
 
 ¡Listo! La API está disponible en `http://localhost:3000` y la documentación interactiva en `http://localhost:3000/docs`
 
@@ -195,15 +191,15 @@ docker exec library-postgres psql -U library -d library -c "SELECT COUNT(*) FROM
 curl http://localhost:3000/api/books?limit=1 | jq '.meta.total'
 ```
 
-### Carga automática al iniciar (Desarrollo)
+### Carga automática al iniciar
 
-Para entornos de desarrollo, puedes habilitar la carga automática:
+Para entornos de desarrollo o staging, puedes habilitar la carga automática:
 
 ```bash
-# En docker-compose.yml o .env
+# En docker-compose.yml o en variables de entorno (.env)
 AUTO_SEED=true
 
-# Solo cargará datos si la base de datos está vacía
+# Solo cargará datos si la base de datos está vacía (idempotente)
 ```
 
 ## Uso
@@ -297,7 +293,7 @@ curl "http://localhost:3000/api/books?limit=20&cursor=<token_de_pagina_anterior>
 curl "http://localhost:3000/api/books?types=technical&levels=Intermediate&limit=10"
 ```
 
-> **Nota**: La búsqueda semántica (`text`) genera embeddings del texto y encuentra libros con similaridad ≥70%. Los resultados incluyen `similarityScore`.
+> **Nota**: La búsqueda semántica (`text`) genera embeddings del texto y encuentra libros con similaridad ≥55% (umbral calibrado para `nomic-embed-text`). Los resultados incluyen `similarityScore`.
 
 #### Formato de respuesta
 
@@ -341,7 +337,7 @@ library/
 │   │   ├── tests/
 │   │   └── docker/
 │   │
-│   └── web-client/       # Frontend: Angular 21 + Material
+│   └── web-client/       # Frontend: Angular 21 + Tailwind CSS
 │       └── docker/
 │
 ├── scripts/
@@ -385,7 +381,7 @@ docker-compose down -v
 docker-compose build api
 ```
 
-#### Tests
+#### Tests (API)
 
 ```bash
 # Tests unitarios
@@ -413,17 +409,42 @@ docker exec library-api-dev npm run test:ui
 docker exec library-api-dev npx vitest run tests/unit/domain/entities/Book.test.ts
 ```
 
+#### Tests (Web Client)
+
+```bash
+cd apps/web-client
+
+# Tests unitarios
+npm test
+
+# Tests en modo watch (re-ejecuta al detectar cambios)
+npm run test:watch
+
+# Tests con reporte de cobertura
+npm run test:coverage
+
+# Tests end-to-end con Playwright
+npm run test:e2e
+
+# Tests E2E en modo interactivo (con UI de Playwright)
+npm run test:e2e:ui
+
+# Tests E2E con navegador visible
+npm run test:e2e:headed
+```
+
 #### Lint y TypeScript
 
 ```bash
-# Ejecutar linter
+# API
 docker exec library-api-dev npm run lint
-
-# Ejecutar linter con auto-fix
 docker exec library-api-dev npm run lint:fix
-
-# Verificar tipos TypeScript (sin emitir archivos)
 docker exec library-api-dev npm run typecheck
+
+# Web Client
+cd apps/web-client
+npm run lint
+npm run lint:fix
 ```
 
 #### Base de Datos (Drizzle)
@@ -452,8 +473,12 @@ docker exec library-api-dev npm run seed:database
 #### Modelos de Ollama
 
 ```bash
-# Descargar modelo de embeddings
+# Descargar modelos (script automático - recomendado)
+./scripts/setup-ollama-models.sh
+
+# O manualmente:
 docker exec library-ollama-embeddings ollama pull nomic-embed-text
+docker exec library-ollama-translations ollama pull llama3.2:1b
 
 # Listar modelos descargados
 docker exec library-ollama-embeddings ollama list
@@ -465,7 +490,6 @@ curl http://localhost:11434/api/tags
 #### Web Client (Angular)
 
 ```bash
-# Ir al directorio del cliente web
 cd apps/web-client
 
 # Instalar dependencias (primera vez)
@@ -481,33 +505,9 @@ npm start -- --port 4300
 
 **Acceso desde el navegador:**
 
-- **Desarrollo:** <http://localhost:4200>
+- **Web Client:** <http://localhost:4200>
 - **API (backend):** <http://localhost:3000>
 - **Swagger UI:** <http://localhost:3000/docs> *(solo en desarrollo/test)*
-
-#### Tests del Web Client
-
-```bash
-cd apps/web-client
-
-# Tests unitarios
-npm test
-
-# Tests en modo watch (re-ejecuta al detectar cambios)
-npm run test:watch
-
-# Tests con reporte de cobertura
-npm run test:coverage
-
-# Tests end-to-end con Playwright
-npm run test:e2e
-
-# Tests E2E en modo interactivo (con UI de Playwright)
-npm run test:e2e:ui
-
-# Tests E2E con navegador visible
-npm run test:e2e:headed
-```
 
 #### Storybook
 
@@ -524,22 +524,6 @@ npm run storybook
 npm run build-storybook
 ```
 
-**Acceso desde el navegador:**
-
-- **Storybook:** <http://localhost:6006>
-
-#### Lint del Web Client
-
-```bash
-cd apps/web-client
-
-# Ejecutar linter
-npm run lint
-
-# Ejecutar linter con auto-fix
-npm run lint:fix
-```
-
 ### Testing
 
 El proyecto utiliza [Vitest](https://vitest.dev/) como framework de testing con tres niveles:
@@ -554,16 +538,16 @@ El proyecto utiliza [Vitest](https://vitest.dev/) como framework de testing con 
 
 ```
 apps/api/tests/
-├── unit/                    # Tests unitarios (~345 tests)
+├── unit/                    # Tests unitarios (~1435 tests)
 │   ├── domain/              # Entidades, Value Objects, Criteria
 │   ├── application/         # Casos de uso
 │   ├── infrastructure/      # Mappers, configuración
 │   └── scripts/             # Scripts de consolidación/seeding
-├── integration/             # Tests de integración (~63 tests)
+├── integration/             # Tests de integración (~159 tests)
 │   ├── application/         # Use cases con repos reales
 │   ├── infrastructure/      # Repositorios, servicios externos
 │   └── scripts/             # Scripts con BD real
-└── e2e/                     # Tests end-to-end (~30 tests)
+└── e2e/                     # Tests end-to-end (~96 tests)
     └── http/                # API REST completa
 ```
 
@@ -611,6 +595,33 @@ El proyecto incluye cinco configuraciones de Docker Compose:
 
 > **Nota:** Los entornos de consolidación y seeding no exponen puertos externos. Son tareas de un solo uso que reutilizan los volúmenes de datos existentes.
 
+### Comandos comunes por entorno
+
+Todos los entornos Docker siguen el mismo patrón de comandos. Sustituir `<compose-file>` por el archivo correspondiente:
+
+```bash
+# Iniciar servicios
+docker-compose -f <compose-file> up -d
+
+# Ver estado
+docker-compose -f <compose-file> ps
+
+# Ver logs
+docker-compose -f <compose-file> logs -f [servicio]
+
+# Reiniciar
+docker-compose -f <compose-file> restart
+
+# Detener
+docker-compose -f <compose-file> down
+
+# Detener y eliminar volúmenes (⚠️ borra datos)
+docker-compose -f <compose-file> down -v
+
+# Reconstruir
+docker-compose -f <compose-file> up -d --build
+```
+
 ## Producción
 
 ### Desplegar en producción
@@ -619,21 +630,19 @@ El proyecto incluye cinco configuraciones de Docker Compose:
 # 1. Clonar y configurar
 git clone <repository-url>
 cd library
-
-# 2. Crear archivo de variables de entorno
 cp .env.example .env
 # Editar .env y configurar POSTGRES_PASSWORD con una contraseña segura
 
-# 3. Construir e iniciar servicios
+# 2. Construir e iniciar servicios
 docker-compose -f docker-compose.prod.yml up -d --build
 
-# 4. Descargar modelos de IA (primera vez)
+# 3. Descargar modelos de IA (primera vez)
 ./scripts/setup-ollama-models.sh
 
-# 5. Ejecutar migraciones de base de datos
+# 4. Ejecutar migraciones de base de datos
 docker exec library-api npm run db:migrate
 
-# 6. (Opcional) Cargar datos iniciales
+# 5. (Opcional) Cargar datos iniciales
 docker exec library-api npm run seed:database
 ```
 
@@ -666,61 +675,7 @@ docker exec library-api npm run seed:database
 
 El script es **idempotente**: verifica cada libro por ISBN antes de insertarlo. Si el libro ya existe, lo salta. Esto permite ejecutarlo múltiples veces sin duplicar datos.
 
-**Carga automática (opcional):**
-
-Para ambientes de staging o desarrollo, puedes habilitar la carga automática al iniciar el contenedor añadiendo esta variable de entorno:
-
-```bash
-# En .env o docker-compose
-AUTO_SEED=true
-```
-
-Con `AUTO_SEED=true`, el seeding se ejecuta automáticamente al arrancar la API. Como es idempotente, si los libros ya existen no se duplican.
-
-#### Verificar estado de la base de datos
-
-```bash
-# Verificar que hay libros cargados
-curl http://localhost:3000/api/books?limit=1
-
-# Contar libros en la base de datos
-docker exec library-postgres psql -U library -d library -c "SELECT COUNT(*) FROM books;"
-```
-
-### Comandos de producción
-
-```bash
-# Ver estado de los servicios
-docker-compose -f docker-compose.prod.yml ps
-
-# Ver logs en tiempo real
-docker-compose -f docker-compose.prod.yml logs -f
-
-# Ver logs de un servicio específico
-docker-compose -f docker-compose.prod.yml logs -f api
-
-# Reiniciar servicios
-docker-compose -f docker-compose.prod.yml restart
-
-# Detener servicios
-docker-compose -f docker-compose.prod.yml down
-
-# Reconstruir después de cambios
-docker-compose -f docker-compose.prod.yml up -d --build
-```
-
-### Verificar salud de servicios
-
-```bash
-# Health check del API
-curl http://localhost:3000/health
-
-# Health check del Web Client
-curl http://localhost/health
-
-# Verificar que Ollama tiene los modelos
-curl http://localhost:11434/api/tags
-```
+> Para carga automática, ver [Carga automática al iniciar](#carga-automática-al-iniciar).
 
 ### Variables de entorno de producción
 
@@ -734,14 +689,12 @@ curl http://localhost:11434/api/tags
 - 🔒 Cambiar `POSTGRES_PASSWORD` por una contraseña segura
 - 🔒 Los puertos de PostgreSQL y Ollama NO se exponen externamente
 - 📊 Configurar monitoreo y alertas
-- 💾 Configurar backups de PostgreSQL (ver sección Backup/Restore)
+- 💾 Configurar backups de PostgreSQL (ver sección [Backup/Restore](#backup-y-restore))
 - 🔄 Usar un reverse proxy (nginx, traefik) con HTTPS
 
 ## Entorno de Testing
 
 El entorno de testing está completamente aislado de producción con su propia base de datos y volúmenes.
-
-### Comandos de testing
 
 ```bash
 # Levantar entorno de testing
@@ -790,7 +743,7 @@ gunzip -c backup.sql.gz | docker exec -i library-postgres psql -U library librar
 
 ```bash
 # Verificar que Ollama está corriendo
-docker-compose -f docker-compose.prod.yml logs ollama-embeddings
+docker-compose logs ollama-embeddings
 
 # Verificar conectividad
 curl http://localhost:11434/api/tags
@@ -814,8 +767,8 @@ curl http://localhost:5000/languages
 
 ```bash
 # Verificar que PostgreSQL está corriendo y saludable
-docker-compose -f docker-compose.prod.yml ps postgres
-docker-compose -f docker-compose.prod.yml logs postgres
+docker-compose ps postgres
+docker-compose logs postgres
 
 # Verificar conectividad
 docker exec library-postgres pg_isready -U library -d library
@@ -825,13 +778,13 @@ docker exec library-postgres pg_isready -U library -d library
 
 ```bash
 # Verificar logs del API
-docker-compose -f docker-compose.prod.yml logs api
+docker-compose logs api
 
 # Verificar que las migraciones se ejecutaron
-docker exec library-api npm run db:migrate
+docker exec library-api-dev npm run db:migrate
 
 # Verificar variables de entorno
-docker exec library-api env | grep -E "(DATABASE|OLLAMA|NODE)"
+docker exec library-api-dev env | grep -E "(DATABASE|OLLAMA|NODE)"
 ```
 
 #### El Web Client no puede conectar con el API
@@ -845,8 +798,8 @@ curl -I http://localhost:3000/api/books
 
 # Verificar la URL del API en la build del web client
 # Si cambió, hay que reconstruir la imagen:
-docker-compose -f docker-compose.prod.yml build web-client
-docker-compose -f docker-compose.prod.yml up -d web-client
+docker-compose build web-client
+docker-compose up -d web-client
 ```
 
 #### Problemas de permisos en volúmenes (Linux)
@@ -856,8 +809,8 @@ docker-compose -f docker-compose.prod.yml up -d web-client
 sudo chown -R $(id -u):$(id -g) ./
 
 # O reiniciar con volúmenes limpios
-docker-compose -f docker-compose.prod.yml down -v
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose down -v
+docker-compose up -d
 ```
 
 #### Memoria insuficiente para Ollama
@@ -876,6 +829,19 @@ docker stats library-ollama
 #   resources:
 #     limits:
 #       memory: 6G  # Aumentar si es necesario
+```
+
+## Verificación de salud
+
+```bash
+# Health check del API
+curl http://localhost:3000/health
+
+# Health check del Web Client (producción)
+curl http://localhost/health
+
+# Verificar que Ollama tiene los modelos
+curl http://localhost:11434/api/tags
 ```
 
 ## Arquitectura
