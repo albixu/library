@@ -202,4 +202,31 @@ describe('SearchableSelectComponent', () => {
       expect(component.showAllOption()).toBe(false);
     });
   });
+
+  describe('hasValue computed', () => {
+    it('should be false when internalValue is empty string', () => {
+      component.internalValue.set('');
+      expect(component.hasValue()).toBe(false);
+    });
+
+    it('should be true when internalValue has a non-empty value', () => {
+      component.internalValue.set('Technical');
+      expect(component.hasValue()).toBe(true);
+    });
+
+    it('should be false after clearing selection via onSelectionChange(null)', async () => {
+      fixture.componentRef.setInput('value', 'Technical');
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      component.onSelectionChange(null);
+
+      expect(component.hasValue()).toBe(false);
+    });
+
+    it('should be true after selecting a value via onSelectionChange', () => {
+      component.onSelectionChange('Fiction');
+      expect(component.hasValue()).toBe(true);
+    });
+  });
 });

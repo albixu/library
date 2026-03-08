@@ -10,8 +10,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { OpenAPIV3 } from 'openapi-types';
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -80,8 +79,8 @@ export async function createServer(
   // Register Swagger UI only in development and test environments
   const enableSwagger = nodeEnv === 'development' || nodeEnv === 'test';
   if (enableSwagger) {
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    const openapiSpecPath = resolve(__dirname, '../../../../../../docs/api/openapi.yaml');
+    const docsBasePath = process.env['DOCS_PATH'] ?? '/docs';
+    const openapiSpecPath = resolve(docsBasePath, 'api/openapi.yaml');
     const openapiSpec = parseYaml(readFileSync(openapiSpecPath, 'utf-8')) as OpenAPIV3.Document;
 
     await fastify.register(fastifySwagger, {

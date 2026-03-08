@@ -127,6 +127,7 @@ import {
                   }
                 </p>
               </div>
+              <!-- TODO: Descomentar cuando se implemente la exportación del catálogo y la creación manual de libros (HU-035)
               <div class="results-actions">
                 <button type="button" class="btn btn-secondary">
                   <span class="material-symbols-outlined" aria-hidden="true">download</span>
@@ -137,6 +138,7 @@ import {
                   Añadir Nuevo Libro
                 </button>
               </div>
+              -->
             </div>
 
             <!-- Book display -->
