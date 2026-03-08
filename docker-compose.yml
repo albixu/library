@@ -33,6 +33,7 @@ services:
       - ./apps/api/scripts:/app/scripts
       - ./apps/api/data:/app/data
       - ./apps/api/package.json:/app/package.json
+      - ./apps/api/package-lock.json:/app/package-lock.json
       - ./apps/api/tsconfig.json:/app/tsconfig.json
       - ./apps/api/vitest.config.ts:/app/vitest.config.ts
       - ./apps/api/vitest.integration.config.ts:/app/vitest.integration.config.ts
@@ -85,6 +86,7 @@ services:
       - ./apps/web-client/.storybook:/app/.storybook
       # Configuration files
       - ./apps/web-client/package.json:/app/package.json
+      - ./apps/web-client/package-lock.json:/app/package-lock.json
       - ./apps/web-client/tsconfig.json:/app/tsconfig.json
       - ./apps/web-client/tsconfig.app.json:/app/tsconfig.app.json
       - ./apps/web-client/tsconfig.spec.json:/app/tsconfig.spec.json
