@@ -28,7 +28,7 @@ services:
         API_URL: ${API_URL:-http://localhost:3000}
     container_name: library-web
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       api:
         condition: service_healthy
