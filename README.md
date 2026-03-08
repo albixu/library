@@ -31,7 +31,7 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 | Traducciones | LibreTranslate (self-hosted) |
 | API | Fastify |
 | ORM | Drizzle ORM |
-| Frontend | Angular 21 + Tailwind CSS |
+| Frontend | Angular 21.2 + Tailwind CSS |
 | Testing API | Vitest |
 | Testing Web | Vitest + Playwright |
 | Documentación UI | Storybook |
@@ -337,7 +337,7 @@ library/
 │   │   ├── tests/
 │   │   └── docker/
 │   │
-│   └── web-client/       # Frontend: Angular 21 + Tailwind CSS
+│   └── web-client/       # Frontend: Angular 21.2 + Tailwind CSS
 │       └── docker/
 │
 ├── scripts/

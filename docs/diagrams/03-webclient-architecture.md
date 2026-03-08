@@ -1,6 +1,6 @@
-# Diagrama de Arquitectura — Web Client (Angular 21)
+# Diagrama de Arquitectura — Web Client (Angular 21.2)
 
-Este diagrama representa la arquitectura interna del cliente web del sistema **Library**, construido con Angular 21. La estructura sigue el patrón **Screaming Architecture** (organización por features), con gestión de estado mediante **Angular Signals** y comunicación con la API REST a través de servicios singleton en el módulo `core`.
+Este diagrama representa la arquitectura interna del cliente web del sistema **Library**, construido con Angular 21.2. La estructura sigue el patrón **Screaming Architecture** (organización por features), con gestión de estado mediante **Angular Signals** y comunicación con la API REST a través de servicios singleton en el módulo `core`.
 
 ```mermaid
 graph TD
