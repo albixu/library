@@ -64,10 +64,10 @@ cp apps/api/.env.example apps/api/.env
 
 ```bash
 # Iniciar todos los servicios
-docker-compose up -d
+docker compose up -d
 
 # Verificar que todo está corriendo
-docker-compose ps
+docker compose ps
 ```
 
 ### 4. Descargar los modelos de IA
@@ -118,16 +118,16 @@ Consolida múltiples archivos JSON de `original_data/` en ficheros particionados
 
 ```bash
 # 1. Iniciar entorno de consolidación (incluye LibreTranslate)
-docker-compose -f docker-compose.consolidate.yml up -d
+docker compose -f docker-compose.consolidate.yml up -d
 
 # 2. Verificar que los servicios están corriendo
-docker-compose -f docker-compose.consolidate.yml ps
+docker compose -f docker-compose.consolidate.yml ps
 
 # 3. Ejecutar script de consolidación
 docker exec library-consolidate-api npm run consolidate:books
 
 # 4. Detener servicios cuando termine
-docker-compose -f docker-compose.consolidate.yml down
+docker compose -f docker-compose.consolidate.yml down
 ```
 
 > **⚠️ Aviso de memoria (OOM):** Con catálogos grandes (~55.000 libros), el proceso puede ser
@@ -156,10 +156,10 @@ Carga los ficheros particionados en PostgreSQL, generando embeddings para búsqu
 
 ```bash
 # 1. Iniciar entorno de seeding
-docker-compose -f docker-compose.seed.yml up -d
+docker compose -f docker-compose.seed.yml up -d
 
 # 2. Verificar que los servicios están healthy
-docker-compose -f docker-compose.seed.yml ps
+docker compose -f docker-compose.seed.yml ps
 
 # 3. Descargar modelo de embeddings (solo la primera vez)
 docker exec library-seed-ollama-embeddings ollama pull nomic-embed-text
@@ -171,7 +171,7 @@ docker exec library-seed-api npm run db:migrate
 docker exec library-seed-api npm run seed:database
 
 # 6. Detener servicios cuando termine
-docker-compose -f docker-compose.seed.yml down
+docker compose -f docker-compose.seed.yml down
 ```
 
 **Resultado:** Libros cargados en PostgreSQL con embeddings vectoriales
@@ -360,25 +360,25 @@ library/
 
 ```bash
 # Iniciar todos los contenedores
-docker-compose up -d
+docker compose up -d
 
 # Ver logs en tiempo real
-docker-compose logs -f api
+docker compose logs -f api
 
 # Ver logs de todos los servicios
-docker-compose logs -f
+docker compose logs -f
 
 # Reiniciar solo la API
-docker-compose restart api
+docker compose restart api
 
 # Detener todo
-docker-compose down
+docker compose down
 
 # Detener y eliminar volúmenes (⚠️ borra datos de BD)
-docker-compose down -v
+docker compose down -v
 
 # Reconstruir imagen de la API
-docker-compose build api
+docker compose build api
 ```
 
 #### Tests (API)
@@ -601,25 +601,25 @@ Todos los entornos Docker siguen el mismo patrón de comandos. Sustituir `<compo
 
 ```bash
 # Iniciar servicios
-docker-compose -f <compose-file> up -d
+docker compose -f <compose-file> up -d
 
 # Ver estado
-docker-compose -f <compose-file> ps
+docker compose -f <compose-file> ps
 
 # Ver logs
-docker-compose -f <compose-file> logs -f [servicio]
+docker compose -f <compose-file> logs -f [servicio]
 
 # Reiniciar
-docker-compose -f <compose-file> restart
+docker compose -f <compose-file> restart
 
 # Detener
-docker-compose -f <compose-file> down
+docker compose -f <compose-file> down
 
 # Detener y eliminar volúmenes (⚠️ borra datos)
-docker-compose -f <compose-file> down -v
+docker compose -f <compose-file> down -v
 
 # Reconstruir
-docker-compose -f <compose-file> up -d --build
+docker compose -f <compose-file> up -d --build
 ```
 
 ## Producción
@@ -634,7 +634,7 @@ cp .env.example .env
 # Editar .env y configurar POSTGRES_PASSWORD con una contraseña segura
 
 # 2. Construir e iniciar servicios
-docker-compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 
 # 3. Descargar modelos de IA (primera vez)
 ./scripts/setup-ollama-models.sh
@@ -660,8 +660,8 @@ El archivo `docs/db/init-db.sql` está montado en `/docker-entrypoint-initdb.d/`
 
 ```bash
 # Para forzar la reinicialización del schema (⚠️ BORRA TODOS LOS DATOS):
-docker-compose -f docker-compose.prod.yml down -v
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml down -v
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 #### Fase 2: Datos iniciales (Manual o Automático)
@@ -698,7 +698,7 @@ El entorno de testing está completamente aislado de producción con su propia b
 
 ```bash
 # Levantar entorno de testing
-docker-compose -f docker-compose.test.yml up -d
+docker compose -f docker-compose.test.yml up -d
 
 # Descargar modelos de Ollama en testing (primera vez)
 OLLAMA_HOST=http://localhost:11435 ./scripts/setup-ollama-models.sh
@@ -707,10 +707,10 @@ OLLAMA_HOST=http://localhost:11435 ./scripts/setup-ollama-models.sh
 docker exec library-api-test npm run test:e2e
 
 # Ver logs
-docker-compose -f docker-compose.test.yml logs -f
+docker compose -f docker-compose.test.yml logs -f
 
 # Destruir entorno (incluyendo volúmenes)
-docker-compose -f docker-compose.test.yml down -v
+docker compose -f docker-compose.test.yml down -v
 ```
 
 ## Backup y Restore
@@ -743,7 +743,7 @@ gunzip -c backup.sql.gz | docker exec -i library-postgres psql -U library librar
 
 ```bash
 # Verificar que Ollama está corriendo
-docker-compose logs ollama-embeddings
+docker compose logs ollama-embeddings
 
 # Verificar conectividad
 curl http://localhost:11434/api/tags
@@ -756,8 +756,8 @@ docker exec library-ollama-embeddings ollama pull nomic-embed-text
 
 ```bash
 # Verificar que el servicio está corriendo
-docker-compose -f docker-compose.consolidate.yml ps libretranslate
-docker-compose -f docker-compose.consolidate.yml logs libretranslate
+docker compose -f docker-compose.consolidate.yml ps libretranslate
+docker compose -f docker-compose.consolidate.yml logs libretranslate
 
 # Verificar conectividad
 curl http://localhost:5000/languages
@@ -767,8 +767,8 @@ curl http://localhost:5000/languages
 
 ```bash
 # Verificar que PostgreSQL está corriendo y saludable
-docker-compose ps postgres
-docker-compose logs postgres
+docker compose ps postgres
+docker compose logs postgres
 
 # Verificar conectividad
 docker exec library-postgres pg_isready -U library -d library
@@ -778,7 +778,7 @@ docker exec library-postgres pg_isready -U library -d library
 
 ```bash
 # Verificar logs del API
-docker-compose logs api
+docker compose logs api
 
 # Verificar que las migraciones se ejecutaron
 docker exec library-api-dev npm run db:migrate
@@ -798,8 +798,8 @@ curl -I http://localhost:3000/api/books
 
 # Verificar la URL del API en la build del web client
 # Si cambió, hay que reconstruir la imagen:
-docker-compose build web-client
-docker-compose up -d web-client
+docker compose build web-client
+docker compose up -d web-client
 ```
 
 #### Problemas de permisos en volúmenes (Linux)
@@ -809,8 +809,8 @@ docker-compose up -d web-client
 sudo chown -R $(id -u):$(id -g) ./
 
 # O reiniciar con volúmenes limpios
-docker-compose down -v
-docker-compose up -d
+docker compose down -v
+docker compose up -d
 ```
 
 #### Memoria insuficiente para Ollama
