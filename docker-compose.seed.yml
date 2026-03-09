@@ -49,6 +49,8 @@ services:
       - ./apps/api/tsconfig.json:/app/tsconfig.json
       - ./apps/api/drizzle.config.ts:/app/drizzle.config.ts
       - ./apps/api/drizzle:/app/drizzle
+      # Docs directory (required for OpenAPI spec)
+      - ./docs:/app/docs
       # Initial data directory (partitioned JSON files)
       - ./initial_data:/app/data/initial_data:ro
       # Reuse development node_modules volume
@@ -56,6 +58,8 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
+      # Docs path (must match volume mount for OpenAPI spec)
+      - DOCS_PATH=/app/docs
       # Database connection (uses POSTGRES_PASSWORD from .env for production)
       - DATABASE_URL=postgresql://library:${POSTGRES_PASSWORD:-library}@postgres:5432/library
       # Ollama for embeddings
