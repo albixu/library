@@ -40,9 +40,10 @@ LABEL maintainer="Library Team" \
       org.opencontainers.image.vendor="Library" \
       org.opencontainers.image.source="https://github.com/albixu/library"
 
-# Security: Update packages and remove cache
+# Security: Update packages, install curl for healthcheck, and remove cache
 RUN apk update && \
     apk upgrade --no-cache && \
+    apk add --no-cache curl && \
     rm -rf /var/cache/apk/*
 
 # Security: Create non-root user
@@ -72,7 +73,7 @@ EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget -q --spider http://localhost/health || exit 1
+    CMD curl -f http://127.0.0.1/health || exit 1
 
 # Note: Running as root is required for nginx to bind to port 80
 # The nginx worker processes run as nginx-user after startup
