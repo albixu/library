@@ -58,6 +58,8 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
+      # Override heap limit for seeding (loads many JSON files into memory)
+      - NODE_OPTIONS=--max-old-space-size=1536
       # Docs path (must match volume mount for OpenAPI spec)
       - DOCS_PATH=/app/docs
       # Database connection (uses POSTGRES_PASSWORD from .env for production)
