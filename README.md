@@ -349,9 +349,10 @@ library/
 ├── .env.example              # Variables de entorno
 │
 └── docs/
-    ├── api/                  # OpenAPI spec
-    ├── design_docs/          # Documentación de diseño
-    └── user_stories/         # Historias de usuario
+│   ├── api/                  # OpenAPI spec
+│   ├── design_docs/          # Documentación de diseño
+│   └── user_stories/         # Historias de usuario
+└── entregables_proyecto/     # Documentación auxiliar (documentación a entregar por si los enlaces no funcionan)
 ```
 
 ### Comandos de desarrollo
