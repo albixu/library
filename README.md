@@ -234,13 +234,17 @@ Desde ahí podés explorar todos los endpoints, ver los esquemas de request/resp
 curl -X POST http://localhost:3000/api/books \
   -H "Content-Type: application/json" \
   -d '{
+    "isbn": "aa2s8df188sd"
     "title": "Clean Code",
     "authors": ["Robert C. Martin"],
     "description": "A handbook of agile software craftsmanship",
     "type": "technical",
     "categories": ["programming"],
     "format": "pdf",
-    "level": "Intermediate"
+    "level": "Intermediate",
+    "image": "https://dominio.com/imagen",
+    "publication_date": "June 2025"
+    "language": "es"
   }'
 ```
 
