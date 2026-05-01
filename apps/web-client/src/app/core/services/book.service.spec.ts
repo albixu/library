@@ -291,7 +291,9 @@ describe('BookService', () => {
     it('should return Observable<void>', async () => {
       apiServiceMock.post.mockReturnValue(of(undefined));
 
-      const result = await firstValueFrom(service.sendBookByEmail('book-id-123', 'user@example.com'));
+      const result = await firstValueFrom(
+        service.sendBookByEmail('book-id-123', 'user@example.com')
+      );
 
       expect(result).toBeUndefined();
     });

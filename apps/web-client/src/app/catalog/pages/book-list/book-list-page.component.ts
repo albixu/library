@@ -127,7 +127,6 @@ import {
                   }
                 </p>
               </div>
-
             </div>
 
             <!-- Book display -->

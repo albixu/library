@@ -433,7 +433,7 @@ describe('BookListPageComponent – Mobile layout', () => {
   let fixture: ComponentFixture<BookListPageComponent>;
   let mockStore: Partial<BookSearchStore>;
   let mockDialogService: { open: ReturnType<typeof vi.fn> };
-  let breakpointSubject: Subject<BreakpointState>;
+  let _breakpointSubject: Subject<BreakpointState>;
 
   const mockBooks: Book[] = [
     {
@@ -461,7 +461,7 @@ describe('BookListPageComponent – Mobile layout', () => {
   };
 
   beforeEach(async () => {
-    breakpointSubject = new Subject<BreakpointState>();
+    _breakpointSubject = new Subject<BreakpointState>();
 
     mockStore = {
       books: signal(mockBooks),
