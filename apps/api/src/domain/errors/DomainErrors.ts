@@ -182,3 +182,24 @@ export class InvalidLanguageCodeError extends DomainError {
     );
   }
 }
+
+/**
+ * Thrown when a book's file is not found (no path defined or file does not exist)
+ */
+export class BookFileNotFoundError extends DomainError {
+  constructor(bookId: string) {
+    super(
+      `Book file not found for book "${bookId}". The book has no file path defined or the file does not exist.`,
+    );
+  }
+}
+
+/**
+ * Thrown when sending an email fails
+ */
+export class EmailSendError extends DomainError {
+  constructor(recipient: string, reason?: string) {
+    const reasonMessage = reason ? `: ${reason}` : '';
+    super(`Failed to send email to "${recipient}"${reasonMessage}`);
+  }
+}

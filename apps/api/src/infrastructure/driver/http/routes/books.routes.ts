@@ -10,6 +10,7 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import type { BooksController } from '../controllers/BooksController.js';
 import type { SearchBooksController } from '../controllers/SearchBooksController.js';
+import type { SendBookByEmailController } from '../controllers/SendBookByEmailController.js';
 
 /**
  * Options for registering book routes
@@ -17,6 +18,7 @@ import type { SearchBooksController } from '../controllers/SearchBooksController
 export interface BooksRoutesOptions extends FastifyPluginOptions {
   controller: BooksController;
   searchController: SearchBooksController;
+  sendBookByEmailController: SendBookByEmailController;
 }
 
 /**
@@ -25,6 +27,7 @@ export interface BooksRoutesOptions extends FastifyPluginOptions {
  * Endpoints:
  * - GET /api/books - Search books with filters and pagination
  * - POST /api/books - Create a new book
+ * - POST /api/books/:id/send - Send a book by email (HU-036)
  *
  * @param fastify - Fastify instance
  * @param options - Route options including controllers
@@ -33,7 +36,7 @@ export async function booksRoutes(
   fastify: FastifyInstance,
   options: BooksRoutesOptions,
 ): Promise<void> {
-  const { controller, searchController } = options;
+  const { controller, searchController, sendBookByEmailController } = options;
 
   /**
    * GET /api/books
@@ -49,5 +52,16 @@ export async function booksRoutes(
    */
   fastify.post('/books', async (request, reply) => {
     return controller.create(request, reply);
+  });
+
+  /**
+   * POST /api/books/:id/send
+   * Sends a book file to the given email address (HU-036)
+   */
+  fastify.post('/books/:id/send', async (request, reply) => {
+    return sendBookByEmailController.send(
+      request as Parameters<typeof sendBookByEmailController.send>[0],
+      reply,
+    );
   });
 }

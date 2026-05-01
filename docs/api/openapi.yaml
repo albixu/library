@@ -547,6 +547,133 @@ paths:
                     error:
                       message: "Translation service unavailable, please try again later"
 
+  /books/{id}/send:
+    post:
+      tags:
+        - Books
+      summary: Send book file by email
+      description: |
+        Envía el archivo físico del libro al correo electrónico indicado.
+
+        ## Flujo
+
+        1. **Validación**: Se valida que el `email` tenga formato válido
+        2. **Búsqueda**: Se recupera el libro por `id` — si no existe, se retorna `404`
+        3. **Verificación de archivo**: Se comprueba que el libro tenga un `path` asignado y que
+           el archivo físico exista en disco — si no, se retorna `422`
+        4. **Envío**: Se envía el archivo adjunto al correo indicado — si el servicio de correo
+           falla, se retorna `500`
+
+        ## Notas
+
+        - El correo se envía con el archivo adjunto (no como enlace)
+        - No se requiere autenticación para este endpoint (según configuración del servidor)
+      operationId: sendBookByEmail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único del libro (UUID v4)
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendBookRequest'
+            example:
+              email: "usuario@example.com"
+      responses:
+        '200':
+          description: Correo enviado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSuccessResponse'
+              example:
+                success: true
+                data: null
+                error: null
+        '400':
+          description: |
+            Solicitud inválida. Posibles causas:
+            - El campo `email` no tiene un formato de correo electrónico válido
+            - El campo `email` está vacío o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                invalid_email_format:
+                  summary: Formato de email inválido
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "email: Invalid email"
+                missing_email:
+                  summary: Email ausente
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "email is required"
+        '404':
+          description: Libro no encontrado. No existe ningún libro con el `id` indicado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Book with id \"550e8400-e29b-41d4-a716-446655440000\" not found"
+        '422':
+          description: |
+            Entidad no procesable. Posibles causas:
+            - El libro no tiene un `path` asignado en la base de datos
+            - El archivo físico referenciado por `path` no existe en el sistema de archivos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                no_path_assigned:
+                  summary: Libro sin path asignado
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Book file not found for book \"550e8400-e29b-41d4-a716-446655440000\""
+                file_not_on_disk:
+                  summary: Archivo no encontrado en disco
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Book file not found for book \"550e8400-e29b-41d4-a716-446655440000\""
+        '500':
+          description: |
+            Error interno del servidor al intentar enviar el correo.
+            El archivo existe pero el servicio de correo falló.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Failed to send email"
+
   /book-types:
     get:
       tags:
@@ -1296,6 +1423,21 @@ components:
           description: Lista de libros que coinciden con los criterios de búsqueda
         pagination:
           $ref: '#/components/schemas/BookSearchPagination'
+
+    # ============================================
+    # HU-036: Send Book by Email Schemas
+    # ============================================
+
+    SendBookRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Dirección de correo electrónico a la que se enviará el archivo del libro
+          example: "usuario@example.com"
 
     BookSearchResponse:
       allOf:

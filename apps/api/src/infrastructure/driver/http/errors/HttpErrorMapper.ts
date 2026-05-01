@@ -20,7 +20,11 @@ import {
   EmbeddingTextTooLongError,
   CategoryTypeMismatchError,
   LevelTypeMismatchError,
+  BookNotFoundError,
+  BookFileNotFoundError,
+  EmailSendError,
 } from '../../../../domain/errors/DomainErrors.js';
+import { InvalidEmailAddressError } from '../../../../domain/value-objects/EmailAddress.js';
 import { InvalidBookIdentifierError } from '../../../../domain/value-objects/BookIdentifier.js';
 import { InvalidBookFormatError } from '../../../../domain/value-objects/BookFormat.js';
 import {
@@ -98,6 +102,26 @@ export function mapErrorToHttpResponse(error: unknown): HttpErrorResponse {
   // Zod validation errors
   if (error instanceof ZodError) {
     return mapZodError(error);
+  }
+
+  // HU-036: Invalid email address → 400
+  if (error instanceof InvalidEmailAddressError) {
+    return createErrorResponse(400, error.message);
+  }
+
+  // HU-036: Book not found → 404
+  if (error instanceof BookNotFoundError) {
+    return createErrorResponse(404, error.message);
+  }
+
+  // HU-036: Book file not found → 422
+  if (error instanceof BookFileNotFoundError) {
+    return createErrorResponse(422, error.message);
+  }
+
+  // HU-036: Email send error → 500
+  if (error instanceof EmailSendError) {
+    return createErrorResponse(500, error.message);
   }
 
   // Duplicate errors → 409 Conflict
