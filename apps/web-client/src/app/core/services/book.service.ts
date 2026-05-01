@@ -47,6 +47,17 @@ export class BookService {
   }
 
   /**
+   * Send a book to the specified email address
+   *
+   * @param bookId - The ID of the book to send
+   * @param email - The destination email address
+   * @returns Observable<void>
+   */
+  sendBookByEmail(bookId: string, email: string): Observable<void> {
+    return this.api.post<void>(`/books/${bookId}/send`, { email });
+  }
+
+  /**
    * Get all book types
    *
    * @returns Observable of BookTypeListResponse
