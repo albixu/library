@@ -46,6 +46,8 @@ services:
       - ./initial_data:/app/initial_data
       # Original data directory (source JSON files)
       - ./original_data:/app/original_data
+      # Docs directory for consolidated output
+      - ./docs:/app/docs
       # Reuse development node_modules volume
       - api_node_modules:/app/node_modules
     environment:
@@ -60,6 +62,7 @@ services:
       - BOOKS_PER_FILE=1000
       # Monorepo root mapping
       - MONOREPO_ROOT=/app
+      - DOCS_PATH=/app/docs
     depends_on:
       libretranslate:
         condition: service_started
