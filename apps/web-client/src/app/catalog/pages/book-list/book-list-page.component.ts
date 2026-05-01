@@ -127,18 +127,6 @@ import {
                   }
                 </p>
               </div>
-              <!-- TODO: Descomentar cuando se implemente la exportación del catálogo y la creación manual de libros (HU-035)
-              <div class="results-actions">
-                <button type="button" class="btn btn-secondary">
-                  <span class="material-symbols-outlined" aria-hidden="true">download</span>
-                  Exportar
-                </button>
-                <button type="button" class="btn btn-primary">
-                  <span class="material-symbols-outlined" aria-hidden="true">add</span>
-                  Añadir Nuevo Libro
-                </button>
-              </div>
-              -->
             </div>
 
             <!-- Book display -->
@@ -395,17 +383,6 @@ import {
       }
     }
 
-    .results-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-
-      .material-symbols-outlined {
-        font-size: 1.125rem;
-        margin-right: 0.375rem;
-      }
-    }
-
     /* Cards Container */
     .cards-container {
       display: grid;
@@ -573,15 +550,6 @@ import {
         flex-direction: column;
         align-items: flex-start;
         gap: 1rem;
-      }
-
-      .results-actions {
-        width: 100%;
-        flex-direction: column;
-
-        button {
-          width: 100%;
-        }
       }
     }
   `,
