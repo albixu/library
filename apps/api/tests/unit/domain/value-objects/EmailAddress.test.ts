@@ -117,4 +117,11 @@ describe('EmailAddress', () => {
       expect(Object.isFrozen(email)).toBe(true);
     });
   });
+
+  describe('toString', () => {
+    it('should return the email value as string', () => {
+      const email = EmailAddress.create('user@example.com');
+      expect(email.toString()).toBe('user@example.com');
+    });
+  });
 });
