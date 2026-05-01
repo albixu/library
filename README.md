@@ -465,6 +465,24 @@ docker exec library-api-dev npm run db:generate
 docker exec library-api-dev npx drizzle-kit check
 ```
 
+#### Backup de la Base de Datos
+
+```bash
+# Backup en texto plano
+docker exec library-postgres pg_dump -U library library > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Backup comprimido (recomendado)
+docker exec library-postgres pg_dump -U library library | gzip > backup_$(date +%Y%m%d_%H%M%S).sql.gz
+
+# Restore desde archivo SQL
+docker exec -i library-postgres psql -U library library < backup.sql
+
+# Restore desde archivo comprimido
+gunzip -c backup.sql.gz | docker exec -i library-postgres psql -U library library
+```
+
+> 💡 El contenedor `library-postgres` es el mismo en desarrollo y producción. Ver sección [Backup y Restore](#backup-y-restore) para más detalles.
+
 #### Carga de Datos
 
 ```bash
