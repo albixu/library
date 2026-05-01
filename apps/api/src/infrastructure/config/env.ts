@@ -64,6 +64,16 @@ export interface AppConfig {
 }
 
 /**
+ * Gmail email service configuration (HU-036)
+ */
+export interface GmailConfig {
+  /** Gmail account used as sender */
+  user: string;
+  /** Google App Password (not the regular account password) */
+  appPassword: string;
+}
+
+/**
  * Complete environment configuration
  */
 export interface EnvConfig {
@@ -71,6 +81,7 @@ export interface EnvConfig {
   database: DatabaseConfig;
   ollama: OllamaConfig;
   translation: TranslationConfig; // HU-013
+  gmail: GmailConfig; // HU-036
 }
 
 /**
@@ -142,6 +153,24 @@ export function loadEnvConfig(): EnvConfig {
     );
   }
 
+  // HU-036: Validate Gmail credentials (required for book email delivery)
+  const gmailUser = process.env['GMAIL_USER'];
+  if (!gmailUser || gmailUser.trim() === '') {
+    throw new Error(
+      'GMAIL_USER environment variable is required but not set. ' +
+      'Please set it to the Gmail account used for sending books (e.g., biblioteca@gmail.com)',
+    );
+  }
+
+  const gmailAppPassword = process.env['GMAIL_APP_PASSWORD'];
+  if (!gmailAppPassword || gmailAppPassword.trim() === '') {
+    throw new Error(
+      'GMAIL_APP_PASSWORD environment variable is required but not set. ' +
+      'Please set it to a Google App Password (Google Account > Security > App Passwords). ' +
+      'Do NOT use your regular Gmail password.',
+    );
+  }
+
   return {
     app: {
       nodeEnv: process.env['NODE_ENV'] ?? DEFAULTS.NODE_ENV,
@@ -183,6 +212,11 @@ export function loadEnvConfig(): EnvConfig {
         DEFAULTS.LIBRETRANSLATE_TIMEOUT_MS,
         'LIBRETRANSLATE_TIMEOUT_MS',
       ),
+    },
+    // HU-036: Gmail email service configuration
+    gmail: {
+      user: gmailUser,
+      appPassword: gmailAppPassword,
     },
   };
 }

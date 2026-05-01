@@ -43,6 +43,8 @@ services:
       - ./apps/api/drizzle:/app/drizzle
       # Docs directory for consolidated output
       - ./docs:/app/docs
+      # Books directory (read-only mount for email delivery)
+      - ${BOOKS_PATH}:/books:ro
       # Original data directory (source JSON files for consolidation)
       - ./original_data:/app/original_data
       # Named volume for node_modules (prevents overwrite by host)
