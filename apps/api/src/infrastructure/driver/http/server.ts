@@ -23,6 +23,7 @@ import { SearchBooksController } from './controllers/SearchBooksController.js';
 import { BookTypesController } from './controllers/BookTypesController.js';
 import { CategoriesController } from './controllers/CategoriesController.js';
 import { BookLevelsController } from './controllers/BookLevelsController.js';
+import { SendBookByEmailController } from './controllers/SendBookByEmailController.js';
 import { booksRoutes } from './routes/books.routes.js';
 import { bookTypesRoutes } from './routes/book-types.routes.js';
 import { categoriesRoutes } from './routes/categories.routes.js';
@@ -32,6 +33,7 @@ import type { SearchBooksUseCase } from '../../../application/use-cases/SearchBo
 import type { ListBookTypesUseCase } from '../../../application/use-cases/ListBookTypesUseCase.js';
 import type { ListCategoriesUseCase } from '../../../application/use-cases/ListCategoriesUseCase.js';
 import type { ListBookLevelsUseCase } from '../../../application/use-cases/ListBookLevelsUseCase.js';
+import type { SendBookByEmailUseCase } from '../../../application/use-cases/SendBookByEmailUseCase.js';
 
 /**
  * Dependencies required by the server
@@ -42,6 +44,7 @@ export interface ServerDeps {
   listBookTypesUseCase: ListBookTypesUseCase;
   listCategoriesUseCase: ListCategoriesUseCase;
   listBookLevelsUseCase: ListBookLevelsUseCase;
+  sendBookByEmailUseCase: SendBookByEmailUseCase;
   logger?: Logger;
 }
 
@@ -66,7 +69,7 @@ export async function createServer(
   deps: ServerDeps,
   options: ServerOptions = {},
 ): Promise<FastifyInstance> {
-  const { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, logger = noopLogger } = deps;
+  const { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, sendBookByEmailUseCase, logger = noopLogger } = deps;
   const { prefix = '/api', nodeEnv = 'production' } = options;
 
   const serverLogger = logger.child({ name: 'FastifyServer' });
@@ -127,11 +130,17 @@ export async function createServer(
     logger,
   });
 
+  const sendBookByEmailController = new SendBookByEmailController({
+    sendBookByEmailUseCase,
+    logger,
+  });
+
   // Register routes with prefix
   await fastify.register(booksRoutes, {
     prefix,
     controller: booksController,
     searchController: searchBooksController,
+    sendBookByEmailController,
   });
 
   await fastify.register(bookTypesRoutes, {
@@ -154,6 +163,7 @@ export async function createServer(
     const routes = [
       { method: 'GET', path: `${prefix}/books` },
       { method: 'POST', path: `${prefix}/books` },
+      { method: 'POST', path: `${prefix}/books/:id/send` },
       { method: 'GET', path: `${prefix}/book-types` },
       { method: 'GET', path: `${prefix}/book-categories` },
       { method: 'GET', path: `${prefix}/book-levels` },

@@ -24,6 +24,9 @@ import { SearchBooksUseCase } from './application/use-cases/SearchBooksUseCase.j
 import { ListBookTypesUseCase } from './application/use-cases/ListBookTypesUseCase.js';
 import { ListCategoriesUseCase } from './application/use-cases/ListCategoriesUseCase.js';
 import { ListBookLevelsUseCase } from './application/use-cases/ListBookLevelsUseCase.js';
+import { SendBookByEmailUseCase } from './application/use-cases/SendBookByEmailUseCase.js';
+import { GmailEmailAdapter } from './infrastructure/driven/email/GmailEmailAdapter.js';
+import { NodeFileSystemAdapter } from './infrastructure/driven/filesystem/NodeFileSystemAdapter.js';
 import { createServer, startServer } from './infrastructure/driver/http/server.js';
 import * as schema from './infrastructure/driven/persistence/drizzle/schema.js';
 
@@ -122,9 +125,21 @@ async function bootstrap(): Promise<void> {
       logger,
     });
 
+    // HU-036: Send book by email use case
+    const emailAdapter = new GmailEmailAdapter({
+      user: env.gmail.user,
+      appPassword: env.gmail.appPassword,
+    });
+    const fileSystemAdapter = new NodeFileSystemAdapter();
+    const sendBookByEmailUseCase = new SendBookByEmailUseCase({
+      bookRepository,
+      fileSystemPort: fileSystemAdapter,
+      emailPort: emailAdapter,
+    });
+
     // Create and start server
     const server = await createServer(
-      { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, logger },
+      { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, sendBookByEmailUseCase, logger },
       { prefix: '/api', nodeEnv: env.app.nodeEnv },
     );
 
