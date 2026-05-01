@@ -26,11 +26,9 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 
       <div class="header__actions">
         <app-theme-toggle />
-        <!-- TODO: Descomentar cuando se implemente la gestión de usuarios/perfil (HU-035)
         <div class="header__avatar" role="img" aria-label="Perfil de usuario">
           <span class="material-symbols-outlined">account_circle</span>
         </div>
-        -->
       </div>
     </header>
   `,
