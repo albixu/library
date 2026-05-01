@@ -165,7 +165,9 @@ describe('BookTableComponent', () => {
       fixture.componentRef.setInput('books', mockBooks);
       fixture.detectChanges();
 
-      const descriptionButtons = fixture.nativeElement.querySelectorAll('[aria-label="Ver descripción"]');
+      const descriptionButtons = fixture.nativeElement.querySelectorAll(
+        '[aria-label="Ver descripción"]'
+      );
       expect(descriptionButtons.length).toBe(2);
     });
 
@@ -193,7 +195,9 @@ describe('BookTableComponent', () => {
       fixture.detectChanges();
 
       const dialogSpy = vi.spyOn(component.descriptionDialog(), 'open');
-      const descriptionButton = fixture.nativeElement.querySelector('[aria-label="Ver descripción"]');
+      const descriptionButton = fixture.nativeElement.querySelector(
+        '[aria-label="Ver descripción"]'
+      );
       descriptionButton.click();
 
       expect(dialogSpy).toHaveBeenCalledWith(mockBooks[0].title, mockBooks[0].description);
@@ -206,7 +210,9 @@ describe('BookTableComponent', () => {
       const rowClickSpy = vi.fn();
       component.rowClick.subscribe(rowClickSpy);
 
-      const descriptionButton = fixture.nativeElement.querySelector('[aria-label="Ver descripción"]');
+      const descriptionButton = fixture.nativeElement.querySelector(
+        '[aria-label="Ver descripción"]'
+      );
       descriptionButton.click();
 
       expect(rowClickSpy).not.toHaveBeenCalled();
