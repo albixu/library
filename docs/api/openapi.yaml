@@ -1875,38 +1875,8 @@ components:
               $ref: '#/components/schemas/BookSearchData'
 
     # ============================================
-    # HU-039: Favorites and Access Control Schemas
+    # HU-038: Auth Request Schemas
     # ============================================
-
-    FavoriteToggleData:
-      type: object
-      required:
-        - favorite
-      properties:
-        favorite:
-          type: boolean
-          description: |
-            Estado del favorito tras la operación.
-            `true` si el libro fue añadido a favoritos, `false` si fue eliminado.
-          example: true
-
-    FavoriteToggleResponse:
-      allOf:
-        - $ref: '#/components/schemas/ApiSuccessResponse'
-        - type: object
-          properties:
-            data:
-              $ref: '#/components/schemas/FavoriteToggleData'
-
-  securitySchemes:
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: access_token
-      description: |
-        JWT de acceso almacenado en la cookie `access_token` (httpOnly).
-        Se establece automáticamente al hacer login con `POST /auth/login`.
-        Expira en 7 días. Puede renovarse con `POST /auth/refresh`.
 
     LoginRequest:
       type: object
@@ -1952,3 +1922,37 @@ components:
           minLength: 8
           description: Nueva contraseña (mínimo 8 caracteres)
           example: "nueva-contraseña-segura"
+
+    # ============================================
+    # HU-039: Favorites and Access Control Schemas
+    # ============================================
+
+    FavoriteToggleData:
+      type: object
+      required:
+        - favorite
+      properties:
+        favorite:
+          type: boolean
+          description: |
+            Estado del favorito tras la operación.
+            `true` si el libro fue añadido a favoritos, `false` si fue eliminado.
+          example: true
+
+    FavoriteToggleResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiSuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/FavoriteToggleData'
+
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+      description: |
+        JWT de acceso almacenado en la cookie `access_token` (httpOnly).
+        Se establece automáticamente al hacer login con `POST /auth/login`.
+        Expira en 7 días. Puede renovarse con `POST /auth/refresh`.

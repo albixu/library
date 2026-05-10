@@ -10,18 +10,8 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- ENUM Types
 -- ================================
 
--- Book file format (kept as enum - fixed set of values)
-CREATE TYPE book_format AS ENUM (
-    'epub',
-    'pdf',
-    'mobi',
-    'azw3',
-    'djvu',
-    'cbz',
-    'cbr',
-    'txt',
-    'other'
-);
+-- Note: book_format was previously defined as an ENUM but has been changed to VARCHAR(50)
+-- to align with the Drizzle ORM schema (HU-039). No ENUM types remain.
 
 -- Note: book_level ENUM has been removed (HU-008)
 -- Levels are now stored in the 'levels' table with dynamic values
@@ -112,7 +102,7 @@ CREATE TABLE IF NOT EXISTS books (
     -- Required fields
     title VARCHAR(500) NOT NULL,
     type_id UUID NOT NULL REFERENCES types(id),
-    format book_format NOT NULL,
+    format VARCHAR(50) NOT NULL,  -- epub, pdf, mobi, azw3, djvu, cbz, cbr, txt, other
     available BOOLEAN NOT NULL DEFAULT TRUE,  -- default TRUE since migration 0001
     
     -- HU-013: Description fields
