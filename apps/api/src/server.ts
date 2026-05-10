@@ -25,6 +25,8 @@ import { ListBookTypesUseCase } from './application/use-cases/ListBookTypesUseCa
 import { ListCategoriesUseCase } from './application/use-cases/ListCategoriesUseCase.js';
 import { ListBookLevelsUseCase } from './application/use-cases/ListBookLevelsUseCase.js';
 import { SendBookByEmailUseCase } from './application/use-cases/SendBookByEmailUseCase.js';
+import { ToggleFavoriteUseCase } from './application/use-cases/favorite/ToggleFavoriteUseCase.js';
+import { RegisterDownloadUseCase } from './application/use-cases/download/RegisterDownloadUseCase.js';
 import { LoginUseCase } from './application/use-cases/auth/LoginUseCase.js';
 import { LogoutUseCase } from './application/use-cases/auth/LogoutUseCase.js';
 import { RefreshTokenUseCase } from './application/use-cases/auth/RefreshTokenUseCase.js';
@@ -34,6 +36,8 @@ import { JwtServiceImpl } from './infrastructure/driven/auth/JwtServiceImpl.js';
 import { Argon2PasswordHasher } from './infrastructure/driven/auth/Argon2PasswordHasher.js';
 import { DrizzleUserRepository } from './infrastructure/driven/persistence/DrizzleUserRepository.js';
 import { DrizzlePasswordResetTokenRepository } from './infrastructure/driven/persistence/DrizzlePasswordResetTokenRepository.js';
+import { DrizzleFavoriteRepository } from './infrastructure/driven/persistence/DrizzleFavoriteRepository.js';
+import { DrizzleDownloadRepository } from './infrastructure/driven/persistence/DrizzleDownloadRepository.js';
 import { GmailEmailAdapter } from './infrastructure/driven/email/GmailEmailAdapter.js';
 import { NodeFileSystemAdapter } from './infrastructure/driven/filesystem/NodeFileSystemAdapter.js';
 import { createServer, startServer } from './infrastructure/driver/http/server.js';
@@ -174,6 +178,12 @@ async function bootstrap(): Promise<void> {
       passwordHasher,
     });
 
+    // HU-039: Favorites and downloads use cases
+    const favoriteRepository = new DrizzleFavoriteRepository(db);
+    const downloadRepository = new DrizzleDownloadRepository(db);
+    const toggleFavoriteUseCase = new ToggleFavoriteUseCase({ favoriteRepository });
+    const registerDownloadUseCase = new RegisterDownloadUseCase({ downloadRepository });
+
     // Create and start server
     const server = await createServer(
       {
@@ -183,11 +193,14 @@ async function bootstrap(): Promise<void> {
         listCategoriesUseCase,
         listBookLevelsUseCase,
         sendBookByEmailUseCase,
+        toggleFavoriteUseCase,
+        registerDownloadUseCase,
         loginUseCase,
         logoutUseCase,
         refreshTokenUseCase,
         forgotPasswordUseCase,
         resetPasswordUseCase,
+        jwtService,
         logger,
       },
       { prefix: '/api', nodeEnv: env.app.nodeEnv },
