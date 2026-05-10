@@ -81,7 +81,7 @@ export class JwtServiceImpl implements JwtService {
 
       return { userId: decoded.userId, email: decoded.email };
     } catch (err) {
-      if (err instanceof InvalidCredentialsError) throw err;
+      if (err instanceof InvalidCredentialsError) {throw err;}
       throw new InvalidCredentialsError();
     }
   }
