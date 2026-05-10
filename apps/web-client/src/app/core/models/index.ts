@@ -106,6 +106,8 @@ export interface Book {
   language: string;
   available: boolean;
   similarityScore: number | null;
+  /** Favorite state — only present when the user is authenticated */
+  favorite?: boolean;
 }
 
 /**
@@ -141,6 +143,8 @@ export interface SearchFilters {
   categories?: string[];
   levels?: string[];
   text?: string;
+  /** Filter by user favorites — only effective when authenticated */
+  favorites?: boolean;
 }
 
 /**

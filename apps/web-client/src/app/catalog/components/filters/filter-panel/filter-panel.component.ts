@@ -7,6 +7,7 @@ import {
   effect,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { TextFilterInputComponent } from '../text-filter-input/index.js';
 import { SearchableSelectComponent } from '../searchable-select/index.js';
@@ -28,6 +29,7 @@ interface FilterState {
   categories: string[];
   levels: string[];
   text: string;
+  favorites: boolean;
 }
 
 /**
@@ -41,6 +43,7 @@ const DEFAULT_FILTERS: FilterState = {
   categories: [],
   levels: [],
   text: '',
+  favorites: false,
 };
 
 /**
@@ -63,6 +66,7 @@ const DEFAULT_FILTERS: FilterState = {
     SearchableSelectComponent,
     MultiSelectChipsComponent,
     SemanticSearchComponent,
+    FormsModule,
   ],
   template: `
     <div
@@ -186,6 +190,30 @@ const DEFAULT_FILTERS: FilterState = {
             />
           </div>
         </section>
+
+        @if (isAuthenticated()) {
+          <div class="filter-panel__divider"></div>
+
+          <!-- Favorites section -->
+          <section class="filter-section">
+            <h3 class="filter-section__title">Mi biblioteca</h3>
+
+            <label
+              class="favorites-checkbox-label"
+              data-testid="favorites-filter"
+            >
+              <input
+                type="checkbox"
+                class="favorites-checkbox"
+                [checked]="currentFilters().favorites"
+                [disabled]="disabled()"
+                (change)="onFavoritesChange($event)"
+              />
+              <span class="material-symbols-outlined favorites-icon">favorite</span>
+              <span>Mis favoritos</span>
+            </label>
+          </section>
+        }
       </div>
     </div>
   `,
@@ -296,6 +324,37 @@ const DEFAULT_FILTERS: FilterState = {
         letter-spacing: 0.05em;
         color: rgb(148 163 184);
       }
+
+      .favorites-checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+        color: rgb(148 163 184);
+        user-select: none;
+
+        &:has(input:disabled) {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+      }
+
+      .favorites-checkbox {
+        accent-color: #17a1cf;
+        width: 1rem;
+        height: 1rem;
+        cursor: pointer;
+      }
+
+      .favorites-icon {
+        font-size: 1rem;
+        color: #e11d48;
+      }
+
+      [data-theme='light'] .favorites-checkbox-label {
+        color: rgb(100 116 139);
+      }
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -314,6 +373,7 @@ export class FilterPanelComponent {
   // General state inputs
   readonly disabled = input<boolean>(false);
   readonly value = input<SearchFilters | null>(null);
+  readonly isAuthenticated = input<boolean>(false);
 
   // Outputs
   readonly filtersChange = output<SearchFilters>();
@@ -335,7 +395,8 @@ export class FilterPanelComponent {
       filters.type !== '' ||
       filters.categories.length > 0 ||
       filters.levels.length > 0 ||
-      filters.text !== ''
+      filters.text !== '' ||
+      filters.favorites
     );
   });
 
@@ -350,6 +411,7 @@ export class FilterPanelComponent {
           ...externalValue,
           categories: externalValue.categories ?? [],
           levels: externalValue.levels ?? [],
+          favorites: externalValue.favorites ?? false,
         });
         this.previousType = externalValue.type ?? '';
       }
@@ -394,6 +456,11 @@ export class FilterPanelComponent {
     this.updateFilters({ text });
   }
 
+  onFavoritesChange(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.updateFilters({ favorites: checked });
+  }
+
   clearFilters(): void {
     this.currentFilters.set({ ...DEFAULT_FILTERS });
     this.previousType = '';
@@ -424,6 +491,7 @@ export class FilterPanelComponent {
     if (state.categories.length > 0) filters.categories = state.categories;
     if (state.levels.length > 0) filters.levels = state.levels;
     if (state.text) filters.text = state.text;
+    if (state.favorites) filters.favorites = true;
 
     return filters;
   }

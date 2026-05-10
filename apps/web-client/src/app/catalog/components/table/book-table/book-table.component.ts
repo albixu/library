@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, input, output, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { CategoryChipsComponent } from '../../data-display/category-chips/category-chips.component.js';
 import { LevelBadgeComponent } from '../../data-display/level-badge/level-badge.component.js';
 import { LanguageFlagComponent } from '../../data-display/language-flag/language-flag.component.js';
@@ -6,6 +15,8 @@ import { EmptyStateComponent } from '../empty-state/empty-state.component.js';
 import { LoadingOverlayComponent } from '../loading-overlay/loading-overlay.component.js';
 import { BookDescriptionDialogComponent } from '../../dialogs/book-description-dialog/book-description-dialog.component.js';
 import { Book } from '../../../../core/models/index.js';
+import { AuthService } from '../../../../auth/auth.service.js';
+import { FavoriteService } from '../../../../books/services/favorite.service.js';
 
 @Component({
   selector: 'app-book-table',
@@ -35,7 +46,9 @@ import { Book } from '../../../../core/models/index.js';
                   <th>Nivel</th>
                   <th>Formato</th>
                   <th>Descripción</th>
-                  <th class="text-right">Acciones</th>
+                  @if (isAuthenticated()) {
+                    <th class="text-right">Acciones</th>
+                  }
                 </tr>
               </thead>
               <tbody>
@@ -88,17 +101,31 @@ import { Book } from '../../../../core/models/index.js';
                         <span class="description-text">-</span>
                       }
                     </td>
-                    <td class="actions-column text-right">
-                      <button
-                        class="action-button"
-                        type="button"
-                        aria-label="Send to Kindle"
-                        title="Enviar a Kindle"
-                        (click)="onSendToKindle($event, book)"
-                      >
-                        <span class="material-symbols-outlined">send_to_mobile</span>
-                      </button>
-                    </td>
+                    @if (isAuthenticated()) {
+                      <td class="actions-column text-right">
+                        <button
+                          class="action-button"
+                          type="button"
+                          aria-label="Send to Kindle"
+                          title="Enviar a Kindle"
+                          (click)="onSendToKindle($event, book)"
+                        >
+                          <span class="material-symbols-outlined">send_to_mobile</span>
+                        </button>
+                        <button
+                          class="action-button"
+                          type="button"
+                          [attr.aria-label]="getFavoriteAriaLabel(book)"
+                          [title]="getFavoriteAriaLabel(book)"
+                          [class.favorite-active]="getEffectiveFavorite(book)"
+                          (click)="onToggleFavorite($event, book)"
+                        >
+                          <span class="material-symbols-outlined">{{
+                            getEffectiveFavorite(book) ? 'favorite' : 'favorite_border'
+                          }}</span>
+                        </button>
+                      </td>
+                    }
                   </tr>
                 }
               </tbody>
@@ -261,7 +288,7 @@ import { Book } from '../../../../core/models/index.js';
     }
 
     .actions-column {
-      width: 80px;
+      width: 120px;
     }
 
     .isbn-column {
@@ -312,18 +339,32 @@ import { Book } from '../../../../core/models/index.js';
         height: 1.25rem;
       }
     }
+
+    .action-button.favorite-active {
+      color: #e11d48; /* rose-600 — filled heart color */
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BookTableComponent {
+  private readonly authService = inject(AuthService);
+  private readonly favoriteService = inject(FavoriteService);
+
   readonly books = input<Book[]>([]);
   readonly loading = input<boolean>(false);
   readonly emptyStateType = input<'empty' | 'no-results' | 'initial'>('empty');
 
   readonly rowClick = output<Book>();
   readonly sendToKindle = output<Book>();
+  readonly favoriteToggle = output<{ book: Book; favorite: boolean }>();
 
   readonly descriptionDialog = viewChild.required(BookDescriptionDialogComponent);
+
+  /** Derived signal: true when a user is logged in */
+  readonly isAuthenticated = computed(() => this.authService.currentUser() !== null);
+
+  /** Local map to track optimistic favorite state (bookId → favorite) */
+  private readonly favoriteOverrides = signal<Record<string, boolean>>({});
 
   onRowClick(book: Book): void {
     this.rowClick.emit(book);
@@ -337,6 +378,48 @@ export class BookTableComponent {
   onShowDescription(event: Event, book: Book): void {
     event.stopPropagation();
     this.descriptionDialog().open(book.title, book.description);
+  }
+
+  onToggleFavorite(event: Event, book: Book): void {
+    event.stopPropagation();
+
+    // Optimistic update
+    const currentFavorite = this.getEffectiveFavorite(book);
+    const newFavorite = !currentFavorite;
+    this.favoriteOverrides.update((overrides) => ({ ...overrides, [book.id]: newFavorite }));
+
+    this.favoriteService.toggle(book.id).subscribe({
+      next: (response) => {
+        this.favoriteOverrides.update((overrides) => ({
+          ...overrides,
+          [book.id]: response.favorite,
+        }));
+        this.favoriteToggle.emit({ book, favorite: response.favorite });
+      },
+      error: () => {
+        // Revert optimistic update on error
+        this.favoriteOverrides.update((overrides) => ({
+          ...overrides,
+          [book.id]: currentFavorite,
+        }));
+      },
+    });
+  }
+
+  getFavoriteAriaLabel(book: Book): string {
+    return this.getEffectiveFavorite(book) ? 'Quitar de favoritos' : 'Añadir a favoritos';
+  }
+
+  /**
+   * Get the effective favorite state for a book,
+   * preferring the local optimistic override over the server value.
+   */
+  getEffectiveFavorite(book: Book): boolean {
+    const overrides = this.favoriteOverrides();
+    if (book.id in overrides) {
+      return overrides[book.id];
+    }
+    return book.favorite ?? false;
   }
 
   // Helper methods to extract names from Author/Category objects
