@@ -62,6 +62,7 @@ const mockSearchOutput: SearchBooksOutput = {
       format: 'pdf',
       description: 'A Handbook of Agile Software Craftsmanship',
       similarityScore: null,
+      favorite: false,
     },
   ],
   pagination: {
