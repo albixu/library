@@ -6,7 +6,7 @@
 |-------|-------|
 | **Estado** | Aprobado |
 | **Fecha** | 2026-01-31 |
-| **Última actualización** | 2026-03-08 (Angular 21.2, estructura real, LibreTranslate, HU-001–HU-032) |
+| **Última actualización** | 2026-05-10 (estructura real verificada: auth, download, favorite, user domains, nuevos ports y adapters) |
 | **Autor** | - |
 
 ---
@@ -135,18 +135,41 @@ library/
 │   ├── api/                                  # 🖥️ Backend: API REST
 │   │   ├── src/
 │   │   │   ├── domain/                      # 💎 NÚCLEO - Lógica de negocio pura
-│   │   │   │   ├── entities/
+│   │   │   │   ├── entities/                # Entidades compartidas (sin subdominio propio)
 │   │   │   │   │   ├── Book.ts
 │   │   │   │   │   ├── Author.ts            # Entidad Author (N:M con Book)
 │   │   │   │   │   ├── BookType.ts          # Entidad BookType (N:1 con Book)
 │   │   │   │   │   ├── Category.ts          # Entidad Category (pertenece a Type)
 │   │   │   │   │   ├── Level.ts             # Entidad Level (N:M con Type)
 │   │   │   │   │   └── index.ts
-│   │   │   │   ├── value-objects/
+│   │   │   │   ├── value-objects/           # Value objects globales del dominio
 │   │   │   │   │   ├── BookFormat.ts
 │   │   │   │   │   ├── BookIdentifier.ts    # HU-029: reemplaza ISBN (1-32 chars)
+│   │   │   │   │   ├── EmailAddress.ts      # Value object de email con validación
 │   │   │   │   │   ├── ISBN.ts              # Mantenido por compatibilidad interna
 │   │   │   │   │   └── index.ts
+│   │   │   │   ├── book/                    # Subdominio Book
+│   │   │   │   │   └── value-objects/
+│   │   │   │   │       └── BookId.ts        # Value object específico de BookId
+│   │   │   │   ├── user/                    # Subdominio User (autenticación)
+│   │   │   │   │   ├── User.ts              # Entidad User
+│   │   │   │   │   ├── errors/
+│   │   │   │   │   │   └── UserErrors.ts    # Errores de dominio del usuario
+│   │   │   │   │   ├── ports/               # Puertos definidos en el subdominio
+│   │   │   │   │   │   ├── JwtService.ts
+│   │   │   │   │   │   ├── PasswordHasher.ts
+│   │   │   │   │   │   ├── PasswordResetTokenRepository.ts
+│   │   │   │   │   │   └── UserRepository.ts
+│   │   │   │   │   └── value-objects/
+│   │   │   │   │       └── UserId.ts
+│   │   │   │   ├── download/                # Subdominio Download
+│   │   │   │   │   ├── Download.ts          # Entidad Download
+│   │   │   │   │   └── ports/
+│   │   │   │   │       └── DownloadRepository.ts
+│   │   │   │   ├── favorite/                # Subdominio Favorite
+│   │   │   │   │   ├── Favorite.ts          # Entidad Favorite
+│   │   │   │   │   └── ports/
+│   │   │   │   │       └── FavoriteRepository.ts
 │   │   │   │   ├── criteria/                # HU-012: Patrón Criteria para consultas
 │   │   │   │   │   ├── Criteria.ts
 │   │   │   │   │   ├── Filter.ts
@@ -174,6 +197,17 @@ library/
 │   │   │   │   │   ├── ListBookTypesUseCase.ts
 │   │   │   │   │   ├── ListCategoriesUseCase.ts
 │   │   │   │   │   ├── ListBookLevelsUseCase.ts
+│   │   │   │   │   ├── SendBookByEmailUseCase.ts
+│   │   │   │   │   ├── auth/                # Casos de uso de autenticación
+│   │   │   │   │   │   ├── LoginUseCase.ts
+│   │   │   │   │   │   ├── LogoutUseCase.ts
+│   │   │   │   │   │   ├── RefreshTokenUseCase.ts
+│   │   │   │   │   │   ├── ForgotPasswordUseCase.ts
+│   │   │   │   │   │   └── ResetPasswordUseCase.ts
+│   │   │   │   │   ├── download/            # Casos de uso de descargas
+│   │   │   │   │   │   └── RegisterDownloadUseCase.ts
+│   │   │   │   │   ├── favorite/            # Casos de uso de favoritos
+│   │   │   │   │   │   └── ToggleFavoriteUseCase.ts
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── ports/
 │   │   │   │   │   ├── BookRepository.ts
@@ -183,6 +217,8 @@ library/
 │   │   │   │   │   ├── LevelRepository.ts
 │   │   │   │   │   ├── EmbeddingService.ts
 │   │   │   │   │   ├── TranslationService.ts
+│   │   │   │   │   ├── EmailPort.ts         # Puerto para envío de emails
+│   │   │   │   │   ├── FileSystemPort.ts    # Puerto para acceso al sistema de archivos
 │   │   │   │   │   ├── Logger.ts
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── errors/
@@ -192,12 +228,23 @@ library/
 │   │   │   │
 │   │   │   ├── infrastructure/              # 🔌 ADAPTADORES
 │   │   │   │   ├── driven/
+│   │   │   │   │   ├── auth/                # Adaptadores de autenticación
+│   │   │   │   │   │   ├── JwtServiceImpl.ts        # Implementación JWT (jsonwebtoken)
+│   │   │   │   │   │   └── Argon2PasswordHasher.ts  # Hash de contraseñas con Argon2
+│   │   │   │   │   ├── email/               # Adaptador de email
+│   │   │   │   │   │   └── GmailEmailAdapter.ts     # Envío de emails via Gmail SMTP
+│   │   │   │   │   ├── filesystem/          # Adaptador de sistema de archivos
+│   │   │   │   │   │   └── NodeFileSystemAdapter.ts # Acceso a archivos con Node.js fs
 │   │   │   │   │   ├── persistence/
 │   │   │   │   │   │   ├── PostgresBookRepository.ts
 │   │   │   │   │   │   ├── PostgresAuthorRepository.ts
 │   │   │   │   │   │   ├── PostgresTypeRepository.ts
 │   │   │   │   │   │   ├── PostgresCategoryRepository.ts
 │   │   │   │   │   │   ├── PostgresLevelRepository.ts
+│   │   │   │   │   │   ├── DrizzleUserRepository.ts         # Repositorio de usuarios
+│   │   │   │   │   │   ├── DrizzleDownloadRepository.ts     # Repositorio de descargas
+│   │   │   │   │   │   ├── DrizzleFavoriteRepository.ts     # Repositorio de favoritos
+│   │   │   │   │   │   ├── DrizzlePasswordResetTokenRepository.ts
 │   │   │   │   │   │   ├── types.ts
 │   │   │   │   │   │   ├── utils.ts
 │   │   │   │   │   │   ├── drizzle/
@@ -224,22 +271,31 @@ library/
 │   │   │   │   ├── driver/
 │   │   │   │   │   └── http/
 │   │   │   │   │       ├── server.ts
+│   │   │   │   │       ├── middleware/                  # Middleware HTTP
+│   │   │   │   │       │   ├── extractUserIfPresent.ts  # Extrae usuario del JWT si presente
+│   │   │   │   │       │   └── requireAuth.ts           # Requiere autenticación obligatoria
 │   │   │   │   │       ├── routes/
+│   │   │   │   │       │   ├── auth.routes.ts           # Rutas de autenticación
 │   │   │   │   │       │   ├── books.routes.ts
 │   │   │   │   │       │   ├── book-types.routes.ts
 │   │   │   │   │       │   ├── categories.routes.ts
 │   │   │   │   │       │   └── book-levels.routes.ts
 │   │   │   │   │       ├── controllers/
+│   │   │   │   │       │   ├── AuthController.ts        # Login, logout, refresh, reset password
 │   │   │   │   │       │   ├── BooksController.ts
 │   │   │   │   │       │   ├── SearchBooksController.ts
 │   │   │   │   │       │   ├── BookTypesController.ts
 │   │   │   │   │       │   ├── CategoriesController.ts
-│   │   │   │   │       │   └── BookLevelsController.ts
+│   │   │   │   │       │   ├── BookLevelsController.ts
+│   │   │   │   │       │   ├── FavoriteController.ts    # Toggle favoritos
+│   │   │   │   │       │   └── SendBookByEmailController.ts  # Envío a Kindle/email
 │   │   │   │   │       ├── errors/
 │   │   │   │   │       │   └── HttpErrorMapper.ts
 │   │   │   │   │       ├── schemas/
+│   │   │   │   │       │   ├── auth.schemas.ts          # Schemas Zod de autenticación
 │   │   │   │   │       │   ├── book.schemas.ts
 │   │   │   │   │       │   ├── search-books.schemas.ts
+│   │   │   │   │       │   ├── send-book.schemas.ts     # Schemas de envío de libro
 │   │   │   │   │       │   ├── category.schemas.ts
 │   │   │   │   │       │   ├── book-level.schemas.ts
 │   │   │   │   │       │   └── common.schemas.ts
@@ -291,6 +347,20 @@ library/
 │   └── web-client/                          # 🌐 Frontend: Cliente Web (Angular)
 │       ├── src/
 │       │   ├── app/
+│       │   │   ├── auth/                    # Feature: Autenticación
+│       │   │   │   ├── auth.service.ts      # Servicio de autenticación (login, logout, tokens)
+│       │   │   │   ├── index.ts
+│       │   │   │   ├── login-modal/         # Modal de login
+│       │   │   │   │   ├── login-modal.component.ts
+│       │   │   │   │   └── index.ts
+│       │   │   │   └── reset-password/      # Página de reseteo de contraseña
+│       │   │   │       ├── reset-password-page.component.ts
+│       │   │   │       └── index.ts
+│       │   │   │
+│       │   │   ├── books/                   # Servicios transversales de libros
+│       │   │   │   └── services/
+│       │   │   │       └── favorite.service.ts  # Gestión de favoritos
+│       │   │   │
 │       │   │   ├── catalog/                 # Feature principal: catálogo de libros
 │       │   │   │   ├── components/
 │       │   │   │   │   ├── data-display/    # category-chips, format-icon, language-flag, etc.
@@ -299,16 +369,21 @@ library/
 │       │   │   │   │   └── table/           # book-card, book-table, empty-state, paginator, etc.
 │       │   │   │   ├── pages/
 │       │   │   │   │   └── book-list/
-│       │   │   │   └── services/            # BookCatalogStore, BookService
+│       │   │   │   └── services/            # BookCatalogStore, BookService (movidos a core)
 │       │   │   │
 │       │   │   ├── core/                    # Servicios singleton
 │       │   │   │   ├── services/
+│       │   │   │   │   ├── api.service.ts
+│       │   │   │   │   ├── book.service.ts       # Comunicación con la API de libros
+│       │   │   │   │   ├── book-search.store.ts  # Estado de búsqueda con Signals
+│       │   │   │   │   ├── dialog.service.ts     # Gestión de diálogos modales
+│       │   │   │   │   ├── kindle.service.ts     # Envío de libros a Kindle
+│       │   │   │   │   └── theme.service.ts
 │       │   │   │   ├── interceptors/
 │       │   │   │   └── models/
 │       │   │   │
 │       │   │   ├── kindle/                  # Feature: envío a Kindle
-│       │   │   │   ├── components/
-│       │   │   │   └── services/
+│       │   │   │   └── index.ts
 │       │   │   │
 │       │   │   ├── layout/                  # Componentes de layout
 │       │   │   │   ├── header/
@@ -671,6 +746,16 @@ El Web Client sigue una arquitectura de capas similar a la API, aplicando princi
 
 ```
 src/app/
+├── auth/                    # 🔐 FEATURE: Autenticación
+│   ├── auth.service.ts      # Servicio de autenticación (login, logout, refresh token)
+│   ├── index.ts
+│   ├── login-modal/         # Modal de login (componente standalone)
+│   └── reset-password/      # Página de reseteo de contraseña
+│
+├── books/                   # 📖 SERVICIOS TRANSVERSALES DE LIBROS
+│   └── services/
+│       └── favorite.service.ts  # Gestión de favoritos del usuario
+│
 ├── catalog/                 # 📦 FEATURE PRINCIPAL: Catálogo de libros
 │   ├── components/
 │   │   ├── data-display/    # Visualización de datos (CategoryChips, FormatIcon, etc.)
@@ -679,16 +764,21 @@ src/app/
 │   │   └── table/           # Tabla de libros (BookTable, BookCard, Paginator, etc.)
 │   ├── pages/
 │   │   └── book-list/       # Página principal del catálogo
-│   └── services/            # BookCatalogStore (state con Signals), BookService
+│   └── services/            # (ver core/services para stores y services actuales)
 │
 ├── core/                    # 🔧 SERVICIOS SINGLETON
-│   ├── services/            # ApiService, ThemeService
+│   ├── services/
+│   │   ├── api.service.ts       # Servicio base HTTP
+│   │   ├── book.service.ts      # Comunicación con la API de libros
+│   │   ├── book-search.store.ts # Estado reactivo de búsqueda con Signals
+│   │   ├── dialog.service.ts    # Gestión centralizada de diálogos
+│   │   ├── kindle.service.ts    # Envío de libros a Kindle/email
+│   │   └── theme.service.ts     # Gestión dark/light mode
 │   ├── interceptors/        # HTTP interceptors (error handling)
 │   └── models/              # Domain models/interfaces
 │
 ├── kindle/                  # 📱 FEATURE: Envío a Kindle
-│   ├── components/
-│   └── services/
+│   └── index.ts
 │
 ├── layout/                  # 📐 LAYOUTS
 │   ├── header/

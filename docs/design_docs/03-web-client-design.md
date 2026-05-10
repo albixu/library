@@ -6,7 +6,7 @@
 |-------|-------|
 | **Estado** | Aprobado |
 | **Fecha** | 2026-01-31 |
-| **Última actualización** | 2026-03-06 (HU-032: Angular 21.2, Tailwind CSS — reemplaza Angular Material completo) |
+| **Última actualización** | 2026-05-10 (añadida feature auth/, books/services, servicios core actualizados) |
 | **Autor** | - |
 
 > **Nota HU-020**: El web client fue migrado completamente de Angular Material a **Tailwind CSS** en HU-020. Este documento refleja el estado post-migración. El documento de referencia de la migración se encuentra en `05-migration-material-to-tailwind.md`.
@@ -53,6 +53,20 @@ La estructura sigue **Screaming Architecture**: los nombres de los directorios g
 
 ```
 src/app/
+├── auth/                    # 🔐 FEATURE: Autenticación
+│   ├── auth.service.ts      # Servicio de autenticación (login, logout, refresh token)
+│   ├── index.ts
+│   ├── login-modal/         # Modal de login (componente standalone)
+│   │   ├── login-modal.component.ts
+│   │   └── index.ts
+│   └── reset-password/      # Página de reseteo de contraseña
+│       ├── reset-password-page.component.ts
+│       └── index.ts
+│
+├── books/                   # 📖 SERVICIOS TRANSVERSALES DE LIBROS
+│   └── services/
+│       └── favorite.service.ts  # Toggle favoritos del usuario autenticado
+│
 ├── catalog/                 # 📚 FEATURE: Catálogo de libros (feature principal)
 │   ├── components/
 │   │   ├── data-display/    # Componentes de visualización de datos
@@ -79,20 +93,21 @@ src/app/
 │   ├── pages/
 │   │   └── book-list/       # Página principal del catálogo
 │   └── services/
-│       ├── book-catalog.store.ts  # Estado reactivo con Signals
-│       └── book.service.ts        # Comunicación con la API
 │
 ├── core/                    # 🔧 SERVICIOS SINGLETON
 │   ├── services/
-│   │   ├── api.service.ts   # Servicio base HTTP
-│   │   └── theme.service.ts # Gestión dark/light mode
+│   │   ├── api.service.ts        # Servicio base HTTP
+│   │   ├── book.service.ts       # Comunicación con la API de libros
+│   │   ├── book-search.store.ts  # Estado reactivo de búsqueda con Signals
+│   │   ├── dialog.service.ts     # Gestión centralizada de diálogos modales
+│   │   ├── kindle.service.ts     # Envío de libros a Kindle/email
+│   │   └── theme.service.ts      # Gestión dark/light mode
 │   ├── interceptors/
 │   │   └── error.interceptor.ts
 │   └── models/              # Interfaces y tipos del dominio
 │
 ├── kindle/                  # 📧 FEATURE: Envío a Kindle
-│   ├── components/
-│   └── services/
+│   └── index.ts
 │
 ├── layout/                  # 📐 COMPONENTES DE LAYOUT
 │   ├── header/
@@ -284,6 +299,30 @@ export class ApiService {
   }
 }
 ```
+
+#### `AuthService` (`auth/auth.service.ts`)
+
+Gestiona el ciclo de vida de la sesión del usuario: login, logout, refresh de tokens y estado de autenticación reactivo con Signals.
+
+#### `BookSearchStore` (`core/services/book-search.store.ts`)
+
+Store reactivo con Angular Signals para la búsqueda de libros. Gestiona el estado de los filtros, resultados, paginación y loading.
+
+#### `BookService` (`core/services/book.service.ts`)
+
+Servicio de comunicación con la API REST para operaciones sobre libros (búsqueda, listado, etc.).
+
+#### `KindleService` (`core/services/kindle.service.ts`)
+
+Gestiona el envío de libros a dispositivos Kindle o emails, coordinando la llamada a la API.
+
+#### `DialogService` (`core/services/dialog.service.ts`)
+
+Servicio centralizado para la apertura y gestión del ciclo de vida de diálogos modales.
+
+#### `FavoriteService` (`books/services/favorite.service.ts`)
+
+Gestiona el toggle de favoritos para usuarios autenticados, comunicándose con la API.
 
 #### `ErrorInterceptor`
 
@@ -529,6 +568,9 @@ server {
 | HU-020 | **Migración completa de Angular Material a Tailwind CSS** |
 | HU-023 | Diagramas de arquitectura |
 | HU-027 | Mejoras al catálogo y filtros |
+| —      | Feature `auth/` con modal de login y página de reset de contraseña |
+| —      | `books/services/favorite.service.ts` — servicio de favoritos para usuarios autenticados |
+| —      | Servicios en `core/services/`: BookService, BookSearchStore, KindleService, DialogService |
 
 ---
 
