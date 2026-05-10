@@ -25,8 +25,10 @@ import { Order } from '../../domain/criteria/Order.js';
 import { Filter } from '../../domain/criteria/Filter.js';
 import type { BookRepository, SearchBooksResult } from '../ports/BookRepository.js';
 import type { EmbeddingService } from '../ports/EmbeddingService.js';
+import type { FavoriteRepository } from '../../domain/favorite/ports/FavoriteRepository.js';
 import type { Logger } from '../ports/Logger.js';
 import { noopLogger } from '../ports/Logger.js';
+import type { UserId } from '../../domain/user/value-objects/UserId.js';
 
 /**
  * Input DTO for searching books
@@ -53,6 +55,8 @@ export interface SearchBooksInput {
   limit?: number;
   /** Cursor for pagination */
   cursor?: string;
+  /** If provided, only returns books favorited by this user */
+  favoritesOf?: UserId;
 }
 
 /**
@@ -100,6 +104,7 @@ export interface SearchBooksUseCaseDeps {
   bookRepository: BookRepository;
   embeddingService: EmbeddingService;
   logger?: Logger;
+  favoriteRepository?: FavoriteRepository;
 }
 
 /**
@@ -111,11 +116,13 @@ export class SearchBooksUseCase {
   private readonly bookRepository: BookRepository;
   private readonly embeddingService: EmbeddingService;
   private readonly logger: Logger;
+  private readonly favoriteRepository: FavoriteRepository | undefined;
 
   constructor(deps: SearchBooksUseCaseDeps) {
     this.bookRepository = deps.bookRepository;
     this.embeddingService = deps.embeddingService;
     this.logger = deps.logger?.child({ name: 'SearchBooksUseCase' }) ?? noopLogger;
+    this.favoriteRepository = deps.favoriteRepository;
   }
 
   /**
@@ -133,9 +140,25 @@ export class SearchBooksUseCase {
       filterCount: this.countFilters(input),
       limit,
       hasCursor: !!input.cursor,
+      hasFavoritesFilter: !!input.favoritesOf,
     });
 
-    // 1. Generate embedding if text filter is present
+    // 1. If filtering by favorites, resolve the bookId set first
+    let favoriteBookIds: Set<string> | undefined;
+    if (input.favoritesOf) {
+      const bookIds = await this.favoriteRepository!.findAllByUser(input.favoritesOf);
+      favoriteBookIds = new Set(bookIds.map((id) => id.value));
+
+      // Short-circuit: if user has no favorites, return empty result immediately
+      if (favoriteBookIds.size === 0) {
+        return {
+          items: [],
+          pagination: { limit, hasNextPage: false, nextCursor: null, totalCount: 0 },
+        };
+      }
+    }
+
+    // 2. Generate embedding if text filter is present
     let embedding: number[] | undefined;
     if (input.text) {
       this.logger.debug('Generating embedding for semantic search', {
@@ -150,7 +173,7 @@ export class SearchBooksUseCase {
       });
     }
 
-    // 2. Build Criteria from input
+    // 3. Build Criteria from input
     const criteria = this.buildCriteria(input, limit);
 
     this.logger.debug('Criteria built', {
@@ -159,7 +182,7 @@ export class SearchBooksUseCase {
       hasSimilarityFilter: criteria.hasSimilarityFilter(),
     });
 
-    // 3. Execute search
+    // 4. Execute search
     const result = await this.bookRepository.search(criteria, embedding);
 
     this.logger.info('Book search completed', {
@@ -168,7 +191,12 @@ export class SearchBooksUseCase {
       hasNextPage: result.hasNextPage,
     });
 
-    // 4. Map results to output
+    // 5. Filter by favorites if needed
+    if (favoriteBookIds) {
+      result.items = result.items.filter((item) => favoriteBookIds!.has(item.book.id));
+    }
+
+    // 6. Map results to output
     return this.toOutput(result, limit);
   }
 

@@ -6,11 +6,14 @@ import {
 } from '../../../../src/application/use-cases/SearchBooksUseCase.js';
 import type { BookRepository, SearchBooksResult, BookWithScore } from '../../../../src/application/ports/BookRepository.js';
 import type { EmbeddingService } from '../../../../src/application/ports/EmbeddingService.js';
+import type { FavoriteRepository } from '../../../../src/domain/favorite/ports/FavoriteRepository.js';
 import { Book } from '../../../../src/domain/entities/Book.js';
 import { Author } from '../../../../src/domain/entities/Author.js';
 import { BookType } from '../../../../src/domain/entities/BookType.js';
 import { Category } from '../../../../src/domain/entities/Category.js';
 import { EmbeddingServiceUnavailableError } from '../../../../src/application/errors/ApplicationErrors.js';
+import { UserId } from '../../../../src/domain/user/value-objects/UserId.js';
+import { BookId } from '../../../../src/domain/book/value-objects/BookId.js';
 
 describe('SearchBooksUseCase', () => {
   // Test data
@@ -37,6 +40,8 @@ describe('SearchBooksUseCase', () => {
     generateEmbedding: ReturnType<typeof vi.fn>;
     isAvailable: ReturnType<typeof vi.fn>;
   };
+
+  let mockFavoriteRepository: FavoriteRepository;
 
   let useCase: SearchBooksUseCase;
 
@@ -105,6 +110,13 @@ describe('SearchBooksUseCase', () => {
     mockEmbeddingService = {
       generateEmbedding: vi.fn(),
       isAvailable: vi.fn(),
+    };
+
+    mockFavoriteRepository = {
+      findByUserAndBook: vi.fn(),
+      add: vi.fn(),
+      remove: vi.fn(),
+      findAllByUser: vi.fn(),
     };
 
     const deps: SearchBooksUseCaseDeps = {
@@ -431,6 +443,87 @@ describe('SearchBooksUseCase', () => {
       const result = await useCase.execute({});
 
       expect(result.items[0]?.description).toBe('A test book description');
+    });
+  });
+
+  describe('favoritesOf filter', () => {
+    const userId = UserId.fromPersistence('550e8400-e29b-41d4-a716-446655440099');
+
+    it('should return only favorited books when favoritesOf is provided', async () => {
+      const book1 = createTestBook({ id: '11111111-1111-1111-1111-111111111111', title: 'Favorite Book' });
+      const book2 = createTestBook({ id: '22222222-2222-2222-2222-222222222222', title: 'Other Book' });
+      const favoriteBookId = BookId.fromPersistence('11111111-1111-1111-1111-111111111111');
+
+      const useCaseWithFavorites = new SearchBooksUseCase({
+        bookRepository: mockBookRepository as unknown as BookRepository,
+        embeddingService: mockEmbeddingService as unknown as EmbeddingService,
+        favoriteRepository: mockFavoriteRepository,
+      });
+
+      vi.mocked(mockFavoriteRepository.findAllByUser).mockResolvedValue([favoriteBookId]);
+      mockBookRepository.search.mockResolvedValue(createSearchResult([book1, book2]));
+
+      const result = await useCaseWithFavorites.execute({ favoritesOf: userId });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]?.id).toBe('11111111-1111-1111-1111-111111111111');
+    });
+
+    it('should return empty list when user has no favorites', async () => {
+      const book1 = createTestBook({ id: '11111111-1111-1111-1111-111111111111' });
+
+      const useCaseWithFavorites = new SearchBooksUseCase({
+        bookRepository: mockBookRepository as unknown as BookRepository,
+        embeddingService: mockEmbeddingService as unknown as EmbeddingService,
+        favoriteRepository: mockFavoriteRepository,
+      });
+
+      vi.mocked(mockFavoriteRepository.findAllByUser).mockResolvedValue([]);
+      mockBookRepository.search.mockResolvedValue(createSearchResult([book1]));
+
+      const result = await useCaseWithFavorites.execute({ favoritesOf: userId });
+
+      expect(result.items).toHaveLength(0);
+      expect(result.pagination.totalCount).toBe(0);
+    });
+
+    it('should not call favoriteRepository when favoritesOf is not provided', async () => {
+      const useCaseWithFavorites = new SearchBooksUseCase({
+        bookRepository: mockBookRepository as unknown as BookRepository,
+        embeddingService: mockEmbeddingService as unknown as EmbeddingService,
+        favoriteRepository: mockFavoriteRepository,
+      });
+
+      mockBookRepository.search.mockResolvedValue(createSearchResult([]));
+
+      await useCaseWithFavorites.execute({});
+
+      expect(mockFavoriteRepository.findAllByUser).not.toHaveBeenCalled();
+    });
+
+    it('should preserve normal behavior when favoritesOf is undefined', async () => {
+      const book = createTestBook({ id: '11111111-1111-1111-1111-111111111111' });
+      mockBookRepository.search.mockResolvedValue(createSearchResult([book]));
+
+      const result = await useCase.execute({});
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]?.id).toBe('11111111-1111-1111-1111-111111111111');
+    });
+
+    it('should call findAllByUser with the correct userId', async () => {
+      const useCaseWithFavorites = new SearchBooksUseCase({
+        bookRepository: mockBookRepository as unknown as BookRepository,
+        embeddingService: mockEmbeddingService as unknown as EmbeddingService,
+        favoriteRepository: mockFavoriteRepository,
+      });
+
+      vi.mocked(mockFavoriteRepository.findAllByUser).mockResolvedValue([]);
+      mockBookRepository.search.mockResolvedValue(createSearchResult([]));
+
+      await useCaseWithFavorites.execute({ favoritesOf: userId });
+
+      expect(mockFavoriteRepository.findAllByUser).toHaveBeenCalledWith(userId);
     });
   });
 });
