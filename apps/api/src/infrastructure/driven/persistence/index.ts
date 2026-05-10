@@ -9,6 +9,9 @@ export { PostgresBookRepository, normalizeForDuplicateCheck } from './PostgresBo
 export { PostgresAuthorRepository } from './PostgresAuthorRepository.js';
 export { PostgresTypeRepository } from './PostgresTypeRepository.js';
 export { PostgresLevelRepository } from './PostgresLevelRepository.js';
+export { DrizzleUserRepository } from './DrizzleUserRepository.js';
+export { DrizzleFavoriteRepository } from './DrizzleFavoriteRepository.js';
+export { DrizzleDownloadRepository } from './DrizzleDownloadRepository.js';
 export type { DatabaseClient } from './types.js';
 export * from './drizzle/schema.js';
 export * from './mappers/index.js';

@@ -29,6 +29,7 @@ import type { FavoriteRepository } from '../../domain/favorite/ports/FavoriteRep
 import type { Logger } from '../ports/Logger.js';
 import { noopLogger } from '../ports/Logger.js';
 import type { UserId } from '../../domain/user/value-objects/UserId.js';
+import type { BookId } from '../../domain/book/value-objects/BookId.js';
 
 /**
  * Input DTO for searching books
@@ -143,14 +144,13 @@ export class SearchBooksUseCase {
       hasFavoritesFilter: !!input.favoritesOf,
     });
 
-    // 1. If filtering by favorites, resolve the bookId set first
-    let favoriteBookIds: Set<string> | undefined;
+    // 1. If filtering by favorites, resolve the bookId list first
+    let favoriteBookIds: BookId[] | undefined;
     if (input.favoritesOf) {
-      const bookIds = await this.favoriteRepository!.findAllByUser(input.favoritesOf);
-      favoriteBookIds = new Set(bookIds.map((id) => id.value));
+      favoriteBookIds = await this.favoriteRepository!.findAllByUser(input.favoritesOf);
 
       // Short-circuit: if user has no favorites, return empty result immediately
-      if (favoriteBookIds.size === 0) {
+      if (favoriteBookIds.length === 0) {
         return {
           items: [],
           pagination: { limit, hasNextPage: false, nextCursor: null, totalCount: 0 },
@@ -182,8 +182,8 @@ export class SearchBooksUseCase {
       hasSimilarityFilter: criteria.hasSimilarityFilter(),
     });
 
-    // 4. Execute search
-    const result = await this.bookRepository.search(criteria, embedding);
+    // 4. Execute search — pass favoriteBookIds to let the repository filter at DB level
+    const result = await this.bookRepository.search(criteria, embedding, favoriteBookIds);
 
     this.logger.info('Book search completed', {
       resultCount: result.items.length,
@@ -191,12 +191,7 @@ export class SearchBooksUseCase {
       hasNextPage: result.hasNextPage,
     });
 
-    // 5. Filter by favorites if needed
-    if (favoriteBookIds) {
-      result.items = result.items.filter((item) => favoriteBookIds!.has(item.book.id));
-    }
-
-    // 6. Map results to output
+    // 5. Map results to output
     return this.toOutput(result, limit);
   }
 

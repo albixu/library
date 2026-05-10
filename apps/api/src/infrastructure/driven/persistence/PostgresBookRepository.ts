@@ -22,7 +22,7 @@
  * - Book now uses levelId (UUID FK to levels table) instead of level enum
  */
 
-import { eq, count, and, ilike, sql, asc, desc } from 'drizzle-orm';
+import { eq, count, and, ilike, sql, asc, desc, inArray } from 'drizzle-orm';
 import type { Book } from '../../../domain/entities/Book.js';
 import type { Author } from '../../../domain/entities/Author.js';
 import type { BookType } from '../../../domain/entities/BookType.js';
@@ -39,6 +39,7 @@ import type {
   SearchBooksResult,
   BookWithScore,
 } from '../../../application/ports/BookRepository.js';
+import type { BookId } from '../../../domain/book/value-objects/BookId.js';
 import {
   books,
   bookAuthors,
@@ -381,9 +382,20 @@ export class PostgresBookRepository implements BookRepository {
    *
    * @param criteria - Domain criteria object with filters, order, limit, cursor
    * @param embedding - Optional embedding vector for semantic search (SIMILAR_TO filter)
+   * @param favoritesOf - Optional list of BookIds to restrict results to (favorites filter)
    * @returns Promise resolving to paginated search results with similarity scores
    */
-  async search(criteria: Criteria, embedding?: number[]): Promise<SearchBooksResult> {
+  async search(criteria: Criteria, embedding?: number[], favoritesOf?: BookId[]): Promise<SearchBooksResult> {
+    // Short-circuit: if favorites filter is requested but list is empty, return empty result
+    if (favoritesOf !== undefined && favoritesOf.length === 0) {
+      return {
+        items: [],
+        totalCount: 0,
+        hasNextPage: false,
+        nextCursor: null,
+      };
+    }
+
     const hasEmbedding = embedding !== undefined && embedding.length > 0;
 
     // Build where conditions from criteria filters
@@ -391,6 +403,7 @@ export class PostgresBookRepository implements BookRepository {
       criteria,
       embedding,
       SEMANTIC_SEARCH.SIMILARITY_THRESHOLD,
+      favoritesOf,
     );
 
     // Build the order by clause
@@ -446,6 +459,7 @@ export class PostgresBookRepository implements BookRepository {
     criteria: Criteria,
     embedding: number[] | undefined,
     similarityThreshold: number,
+    favoritesOf?: BookId[],
   ): ReturnType<typeof and> {
     const conditions: ReturnType<typeof eq>[] = [];
 
@@ -463,6 +477,12 @@ export class PostgresBookRepository implements BookRepository {
       conditions.push(
         sql`1 - (${books.embedding} <=> ${embeddingStr}::vector) >= ${similarityThreshold}`,
       );
+    }
+
+    // Add favorites filter if provided (non-empty, already guarded at search() level)
+    if (favoritesOf && favoritesOf.length > 0) {
+      const bookIdStrings = favoritesOf.map((id) => id.value);
+      conditions.push(inArray(books.id, bookIdStrings) as ReturnType<typeof eq>);
     }
 
     return conditions.length > 0 ? and(...conditions) : undefined;
