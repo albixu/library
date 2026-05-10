@@ -475,6 +475,16 @@ docker exec library-api-dev npm run consolidate:books
 docker exec library-api-dev npm run seed:database
 ```
 
+#### Gestión de Usuarios
+
+```bash
+# Crear un usuario (genera contraseña segura y la envía por email)
+cd apps/api
+npm run create-user -- --email usuario@example.com
+```
+
+> Requiere las variables de entorno `GMAIL_USER` y `GMAIL_APP_PASSWORD` configuradas. Si el email ya existe, devuelve un error descriptivo.
+
 #### Modelos de Ollama
 
 ```bash

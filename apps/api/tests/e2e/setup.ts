@@ -181,8 +181,14 @@ export async function createTestServer(db: TestDb, emailPort?: EmailPort): Promi
     listCategoriesUseCase,
     listBookLevelsUseCase,
     sendBookByEmailUseCase,
+    // Auth use cases — no-op stubs for non-auth E2E tests
+    loginUseCase: { execute: async () => ({ accessToken: '', refreshToken: '' }) },
+    logoutUseCase: { execute: async () => undefined },
+    refreshTokenUseCase: { execute: async () => ({ accessToken: '', refreshToken: '' }) },
+    forgotPasswordUseCase: { execute: async () => undefined },
+    resetPasswordUseCase: { execute: async () => undefined },
     logger: noopLogger,
-  });
+  }, { nodeEnv: 'test' });
 
   return server;
 }

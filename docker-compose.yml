@@ -60,6 +60,11 @@ services:
       - MONOREPO_ROOT=/app
       # Set AUTO_SEED=true to seed database on first run if empty
       - AUTO_SEED=false
+      # HU-038: JWT secrets (override in .env or environment for production)
+      - JWT_SECRET=${JWT_SECRET:-dev-access-secret-key-min-32-chars!!}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-dev-refresh-secret-key-min-32-chars!}
+      - PASSWORD_RESET_TOKEN_EXPIRY_HOURS=${PASSWORD_RESET_TOKEN_EXPIRY_HOURS:-24}
+      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:4200}
     depends_on:
       postgres:
         condition: service_healthy

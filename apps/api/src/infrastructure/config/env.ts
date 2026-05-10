@@ -75,6 +75,20 @@ export interface GmailConfig {
 }
 
 /**
+ * JWT authentication configuration (HU-038)
+ */
+export interface JwtConfig {
+  /** Secret for signing access tokens */
+  secret: string;
+  /** Secret for signing refresh tokens */
+  refreshSecret: string;
+  /** Hours until a password reset token expires */
+  passwordResetTokenExpiryHours: number;
+  /** Base URL of the web client (used for reset links) */
+  appBaseUrl: string;
+}
+
+/**
  * Complete environment configuration
  */
 export interface EnvConfig {
@@ -83,6 +97,7 @@ export interface EnvConfig {
   ollama: OllamaConfig;
   translation: TranslationConfig; // HU-013
   gmail: GmailConfig; // HU-036
+  jwt: JwtConfig; // HU-038
 }
 
 /**
@@ -104,6 +119,9 @@ const DEFAULTS = {
   TRANSLATION_PROVIDER: 'ollama' as const,
   LIBRETRANSLATE_URL: 'http://libretranslate:5000',
   LIBRETRANSLATE_TIMEOUT_MS: 10000,
+  // HU-038: JWT defaults
+  PASSWORD_RESET_TOKEN_EXPIRY_HOURS: 24,
+  APP_BASE_URL: 'http://localhost:4200',
 } as const;
 
 /**
@@ -151,6 +169,23 @@ export function loadEnvConfig(): EnvConfig {
     throw new Error(
       'DATABASE_URL environment variable is required but not set. ' +
       'Please set it in your environment or .env file (e.g., postgresql://user:password@host:5432/database)',
+    );
+  }
+
+  // HU-038: JWT secrets are required — fail-fast if not set
+  const jwtSecret = process.env['JWT_SECRET'];
+  if (!jwtSecret || jwtSecret.trim() === '') {
+    throw new Error(
+      'JWT_SECRET environment variable is required but not set. ' +
+      'Please set a strong secret (min 32 chars) in your environment or .env file.',
+    );
+  }
+
+  const jwtRefreshSecret = process.env['JWT_REFRESH_SECRET'];
+  if (!jwtRefreshSecret || jwtRefreshSecret.trim() === '') {
+    throw new Error(
+      'JWT_REFRESH_SECRET environment variable is required but not set. ' +
+      'Please set a strong secret (min 32 chars, different from JWT_SECRET) in your environment or .env file.',
     );
   }
 
@@ -204,6 +239,17 @@ export function loadEnvConfig(): EnvConfig {
     gmail: {
       user: gmailUser,
       appPassword: gmailAppPassword,
+    },
+    // HU-038: JWT configuration
+    jwt: {
+      secret: jwtSecret,
+      refreshSecret: jwtRefreshSecret,
+      passwordResetTokenExpiryHours: safeParseInt(
+        process.env['PASSWORD_RESET_TOKEN_EXPIRY_HOURS'],
+        DEFAULTS.PASSWORD_RESET_TOKEN_EXPIRY_HOURS,
+        'PASSWORD_RESET_TOKEN_EXPIRY_HOURS',
+      ),
+      appBaseUrl: process.env['APP_BASE_URL'] ?? DEFAULTS.APP_BASE_URL,
     },
   };
 }

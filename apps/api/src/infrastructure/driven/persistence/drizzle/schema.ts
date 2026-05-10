@@ -198,6 +198,37 @@ export const bookCategories = pgTable('book_categories', {
 ]);
 
 /**
+ * Users table (HU-038)
+ *
+ * Stores registered user accounts with hashed passwords.
+ * Used for authentication with JWT.
+ */
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index('users_email_idx').on(table.email),
+]);
+
+/**
+ * Password reset tokens table (HU-038)
+ *
+ * Stores hashed tokens for password recovery flow.
+ * Tokens expire and can only be used once.
+ */
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+}, (table) => [
+  index('password_reset_tokens_user_idx').on(table.userId),
+]);
+
+/**
  * Type exports for use in repositories
  */
 export type TypeInsert = typeof types.$inferInsert;
@@ -214,3 +245,7 @@ export type BookInsert = typeof books.$inferInsert;
 export type BookSelect = typeof books.$inferSelect;
 export type BookAuthorInsert = typeof bookAuthors.$inferInsert;
 export type BookCategoryInsert = typeof bookCategories.$inferInsert;
+export type UserInsert = typeof users.$inferInsert;
+export type UserSelect = typeof users.$inferSelect;
+export type PasswordResetTokenInsert = typeof passwordResetTokens.$inferInsert;
+export type PasswordResetTokenSelect = typeof passwordResetTokens.$inferSelect;

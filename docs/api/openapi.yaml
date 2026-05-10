@@ -17,6 +17,8 @@ servers:
     description: Development server
 
 tags:
+  - name: Auth
+    description: "Operaciones de autenticación y gestión de sesión"
   - name: Books
     description: "Operaciones de gestión de libros"
   - name: Book Types
@@ -27,6 +29,327 @@ tags:
     description: "Operaciones de consulta de categorías (endpoint: /book-categories)"
 
 paths:
+  # ============================================
+  # HU-038: Authentication Endpoints
+  # ============================================
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Iniciar sesión
+      description: |
+        Autentica al usuario con email y contraseña. En caso de éxito establece dos cookies
+        `httpOnly` con los tokens de acceso y refresco.
+
+        ## Cookies establecidas
+
+        - **access_token**: JWT de acceso. `httpOnly`, `Secure`, `SameSite=Strict`. Expira en **7 días**.
+        - **refresh_token**: Token de refresco. `httpOnly`, `Secure`, `SameSite=Strict`. Expira en **30 días**.
+
+        ## Rate Limiting
+
+        Este endpoint tiene protección contra fuerza bruta. Tras demasiados intentos fallidos
+        se retorna `429 Too Many Requests`.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: "usuario@example.com"
+              password: "mi-contraseña-segura"
+      responses:
+        '200':
+          description: Login exitoso. Las cookies `access_token` y `refresh_token` quedan establecidas.
+          headers:
+            Set-Cookie:
+              description: |
+                Dos cookies `httpOnly` son establecidas:
+                - `access_token=<jwt>; HttpOnly; Secure; SameSite=Strict; Max-Age=604800; Path=/`
+                - `refresh_token=<token>; HttpOnly; Secure; SameSite=Strict; Max-Age=2592000; Path=/`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSuccessResponse'
+              example:
+                success: true
+                data:
+                  message: "Login successful"
+                error: null
+        '401':
+          description: Credenciales incorrectas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Credenciales incorrectas"
+        '422':
+          description: Error de validación del body (email inválido, contraseña vacía, etc.).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                invalid_email:
+                  summary: Email inválido
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "email: Invalid email address"
+                missing_password:
+                  summary: Contraseña vacía
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "password: Password is required"
+        '429':
+          description: Demasiados intentos de login. Rate limit excedido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Too Many Requests"
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Cerrar sesión
+      description: |
+        Invalida la sesión del usuario eliminando las cookies de autenticación.
+
+        No requiere body. Las cookies `access_token` y `refresh_token` son eliminadas
+        mediante `Set-Cookie` con `Max-Age=0`.
+      operationId: logout
+      responses:
+        '200':
+          description: Sesión cerrada exitosamente. Las cookies de autenticación son eliminadas.
+          headers:
+            Set-Cookie:
+              description: |
+                Las cookies son eliminadas:
+                - `access_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Path=/`
+                - `refresh_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Path=/`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSuccessResponse'
+              example:
+                success: true
+                data:
+                  message: "Logout successful"
+                error: null
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Renovar tokens de autenticación
+      description: |
+        Renueva el par de tokens leyendo automáticamente la cookie `refresh_token`.
+        No requiere body.
+
+        Si el token de refresco es válido y no ha expirado, se emiten nuevos tokens
+        y se sobreescriben las cookies existentes.
+
+        ## Flujo típico
+
+        1. El cliente detecta un error `401` en cualquier endpoint protegido.
+        2. Llama a `POST /auth/refresh` (la cookie `refresh_token` se envía automáticamente).
+        3. Si tiene éxito, reintenta la petición original con las nuevas cookies.
+      operationId: refreshToken
+      responses:
+        '200':
+          description: Tokens renovados exitosamente. Nuevas cookies establecidas.
+          headers:
+            Set-Cookie:
+              description: |
+                Nuevas cookies con los tokens renovados:
+                - `access_token=<nuevo-jwt>; HttpOnly; Secure; SameSite=Strict; Max-Age=604800; Path=/`
+                - `refresh_token=<nuevo-token>; HttpOnly; Secure; SameSite=Strict; Max-Age=2592000; Path=/`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSuccessResponse'
+              example:
+                success: true
+                data:
+                  message: "Token refreshed"
+                error: null
+        '401':
+          description: Token de refresco ausente, inválido o expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missing_token:
+                  summary: Cookie refresh_token ausente
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Refresh token missing"
+                invalid_token:
+                  summary: Token inválido o expirado
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Refresh token inválido o expirado"
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Auth
+      summary: Solicitar restablecimiento de contraseña
+      description: |
+        Inicia el flujo de recuperación de contraseña para el email indicado.
+
+        **Siempre retorna 200** independientemente de si el email existe o no,
+        para evitar la enumeración de usuarios (user enumeration attack).
+
+        Si el email corresponde a un usuario registrado, se enviará un correo
+        con un enlace de restablecimiento.
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+            example:
+              email: "usuario@example.com"
+      responses:
+        '200':
+          description: |
+            Solicitud procesada. Si el email existe, se envía un correo con el enlace de restablecimiento.
+            Esta respuesta es idéntica tanto si el email existe como si no.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSuccessResponse'
+              example:
+                success: true
+                data:
+                  message: "If that email is registered, a reset link has been sent."
+                error: null
+        '422':
+          description: Error de validación del body (email inválido o ausente).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Validation failed"
+                  details:
+                    - "email: Invalid email address"
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Auth
+      summary: Restablecer contraseña
+      description: |
+        Valida el token de restablecimiento y actualiza la contraseña del usuario.
+
+        El token se obtiene del enlace enviado por `POST /auth/forgot-password`.
+        Una vez usado (o expirado), el token queda invalidado y no puede reutilizarse.
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+            example:
+              token: "abc123def456..."
+              newPassword: "nueva-contraseña-segura"
+      responses:
+        '200':
+          description: Contraseña restablecida exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSuccessResponse'
+              example:
+                success: true
+                data:
+                  message: "Password reset successful"
+                error: null
+        '400':
+          description: Token de restablecimiento inválido o expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                invalid_token:
+                  summary: Token inválido
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Token de restablecimiento inválido"
+                expired_token:
+                  summary: Token expirado
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Token de restablecimiento expirado"
+        '422':
+          description: Error de validación del body (token vacío, contraseña muy corta, etc.).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missing_token:
+                  summary: Token vacío
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "token: Token is required"
+                password_too_short:
+                  summary: Contraseña muy corta
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "newPassword: Password must be at least 8 characters"
+
   /books:
     get:
       tags:
@@ -1446,3 +1769,52 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/BookSearchData'
+
+    # ============================================
+    # HU-038: Authentication Schemas
+    # ============================================
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: Dirección de correo electrónico del usuario
+          example: "usuario@example.com"
+        password:
+          type: string
+          minLength: 1
+          description: Contraseña del usuario
+          example: "mi-contraseña-segura"
+
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Dirección de correo electrónico para enviar el enlace de restablecimiento
+          example: "usuario@example.com"
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - token
+        - newPassword
+      properties:
+        token:
+          type: string
+          minLength: 1
+          description: Token de restablecimiento recibido por correo electrónico
+          example: "abc123def456ghi789..."
+        newPassword:
+          type: string
+          minLength: 8
+          description: Nueva contraseña (mínimo 8 caracteres)
+          example: "nueva-contraseña-segura"
