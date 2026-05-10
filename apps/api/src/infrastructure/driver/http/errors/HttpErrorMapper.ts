@@ -9,6 +9,11 @@
 
 import { ZodError } from 'zod';
 import {
+  InvalidCredentialsError,
+  PasswordResetTokenExpiredError,
+  PasswordResetTokenInvalidError,
+} from '../../../../domain/user/errors/UserErrors.js';
+import {
   DomainError,
   RequiredFieldError,
   FieldTooLongError,
@@ -102,6 +107,19 @@ export function mapErrorToHttpResponse(error: unknown): HttpErrorResponse {
   // Zod validation errors
   if (error instanceof ZodError) {
     return mapZodError(error);
+  }
+
+  // HU-038: Auth errors
+  if (error instanceof InvalidCredentialsError) {
+    return createErrorResponse(401, error.message);
+  }
+
+  if (error instanceof PasswordResetTokenExpiredError) {
+    return createErrorResponse(400, error.message);
+  }
+
+  if (error instanceof PasswordResetTokenInvalidError) {
+    return createErrorResponse(400, error.message);
   }
 
   // HU-036: Invalid email address → 400

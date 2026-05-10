@@ -25,6 +25,15 @@ import { ListBookTypesUseCase } from './application/use-cases/ListBookTypesUseCa
 import { ListCategoriesUseCase } from './application/use-cases/ListCategoriesUseCase.js';
 import { ListBookLevelsUseCase } from './application/use-cases/ListBookLevelsUseCase.js';
 import { SendBookByEmailUseCase } from './application/use-cases/SendBookByEmailUseCase.js';
+import { LoginUseCase } from './application/use-cases/auth/LoginUseCase.js';
+import { LogoutUseCase } from './application/use-cases/auth/LogoutUseCase.js';
+import { RefreshTokenUseCase } from './application/use-cases/auth/RefreshTokenUseCase.js';
+import { ForgotPasswordUseCase } from './application/use-cases/auth/ForgotPasswordUseCase.js';
+import { ResetPasswordUseCase } from './application/use-cases/auth/ResetPasswordUseCase.js';
+import { JwtServiceImpl } from './infrastructure/driven/auth/JwtServiceImpl.js';
+import { Argon2PasswordHasher } from './infrastructure/driven/auth/Argon2PasswordHasher.js';
+import { DrizzleUserRepository } from './infrastructure/driven/persistence/DrizzleUserRepository.js';
+import { DrizzlePasswordResetTokenRepository } from './infrastructure/driven/persistence/DrizzlePasswordResetTokenRepository.js';
 import { GmailEmailAdapter } from './infrastructure/driven/email/GmailEmailAdapter.js';
 import { NodeFileSystemAdapter } from './infrastructure/driven/filesystem/NodeFileSystemAdapter.js';
 import { createServer, startServer } from './infrastructure/driver/http/server.js';
@@ -144,9 +153,43 @@ async function bootstrap(): Promise<void> {
       emailPort: emailAdapter,
     });
 
+    // HU-038: Auth adapters and use cases
+    const jwtService = new JwtServiceImpl(env.jwt.secret, env.jwt.refreshSecret);
+    const passwordHasher = new Argon2PasswordHasher();
+    const userRepository = new DrizzleUserRepository(db);
+    const passwordResetTokenRepository = new DrizzlePasswordResetTokenRepository(db);
+
+    const loginUseCase = new LoginUseCase({ userRepository, passwordHasher, jwtService });
+    const logoutUseCase = new LogoutUseCase();
+    const refreshTokenUseCase = new RefreshTokenUseCase({ userRepository, jwtService });
+    const forgotPasswordUseCase = new ForgotPasswordUseCase({
+      userRepository,
+      tokenRepository: passwordResetTokenRepository,
+      emailPort: emailAdapter,
+      appBaseUrl: env.jwt.appBaseUrl,
+    });
+    const resetPasswordUseCase = new ResetPasswordUseCase({
+      tokenRepository: passwordResetTokenRepository,
+      userRepository,
+      passwordHasher,
+    });
+
     // Create and start server
     const server = await createServer(
-      { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, sendBookByEmailUseCase, logger },
+      {
+        createBookUseCase,
+        searchBooksUseCase,
+        listBookTypesUseCase,
+        listCategoriesUseCase,
+        listBookLevelsUseCase,
+        sendBookByEmailUseCase,
+        loginUseCase,
+        logoutUseCase,
+        refreshTokenUseCase,
+        forgotPasswordUseCase,
+        resetPasswordUseCase,
+        logger,
+      },
       { prefix: '/api', nodeEnv: env.app.nodeEnv },
     );
 
