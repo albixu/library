@@ -126,9 +126,16 @@ async function bootstrap(): Promise<void> {
     });
 
     // HU-036: Send book by email use case
+    const { user: gmailUser, appPassword: gmailAppPassword } = env.gmail;
+    if (!gmailUser || !gmailAppPassword) {
+      throw new Error(
+        'GMAIL_USER and GMAIL_APP_PASSWORD environment variables are required to start the API server. ' +
+        'Please set them in your environment or .env file.',
+      );
+    }
     const emailAdapter = new GmailEmailAdapter({
-      user: env.gmail.user,
-      appPassword: env.gmail.appPassword,
+      user: gmailUser,
+      appPassword: gmailAppPassword,
     });
     const fileSystemAdapter = new NodeFileSystemAdapter();
     const sendBookByEmailUseCase = new SendBookByEmailUseCase({

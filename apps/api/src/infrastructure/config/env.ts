@@ -65,12 +65,13 @@ export interface AppConfig {
 
 /**
  * Gmail email service configuration (HU-036)
+ * Both fields are optional — credentials are only required when the email service is actually used.
  */
 export interface GmailConfig {
   /** Gmail account used as sender */
-  user: string;
+  user?: string;
   /** Google App Password (not the regular account password) */
-  appPassword: string;
+  appPassword?: string;
 }
 
 /**
@@ -153,23 +154,9 @@ export function loadEnvConfig(): EnvConfig {
     );
   }
 
-  // HU-036: Validate Gmail credentials (required for book email delivery)
-  const gmailUser = process.env['GMAIL_USER'];
-  if (!gmailUser || gmailUser.trim() === '') {
-    throw new Error(
-      'GMAIL_USER environment variable is required but not set. ' +
-      'Please set it to the Gmail account used for sending books (e.g., biblioteca@gmail.com)',
-    );
-  }
-
-  const gmailAppPassword = process.env['GMAIL_APP_PASSWORD'];
-  if (!gmailAppPassword || gmailAppPassword.trim() === '') {
-    throw new Error(
-      'GMAIL_APP_PASSWORD environment variable is required but not set. ' +
-      'Please set it to a Google App Password (Google Account > Security > App Passwords). ' +
-      'Do NOT use your regular Gmail password.',
-    );
-  }
+  // HU-036: Gmail credentials are optional — only required when email service is used
+  const gmailUser = process.env['GMAIL_USER']?.trim() || undefined;
+  const gmailAppPassword = process.env['GMAIL_APP_PASSWORD']?.trim() || undefined;
 
   return {
     app: {

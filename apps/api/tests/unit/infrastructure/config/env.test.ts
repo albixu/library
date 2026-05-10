@@ -201,63 +201,63 @@ describe('Environment Configuration', () => {
       expect(config.gmail.appPassword).toBe('abcd efgh ijkl mnop');
     });
 
-    it('should throw error when GMAIL_USER is not set', () => {
+    it('should return undefined for gmail.user when GMAIL_USER is not set', () => {
       delete process.env['GMAIL_USER'];
       process.env['GMAIL_APP_PASSWORD'] = 'abcd efgh ijkl mnop';
 
-      expect(() => loadEnvConfig()).toThrow(
-        'GMAIL_USER environment variable is required but not set',
-      );
+      const config = loadEnvConfig();
+
+      expect(config.gmail.user).toBeUndefined();
     });
 
-    it('should throw error when GMAIL_USER is empty string', () => {
+    it('should return undefined for gmail.user when GMAIL_USER is empty string', () => {
       process.env['GMAIL_USER'] = '';
       process.env['GMAIL_APP_PASSWORD'] = 'abcd efgh ijkl mnop';
 
-      expect(() => loadEnvConfig()).toThrow(
-        'GMAIL_USER environment variable is required but not set',
-      );
+      const config = loadEnvConfig();
+
+      expect(config.gmail.user).toBeUndefined();
     });
 
-    it('should throw error when GMAIL_USER is only whitespace', () => {
+    it('should return undefined for gmail.user when GMAIL_USER is only whitespace', () => {
       process.env['GMAIL_USER'] = '   ';
       process.env['GMAIL_APP_PASSWORD'] = 'abcd efgh ijkl mnop';
 
-      expect(() => loadEnvConfig()).toThrow(
-        'GMAIL_USER environment variable is required but not set',
-      );
+      const config = loadEnvConfig();
+
+      expect(config.gmail.user).toBeUndefined();
     });
 
-    it('should include helpful example in GMAIL_USER error message', () => {
+    it('should not throw when GMAIL_USER is missing (credentials are optional)', () => {
       delete process.env['GMAIL_USER'];
       process.env['GMAIL_APP_PASSWORD'] = 'abcd efgh ijkl mnop';
 
-      expect(() => loadEnvConfig()).toThrow(/biblioteca@gmail\.com/);
+      expect(() => loadEnvConfig()).not.toThrow();
     });
 
-    it('should throw error when GMAIL_APP_PASSWORD is not set', () => {
+    it('should return undefined for gmail.appPassword when GMAIL_APP_PASSWORD is not set', () => {
       process.env['GMAIL_USER'] = 'biblioteca@gmail.com';
       delete process.env['GMAIL_APP_PASSWORD'];
 
-      expect(() => loadEnvConfig()).toThrow(
-        'GMAIL_APP_PASSWORD environment variable is required but not set',
-      );
+      const config = loadEnvConfig();
+
+      expect(config.gmail.appPassword).toBeUndefined();
     });
 
-    it('should throw error when GMAIL_APP_PASSWORD is empty string', () => {
+    it('should return undefined for gmail.appPassword when GMAIL_APP_PASSWORD is empty string', () => {
       process.env['GMAIL_USER'] = 'biblioteca@gmail.com';
       process.env['GMAIL_APP_PASSWORD'] = '';
 
-      expect(() => loadEnvConfig()).toThrow(
-        'GMAIL_APP_PASSWORD environment variable is required but not set',
-      );
+      const config = loadEnvConfig();
+
+      expect(config.gmail.appPassword).toBeUndefined();
     });
 
-    it('should mention App Password instructions in GMAIL_APP_PASSWORD error', () => {
+    it('should not throw when GMAIL_APP_PASSWORD is missing (credentials are optional)', () => {
       process.env['GMAIL_USER'] = 'biblioteca@gmail.com';
       delete process.env['GMAIL_APP_PASSWORD'];
 
-      expect(() => loadEnvConfig()).toThrow(/Google App Password/);
+      expect(() => loadEnvConfig()).not.toThrow();
     });
   });
 
