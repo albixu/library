@@ -461,7 +461,11 @@ describe('SearchBooksUseCase', () => {
       });
 
       vi.mocked(mockFavoriteRepository.findAllByUser).mockResolvedValue([favoriteBookId]);
-      mockBookRepository.search.mockResolvedValue(createSearchResult([book1, book2]));
+      mockBookRepository.search.mockImplementation((_criteria, _embedding, bookIds) => {
+        const ids = new Set((bookIds ?? []).map((id: { value: string }) => id.value));
+        const filtered = [book1, book2].filter((b) => ids.has(b.id));
+        return Promise.resolve(createSearchResult(filtered));
+      });
 
       const result = await useCaseWithFavorites.execute({ favoritesOf: userId });
 

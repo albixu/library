@@ -87,6 +87,8 @@ services:
       - JWT_REFRESH_SECRET=test-refresh-secret-key-min-32-chars!
       - PASSWORD_RESET_TOKEN_EXPIRY_HOURS=24
       - APP_BASE_URL=http://localhost:4200
+      - GMAIL_USER=test@example.com
+      - GMAIL_APP_PASSWORD=test-dummy-password
     depends_on:
       postgres-test:
         condition: service_healthy

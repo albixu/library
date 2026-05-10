@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS books (
     title VARCHAR(500) NOT NULL,
     type_id UUID NOT NULL REFERENCES types(id),
     format book_format NOT NULL,
-    available BOOLEAN NOT NULL DEFAULT FALSE,
+    available BOOLEAN NOT NULL DEFAULT TRUE,  -- default TRUE since migration 0001
     
     -- HU-013: Description fields
     -- original_description: stores the description in the original language
@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS books (
     language VARCHAR(10) NOT NULL,
     
     -- Optional fields
-    isbn VARCHAR(32) UNIQUE,
+    isbn VARCHAR(32) UNIQUE,  -- varchar(32) since migration 0001
     path VARCHAR(1000),
     
     -- HU-008: Level is now a FK to levels table instead of enum
@@ -246,6 +246,72 @@ CREATE INDEX IF NOT EXISTS idx_book_categories_book_id
 -- Index for finding all books in a category
 CREATE INDEX IF NOT EXISTS idx_book_categories_category_id 
     ON book_categories (category_id);
+
+-- Users table (migration 0002 - authentication)
+CREATE TABLE IF NOT EXISTS users (
+    -- Primary key (UUID v4)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    -- Required fields
+    email TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+
+    -- Timestamps
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+
+    -- Constraints
+    CONSTRAINT users_email_unique UNIQUE (email)
+);
+
+-- Password reset tokens table (migration 0002)
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    -- Primary key (UUID v4)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    -- Required fields
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+
+    -- Optional fields
+    used_at TIMESTAMPTZ
+);
+
+-- User book downloads table (migration 0003 - HU-039)
+CREATE TABLE IF NOT EXISTS user_book_downloads (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+    downloaded_at TIMESTAMPTZ DEFAULT NOW(),
+
+    -- Composite primary key
+    CONSTRAINT user_book_downloads_user_id_book_id_pk PRIMARY KEY (user_id, book_id)
+);
+
+-- User book favorites table (migration 0003 - HU-039)
+CREATE TABLE IF NOT EXISTS user_book_favorites (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+
+    -- Composite primary key
+    CONSTRAINT user_book_favorites_user_id_book_id_pk PRIMARY KEY (user_id, book_id)
+);
+
+-- ================================
+-- Indexes (migration 0002–0003)
+-- ================================
+
+-- Users indexes
+CREATE INDEX IF NOT EXISTS users_email_idx
+    ON users USING btree (email);
+
+-- Password reset tokens indexes
+CREATE INDEX IF NOT EXISTS password_reset_tokens_user_idx
+    ON password_reset_tokens USING btree (user_id);
+
+-- User book favorites indexes (migration 0003)
+CREATE INDEX IF NOT EXISTS user_book_favorites_user_idx
+    ON user_book_favorites USING btree (user_id);
 
 -- ================================
 -- Triggers
