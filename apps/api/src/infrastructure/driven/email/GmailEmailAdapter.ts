@@ -9,7 +9,7 @@
  */
 
 import nodemailer from 'nodemailer';
-import type { SendEmailOptions, EmailPort } from '../../../application/ports/EmailPort.js';
+import type { SendEmailOptions, SendPlainEmailOptions, EmailPort } from '../../../application/ports/EmailPort.js';
 import { EmailSendError } from '../../../domain/errors/DomainErrors.js';
 
 /**
@@ -61,6 +61,28 @@ export class GmailEmailAdapter implements EmailPort {
             path: attachmentPath,
           },
         ],
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'Unknown error';
+      throw new EmailSendError(to, reason);
+    }
+  }
+
+  /**
+   * Sends a plain email without attachment via Gmail SMTP.
+   *
+   * @param options - Email recipient, subject, and body
+   * @throws EmailSendError if Nodemailer fails to send the email
+   */
+  async send(options: SendPlainEmailOptions): Promise<void> {
+    const { to, subject, body } = options;
+
+    try {
+      await this.transporter.sendMail({
+        from: this.user,
+        to,
+        subject,
+        text: body,
       });
     } catch (error) {
       const reason = error instanceof Error ? error.message : 'Unknown error';
