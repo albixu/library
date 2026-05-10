@@ -15,6 +15,13 @@
       "when": 1772720904691,
       "tag": "0001_brave_night_thrasher",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778427816041,
+      "tag": "0002_broad_mister_fear",
+      "breakpoints": true
     }
   ]
 }
