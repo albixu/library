@@ -25,6 +25,7 @@ import { BookTypesController } from './controllers/BookTypesController.js';
 import { CategoriesController } from './controllers/CategoriesController.js';
 import { BookLevelsController } from './controllers/BookLevelsController.js';
 import { SendBookByEmailController } from './controllers/SendBookByEmailController.js';
+import { FavoriteController } from './controllers/FavoriteController.js';
 import { AuthController } from './controllers/AuthController.js';
 import { booksRoutes } from './routes/books.routes.js';
 import { bookTypesRoutes } from './routes/book-types.routes.js';
@@ -37,11 +38,14 @@ import type { ListBookTypesUseCase } from '../../../application/use-cases/ListBo
 import type { ListCategoriesUseCase } from '../../../application/use-cases/ListCategoriesUseCase.js';
 import type { ListBookLevelsUseCase } from '../../../application/use-cases/ListBookLevelsUseCase.js';
 import type { SendBookByEmailUseCase } from '../../../application/use-cases/SendBookByEmailUseCase.js';
+import type { ToggleFavoriteUseCase } from '../../../application/use-cases/favorite/ToggleFavoriteUseCase.js';
+import type { RegisterDownloadUseCase } from '../../../application/use-cases/download/RegisterDownloadUseCase.js';
 import type { LoginUseCase } from '../../../application/use-cases/auth/LoginUseCase.js';
 import type { LogoutUseCase } from '../../../application/use-cases/auth/LogoutUseCase.js';
 import type { RefreshTokenUseCase } from '../../../application/use-cases/auth/RefreshTokenUseCase.js';
 import type { ForgotPasswordUseCase } from '../../../application/use-cases/auth/ForgotPasswordUseCase.js';
 import type { ResetPasswordUseCase } from '../../../application/use-cases/auth/ResetPasswordUseCase.js';
+import type { JwtService } from '../../../domain/user/ports/JwtService.js';
 
 /**
  * Dependencies required by the server
@@ -53,11 +57,14 @@ export interface ServerDeps {
   listCategoriesUseCase: ListCategoriesUseCase;
   listBookLevelsUseCase: ListBookLevelsUseCase;
   sendBookByEmailUseCase: SendBookByEmailUseCase;
+  toggleFavoriteUseCase?: ToggleFavoriteUseCase;
+  registerDownloadUseCase?: RegisterDownloadUseCase;
   loginUseCase: LoginUseCase;
   logoutUseCase: LogoutUseCase;
   refreshTokenUseCase: RefreshTokenUseCase;
   forgotPasswordUseCase: ForgotPasswordUseCase;
   resetPasswordUseCase: ResetPasswordUseCase;
+  jwtService?: JwtService;
   logger?: Logger;
 }
 
@@ -82,7 +89,7 @@ export async function createServer(
   deps: ServerDeps,
   options: ServerOptions = {},
 ): Promise<FastifyInstance> {
-  const { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, sendBookByEmailUseCase, loginUseCase, logoutUseCase, refreshTokenUseCase, forgotPasswordUseCase, resetPasswordUseCase, logger = noopLogger } = deps;
+  const { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, sendBookByEmailUseCase, toggleFavoriteUseCase, registerDownloadUseCase, loginUseCase, logoutUseCase, refreshTokenUseCase, forgotPasswordUseCase, resetPasswordUseCase, jwtService, logger = noopLogger } = deps;
   const { prefix = '/api', nodeEnv = 'production' } = options;
 
   const serverLogger = logger.child({ name: 'FastifyServer' });
@@ -128,6 +135,7 @@ export async function createServer(
 
   const searchBooksController = new SearchBooksController({
     searchBooksUseCase,
+    jwtService,
     logger,
   });
 
@@ -148,8 +156,15 @@ export async function createServer(
 
   const sendBookByEmailController = new SendBookByEmailController({
     sendBookByEmailUseCase,
+    registerDownloadUseCase,
+    jwtService,
     logger,
   });
+
+  // HU-039: FavoriteController (only created if use case and jwtService are provided)
+  const favoriteController = toggleFavoriteUseCase && jwtService
+    ? new FavoriteController({ toggleFavoriteUseCase, jwtService, logger })
+    : undefined;
 
   const authController = new AuthController({
     loginUseCase,
@@ -166,6 +181,7 @@ export async function createServer(
     controller: booksController,
     searchController: searchBooksController,
     sendBookByEmailController,
+    favoriteController,
   });
 
   await fastify.register(bookTypesRoutes, {
@@ -195,6 +211,7 @@ export async function createServer(
       { method: 'GET', path: `${prefix}/books` },
       { method: 'POST', path: `${prefix}/books` },
       { method: 'POST', path: `${prefix}/books/:id/send` },
+      { method: 'POST', path: `${prefix}/books/:id/favorite` },
       { method: 'GET', path: `${prefix}/book-types` },
       { method: 'GET', path: `${prefix}/book-categories` },
       { method: 'GET', path: `${prefix}/book-levels` },

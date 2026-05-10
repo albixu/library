@@ -9,17 +9,23 @@
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { SendBookByEmailUseCase } from '../../../../application/use-cases/SendBookByEmailUseCase.js';
+import type { RegisterDownloadUseCase } from '../../../../application/use-cases/download/RegisterDownloadUseCase.js';
+import type { JwtService } from '../../../../domain/user/ports/JwtService.js';
 import type { Logger } from '../../../../application/ports/Logger.js';
 import { noopLogger } from '../../../../application/ports/Logger.js';
 import { sendBookByEmailSchema } from '../schemas/send-book.schemas.js';
 import { successResponse } from '../schemas/common.schemas.js';
 import { mapErrorToHttpResponse } from '../errors/HttpErrorMapper.js';
+import { extractUserIfPresent } from '../middleware/extractUserIfPresent.js';
+import { BookId } from '../../../../domain/book/value-objects/BookId.js';
 
 /**
  * Dependencies required by SendBookByEmailController
  */
 export interface SendBookByEmailControllerDeps {
   sendBookByEmailUseCase: SendBookByEmailUseCase;
+  registerDownloadUseCase?: RegisterDownloadUseCase;
+  jwtService?: JwtService;
   logger?: Logger;
 }
 
@@ -30,10 +36,14 @@ export interface SendBookByEmailControllerDeps {
  */
 export class SendBookByEmailController {
   private readonly sendBookByEmailUseCase: SendBookByEmailUseCase;
+  private readonly registerDownloadUseCase: RegisterDownloadUseCase | undefined;
+  private readonly jwtService: JwtService | undefined;
   private readonly logger: Logger;
 
   constructor(deps: SendBookByEmailControllerDeps) {
     this.sendBookByEmailUseCase = deps.sendBookByEmailUseCase;
+    this.registerDownloadUseCase = deps.registerDownloadUseCase;
+    this.jwtService = deps.jwtService;
     this.logger = deps.logger?.child({ name: 'SendBookByEmailController' }) ?? noopLogger;
   }
 
@@ -72,6 +82,32 @@ export class SendBookByEmailController {
 
       // 2. Execute use case
       await this.sendBookByEmailUseCase.execute({ bookId, email });
+
+      // HU-039: Register download if user is authenticated (fire-and-forget, never blocks)
+      if (this.registerDownloadUseCase && this.jwtService) {
+        const registerDownload = this.registerDownloadUseCase;
+        extractUserIfPresent(request, this.jwtService)
+          .then((userId) => {
+            if (!userId) {return;}
+            try {
+              const bookIdVO = BookId.create(bookId);
+              registerDownload.execute({ userId, bookId: bookIdVO }).catch((err) => {
+                this.logger.debug('Failed to register download (non-blocking)', {
+                  bookId,
+                  error: err instanceof Error ? err.message : String(err),
+                });
+              });
+            } catch {
+              // Invalid bookId — ignore
+            }
+          })
+          .catch((err) => {
+            this.logger.debug('Failed to extract user for download registration', {
+              bookId,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          });
+      }
 
       // 3. Return success
       this.logger.info('Book sent by email', { bookId, email });

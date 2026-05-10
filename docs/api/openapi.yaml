@@ -27,6 +27,8 @@ tags:
     description: "Operaciones de consulta de niveles de dificultad de libros"
   - name: Categories
     description: "Operaciones de consulta de categorías (endpoint: /book-categories)"
+  - name: Favorites
+    description: "Operaciones de gestión de favoritos del usuario autenticado"
 
 paths:
   # ============================================
@@ -369,6 +371,7 @@ paths:
         - **categories**: Lista de categorías (OR entre valores, case-insensitive)
         - **levels**: Lista de niveles de dificultad (OR entre valores, case-insensitive)
         - **text**: Búsqueda semántica - genera un embedding y encuentra libros similares (≥55% similaridad, calibrado para nomic-embed-text)
+        - **favorites**: Cuando es `true` y el usuario tiene un JWT válido, devuelve únicamente los libros marcados como favoritos por el usuario. Si no hay JWT o el valor es `false`, el parámetro se ignora silenciosamente y el comportamiento es el estándar.
         
         ## Paginación
         
@@ -484,6 +487,19 @@ paths:
             type: string
             minLength: 1
             example: "eyJsYXN0SWQiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJsYXN0VmFsdWUiOiJDbGVhbiBDb2RlIn0="
+        - name: favorites
+          in: query
+          required: false
+          description: |
+            Cuando es `true` y el usuario está autenticado (JWT válido en cookie `access_token`),
+            devuelve únicamente los libros marcados como favoritos por el usuario.
+
+            Si el usuario no tiene JWT o el valor es `false`, el parámetro se ignora silenciosamente
+            y el comportamiento del endpoint es el estándar (sin filtro por favoritos).
+          schema:
+            type: boolean
+            default: false
+            example: true
       responses:
         '200':
           description: Búsqueda completada exitosamente
@@ -891,6 +907,8 @@ paths:
 
         - El correo se envía con el archivo adjunto (no como enlace)
         - No se requiere autenticación para este endpoint (según configuración del servidor)
+        - Si el usuario está autenticado (JWT válido en cookie `access_token`), se registra automáticamente
+          un registro de descarga asociado al usuario (operación fire-and-forget: no afecta la respuesta)
       operationId: sendBookByEmail
       parameters:
         - name: id
@@ -996,6 +1014,92 @@ paths:
                 data: null
                 error:
                   message: "Failed to send email"
+
+  # ============================================
+  # HU-039: Favorites and Access Control Endpoints
+  # ============================================
+
+  /books/{id}/favorite:
+    post:
+      tags:
+        - Favorites
+      summary: Alternar favorito de un libro
+      description: |
+        Alterna el estado de favorito del libro indicado para el usuario autenticado.
+
+        - Si el libro **no está** en favoritos del usuario, lo agrega y retorna `{ "favorite": true }`.
+        - Si el libro **ya está** en favoritos del usuario, lo elimina y retorna `{ "favorite": false }`.
+
+        ## Autenticación
+
+        Requiere un JWT válido en la cookie `access_token`. Si el token está ausente o es inválido,
+        se retorna `401 Unauthorized`.
+      operationId: toggleFavorite
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único del libro (UUID v4)
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Estado de favorito actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoriteToggleResponse'
+              examples:
+                added_to_favorites:
+                  summary: Libro añadido a favoritos
+                  value:
+                    success: true
+                    data:
+                      favorite: true
+                    error: null
+                removed_from_favorites:
+                  summary: Libro eliminado de favoritos
+                  value:
+                    success: true
+                    data:
+                      favorite: false
+                    error: null
+        '401':
+          description: No autenticado. El token JWT está ausente o es inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missing_token:
+                  summary: Token ausente
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Unauthorized"
+                invalid_token:
+                  summary: Token inválido o expirado
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Unauthorized"
+        '404':
+          description: Libro no encontrado. No existe ningún libro con el `id` indicado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Book with id \"550e8400-e29b-41d4-a716-446655440000\" not found"
 
   /book-types:
     get:
@@ -1771,8 +1875,38 @@ components:
               $ref: '#/components/schemas/BookSearchData'
 
     # ============================================
-    # HU-038: Authentication Schemas
+    # HU-039: Favorites and Access Control Schemas
     # ============================================
+
+    FavoriteToggleData:
+      type: object
+      required:
+        - favorite
+      properties:
+        favorite:
+          type: boolean
+          description: |
+            Estado del favorito tras la operación.
+            `true` si el libro fue añadido a favoritos, `false` si fue eliminado.
+          example: true
+
+    FavoriteToggleResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiSuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/FavoriteToggleData'
+
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+      description: |
+        JWT de acceso almacenado en la cookie `access_token` (httpOnly).
+        Se establece automáticamente al hacer login con `POST /auth/login`.
+        Expira en 7 días. Puede renovarse con `POST /auth/refresh`.
 
     LoginRequest:
       type: object

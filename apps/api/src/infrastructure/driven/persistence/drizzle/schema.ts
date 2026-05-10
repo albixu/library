@@ -42,13 +42,22 @@ export const types = pgTable('types', {
 ]);
 
 /**
- * Levels table (HU-008)
+ * Changes in HU-002:
+ * - Added 'types' table (replaces book_type enum)
+ * - Added 'authors' table with N:M relationship to books
+ * - Added 'book_authors' junction table
+ * - Modified 'books' table: removed author column, added type_id reference
  *
- * Stores difficulty level classifications for books.
- * Replaces the book_level enum with dynamic values.
- * Examples: Beginner, Intermediate, Advanced
+ * Changes in HU-008:
+ * - Removed 'book_level' enum (replaced by 'levels' table)
+ * - Added 'levels' table for dynamic level values
+ * - Added 'type_levels' junction table for N:N relationship between types and levels
+ * - Added 'type_id' to 'categories' table (1:N relationship with types)
+ * - Changed 'books.level' to 'books.level_id' as FK to levels table
  *
- * Has N:N relationship with types via type_levels junction table.
+ * Changes in HU-039:
+ * - Added 'user_book_favorites' junction table (user ↔ book favorites)
+ * - Added 'user_book_downloads' junction table (user ↔ book downloads)
  */
 export const levels = pgTable('levels', {
   id: uuid('id').primaryKey(),
@@ -249,3 +258,40 @@ export type UserInsert = typeof users.$inferInsert;
 export type UserSelect = typeof users.$inferSelect;
 export type PasswordResetTokenInsert = typeof passwordResetTokens.$inferInsert;
 export type PasswordResetTokenSelect = typeof passwordResetTokens.$inferSelect;
+
+/**
+ * User-Book Favorites junction table (HU-039)
+ *
+ * Tracks which books a user has marked as favorites.
+ * Composite primary key (user_id, book_id) prevents duplicates.
+ */
+export const userBookFavorites = pgTable('user_book_favorites', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  bookId: uuid('book_id').notNull().references(() => books.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  // Composite primary key
+  primaryKey({ columns: [table.userId, table.bookId] }),
+  // Index for querying favorites by user
+  index('user_book_favorites_user_idx').on(table.userId),
+]);
+
+/**
+ * User-Book Downloads junction table (HU-039)
+ *
+ * Tracks which books a user has downloaded.
+ * Composite primary key (user_id, book_id) — one record per user+book pair.
+ */
+export const userBookDownloads = pgTable('user_book_downloads', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  bookId: uuid('book_id').notNull().references(() => books.id, { onDelete: 'cascade' }),
+  downloadedAt: timestamp('downloaded_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  // Composite primary key
+  primaryKey({ columns: [table.userId, table.bookId] }),
+]);
+
+export type UserBookFavoriteInsert = typeof userBookFavorites.$inferInsert;
+export type UserBookFavoriteSelect = typeof userBookFavorites.$inferSelect;
+export type UserBookDownloadInsert = typeof userBookDownloads.$inferInsert;
+export type UserBookDownloadSelect = typeof userBookDownloads.$inferSelect;

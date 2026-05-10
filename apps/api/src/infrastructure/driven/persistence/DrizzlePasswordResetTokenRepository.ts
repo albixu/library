@@ -69,10 +69,10 @@ export class DrizzlePasswordResetTokenRepository implements PasswordResetTokenRe
       ),
     });
 
-    if (!row) return null;
+    if (!row) {return null;}
 
     // Check expiry in application layer (avoids SQL gt import complexity)
-    if (row.expiresAt <= now) return null;
+    if (row.expiresAt <= now) {return null;}
 
     return toDomain(row);
   }

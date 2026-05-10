@@ -187,6 +187,8 @@ export async function createTestServer(db: TestDb, emailPort?: EmailPort): Promi
     refreshTokenUseCase: { execute: async () => ({ accessToken: '', refreshToken: '' }) },
     forgotPasswordUseCase: { execute: async () => undefined },
     resetPasswordUseCase: { execute: async () => undefined },
+    // HU-039: Favorite and download use cases not wired in the default test server
+    // (tests that need them create their own server via createServer directly)
     logger: noopLogger,
   }, { nodeEnv: 'test' });
 

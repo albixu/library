@@ -124,6 +124,10 @@ export class BookService {
       params['levels'] = filters.levels;
     }
 
+    if (filters.favorites) {
+      params['favorites'] = true;
+    }
+
     return params;
   }
 }

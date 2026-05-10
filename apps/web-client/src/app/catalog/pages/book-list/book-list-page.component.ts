@@ -17,6 +17,7 @@ import { PaginatorComponent } from '../../components/table/paginator/index.js';
 import { SendToKindleDialogComponent } from '../../components/dialogs/index.js';
 import { BookSearchStore } from '../../../core/services/book-search.store.js';
 import { DialogService } from '../../../core/services/dialog.service.js';
+import { AuthService } from '../../../auth/auth.service.js';
 import {
   Book,
   BookType,
@@ -72,6 +73,7 @@ import {
           [typesLoading]="store.typesLoading()"
           [categoriesLoading]="store.categoriesLoading()"
           [levelsLoading]="store.levelsLoading()"
+          [isAuthenticated]="isAuthenticated()"
           (filtersChange)="onFiltersChange($event)"
           (typeChange)="onTypeChange($event)"
         />
@@ -558,7 +560,11 @@ import {
 export class BookListPageComponent implements OnInit {
   readonly store = inject(BookSearchStore);
   private readonly dialogService = inject(DialogService);
+  private readonly authService = inject(AuthService);
   private readonly breakpointObserver = inject(BreakpointObserver);
+
+  /** True when a user is logged in */
+  readonly isAuthenticated = computed(() => this.authService.currentUser() !== null);
 
   // Mobile state
   readonly isMobileDrawerOpen = signal(false);
@@ -591,6 +597,7 @@ export class BookListPageComponent implements OnInit {
     if (filters.categories && filters.categories.length > 0) count++;
     if (filters.levels && filters.levels.length > 0) count++;
     if (filters.text) count++;
+    if (filters.favorites) count++;
 
     return count;
   });

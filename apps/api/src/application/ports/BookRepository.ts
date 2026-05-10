@@ -12,6 +12,7 @@
 
 import type { Book } from '../../domain/entities/Book.js';
 import type { Criteria } from '../../domain/criteria/Criteria.js';
+import type { BookId } from '../../domain/book/value-objects/BookId.js';
 
 /**
  * A book with its similarity score (for semantic search results)
@@ -197,7 +198,9 @@ export interface BookRepository {
    *
    * @param criteria - Domain criteria object with filters, order, limit, cursor
    * @param embedding - Optional embedding vector for semantic search (SIMILAR_TO filter)
+   * @param favoritesOf - Optional list of BookIds to restrict results to (favorites filter).
+   *                      If provided and empty, implementations must return empty results immediately.
    * @returns Promise resolving to paginated search results with similarity scores
    */
-  search(criteria: Criteria, embedding?: number[]): Promise<SearchBooksResult>;
+  search(criteria: Criteria, embedding?: number[], favoritesOf?: BookId[]): Promise<SearchBooksResult>;
 }
