@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { MainLayoutComponent } from '@layout/main-layout/main-layout.component.js';
+import { ResetPasswordPageComponent } from './auth/reset-password/index.js';
 
 /**
  * Application Routes
@@ -23,6 +24,11 @@ export const routes: Routes = [
       {
         path: 'books',
         loadChildren: () => import('./catalog/catalog.routes.js').then((m) => m.catalogRoutes),
+      },
+      // Password reset page
+      {
+        path: 'reset-password',
+        component: ResetPasswordPageComponent,
       },
     ],
   },

@@ -4,3 +4,4 @@
 
 export * from './auth.service.js';
 export * from './login-modal/index.js';
+export * from './reset-password/index.js';

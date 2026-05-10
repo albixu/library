@@ -49,4 +49,23 @@ export class AuthService {
   refreshToken(): Observable<void> {
     return this.api.post<void>('/auth/refresh', {});
   }
+
+  /**
+   * Sends a password recovery email.
+   *
+   * @param email - User email to send the reset link to
+   */
+  forgotPassword(email: string): Observable<void> {
+    return this.api.post<void>('/auth/forgot-password', { email });
+  }
+
+  /**
+   * Resets the user password using a recovery token.
+   *
+   * @param token - Token received via email
+   * @param newPassword - New password to set
+   */
+  resetPassword(token: string, newPassword: string): Observable<void> {
+    return this.api.post<void>('/auth/reset-password', { token, newPassword });
+  }
 }
