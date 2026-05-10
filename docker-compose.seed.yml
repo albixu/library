@@ -63,8 +63,8 @@ services:
       # Docs path (must match volume mount for OpenAPI spec)
       - DOCS_PATH=/app/docs
       # Database connection (uses POSTGRES_PASSWORD from .env for production)
-      - DATABASE_URL=postgresql://library:${POSTGRES_PASSWORD:-library}@postgres:5432/library
-      #- DATABASE_URL=postgresql://library:${POSTGRES_PASSWORD:-library}@72.61.203.33:5432/library
+      #- DATABASE_URL=postgresql://library:${POSTGRES_PASSWORD:-library}@postgres:5432/library
+      - DATABASE_URL=postgresql://library:${POSTGRES_PASSWORD:-library}@72.61.203.33:5432/library
       # Ollama for embeddings
       - OLLAMA_EMBEDDING_URL=http://ollama-embeddings:11434
       - OLLAMA_TRANSLATION_URL=http://ollama-translations:11435
