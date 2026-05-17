@@ -19,11 +19,11 @@
 import { randomBytes } from 'node:crypto';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import nodemailer from 'nodemailer';
 import * as schema from '../src/infrastructure/driven/persistence/drizzle/schema.js';
 import { loadEnvConfig } from '../src/infrastructure/config/env.js';
 import { DrizzleUserRepository } from '../src/infrastructure/driven/persistence/DrizzleUserRepository.js';
 import { Argon2PasswordHasher } from '../src/infrastructure/driven/auth/Argon2PasswordHasher.js';
-import { GmailEmailAdapter } from '../src/infrastructure/driven/email/GmailEmailAdapter.js';
 import { User } from '../src/domain/user/User.js';
 import { UserAlreadyExistsError } from '../src/domain/user/errors/UserErrors.js';
 
@@ -152,9 +152,12 @@ async function main(): Promise<void> {
   try {
     const userRepository = new DrizzleUserRepository(db);
     const passwordHasher = new Argon2PasswordHasher();
-    const emailAdapter = new GmailEmailAdapter({
-      user: env.gmail.user,
-      appPassword: env.gmail.appPassword,
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: env.gmail.user,
+        pass: env.gmail.appPassword,
+      },
     });
 
     // 1. Check email uniqueness
@@ -173,7 +176,12 @@ async function main(): Promise<void> {
 
     // 4. Send welcome email
     const { subject, body } = buildWelcomeEmail(email, plainPassword);
-    await emailAdapter.send({ to: email, subject, body });
+    await transporter.sendMail({
+      from: env.gmail.user,
+      to: email,
+      subject,
+      text: body,
+    });
 
     // 5. Success output
     console.log('');
