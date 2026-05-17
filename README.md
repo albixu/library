@@ -475,17 +475,9 @@ docker exec library-api-dev npx drizzle-kit check
 #### Backup de la Base de Datos
 
 ```bash
-# Backup en texto plano
-docker exec library-postgres pg_dump -U library library > backup_$(date +%Y%m%d_%H%M%S).sql
-
-# Backup comprimido (recomendado)
-docker exec library-postgres pg_dump -U library library | gzip > backup_$(date +%Y%m%d_%H%M%S).sql.gz
-
-# Restore desde archivo SQL
-docker exec -i library-postgres psql -U library library < backup.sql
-
-# Restore desde archivo comprimido
-gunzip -c backup.sql.gz | docker exec -i library-postgres psql -U library library
+# Backup en formato custom (recomendado — binario, sin riesgo de encoding)
+docker exec library-postgres pg_dump -U library -d library -F c -f /tmp/backup_$(date +%Y%m%d_%H%M%S).dump
+docker cp library-postgres:/tmp/backup_<timestamp>.dump ./backup_<timestamp>.dump
 ```
 
 > 💡 El contenedor `library-postgres` es el mismo en desarrollo y producción. Ver sección [Backup y Restore](#backup-y-restore) para más detalles.
@@ -757,22 +749,53 @@ docker compose -f docker-compose.test.yml down -v
 
 ### Backup de la base de datos
 
-```bash
-# Producción
-docker exec library-postgres pg_dump -U library library > backup_$(date +%Y%m%d_%H%M%S).sql
+Usar siempre el **formato custom** (`-F c`). Es binario — evita cualquier problema de encoding al copiar el archivo entre sistemas (Windows/Linux).
 
-# Con compresión
-docker exec library-postgres pg_dump -U library library | gzip > backup_$(date +%Y%m%d_%H%M%S).sql.gz
+```bash
+# 1. Generar el dump dentro del contenedor
+docker exec library-postgres pg_dump -U library -d library -F c -f /tmp/backup_$(date +%Y%m%d_%H%M%S).dump
+
+# 2. Copiar el archivo fuera del contenedor
+docker cp library-postgres:/tmp/backup_<timestamp>.dump ./backup_<timestamp>.dump
 ```
+
+> ⚠️ **No usar** `pg_dump ... > archivo.sql` ni pipes (`|`) desde PowerShell/Windows: PowerShell convierte el stream a UTF-16 y corrompe los caracteres especiales (acentos, ñ, etc.).
 
 ### Restore de la base de datos
 
-```bash
-# Desde archivo SQL
-docker exec -i library-postgres psql -U library library < backup.sql
+El restore se hace **en dos pasos**: primero copiar el archivo al contenedor, luego ejecutar `pg_restore` desde dentro. Nunca pasar el archivo por PowerShell.
 
-# Desde archivo comprimido
-gunzip -c backup.sql.gz | docker exec -i library-postgres psql -U library library
+```bash
+# 1. Copiar el backup al contenedor (transferencia binaria, sin conversión)
+docker cp ./backup_<timestamp>.dump library-postgres:/tmp/backup.dump
+
+# 2. Truncar los datos existentes (respeta el schema y las FK)
+docker exec library-postgres psql -U library -d library -c \
+  "TRUNCATE TABLE public.user_book_downloads, public.user_book_favorites, public.books CASCADE;"
+
+# 3. Restaurar solo los datos (el schema ya existe y está actualizado)
+docker exec library-postgres pg_restore \
+  -U library -d library \
+  --data-only --disable-triggers \
+  -F c /tmp/backup.dump
+```
+
+> ℹ️ Los warnings de tipo `duplicate key` en tablas de lookup (`authors`, `categories`, `levels`, `types`) son esperados y se pueden ignorar — esas tablas ya tienen los datos correctos. Los datos de `books` y sus relaciones se restauran sin problema.
+
+> ⚠️ **No usar** `--clean --if-exists` en el restore: falla por dependencias en cascada entre `books`, `user_book_downloads` y `user_book_favorites`.
+
+### Restaurar backup de producción en local (desde VPS con Docker)
+
+```bash
+# En el VPS (Linux) — generar y extraer el dump
+docker exec <contenedor-postgres-prod> pg_dump -U library -d library -F c -f /tmp/backup_prod.dump
+docker cp <contenedor-postgres-prod>:/tmp/backup_prod.dump ~/backup_prod.dump
+
+# Copiar al equipo local
+scp usuario@vps:~/backup_prod.dump C:\Users\ion\Desktop\backup_prod.dump
+
+# En local — copiar al contenedor y restaurar (seguir pasos del apartado anterior)
+docker cp C:\Users\ion\Desktop\backup_prod.dump library-postgres:/tmp/backup.dump
 ```
 
 ## Troubleshooting
