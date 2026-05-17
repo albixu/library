@@ -17,6 +17,8 @@ servers:
     description: Development server
 
 tags:
+  - name: Auth
+    description: "Operaciones de autenticación y gestión de sesión"
   - name: Books
     description: "Operaciones de gestión de libros"
   - name: Book Types
@@ -25,8 +27,380 @@ tags:
     description: "Operaciones de consulta de niveles de dificultad de libros"
   - name: Categories
     description: "Operaciones de consulta de categorías (endpoint: /book-categories)"
+  - name: Favorites
+    description: "Operaciones de gestión de favoritos del usuario autenticado"
 
 paths:
+  # ============================================
+  # HU-038: Authentication Endpoints
+  # ============================================
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Iniciar sesión
+      description: |
+        Autentica al usuario con email y contraseña. En caso de éxito establece dos cookies
+        `httpOnly` con los tokens de acceso y refresco.
+
+        ## Cookies establecidas
+
+        - **access_token**: JWT de acceso. `httpOnly`, `Secure`, `SameSite=Strict`. Expira en **7 días**.
+        - **refresh_token**: Token de refresco. `httpOnly`, `Secure`, `SameSite=Strict`. Expira en **30 días**.
+
+        ## Rate Limiting
+
+        Este endpoint tiene protección contra fuerza bruta. Tras demasiados intentos fallidos
+        se retorna `429 Too Many Requests`.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: "usuario@example.com"
+              password: "mi-contraseña-segura"
+      responses:
+        '200':
+          description: Login exitoso. Las cookies `access_token` y `refresh_token` quedan establecidas.
+          headers:
+            Set-Cookie:
+              description: |
+                Dos cookies `httpOnly` son establecidas:
+                - `access_token=<jwt>; HttpOnly; Secure; SameSite=Strict; Max-Age=604800; Path=/`
+                - `refresh_token=<token>; HttpOnly; Secure; SameSite=Strict; Max-Age=2592000; Path=/`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSuccessResponse'
+              example:
+                success: true
+                data:
+                  message: "Login successful"
+                error: null
+        '401':
+          description: Credenciales incorrectas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Credenciales incorrectas"
+        '422':
+          description: Error de validación del body (email inválido, contraseña vacía, etc.).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                invalid_email:
+                  summary: Email inválido
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "email: Invalid email address"
+                missing_password:
+                  summary: Contraseña vacía
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "password: Password is required"
+        '429':
+          description: Demasiados intentos de login. Rate limit excedido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Too Many Requests"
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Cerrar sesión
+      description: |
+        Invalida la sesión del usuario eliminando las cookies de autenticación.
+
+        No requiere body. Las cookies `access_token` y `refresh_token` son eliminadas
+        mediante `Set-Cookie` con `Max-Age=0`.
+      operationId: logout
+      responses:
+        '200':
+          description: Sesión cerrada exitosamente. Las cookies de autenticación son eliminadas.
+          headers:
+            Set-Cookie:
+              description: |
+                Las cookies son eliminadas:
+                - `access_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Path=/`
+                - `refresh_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Path=/`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSuccessResponse'
+              example:
+                success: true
+                data:
+                  message: "Logout successful"
+                error: null
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Renovar tokens de autenticación
+      description: |
+        Renueva el par de tokens leyendo automáticamente la cookie `refresh_token`.
+        No requiere body.
+
+        Si el token de refresco es válido y no ha expirado, se emiten nuevos tokens
+        y se sobreescriben las cookies existentes.
+
+        ## Flujo típico
+
+        1. El cliente detecta un error `401` en cualquier endpoint protegido.
+        2. Llama a `POST /auth/refresh` (la cookie `refresh_token` se envía automáticamente).
+        3. Si tiene éxito, reintenta la petición original con las nuevas cookies.
+      operationId: refreshToken
+      responses:
+        '200':
+          description: Tokens renovados exitosamente. Nuevas cookies establecidas.
+          headers:
+            Set-Cookie:
+              description: |
+                Nuevas cookies con los tokens renovados:
+                - `access_token=<nuevo-jwt>; HttpOnly; Secure; SameSite=Strict; Max-Age=604800; Path=/`
+                - `refresh_token=<nuevo-token>; HttpOnly; Secure; SameSite=Strict; Max-Age=2592000; Path=/`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSuccessResponse'
+              example:
+                success: true
+                data:
+                  message: "Token refreshed"
+                error: null
+        '401':
+          description: Token de refresco ausente, inválido o expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missing_token:
+                  summary: Cookie refresh_token ausente
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Refresh token missing"
+                invalid_token:
+                  summary: Token inválido o expirado
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Refresh token inválido o expirado"
+
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Obtener sesión actual
+      description: |
+        Devuelve la información del usuario autenticado leyendo el `access_token`
+        de la cookie httpOnly. No consulta la base de datos — extrae los datos
+        directamente del payload del JWT.
+
+        Utilizado por el frontend en el arranque de la aplicación (`APP_INITIALIZER`)
+        para rehidratar el estado de sesión tras una recarga de página.
+      operationId: getMe
+      responses:
+        '200':
+          description: Sesión activa. Datos del usuario extraídos del token.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required:
+                          - email
+                        properties:
+                          email:
+                            type: string
+                            format: email
+                            example: "usuario@ejemplo.com"
+              example:
+                success: true
+                data:
+                  email: "usuario@ejemplo.com"
+                error: null
+        '401':
+          description: Cookie `access_token` ausente, inválida o expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Unauthorized"
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Auth
+      summary: Solicitar restablecimiento de contraseña
+      description: |
+        Inicia el flujo de recuperación de contraseña para el email indicado.
+
+        **Siempre retorna 200** independientemente de si el email existe o no,
+        para evitar la enumeración de usuarios (user enumeration attack).
+
+        Si el email corresponde a un usuario registrado, se enviará un correo
+        con un enlace de restablecimiento.
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+            example:
+              email: "usuario@example.com"
+      responses:
+        '200':
+          description: |
+            Solicitud procesada. Si el email existe, se envía un correo con el enlace de restablecimiento.
+            Esta respuesta es idéntica tanto si el email existe como si no.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSuccessResponse'
+              example:
+                success: true
+                data:
+                  message: "If that email is registered, a reset link has been sent."
+                error: null
+        '422':
+          description: Error de validación del body (email inválido o ausente).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Validation failed"
+                  details:
+                    - "email: Invalid email address"
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Auth
+      summary: Restablecer contraseña
+      description: |
+        Valida el token de restablecimiento y actualiza la contraseña del usuario.
+
+        El token se obtiene del enlace enviado por `POST /auth/forgot-password`.
+        Una vez usado (o expirado), el token queda invalidado y no puede reutilizarse.
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+            example:
+              token: "abc123def456..."
+              newPassword: "nueva-contraseña-segura"
+      responses:
+        '200':
+          description: Contraseña restablecida exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSuccessResponse'
+              example:
+                success: true
+                data:
+                  message: "Password reset successful"
+                error: null
+        '400':
+          description: Token de restablecimiento inválido o expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                invalid_token:
+                  summary: Token inválido
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Token de restablecimiento inválido"
+                expired_token:
+                  summary: Token expirado
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Token de restablecimiento expirado"
+        '422':
+          description: Error de validación del body (token vacío, contraseña muy corta, etc.).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missing_token:
+                  summary: Token vacío
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "token: Token is required"
+                password_too_short:
+                  summary: Contraseña muy corta
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "newPassword: Password must be at least 8 characters"
+
   /books:
     get:
       tags:
@@ -46,6 +420,7 @@ paths:
         - **categories**: Lista de categorías (OR entre valores, case-insensitive)
         - **levels**: Lista de niveles de dificultad (OR entre valores, case-insensitive)
         - **text**: Búsqueda semántica - genera un embedding y encuentra libros similares (≥55% similaridad, calibrado para nomic-embed-text)
+        - **favorites**: Cuando es `true` y el usuario tiene un JWT válido, devuelve únicamente los libros marcados como favoritos por el usuario. Si no hay JWT o el valor es `false`, el parámetro se ignora silenciosamente y el comportamiento es el estándar.
         
         ## Paginación
         
@@ -161,6 +536,19 @@ paths:
             type: string
             minLength: 1
             example: "eyJsYXN0SWQiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJsYXN0VmFsdWUiOiJDbGVhbiBDb2RlIn0="
+        - name: favorites
+          in: query
+          required: false
+          description: |
+            Cuando es `true` y el usuario está autenticado (JWT válido en cookie `access_token`),
+            devuelve únicamente los libros marcados como favoritos por el usuario.
+
+            Si el usuario no tiene JWT o el valor es `false`, el parámetro se ignora silenciosamente
+            y el comportamiento del endpoint es el estándar (sin filtro por favoritos).
+          schema:
+            type: boolean
+            default: false
+            example: true
       responses:
         '200':
           description: Búsqueda completada exitosamente
@@ -546,6 +934,221 @@ paths:
                     data: null
                     error:
                       message: "Translation service unavailable, please try again later"
+
+  /books/{id}/send:
+    post:
+      tags:
+        - Books
+      summary: Send book file by email
+      description: |
+        Envía el archivo físico del libro al correo electrónico indicado.
+
+        ## Flujo
+
+        1. **Validación**: Se valida que el `email` tenga formato válido
+        2. **Búsqueda**: Se recupera el libro por `id` — si no existe, se retorna `404`
+        3. **Verificación de archivo**: Se comprueba que el libro tenga un `path` asignado y que
+           el archivo físico exista en disco — si no, se retorna `422`
+        4. **Envío**: Se envía el archivo adjunto al correo indicado — si el servicio de correo
+           falla, se retorna `500`
+
+        ## Notas
+
+        - El correo se envía con el archivo adjunto (no como enlace)
+        - No se requiere autenticación para este endpoint (según configuración del servidor)
+        - Si el usuario está autenticado (JWT válido en cookie `access_token`), se registra automáticamente
+          un registro de descarga asociado al usuario (operación fire-and-forget: no afecta la respuesta)
+      operationId: sendBookByEmail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único del libro (UUID v4)
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendBookRequest'
+            example:
+              email: "usuario@example.com"
+      responses:
+        '200':
+          description: Correo enviado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSuccessResponse'
+              example:
+                success: true
+                data: null
+                error: null
+        '400':
+          description: |
+            Solicitud inválida. Posibles causas:
+            - El campo `email` no tiene un formato de correo electrónico válido
+            - El campo `email` está vacío o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                invalid_email_format:
+                  summary: Formato de email inválido
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "email: Invalid email"
+                missing_email:
+                  summary: Email ausente
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Validation failed"
+                      details:
+                        - "email is required"
+        '404':
+          description: Libro no encontrado. No existe ningún libro con el `id` indicado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Book with id \"550e8400-e29b-41d4-a716-446655440000\" not found"
+        '422':
+          description: |
+            Entidad no procesable. Posibles causas:
+            - El libro no tiene un `path` asignado en la base de datos
+            - El archivo físico referenciado por `path` no existe en el sistema de archivos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                no_path_assigned:
+                  summary: Libro sin path asignado
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Book file not found for book \"550e8400-e29b-41d4-a716-446655440000\""
+                file_not_on_disk:
+                  summary: Archivo no encontrado en disco
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Book file not found for book \"550e8400-e29b-41d4-a716-446655440000\""
+        '500':
+          description: |
+            Error interno del servidor al intentar enviar el correo.
+            El archivo existe pero el servicio de correo falló.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Failed to send email"
+
+  # ============================================
+  # HU-039: Favorites and Access Control Endpoints
+  # ============================================
+
+  /books/{id}/favorite:
+    post:
+      tags:
+        - Favorites
+      summary: Alternar favorito de un libro
+      description: |
+        Alterna el estado de favorito del libro indicado para el usuario autenticado.
+
+        - Si el libro **no está** en favoritos del usuario, lo agrega y retorna `{ "favorite": true }`.
+        - Si el libro **ya está** en favoritos del usuario, lo elimina y retorna `{ "favorite": false }`.
+
+        ## Autenticación
+
+        Requiere un JWT válido en la cookie `access_token`. Si el token está ausente o es inválido,
+        se retorna `401 Unauthorized`.
+      operationId: toggleFavorite
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único del libro (UUID v4)
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Estado de favorito actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoriteToggleResponse'
+              examples:
+                added_to_favorites:
+                  summary: Libro añadido a favoritos
+                  value:
+                    success: true
+                    data:
+                      favorite: true
+                    error: null
+                removed_from_favorites:
+                  summary: Libro eliminado de favoritos
+                  value:
+                    success: true
+                    data:
+                      favorite: false
+                    error: null
+        '401':
+          description: No autenticado. El token JWT está ausente o es inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missing_token:
+                  summary: Token ausente
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Unauthorized"
+                invalid_token:
+                  summary: Token inválido o expirado
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Unauthorized"
+        '404':
+          description: Libro no encontrado. No existe ningún libro con el `id` indicado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Book with id \"550e8400-e29b-41d4-a716-446655440000\" not found"
 
   /book-types:
     get:
@@ -1297,6 +1900,21 @@ components:
         pagination:
           $ref: '#/components/schemas/BookSearchPagination'
 
+    # ============================================
+    # HU-036: Send Book by Email Schemas
+    # ============================================
+
+    SendBookRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Dirección de correo electrónico a la que se enviará el archivo del libro
+          example: "usuario@example.com"
+
     BookSearchResponse:
       allOf:
         - $ref: '#/components/schemas/ApiSuccessResponse'
@@ -1304,3 +1922,86 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/BookSearchData'
+
+    # ============================================
+    # HU-038: Auth Request Schemas
+    # ============================================
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: Dirección de correo electrónico del usuario
+          example: "usuario@example.com"
+        password:
+          type: string
+          minLength: 1
+          description: Contraseña del usuario
+          example: "mi-contraseña-segura"
+
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Dirección de correo electrónico para enviar el enlace de restablecimiento
+          example: "usuario@example.com"
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - token
+        - newPassword
+      properties:
+        token:
+          type: string
+          minLength: 1
+          description: Token de restablecimiento recibido por correo electrónico
+          example: "abc123def456ghi789..."
+        newPassword:
+          type: string
+          minLength: 8
+          description: Nueva contraseña (mínimo 8 caracteres)
+          example: "nueva-contraseña-segura"
+
+    # ============================================
+    # HU-039: Favorites and Access Control Schemas
+    # ============================================
+
+    FavoriteToggleData:
+      type: object
+      required:
+        - favorite
+      properties:
+        favorite:
+          type: boolean
+          description: |
+            Estado del favorito tras la operación.
+            `true` si el libro fue añadido a favoritos, `false` si fue eliminado.
+          example: true
+
+    FavoriteToggleResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiSuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/FavoriteToggleData'
+
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+      description: |
+        JWT de acceso almacenado en la cookie `access_token` (httpOnly).
+        Se establece automáticamente al hacer login con `POST /auth/login`.
+        Expira en 7 días. Puede renovarse con `POST /auth/refresh`.

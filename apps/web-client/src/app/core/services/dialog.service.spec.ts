@@ -30,10 +30,7 @@ describe('DialogService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [
-        DialogService,
-        { provide: Dialog, useValue: mockCdkDialog },
-      ],
+      providers: [DialogService, { provide: Dialog, useValue: mockCdkDialog }],
     });
 
     service = TestBed.inject(DialogService);
@@ -49,10 +46,7 @@ describe('DialogService', () => {
     it('should call cdkDialog.open with the given component', () => {
       service.open(DummyDialogComponent);
 
-      expect(mockCdkDialog.open).toHaveBeenCalledWith(
-        DummyDialogComponent,
-        expect.any(Object)
-      );
+      expect(mockCdkDialog.open).toHaveBeenCalledWith(DummyDialogComponent, expect.any(Object));
     });
 
     it('should apply default panel and backdrop classes', () => {

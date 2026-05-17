@@ -24,6 +24,22 @@ import { SearchBooksUseCase } from './application/use-cases/SearchBooksUseCase.j
 import { ListBookTypesUseCase } from './application/use-cases/ListBookTypesUseCase.js';
 import { ListCategoriesUseCase } from './application/use-cases/ListCategoriesUseCase.js';
 import { ListBookLevelsUseCase } from './application/use-cases/ListBookLevelsUseCase.js';
+import { SendBookByEmailUseCase } from './application/use-cases/SendBookByEmailUseCase.js';
+import { ToggleFavoriteUseCase } from './application/use-cases/favorite/ToggleFavoriteUseCase.js';
+import { RegisterDownloadUseCase } from './application/use-cases/download/RegisterDownloadUseCase.js';
+import { LoginUseCase } from './application/use-cases/auth/LoginUseCase.js';
+import { LogoutUseCase } from './application/use-cases/auth/LogoutUseCase.js';
+import { RefreshTokenUseCase } from './application/use-cases/auth/RefreshTokenUseCase.js';
+import { ForgotPasswordUseCase } from './application/use-cases/auth/ForgotPasswordUseCase.js';
+import { ResetPasswordUseCase } from './application/use-cases/auth/ResetPasswordUseCase.js';
+import { JwtServiceImpl } from './infrastructure/driven/auth/JwtServiceImpl.js';
+import { Argon2PasswordHasher } from './infrastructure/driven/auth/Argon2PasswordHasher.js';
+import { DrizzleUserRepository } from './infrastructure/driven/persistence/DrizzleUserRepository.js';
+import { DrizzlePasswordResetTokenRepository } from './infrastructure/driven/persistence/DrizzlePasswordResetTokenRepository.js';
+import { DrizzleFavoriteRepository } from './infrastructure/driven/persistence/DrizzleFavoriteRepository.js';
+import { DrizzleDownloadRepository } from './infrastructure/driven/persistence/DrizzleDownloadRepository.js';
+import { GmailEmailAdapter } from './infrastructure/driven/email/GmailEmailAdapter.js';
+import { NodeFileSystemAdapter } from './infrastructure/driven/filesystem/NodeFileSystemAdapter.js';
 import { createServer, startServer } from './infrastructure/driver/http/server.js';
 import * as schema from './infrastructure/driven/persistence/drizzle/schema.js';
 
@@ -122,9 +138,71 @@ async function bootstrap(): Promise<void> {
       logger,
     });
 
+    // HU-036: Send book by email use case
+    const { user: gmailUser, appPassword: gmailAppPassword } = env.gmail;
+    if (!gmailUser || !gmailAppPassword) {
+      throw new Error(
+        'GMAIL_USER and GMAIL_APP_PASSWORD environment variables are required to start the API server. ' +
+        'Please set them in your environment or .env file.',
+      );
+    }
+    const emailAdapter = new GmailEmailAdapter({
+      user: gmailUser,
+      appPassword: gmailAppPassword,
+    });
+    const fileSystemAdapter = new NodeFileSystemAdapter();
+    const sendBookByEmailUseCase = new SendBookByEmailUseCase({
+      bookRepository,
+      fileSystemPort: fileSystemAdapter,
+      emailPort: emailAdapter,
+    });
+
+    // HU-038: Auth adapters and use cases
+    const jwtService = new JwtServiceImpl(env.jwt.secret, env.jwt.refreshSecret);
+    const passwordHasher = new Argon2PasswordHasher();
+    const userRepository = new DrizzleUserRepository(db);
+    const passwordResetTokenRepository = new DrizzlePasswordResetTokenRepository(db);
+
+    const loginUseCase = new LoginUseCase({ userRepository, passwordHasher, jwtService });
+    const logoutUseCase = new LogoutUseCase();
+    const refreshTokenUseCase = new RefreshTokenUseCase({ userRepository, jwtService });
+    const forgotPasswordUseCase = new ForgotPasswordUseCase({
+      userRepository,
+      tokenRepository: passwordResetTokenRepository,
+      emailPort: emailAdapter,
+      appBaseUrl: env.jwt.appBaseUrl,
+    });
+    const resetPasswordUseCase = new ResetPasswordUseCase({
+      tokenRepository: passwordResetTokenRepository,
+      userRepository,
+      passwordHasher,
+    });
+
+    // HU-039: Favorites and downloads use cases
+    const favoriteRepository = new DrizzleFavoriteRepository(db);
+    const downloadRepository = new DrizzleDownloadRepository(db);
+    const toggleFavoriteUseCase = new ToggleFavoriteUseCase({ favoriteRepository });
+    const registerDownloadUseCase = new RegisterDownloadUseCase({ downloadRepository });
+
     // Create and start server
     const server = await createServer(
-      { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, logger },
+      {
+        createBookUseCase,
+        searchBooksUseCase,
+        listBookTypesUseCase,
+        listCategoriesUseCase,
+        listBookLevelsUseCase,
+        sendBookByEmailUseCase,
+        toggleFavoriteUseCase,
+        registerDownloadUseCase,
+        loginUseCase,
+        logoutUseCase,
+        refreshTokenUseCase,
+        forgotPasswordUseCase,
+        resetPasswordUseCase,
+        jwtService,
+        logger,
+      },
       { prefix: '/api', nodeEnv: env.app.nodeEnv },
     );
 

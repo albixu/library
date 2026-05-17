@@ -2,4 +2,4 @@
 // Core Interceptors - Barrel Exports
 // =============================================================================
 
-// Interceptors will be added here as they are created
+export { authInterceptor } from './auth.interceptor.js';

@@ -21,6 +21,9 @@ import { SearchBooksUseCase } from '../../src/application/use-cases/SearchBooksU
 import { ListBookTypesUseCase } from '../../src/application/use-cases/ListBookTypesUseCase.js';
 import { ListCategoriesUseCase } from '../../src/application/use-cases/ListCategoriesUseCase.js';
 import { ListBookLevelsUseCase } from '../../src/application/use-cases/ListBookLevelsUseCase.js';
+import { SendBookByEmailUseCase } from '../../src/application/use-cases/SendBookByEmailUseCase.js';
+import { NodeFileSystemAdapter } from '../../src/infrastructure/driven/filesystem/NodeFileSystemAdapter.js';
+import type { EmailPort } from '../../src/application/ports/EmailPort.js';
 import { OllamaEmbeddingService } from '../../src/infrastructure/driven/embedding/OllamaEmbeddingService.js';
 import { LibreTranslateTranslationService } from '../../src/infrastructure/driven/translation/LibreTranslateTranslationService.js';
 import { PostgresBookRepository } from '../../src/infrastructure/driven/persistence/PostgresBookRepository.js';
@@ -96,7 +99,7 @@ export async function clearTestData(db: TestDb): Promise<void> {
 /**
  * Creates a fully configured Fastify server for E2E testing
  */
-export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
+export async function createTestServer(db: TestDb, emailPort?: EmailPort): Promise<FastifyInstance> {
   const ollamaUrl = DEFAULT_OLLAMA_URL;
   const libretranslateUrl = DEFAULT_LIBRETRANSLATE_URL;
   const ollamaModel = process.env['OLLAMA_MODEL'] ?? DEFAULT_OLLAMA_MODEL;
@@ -158,6 +161,18 @@ export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
     logger: noopLogger,
   });
 
+  // HU-036: Build a no-op email adapter unless a custom one is provided
+  const resolvedEmailPort: EmailPort = emailPort ?? {
+    sendWithAttachment: async () => { /* no-op for tests that don't test email */ },
+  };
+
+  const fileSystemAdapter = new NodeFileSystemAdapter();
+  const sendBookByEmailUseCase = new SendBookByEmailUseCase({
+    bookRepository,
+    fileSystemPort: fileSystemAdapter,
+    emailPort: resolvedEmailPort,
+  });
+
   // Create server
   const server = await createServer({
     createBookUseCase,
@@ -165,8 +180,17 @@ export async function createTestServer(db: TestDb): Promise<FastifyInstance> {
     listBookTypesUseCase,
     listCategoriesUseCase,
     listBookLevelsUseCase,
+    sendBookByEmailUseCase,
+    // Auth use cases — no-op stubs for non-auth E2E tests
+    loginUseCase: { execute: async () => ({ accessToken: '', refreshToken: '' }) },
+    logoutUseCase: { execute: async () => undefined },
+    refreshTokenUseCase: { execute: async () => ({ accessToken: '', refreshToken: '' }) },
+    forgotPasswordUseCase: { execute: async () => undefined },
+    resetPasswordUseCase: { execute: async () => undefined },
+    // HU-039: Favorite and download use cases not wired in the default test server
+    // (tests that need them create their own server via createServer directly)
     logger: noopLogger,
-  });
+  }, { nodeEnv: 'test' });
 
   return server;
 }

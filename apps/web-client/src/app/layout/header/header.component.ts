@@ -1,14 +1,19 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Dialog } from '@angular/cdk/dialog';
+
 import { ThemeToggleComponent } from '@shared/components/theme-toggle';
+import { AuthService } from '../../auth/auth.service.js';
+import { LoginModalComponent } from '../../auth/login-modal/login-modal.component.js';
 
 /**
- * HeaderComponent - Application header with logo and actions
+ * HeaderComponent - Application header with logo, actions and auth state
  *
  * Features:
  * - Sticky positioning at top
  * - Logo with auto_stories icon in cyan container
  * - "BiblioManager" title with bold styling
  * - Theme toggle and profile icons on the right
+ * - Auth-aware: shows login modal when unauthenticated, user menu when authenticated
  */
 @Component({
   selector: 'app-header',
@@ -26,11 +31,38 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 
       <div class="header__actions">
         <app-theme-toggle />
-        <!-- TODO: Descomentar cuando se implemente la gestión de usuarios/perfil (HU-035)
-        <div class="header__avatar" role="img" aria-label="Perfil de usuario">
-          <span class="material-symbols-outlined">account_circle</span>
-        </div>
-        -->
+
+        @if (authService.currentUser() === null) {
+          <!-- Unauthenticated: show login icon -->
+          <div
+            class="header__avatar"
+            role="button"
+            tabindex="0"
+            aria-label="Iniciar sesión"
+            (click)="openLoginModal()"
+            (keydown.enter)="openLoginModal()"
+          >
+            <span class="material-symbols-outlined">account_circle</span>
+          </div>
+        } @else {
+          <!-- Authenticated: show user menu -->
+          <div class="header__user" (click)="toggleDropdown()" (keydown.enter)="toggleDropdown()" role="button" tabindex="0" aria-label="Menú de usuario" aria-haspopup="true" [attr.aria-expanded]="isDropdownOpen()">
+            <span class="header__email">{{ authService.currentUser()!.email }}</span>
+            <span class="material-symbols-outlined header__user-icon">account_circle</span>
+            @if (isDropdownOpen()) {
+              <div class="header__dropdown" role="menu">
+                <button
+                  class="header__dropdown-item"
+                  role="menuitem"
+                  (click)="logout($event)"
+                >
+                  <span class="material-symbols-outlined">logout</span>
+                  Desconectarse
+                </button>
+              </div>
+            }
+          </div>
+        }
       </div>
     </header>
   `,
@@ -106,6 +138,7 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
         flex-shrink: 0;
       }
 
+      /* Unauthenticated avatar */
       .header__avatar {
         display: flex;
         align-items: center;
@@ -137,7 +170,142 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle';
       :host-context([data-theme='dark']) .header__avatar .material-symbols-outlined {
         color: rgb(148 163 184); /* slate-400 */
       }
+
+      /* Authenticated user area */
+      .header__user {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 9999px;
+        background-color: rgb(226 232 240);
+        cursor: pointer;
+        transition: background-color 150ms ease;
+        user-select: none;
+      }
+
+      .header__user:hover {
+        background-color: rgb(203 213 225);
+      }
+
+      :host-context([data-theme='dark']) .header__user {
+        background-color: rgb(51 65 85);
+      }
+
+      :host-context([data-theme='dark']) .header__user:hover {
+        background-color: rgb(71 85 105);
+      }
+
+      .header__email {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: rgb(51 65 85);
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      :host-context([data-theme='dark']) .header__email {
+        color: rgb(203 213 225);
+      }
+
+      .header__user-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        color: rgb(71 85 105);
+        font-variation-settings:
+          'FILL' 1,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 20;
+      }
+
+      :host-context([data-theme='dark']) .header__user-icon {
+        color: rgb(148 163 184);
+      }
+
+      /* Dropdown */
+      .header__dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        z-index: 100;
+        min-width: 160px;
+        background-color: white;
+        border: 1px solid rgb(226 232 240);
+        border-radius: 0.5rem;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      :host-context([data-theme='dark']) .header__dropdown {
+        background-color: rgb(17 29 33);
+        border-color: rgb(51 65 85);
+      }
+
+      .header__dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.625rem 0.875rem;
+        border: none;
+        background-color: transparent;
+        font-size: 0.875rem;
+        color: rgb(51 65 85);
+        cursor: pointer;
+        transition: background-color 150ms ease;
+        text-align: left;
+      }
+
+      .header__dropdown-item:hover {
+        background-color: rgb(241 245 249);
+      }
+
+      :host-context([data-theme='dark']) .header__dropdown-item {
+        color: rgb(203 213 225);
+      }
+
+      :host-context([data-theme='dark']) .header__dropdown-item:hover {
+        background-color: rgb(30 41 59);
+      }
+
+      .header__dropdown-item .material-symbols-outlined {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
     `,
   ],
 })
-export class HeaderComponent {}
+export class HeaderComponent {
+  readonly authService = inject(AuthService);
+  private readonly dialog = inject(Dialog);
+
+  readonly isDropdownOpen = signal(false);
+
+  openLoginModal(): void {
+    this.dialog.open(LoginModalComponent, {
+      panelClass: 'dialog-panel',
+      backdropClass: 'dialog-backdrop',
+      hasBackdrop: true,
+    });
+  }
+
+  toggleDropdown(): void {
+    this.isDropdownOpen.update((v) => !v);
+  }
+
+  logout(event: Event): void {
+    // Prevent click from bubbling to parent (which would re-toggle dropdown)
+    event.stopPropagation();
+    this.authService.logout().subscribe(() => {
+      this.isDropdownOpen.set(false);
+    });
+  }
+}

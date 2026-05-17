@@ -15,7 +15,7 @@ import {
 
 describe('BookService', () => {
   let service: BookService;
-  let apiServiceMock: { get: ReturnType<typeof vi.fn> };
+  let apiServiceMock: { get: ReturnType<typeof vi.fn>; post: ReturnType<typeof vi.fn> };
 
   const mockBookSearchResponse: BookSearchResponse = {
     success: true,
@@ -75,9 +75,13 @@ describe('BookService', () => {
     error: null,
   };
 
+  let apiServicePostMock: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
+    apiServicePostMock = vi.fn();
     apiServiceMock = {
       get: vi.fn(),
+      post: apiServicePostMock,
     };
 
     TestBed.configureTestingModule({
@@ -259,6 +263,49 @@ describe('BookService', () => {
 
       expect(response).toEqual(mockLevelsResponse);
       expect(response.data?.length).toBe(3);
+    });
+  });
+
+  describe('sendBookByEmail', () => {
+    it('should call ApiService.post with correct endpoint and body', async () => {
+      apiServiceMock.post.mockReturnValue(of(undefined));
+
+      await firstValueFrom(service.sendBookByEmail('book-id-123', 'user@example.com'));
+
+      expect(apiServiceMock.post).toHaveBeenCalledWith('/books/book-id-123/send', {
+        email: 'user@example.com',
+      });
+    });
+
+    it('should use the bookId in the URL path', async () => {
+      apiServiceMock.post.mockReturnValue(of(undefined));
+
+      await firstValueFrom(service.sendBookByEmail('abc-456', 'test@test.com'));
+
+      expect(apiServiceMock.post).toHaveBeenCalledWith(
+        '/books/abc-456/send',
+        expect.objectContaining({ email: 'test@test.com' })
+      );
+    });
+
+    it('should return Observable<void>', async () => {
+      apiServiceMock.post.mockReturnValue(of(undefined));
+
+      const result = await firstValueFrom(
+        service.sendBookByEmail('book-id-123', 'user@example.com')
+      );
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should propagate HTTP errors', async () => {
+      const { throwError } = await import('rxjs');
+      const httpError = new Error('HTTP 500 Internal Server Error');
+      apiServiceMock.post.mockReturnValue(throwError(() => httpError));
+
+      await expect(
+        firstValueFrom(service.sendBookByEmail('book-id-123', 'user@example.com'))
+      ).rejects.toThrow('HTTP 500 Internal Server Error');
     });
   });
 });

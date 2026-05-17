@@ -62,6 +62,8 @@ services:
     volumes:
       # Mount initial_data directory for seeding (run: docker exec library-api npm run seed:prod)
       - ./initial_data:/app/data/initial_data:ro
+      # Books directory (read-only mount for email delivery)
+      - ${BOOKS_PATH}:/books:ro
     depends_on:
       postgres:
         condition: service_healthy

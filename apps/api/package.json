@@ -27,22 +27,30 @@
     "db:studio": "drizzle-kit studio",
     "consolidate:books": "NODE_OPTIONS=--max-old-space-size=4096 tsx scripts/consolidate-books.ts",
     "seed:database": "tsx scripts/seed-database.ts",
-    "seed:prod": "NODE_OPTIONS=--max-old-space-size=1024 node dist/scripts/seed-database.js"
+    "seed:prod": "NODE_OPTIONS=--max-old-space-size=1024 node dist/scripts/seed-database.js",
+    "create-user": "tsx scripts/create-user.ts"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/rate-limit": "^10.3.0",
     "@fastify/swagger": "^9.7.0",
     "@fastify/swagger-ui": "^5.2.5",
+    "@types/jsonwebtoken": "^9.0.10",
+    "argon2": "^0.44.0",
+    "drizzle-kit": "^0.30.4",
     "drizzle-orm": "^0.38.3",
     "fastify": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^8.0.7",
     "pg": "^8.13.1",
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
-    "drizzle-kit": "^0.30.4",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
     "@types/node": "^22.10.7",
+    "@types/nodemailer": "^8.0.0",
     "@types/pg": "^8.11.10",
     "@vitest/coverage-v8": "^2.1.8",
     "@vitest/ui": "^2.1.8",

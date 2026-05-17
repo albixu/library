@@ -64,6 +64,31 @@ export interface AppConfig {
 }
 
 /**
+ * Gmail email service configuration (HU-036)
+ * Both fields are optional — credentials are only required when the email service is actually used.
+ */
+export interface GmailConfig {
+  /** Gmail account used as sender */
+  user?: string;
+  /** Google App Password (not the regular account password) */
+  appPassword?: string;
+}
+
+/**
+ * JWT authentication configuration (HU-038)
+ */
+export interface JwtConfig {
+  /** Secret for signing access tokens */
+  secret: string;
+  /** Secret for signing refresh tokens */
+  refreshSecret: string;
+  /** Hours until a password reset token expires */
+  passwordResetTokenExpiryHours: number;
+  /** Base URL of the web client (used for reset links) */
+  appBaseUrl: string;
+}
+
+/**
  * Complete environment configuration
  */
 export interface EnvConfig {
@@ -71,6 +96,8 @@ export interface EnvConfig {
   database: DatabaseConfig;
   ollama: OllamaConfig;
   translation: TranslationConfig; // HU-013
+  gmail: GmailConfig; // HU-036
+  jwt: JwtConfig; // HU-038
 }
 
 /**
@@ -92,6 +119,9 @@ const DEFAULTS = {
   TRANSLATION_PROVIDER: 'ollama' as const,
   LIBRETRANSLATE_URL: 'http://libretranslate:5000',
   LIBRETRANSLATE_TIMEOUT_MS: 10000,
+  // HU-038: JWT defaults
+  PASSWORD_RESET_TOKEN_EXPIRY_HOURS: 24,
+  APP_BASE_URL: 'http://localhost:4200',
 } as const;
 
 /**
@@ -142,6 +172,26 @@ export function loadEnvConfig(): EnvConfig {
     );
   }
 
+  // HU-038: JWT secrets are required — fail-fast if not set
+  const jwtSecret = process.env['JWT_SECRET'];
+  if (!jwtSecret || jwtSecret.trim() === '') {
+    throw new Error(
+      'JWT_SECRET environment variable is required but not set. ' +
+      'Please set a strong secret (min 32 chars) in your environment or .env file.',
+    );
+  }
+
+  const jwtRefreshSecret = process.env['JWT_REFRESH_SECRET'];
+  if (!jwtRefreshSecret || jwtRefreshSecret.trim() === '') {
+    throw new Error(
+      'JWT_REFRESH_SECRET environment variable is required but not set. ' +
+      'Please set a strong secret (min 32 chars, different from JWT_SECRET) in your environment or .env file.',
+    );
+  }
+
+  // HU-036: Gmail credentials are optional — only required when email service is used
+  const gmailUser = process.env['GMAIL_USER']?.trim() || undefined;
+  const gmailAppPassword = process.env['GMAIL_APP_PASSWORD']?.trim() || undefined;
   return {
     app: {
       nodeEnv: process.env['NODE_ENV'] ?? DEFAULTS.NODE_ENV,
@@ -183,6 +233,22 @@ export function loadEnvConfig(): EnvConfig {
         DEFAULTS.LIBRETRANSLATE_TIMEOUT_MS,
         'LIBRETRANSLATE_TIMEOUT_MS',
       ),
+    },
+    // HU-036: Gmail email service configuration
+    gmail: {
+      user: gmailUser,
+      appPassword: gmailAppPassword,
+    },
+    // HU-038: JWT configuration
+    jwt: {
+      secret: jwtSecret,
+      refreshSecret: jwtRefreshSecret,
+      passwordResetTokenExpiryHours: safeParseInt(
+        process.env['PASSWORD_RESET_TOKEN_EXPIRY_HOURS'],
+        DEFAULTS.PASSWORD_RESET_TOKEN_EXPIRY_HOURS,
+        'PASSWORD_RESET_TOKEN_EXPIRY_HOURS',
+      ),
+      appBaseUrl: process.env['APP_BASE_URL'] ?? DEFAULTS.APP_BASE_URL,
     },
   };
 }

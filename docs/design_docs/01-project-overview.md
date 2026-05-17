@@ -120,20 +120,33 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
 - **BookFormat**: `epub` | `pdf` | `mobi` | `azw3` | `djvu` | `cbz` | `cbr` | `txt` | `other`
 - **BookIdentifier**: Cadena alfanumérica de 1–32 caracteres (identificador flexible: ISBN-10, ISBN-13, ASIN, o cualquier otro identificador de libro). Introducido en HU-029 reemplazando el antiguo Value Object `ISBN`.
 
-### 3.7 Relaciones
+### 3.7 Entidad: User
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `id` | UUID | Sí | Identificador único generado por el sistema |
+| `email` | string | Sí | Email único del usuario |
+| `passwordHash` | string | Sí | Hash bcrypt de la contraseña |
+| `createdAt` | timestamp | Sí | Fecha de creación del registro |
+
+El `User` se relaciona con `Book` a través de dos tablas de unión:
+- **`user_book_favorites`**: libros marcados como favoritos por el usuario (N:M)
+- **`user_book_downloads`**: registro de libros enviados por email/Kindle (N:M con `downloaded_at`)
+
+### 3.8 Relaciones
 
 ```
 ┌─────────────┐       N:M       ┌─────────────┐       N:1       ┌─────────────┐
 │   Author    │◄───────────────►│    Book     │───────────────►│    Level    │
 └─────────────┘                 └─────────────┘                 └─────────────┘
-                                      │                               ▲
-                                      │ N:1                           │ N:M
-                                      ▼                               │
-                                ┌─────────────┐                       │
-                                │  BookType   │───────────────────────┘
-                                └─────────────┘
-                                      │
-                                      │ 1:N
+                                      │    ▲                          ▲
+                                      │ N:1│                          │ N:M
+                                      ▼   N:M (favorites/downloads)  │
+                                ┌─────────────┐      ┌─────────────┐ │
+                                │  BookType   │──────►│    User     │ │
+                                └─────────────┘      └─────────────┘ │
+                                      │                               │
+                                      │ 1:N               ───────────┘
                                       ▼
                                 ┌─────────────┐
                                 │  Category   │
@@ -167,6 +180,14 @@ Entidad para gestionar niveles de dificultad. Los niveles se crean dinámicament
   - Un nivel puede estar disponible para múltiples tipos
   - Se gestiona mediante tabla de unión `type_levels`
   - **Validación**: Al crear un libro, se valida que el level esté asociado al type
+
+- **User ↔ Book (favoritos)**: Relación muchos-a-muchos (N:M)
+  - Un usuario puede marcar múltiples libros como favoritos
+  - Se gestiona mediante tabla de unión `user_book_favorites`
+
+- **User ↔ Book (descargas)**: Relación muchos-a-muchos (N:M)
+  - Un usuario puede descargar/enviar múltiples libros a Kindle
+  - Se registra en `user_book_downloads` con timestamp `downloaded_at`
 
 ---
 

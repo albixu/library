@@ -90,6 +90,12 @@ export const searchBooksQuerySchema = z.object({
     .string()
     .min(1, 'Cursor cannot be empty')
     .optional(),
+
+  // HU-039: Filter to show only books favorited by the authenticated user
+  favorites: z
+    .union([z.literal('true'), z.literal('false'), z.boolean()])
+    .transform((val) => val === true || val === 'true')
+    .optional(),
 });
 
 /**

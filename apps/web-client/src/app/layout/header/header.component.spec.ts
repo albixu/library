@@ -1,7 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { Dialog } from '@angular/cdk/dialog';
+import { of } from 'rxjs';
+
 import { HeaderComponent } from './header.component.js';
 import { ThemeService } from '@core/services/theme.service';
-import { signal } from '@angular/core';
+import { AuthService } from '../../auth/auth.service.js';
 
 describe('HeaderComponent', () => {
   let component: HeaderComponent;
@@ -10,10 +14,15 @@ describe('HeaderComponent', () => {
     theme: ReturnType<typeof signal<'light' | 'dark'>>;
     setTheme: ReturnType<typeof vi.fn>;
   };
+  let mockAuthService: {
+    currentUser: ReturnType<typeof signal<{ email: string } | null>>;
+    logout: ReturnType<typeof vi.fn>;
+  };
+  let mockDialog: { open: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
-    // Create mock ThemeService with signals
     const themeSignal = signal<'light' | 'dark'>('dark');
+    const currentUserSignal = signal<{ email: string } | null>(null);
 
     mockThemeService = {
       theme: themeSignal,
@@ -22,9 +31,22 @@ describe('HeaderComponent', () => {
       }),
     };
 
+    mockAuthService = {
+      currentUser: currentUserSignal,
+      logout: vi.fn(),
+    };
+
+    mockDialog = {
+      open: vi.fn(),
+    };
+
     await TestBed.configureTestingModule({
       imports: [HeaderComponent],
-      providers: [{ provide: ThemeService, useValue: mockThemeService }],
+      providers: [
+        { provide: ThemeService, useValue: mockThemeService },
+        { provide: AuthService, useValue: mockAuthService },
+        { provide: Dialog, useValue: mockDialog },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HeaderComponent);
@@ -98,23 +120,109 @@ describe('HeaderComponent', () => {
     });
   });
 
-  describe('Action Buttons', () => {
-    // TODO: Restore this test when user profile management is implemented (HU-035)
-    it('should not render avatar until user management is implemented', () => {
+  describe('Unauthenticated state (currentUser = null)', () => {
+    it('should render the account_circle icon when not logged in', () => {
+      const avatar = fixture.nativeElement.querySelector('.header__avatar');
+      expect(avatar).toBeTruthy();
+      const icon = avatar.querySelector('.material-symbols-outlined');
+      expect(icon.textContent.trim()).toBe('account_circle');
+    });
+
+    it('should have aria-label "Iniciar sesión" on the avatar', () => {
+      const avatar = fixture.nativeElement.querySelector('.header__avatar');
+      expect(avatar.getAttribute('aria-label')).toBe('Iniciar sesión');
+    });
+
+    it('should open login modal when avatar is clicked', () => {
+      const avatar = fixture.nativeElement.querySelector('.header__avatar');
+      avatar.click();
+      expect(mockDialog.open).toHaveBeenCalled();
+    });
+
+    it('should NOT render the user menu when unauthenticated', () => {
+      const userMenu = fixture.nativeElement.querySelector('.header__user');
+      expect(userMenu).toBeFalsy();
+    });
+  });
+
+  describe('Authenticated state (currentUser has email)', () => {
+    beforeEach(() => {
+      mockAuthService.currentUser.set({ email: 'user@example.com' });
+      fixture.detectChanges();
+    });
+
+    it('should NOT render the login avatar when authenticated', () => {
       const avatar = fixture.nativeElement.querySelector('.header__avatar');
       expect(avatar).toBeFalsy();
+    });
+
+    it('should render the user email', () => {
+      const email = fixture.nativeElement.querySelector('.header__email');
+      expect(email).toBeTruthy();
+      expect(email.textContent.trim()).toBe('user@example.com');
+    });
+
+    it('should render the account_circle icon in user area', () => {
+      const icon = fixture.nativeElement.querySelector('.header__user-icon');
+      expect(icon).toBeTruthy();
+      expect(icon.textContent.trim()).toBe('account_circle');
+    });
+
+    it('should NOT show dropdown by default', () => {
+      expect(component.isDropdownOpen()).toBe(false);
+      const dropdown = fixture.nativeElement.querySelector('.header__dropdown');
+      expect(dropdown).toBeFalsy();
+    });
+
+    it('should toggle dropdown on click', () => {
+      const userArea = fixture.nativeElement.querySelector('.header__user');
+      userArea.click();
+      fixture.detectChanges();
+
+      expect(component.isDropdownOpen()).toBe(true);
+      const dropdown = fixture.nativeElement.querySelector('.header__dropdown');
+      expect(dropdown).toBeTruthy();
+    });
+
+    it('should render "Desconectarse" button in dropdown', () => {
+      component.isDropdownOpen.set(true);
+      fixture.detectChanges();
+
+      const btn = fixture.nativeElement.querySelector('.header__dropdown-item');
+      expect(btn).toBeTruthy();
+      expect(btn.textContent).toContain('Desconectarse');
+    });
+
+    it('should call authService.logout() when "Desconectarse" is clicked', () => {
+      mockAuthService.logout.mockReturnValue(of(undefined));
+      component.isDropdownOpen.set(true);
+      fixture.detectChanges();
+
+      const btn = fixture.nativeElement.querySelector('.header__dropdown-item');
+      btn.click();
+
+      expect(mockAuthService.logout).toHaveBeenCalled();
+    });
+
+    it('should close dropdown after logout', () => {
+      mockAuthService.logout.mockReturnValue(of(undefined));
+      component.isDropdownOpen.set(true);
+      fixture.detectChanges();
+
+      const btn = fixture.nativeElement.querySelector('.header__dropdown-item');
+      btn.click();
+
+      expect(component.isDropdownOpen()).toBe(false);
     });
   });
 
   describe('Accessibility', () => {
     it('should have appropriate role for header', () => {
       const header = fixture.nativeElement.querySelector('header');
-      // header element has implicit banner role, but we check it exists
       expect(header.tagName.toLowerCase()).toBe('header');
     });
 
     it('should include skip link target or appropriate structure', () => {
-      // The header should be properly structured for screen readers
       const brand = fixture.nativeElement.querySelector('.header__brand');
       expect(brand).toBeTruthy();
     });

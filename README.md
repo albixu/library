@@ -15,6 +15,8 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 ## Características
 
 - 🔍 **Búsqueda semántica**: Encuentra libros describiendo lo que buscas en lenguaje natural
+- 🔐 **Autenticación JWT**: Login/logout/refresh con cookies httpOnly, recuperación de contraseña por email
+- ⭐ **Favoritos**: Marca libros como favoritos y filtra tu lista personal
 - 🌐 **API REST**: Integra con cualquier cliente web
 - 📖 **Swagger UI**: Interfaz interactiva de la API disponible en `/docs` (entornos de desarrollo y test)
 - 📦 **Carga de datos automática**: Importa libros desde archivos JSON
@@ -222,8 +224,15 @@ Desde ahí podés explorar todos los endpoints, ver los esquemas de request/resp
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
+| `POST` | `/api/auth/login` | Iniciar sesión (JWT en cookies httpOnly) |
+| `POST` | `/api/auth/logout` | Cerrar sesión (elimina cookies) |
+| `POST` | `/api/auth/refresh` | Renovar tokens de autenticación |
+| `POST` | `/api/auth/forgot-password` | Solicitar restablecimiento de contraseña |
+| `POST` | `/api/auth/reset-password` | Restablecer contraseña con token |
 | `POST` | `/api/books` | Crear un nuevo libro |
 | `GET` | `/api/books` | Buscar libros (filtros, paginación, búsqueda semántica) |
+| `POST` | `/api/books/:id/send` | Enviar archivo de libro por email |
+| `POST` | `/api/books/:id/favorite` | Alternar favorito (requiere auth) |
 | `GET` | `/api/book-types` | Listar tipos de libro |
 | `GET` | `/api/book-categories` | Listar categorías (filtrable por tipo) |
 | `GET` | `/api/book-levels` | Listar niveles de dificultad (filtrable por tipo) |
@@ -234,13 +243,15 @@ Desde ahí podés explorar todos los endpoints, ver los esquemas de request/resp
 curl -X POST http://localhost:3000/api/books \
   -H "Content-Type: application/json" \
   -d '{
+    "isbn": "9780132350884",
     "title": "Clean Code",
     "authors": ["Robert C. Martin"],
     "description": "A handbook of agile software craftsmanship",
     "type": "technical",
     "categories": ["programming"],
     "format": "pdf",
-    "level": "Intermediate"
+    "level": "Intermediate",
+    "language": "en"
   }'
 ```
 
@@ -461,6 +472,16 @@ docker exec library-api-dev npm run db:generate
 docker exec library-api-dev npx drizzle-kit check
 ```
 
+#### Backup de la Base de Datos
+
+```bash
+# Backup en formato custom (recomendado — binario, sin riesgo de encoding)
+docker exec library-postgres pg_dump -U library -d library -F c -f /tmp/backup_$(date +%Y%m%d_%H%M%S).dump
+docker cp library-postgres:/tmp/backup_<timestamp>.dump ./backup_<timestamp>.dump
+```
+
+> 💡 El contenedor `library-postgres` es el mismo en desarrollo y producción. Ver sección [Backup y Restore](#backup-y-restore) para más detalles.
+
 #### Carga de Datos
 
 ```bash
@@ -470,6 +491,16 @@ docker exec library-api-dev npm run consolidate:books
 # Sembrar la base de datos con libros consolidados
 docker exec library-api-dev npm run seed:database
 ```
+
+#### Gestión de Usuarios
+
+```bash
+# Crear un usuario (genera contraseña segura y la envía por email)
+cd apps/api
+npm run create-user -- --email usuario@example.com
+```
+
+> Requiere las variables de entorno `GMAIL_USER` y `GMAIL_APP_PASSWORD` configuradas. Si el email ya existe, devuelve un error descriptivo.
 
 #### Modelos de Ollama
 
@@ -539,16 +570,16 @@ El proyecto utiliza [Vitest](https://vitest.dev/) como framework de testing con 
 
 ```
 apps/api/tests/
-├── unit/                    # Tests unitarios (~1435 tests)
+├── unit/                    # Tests unitarios (~1642 tests)
 │   ├── domain/              # Entidades, Value Objects, Criteria
 │   ├── application/         # Casos de uso
 │   ├── infrastructure/      # Mappers, configuración
 │   └── scripts/             # Scripts de consolidación/seeding
-├── integration/             # Tests de integración (~159 tests)
+├── integration/             # Tests de integración (~184 tests, 44 skipped — Ollama)
 │   ├── application/         # Use cases con repos reales
 │   ├── infrastructure/      # Repositorios, servicios externos
 │   └── scripts/             # Scripts con BD real
-└── e2e/                     # Tests end-to-end (~96 tests)
+└── e2e/                     # Tests end-to-end (~130 tests)
     └── http/                # API REST completa
 ```
 
@@ -718,22 +749,53 @@ docker compose -f docker-compose.test.yml down -v
 
 ### Backup de la base de datos
 
-```bash
-# Producción
-docker exec library-postgres pg_dump -U library library > backup_$(date +%Y%m%d_%H%M%S).sql
+Usar siempre el **formato custom** (`-F c`). Es binario — evita cualquier problema de encoding al copiar el archivo entre sistemas (Windows/Linux).
 
-# Con compresión
-docker exec library-postgres pg_dump -U library library | gzip > backup_$(date +%Y%m%d_%H%M%S).sql.gz
+```bash
+# 1. Generar el dump dentro del contenedor
+docker exec library-postgres pg_dump -U library -d library -F c -f /tmp/backup_$(date +%Y%m%d_%H%M%S).dump
+
+# 2. Copiar el archivo fuera del contenedor
+docker cp library-postgres:/tmp/backup_<timestamp>.dump ./backup_<timestamp>.dump
 ```
+
+> ⚠️ **No usar** `pg_dump ... > archivo.sql` ni pipes (`|`) desde PowerShell/Windows: PowerShell convierte el stream a UTF-16 y corrompe los caracteres especiales (acentos, ñ, etc.).
 
 ### Restore de la base de datos
 
-```bash
-# Desde archivo SQL
-docker exec -i library-postgres psql -U library library < backup.sql
+El restore se hace **en dos pasos**: primero copiar el archivo al contenedor, luego ejecutar `pg_restore` desde dentro. Nunca pasar el archivo por PowerShell.
 
-# Desde archivo comprimido
-gunzip -c backup.sql.gz | docker exec -i library-postgres psql -U library library
+```bash
+# 1. Copiar el backup al contenedor (transferencia binaria, sin conversión)
+docker cp ./backup_<timestamp>.dump library-postgres:/tmp/backup.dump
+
+# 2. Truncar los datos existentes (respeta el schema y las FK)
+docker exec library-postgres psql -U library -d library -c \
+  "TRUNCATE TABLE public.user_book_downloads, public.user_book_favorites, public.books CASCADE;"
+
+# 3. Restaurar solo los datos (el schema ya existe y está actualizado)
+docker exec library-postgres pg_restore \
+  -U library -d library \
+  --data-only --disable-triggers \
+  -F c /tmp/backup.dump
+```
+
+> ℹ️ Los warnings de tipo `duplicate key` en tablas de lookup (`authors`, `categories`, `levels`, `types`) son esperados y se pueden ignorar — esas tablas ya tienen los datos correctos. Los datos de `books` y sus relaciones se restauran sin problema.
+
+> ⚠️ **No usar** `--clean --if-exists` en el restore: falla por dependencias en cascada entre `books`, `user_book_downloads` y `user_book_favorites`.
+
+### Restaurar backup de producción en local (desde VPS con Docker)
+
+```bash
+# En el VPS (Linux) — generar y extraer el dump
+docker exec <contenedor-postgres-prod> pg_dump -U library -d library -F c -f /tmp/backup_prod.dump
+docker cp <contenedor-postgres-prod>:/tmp/backup_prod.dump ~/backup_prod.dump
+
+# Copiar al equipo local
+scp usuario@vps:~/backup_prod.dump C:\Users\ion\Desktop\backup_prod.dump
+
+# En local — copiar al contenedor y restaurar (seguir pasos del apartado anterior)
+docker cp C:\Users\ion\Desktop\backup_prod.dump library-postgres:/tmp/backup.dump
 ```
 
 ## Troubleshooting

@@ -27,6 +27,8 @@ describe('Environment Configuration', () => {
       process.env['OLLAMA_TRANSLATION_URL'] = 'http://localhost:11435';
       process.env['OLLAMA_MODEL'] = 'test-model';
       process.env['OLLAMA_TIMEOUT_MS'] = '15000';
+      process.env['GMAIL_USER'] = 'test@gmail.com';
+      process.env['GMAIL_APP_PASSWORD'] = 'abcd efgh ijkl mnop';
 
       const config = loadEnvConfig();
 
@@ -42,6 +44,8 @@ describe('Environment Configuration', () => {
 
     it('should use default values when optional environment variables are not set', () => {
       process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
+      process.env['GMAIL_USER'] = 'test@gmail.com';
+      process.env['GMAIL_APP_PASSWORD'] = 'abcd efgh ijkl mnop';
       // Clear optional environment variables
       delete process.env['NODE_ENV'];
       delete process.env['PORT'];
@@ -99,6 +103,8 @@ describe('Environment Configuration', () => {
   describe('TRANSLATION_PROVIDER (HU-026)', () => {
     beforeEach(() => {
       process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
+      process.env['GMAIL_USER'] = 'test@gmail.com';
+      process.env['GMAIL_APP_PASSWORD'] = 'abcd efgh ijkl mnop';
     });
 
     it('should default TRANSLATION_PROVIDER to "ollama" when not set', () => {
@@ -180,177 +186,87 @@ describe('Environment Configuration', () => {
     });
   });
 
-  describe('getOllamaConfig', () => {
-    it('should return Ollama configuration when DATABASE_URL is set', () => {
+  describe('Gmail configuration (HU-036)', () => {
+    beforeEach(() => {
       process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
-      process.env['OLLAMA_EMBEDDING_URL'] = 'http://custom:11434';
-      process.env['OLLAMA_MODEL'] = 'custom-model';
-      process.env['OLLAMA_TIMEOUT_MS'] = '20000';
-
-      const config = getOllamaConfig();
-
-      expect(config).toEqual({
-        baseUrl: 'http://custom:11434',
-        model: 'custom-model',
-        timeoutMs: 20000,
-      });
     });
 
-    it('should return default Ollama configuration when no env vars set', () => {
-      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
-      delete process.env['OLLAMA_EMBEDDING_URL'];
-      delete process.env['OLLAMA_MODEL'];
-      delete process.env['OLLAMA_TIMEOUT_MS'];
-
-      const config = getOllamaConfig();
-
-      expect(config).toEqual({
-        baseUrl: 'http://ollama-embeddings:11434',
-        model: 'nomic-embed-text',
-        timeoutMs: 30000,
-      });
-    });
-
-    it('should throw error if OLLAMA_TIMEOUT_MS is invalid', () => {
-      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
-      process.env['OLLAMA_TIMEOUT_MS'] = 'bad-value';
-
-      expect(() => getOllamaConfig()).toThrow(
-        'Invalid integer value for OLLAMA_TIMEOUT_MS: "bad-value". Expected a valid number.'
-      );
-    });
-
-    it('should throw error if OLLAMA_TIMEOUT_MS contains partial number with trailing text', () => {
-      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
-      process.env['OLLAMA_TIMEOUT_MS'] = '15000ms';
-
-      expect(() => loadEnvConfig()).toThrow(
-        'Invalid integer value for OLLAMA_TIMEOUT_MS: "15000ms". Expected a valid number.'
-      );
-    });
-
-    it('should throw error if PORT contains partial number with trailing text', () => {
-      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
-      process.env['PORT'] = '3000px';
-
-      expect(() => loadEnvConfig()).toThrow(
-        'Invalid integer value for PORT: "3000px". Expected a valid number.'
-      );
-    });
-
-    it('should throw error if PORT contains leading text', () => {
-      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
-      process.env['PORT'] = 'port3000';
-
-      expect(() => loadEnvConfig()).toThrow(
-        'Invalid integer value for PORT: "port3000". Expected a valid number.'
-      );
-    });
-
-    it('should throw error if integer value contains decimal', () => {
-      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
-      process.env['PORT'] = '3000.5';
-
-      expect(() => loadEnvConfig()).toThrow(
-        'Invalid integer value for PORT: "3000.5". Expected a valid number.'
-      );
-    });
-  });
-});
-
-describe('Environment Configuration', () => {
-  let originalEnv: NodeJS.ProcessEnv;
-
-  beforeEach(() => {
-    // Save original environment
-    originalEnv = { ...process.env };
-  });
-
-  afterEach(() => {
-    // Restore original environment
-    process.env = originalEnv;
-  });
-
-  describe('loadEnvConfig', () => {
-    it('should load configuration with all environment variables set', () => {
-      process.env['NODE_ENV'] = 'test';
-      process.env['PORT'] = '4000';
-      process.env['LOG_LEVEL'] = 'info';
-      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
-      process.env['OLLAMA_EMBEDDING_URL'] = 'http://localhost:11434';
-      process.env['OLLAMA_TRANSLATION_URL'] = 'http://localhost:11435';
-      process.env['OLLAMA_MODEL'] = 'test-model';
-      process.env['OLLAMA_TIMEOUT_MS'] = '15000';
+    it('should load gmail config when GMAIL_USER and GMAIL_APP_PASSWORD are set', () => {
+      process.env['GMAIL_USER'] = 'biblioteca@gmail.com';
+      process.env['GMAIL_APP_PASSWORD'] = 'abcd efgh ijkl mnop';
 
       const config = loadEnvConfig();
 
-      expect(config.app.nodeEnv).toBe('test');
-      expect(config.app.port).toBe(4000);
-      expect(config.app.logLevel).toBe('info');
-      expect(config.database.url).toBe('postgresql://test:test@localhost:5432/testdb');
-      expect(config.ollama.baseUrl).toBe('http://localhost:11434');
-      expect(config.ollama.model).toBe('test-model');
-      expect(config.ollama.timeoutMs).toBe(15000);
-      expect(config.translation.baseUrl).toBe('http://localhost:11435');
+      expect(config.gmail.user).toBe('biblioteca@gmail.com');
+      expect(config.gmail.appPassword).toBe('abcd efgh ijkl mnop');
     });
 
-    it('should use default values when optional environment variables are not set', () => {
-      process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
-      // Clear optional environment variables
-      delete process.env['NODE_ENV'];
-      delete process.env['PORT'];
-      delete process.env['LOG_LEVEL'];
-      delete process.env['OLLAMA_EMBEDDING_URL'];
-      delete process.env['OLLAMA_TRANSLATION_URL'];
-      delete process.env['OLLAMA_MODEL'];
-      delete process.env['OLLAMA_TIMEOUT_MS'];
+    it('should return undefined for gmail.user when GMAIL_USER is not set', () => {
+      delete process.env['GMAIL_USER'];
+      process.env['GMAIL_APP_PASSWORD'] = 'abcd efgh ijkl mnop';
 
       const config = loadEnvConfig();
 
-      expect(config.app.nodeEnv).toBe('development');
-      expect(config.app.port).toBe(3000);
-      expect(config.app.logLevel).toBe('debug');
-      expect(config.database.url).toBe('postgresql://test:test@localhost:5432/testdb');
-      expect(config.ollama.baseUrl).toBe('http://ollama-embeddings:11434');
-      expect(config.ollama.model).toBe('nomic-embed-text');
-      expect(config.ollama.timeoutMs).toBe(30000);
-      expect(config.translation.baseUrl).toBe('http://ollama-translations:11435');
+      expect(config.gmail.user).toBeUndefined();
     });
 
-    it('should throw error when DATABASE_URL is not set', () => {
-      delete process.env['DATABASE_URL'];
+    it('should return undefined for gmail.user when GMAIL_USER is empty string', () => {
+      process.env['GMAIL_USER'] = '';
+      process.env['GMAIL_APP_PASSWORD'] = 'abcd efgh ijkl mnop';
 
-      expect(() => loadEnvConfig()).toThrow(
-        'DATABASE_URL environment variable is required but not set'
-      );
+      const config = loadEnvConfig();
+
+      expect(config.gmail.user).toBeUndefined();
     });
 
-    it('should throw error when DATABASE_URL is empty string', () => {
-      process.env['DATABASE_URL'] = '';
+    it('should return undefined for gmail.user when GMAIL_USER is only whitespace', () => {
+      process.env['GMAIL_USER'] = '   ';
+      process.env['GMAIL_APP_PASSWORD'] = 'abcd efgh ijkl mnop';
 
-      expect(() => loadEnvConfig()).toThrow(
-        'DATABASE_URL environment variable is required but not set'
-      );
+      const config = loadEnvConfig();
+
+      expect(config.gmail.user).toBeUndefined();
     });
 
-    it('should throw error when DATABASE_URL is only whitespace', () => {
-      process.env['DATABASE_URL'] = '   ';
+    it('should not throw when GMAIL_USER is missing (credentials are optional)', () => {
+      delete process.env['GMAIL_USER'];
+      process.env['GMAIL_APP_PASSWORD'] = 'abcd efgh ijkl mnop';
 
-      expect(() => loadEnvConfig()).toThrow(
-        'DATABASE_URL environment variable is required but not set'
-      );
+      expect(() => loadEnvConfig()).not.toThrow();
     });
 
-    it('should include helpful error message with example connection string', () => {
-      delete process.env['DATABASE_URL'];
+    it('should return undefined for gmail.appPassword when GMAIL_APP_PASSWORD is not set', () => {
+      process.env['GMAIL_USER'] = 'biblioteca@gmail.com';
+      delete process.env['GMAIL_APP_PASSWORD'];
 
-      expect(() => loadEnvConfig()).toThrow(
-        /Please set it in your environment or \.env file \(e\.g\., postgresql:\/\/user:password@host:5432\/database\)/
-      );
+      const config = loadEnvConfig();
+
+      expect(config.gmail.appPassword).toBeUndefined();
+    });
+
+    it('should return undefined for gmail.appPassword when GMAIL_APP_PASSWORD is empty string', () => {
+      process.env['GMAIL_USER'] = 'biblioteca@gmail.com';
+      process.env['GMAIL_APP_PASSWORD'] = '';
+
+      const config = loadEnvConfig();
+
+      expect(config.gmail.appPassword).toBeUndefined();
+    });
+
+    it('should not throw when GMAIL_APP_PASSWORD is missing (credentials are optional)', () => {
+      process.env['GMAIL_USER'] = 'biblioteca@gmail.com';
+      delete process.env['GMAIL_APP_PASSWORD'];
+
+      expect(() => loadEnvConfig()).not.toThrow();
     });
   });
 
   describe('getOllamaConfig', () => {
+    beforeEach(() => {
+      process.env['GMAIL_USER'] = 'test@gmail.com';
+      process.env['GMAIL_APP_PASSWORD'] = 'abcd efgh ijkl mnop';
+    });
+
     it('should return Ollama configuration when DATABASE_URL is set', () => {
       process.env['DATABASE_URL'] = 'postgresql://test:test@localhost:5432/testdb';
       process.env['OLLAMA_EMBEDDING_URL'] = 'http://custom:11434';

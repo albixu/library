@@ -107,7 +107,7 @@ describe('BookDescriptionDialogComponent', () => {
       fixture.detectChanges();
 
       // p-dialog is not rendered in DOM when not visible by default
-      const dialog = fixture.nativeElement.querySelector('p-dialog');
+      const _dialog = fixture.nativeElement.querySelector('p-dialog');
       expect(component.visible()).toBe(false);
     });
 

@@ -9,17 +9,20 @@
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { SearchBooksUseCase } from '../../../../application/use-cases/SearchBooksUseCase.js';
+import type { JwtService } from '../../../../domain/user/ports/JwtService.js';
 import type { Logger } from '../../../../application/ports/Logger.js';
 import { noopLogger } from '../../../../application/ports/Logger.js';
 import { searchBooksQuerySchema } from '../schemas/search-books.schemas.js';
 import { successResponse } from '../schemas/common.schemas.js';
 import { mapErrorToHttpResponse } from '../errors/HttpErrorMapper.js';
+import { extractUserIfPresent } from '../middleware/extractUserIfPresent.js';
 
 /**
  * Dependencies required by SearchBooksController
  */
 export interface SearchBooksControllerDeps {
   searchBooksUseCase: SearchBooksUseCase;
+  jwtService?: JwtService;
   logger?: Logger;
 }
 
@@ -35,10 +38,12 @@ export interface SearchBooksControllerDeps {
  */
 export class SearchBooksController {
   private readonly searchBooksUseCase: SearchBooksUseCase;
+  private readonly jwtService: JwtService | undefined;
   private readonly logger: Logger;
 
   constructor(deps: SearchBooksControllerDeps) {
     this.searchBooksUseCase = deps.searchBooksUseCase;
+    this.jwtService = deps.jwtService;
     this.logger = deps.logger?.child({ name: 'SearchBooksController' }) ?? noopLogger;
   }
 
@@ -86,6 +91,14 @@ export class SearchBooksController {
 
       const query = parseResult.data;
 
+      // HU-039: Extract optional user identity for favorites filter
+      const userId = this.jwtService
+        ? await extractUserIfPresent(request, this.jwtService)
+        : undefined;
+
+      // HU-039: Only apply favorites filter if user is authenticated
+      const favoritesOf = query.favorites && userId ? userId : undefined;
+
       // 2. Execute use case
       const result = await this.searchBooksUseCase.execute({
         isbn: query.isbn,
@@ -97,6 +110,7 @@ export class SearchBooksController {
         levels: query.levels,
         limit: query.limit,
         cursor: query.cursor,
+        favoritesOf,
       });
 
       // 3. Return search results with standardized response structure

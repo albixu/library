@@ -17,6 +17,7 @@ import { PaginatorComponent } from '../../components/table/paginator/index.js';
 import { SendToKindleDialogComponent } from '../../components/dialogs/index.js';
 import { BookSearchStore } from '../../../core/services/book-search.store.js';
 import { DialogService } from '../../../core/services/dialog.service.js';
+import { AuthService } from '../../../auth/auth.service.js';
 import {
   Book,
   BookType,
@@ -72,6 +73,7 @@ import {
           [typesLoading]="store.typesLoading()"
           [categoriesLoading]="store.categoriesLoading()"
           [levelsLoading]="store.levelsLoading()"
+          [isAuthenticated]="isAuthenticated()"
           (filtersChange)="onFiltersChange($event)"
           (typeChange)="onTypeChange($event)"
         />
@@ -127,18 +129,6 @@ import {
                   }
                 </p>
               </div>
-              <!-- TODO: Descomentar cuando se implemente la exportación del catálogo y la creación manual de libros (HU-035)
-              <div class="results-actions">
-                <button type="button" class="btn btn-secondary">
-                  <span class="material-symbols-outlined" aria-hidden="true">download</span>
-                  Exportar
-                </button>
-                <button type="button" class="btn btn-primary">
-                  <span class="material-symbols-outlined" aria-hidden="true">add</span>
-                  Añadir Nuevo Libro
-                </button>
-              </div>
-              -->
             </div>
 
             <!-- Book display -->
@@ -395,17 +385,6 @@ import {
       }
     }
 
-    .results-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-
-      .material-symbols-outlined {
-        font-size: 1.125rem;
-        margin-right: 0.375rem;
-      }
-    }
-
     /* Cards Container */
     .cards-container {
       display: grid;
@@ -574,15 +553,6 @@ import {
         align-items: flex-start;
         gap: 1rem;
       }
-
-      .results-actions {
-        width: 100%;
-        flex-direction: column;
-
-        button {
-          width: 100%;
-        }
-      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -590,7 +560,11 @@ import {
 export class BookListPageComponent implements OnInit {
   readonly store = inject(BookSearchStore);
   private readonly dialogService = inject(DialogService);
+  private readonly authService = inject(AuthService);
   private readonly breakpointObserver = inject(BreakpointObserver);
+
+  /** True when a user is logged in */
+  readonly isAuthenticated = computed(() => this.authService.currentUser() !== null);
 
   // Mobile state
   readonly isMobileDrawerOpen = signal(false);
@@ -623,6 +597,7 @@ export class BookListPageComponent implements OnInit {
     if (filters.categories && filters.categories.length > 0) count++;
     if (filters.levels && filters.levels.length > 0) count++;
     if (filters.text) count++;
+    if (filters.favorites) count++;
 
     return count;
   });

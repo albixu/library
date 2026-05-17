@@ -43,6 +43,8 @@ services:
       - ./apps/api/drizzle:/app/drizzle
       # Docs directory for consolidated output
       - ./docs:/app/docs
+      # Books directory (read-only mount for email delivery)
+      - ${BOOKS_PATH}:/books:ro
       # Original data directory (source JSON files for consolidation)
       - ./original_data:/app/original_data
       # Named volume for node_modules (prevents overwrite by host)
@@ -58,6 +60,14 @@ services:
       - MONOREPO_ROOT=/app
       # Set AUTO_SEED=true to seed database on first run if empty
       - AUTO_SEED=false
+      # HU-038: JWT secrets (override in .env or environment for production)
+      - JWT_SECRET=${JWT_SECRET:-dev-access-secret-key-min-32-chars!!}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-dev-refresh-secret-key-min-32-chars!}
+      - PASSWORD_RESET_TOKEN_EXPIRY_HOURS=${PASSWORD_RESET_TOKEN_EXPIRY_HOURS:-24}
+      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:4200}
+      # HU-036: Gmail credentials for email delivery
+      - GMAIL_USER=${GMAIL_USER}
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy
