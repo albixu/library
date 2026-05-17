@@ -17,6 +17,7 @@ import type { LogoutUseCase } from '../../../../application/use-cases/auth/Logou
 import type { RefreshTokenUseCase } from '../../../../application/use-cases/auth/RefreshTokenUseCase.js';
 import type { ForgotPasswordUseCase } from '../../../../application/use-cases/auth/ForgotPasswordUseCase.js';
 import type { ResetPasswordUseCase } from '../../../../application/use-cases/auth/ResetPasswordUseCase.js';
+import type { JwtService } from '../../../../domain/user/ports/JwtService.js';
 import type { Logger } from '../../../../application/ports/Logger.js';
 import { noopLogger } from '../../../../application/ports/Logger.js';
 import {
@@ -54,6 +55,7 @@ export interface AuthControllerDeps {
   refreshTokenUseCase: RefreshTokenUseCase;
   forgotPasswordUseCase: ForgotPasswordUseCase;
   resetPasswordUseCase: ResetPasswordUseCase;
+  jwtService: JwtService;
   logger?: Logger;
 }
 
@@ -68,6 +70,7 @@ export class AuthController {
   private readonly refreshTokenUseCase: RefreshTokenUseCase;
   private readonly forgotPasswordUseCase: ForgotPasswordUseCase;
   private readonly resetPasswordUseCase: ResetPasswordUseCase;
+  private readonly jwtService: JwtService;
   private readonly logger: Logger;
 
   constructor(deps: AuthControllerDeps) {
@@ -76,6 +79,7 @@ export class AuthController {
     this.refreshTokenUseCase = deps.refreshTokenUseCase;
     this.forgotPasswordUseCase = deps.forgotPasswordUseCase;
     this.resetPasswordUseCase = deps.resetPasswordUseCase;
+    this.jwtService = deps.jwtService;
     this.logger = deps.logger?.child({ name: 'AuthController' }) ?? noopLogger;
   }
 
@@ -237,6 +241,31 @@ export class AuthController {
       const errorResponse = mapErrorToHttpResponse(error);
       this.logger.debug('Password reset failed', { statusCode: errorResponse.statusCode });
       return reply.status(errorResponse.statusCode).send(errorResponse.body);
+    }
+  }
+
+  /**
+   * GET /api/auth/me
+   *
+   * Verifies the access_token cookie and returns the authenticated user's email.
+   * Used by the frontend on app startup to rehydrate the auth state after a page reload.
+   *
+   * @returns 200 + { email } if the token is valid
+   * @returns 401 if the token is missing or invalid
+   */
+  async me(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+    this.logger.debug('Received /me request');
+
+    const token = request.cookies?.[COOKIE_ACCESS_TOKEN];
+    if (!token) {
+      return reply.status(401).send({ success: false, data: null, error: { message: 'Not authenticated' } });
+    }
+
+    try {
+      const payload = await this.jwtService.verifyAccessToken(token);
+      return reply.status(200).send(successResponse({ email: payload.email }));
+    } catch {
+      return reply.status(401).send({ success: false, data: null, error: { message: 'Invalid or expired token' } });
     }
   }
 }

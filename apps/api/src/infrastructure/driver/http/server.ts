@@ -172,6 +172,7 @@ export async function createServer(
     refreshTokenUseCase,
     forgotPasswordUseCase,
     resetPasswordUseCase,
+    jwtService: jwtService!,
     logger,
   });
 

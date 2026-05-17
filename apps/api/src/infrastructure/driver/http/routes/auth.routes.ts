@@ -97,4 +97,13 @@ export async function authRoutes(
   fastify.post('/auth/reset-password', { config: { rateLimit: false } }, async (request, reply) => {
     return controller.resetPassword(request, reply);
   });
+
+  /**
+   * GET /auth/me
+   * Returns the authenticated user's email from the access_token cookie.
+   * Used by the frontend to rehydrate auth state on page reload.
+   */
+  fastify.get('/auth/me', { config: { rateLimit: false } }, async (request, reply) => {
+    return controller.me(request, reply);
+  });
 }
