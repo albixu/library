@@ -223,6 +223,55 @@ paths:
                     error:
                       message: "Refresh token inválido o expirado"
 
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Obtener sesión actual
+      description: |
+        Devuelve la información del usuario autenticado leyendo el `access_token`
+        de la cookie httpOnly. No consulta la base de datos — extrae los datos
+        directamente del payload del JWT.
+
+        Utilizado por el frontend en el arranque de la aplicación (`APP_INITIALIZER`)
+        para rehidratar el estado de sesión tras una recarga de página.
+      operationId: getMe
+      responses:
+        '200':
+          description: Sesión activa. Datos del usuario extraídos del token.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required:
+                          - email
+                        properties:
+                          email:
+                            type: string
+                            format: email
+                            example: "usuario@ejemplo.com"
+              example:
+                success: true
+                data:
+                  email: "usuario@ejemplo.com"
+                error: null
+        '401':
+          description: Cookie `access_token` ausente, inválida o expirada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  message: "Unauthorized"
+
   /auth/forgot-password:
     post:
       tags:
