@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { CategoryChipsComponent } from '../../data-display/category-chips/category-chips.component.js';
 import { LevelBadgeComponent } from '../../data-display/level-badge/level-badge.component.js';
 import { FormatIconComponent } from '../../data-display/format-icon/format-icon.component.js';
 import { LanguageFlagComponent } from '../../data-display/language-flag/language-flag.component.js';
 import { TruncatedTextComponent } from '../../data-display/truncated-text/truncated-text.component.js';
 import { Book } from '../../../../core/models/index.js';
+import { AuthService } from '../../../../auth/auth.service.js';
+import { FavoriteService } from '../../../../books/services/favorite.service.js';
 
 @Component({
   selector: 'app-book-card',
@@ -32,14 +34,30 @@ import { Book } from '../../../../core/models/index.js';
           <app-language-flag [languageCode]="book().language" />
           <app-level-badge [level]="book().level" />
         </div>
-        <button
-          type="button"
-          aria-label="Enviar a Kindle"
-          class="book-card-action"
-          (click)="onSendToKindle($event)"
-        >
-          <span class="material-symbols-outlined" aria-hidden="true">send_to_mobile</span>
-        </button>
+        @if (isAuthenticated()) {
+          <div class="book-card-actions">
+            <button
+              type="button"
+              aria-label="Enviar a Kindle"
+              class="book-card-action"
+              (click)="onSendToKindle($event)"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">send_to_mobile</span>
+            </button>
+            <button
+              type="button"
+              [attr.aria-label]="getEffectiveFavorite() ? 'Quitar de favoritos' : 'Añadir a favoritos'"
+              class="book-card-action"
+              [class.favorite-active]="getEffectiveFavorite()"
+              [disabled]="pendingFavorite()"
+              (click)="onToggleFavorite($event)"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">{{
+                getEffectiveFavorite() ? 'favorite' : 'favorite_border'
+              }}</span>
+            </button>
+          </div>
+        }
       </header>
 
       <h3 class="book-card-title">{{ book().title }}</h3>
@@ -142,6 +160,13 @@ import { Book } from '../../../../core/models/index.js';
       z-index: 1;
     }
 
+    .book-card-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      margin: -0.5rem -0.5rem 0 0;
+    }
+
     .book-card-meta {
       display: flex;
       align-items: center;
@@ -154,12 +179,20 @@ import { Book } from '../../../../core/models/index.js';
       justify-content: center;
       width: 2.5rem;
       height: 2.5rem;
-      margin: -0.5rem -0.5rem 0 0;
       border: none;
       border-radius: 50%;
       background: transparent;
       cursor: pointer;
       transition: background-color 0.2s ease;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      &.favorite-active {
+        color: #e11d48; /* rose-600 */
+      }
 
       .material-symbols-outlined {
         font-size: 1.25rem;
@@ -251,11 +284,24 @@ import { Book } from '../../../../core/models/index.js';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BookCardComponent {
+  private readonly authService = inject(AuthService);
+  private readonly favoriteService = inject(FavoriteService);
+
   readonly book = input.required<Book>();
   readonly selected = input<boolean>(false);
 
   readonly bookSelect = output<Book>();
   readonly sendToKindle = output<Book>();
+  readonly favoriteToggle = output<{ book: Book; favorite: boolean }>();
+
+  /** Derived signal: true when a user is logged in */
+  readonly isAuthenticated = computed(() => this.authService.currentUser() !== null);
+
+  /** Local optimistic favorite override */
+  private readonly favoriteOverride = signal<boolean | undefined>(undefined);
+
+  /** Whether a favorite toggle request is in flight */
+  readonly pendingFavorite = signal<boolean>(false);
 
   // Computed signals to extract names from Author/Category objects
   readonly authorNames = computed(() =>
@@ -266,6 +312,11 @@ export class BookCardComponent {
 
   readonly categoryNames = computed(() => this.book().categories.map((c) => c.name));
 
+  getEffectiveFavorite(): boolean {
+    const override = this.favoriteOverride();
+    return override !== undefined ? override : (this.book().favorite ?? false);
+  }
+
   onSelect(): void {
     this.bookSelect.emit(this.book());
   }
@@ -273,5 +324,31 @@ export class BookCardComponent {
   onSendToKindle(event: Event): void {
     event.stopPropagation();
     this.sendToKindle.emit(this.book());
+  }
+
+  onToggleFavorite(event: Event): void {
+    event.stopPropagation();
+
+    if (this.pendingFavorite()) return;
+
+    const currentFavorite = this.getEffectiveFavorite();
+    const newFavorite = !currentFavorite;
+
+    // Optimistic update
+    this.favoriteOverride.set(newFavorite);
+    this.pendingFavorite.set(true);
+
+    this.favoriteService.toggle(this.book().id).subscribe({
+      next: (response) => {
+        this.favoriteOverride.set(response.favorite);
+        this.pendingFavorite.set(false);
+        this.favoriteToggle.emit({ book: this.book(), favorite: response.favorite });
+      },
+      error: () => {
+        // Revert optimistic update on error
+        this.favoriteOverride.set(currentFavorite);
+        this.pendingFavorite.set(false);
+      },
+    });
   }
 }
