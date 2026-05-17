@@ -78,6 +78,7 @@ export interface SearchBooksItemOutput {
   description: string; // HU-013: Spanish description
   language: string; // HU-013: ISO 639-1 code
   similarityScore: number | null;
+  available: boolean;
 }
 
 /**
@@ -277,6 +278,7 @@ export class SearchBooksUseCase {
         description: item.book.description, // HU-013: Spanish description
         language: item.book.language, // HU-013
         similarityScore: item.similarityScore,
+        available: item.book.available,
       })),
       pagination: {
         limit,
