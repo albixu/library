@@ -15,6 +15,8 @@ El sistema usa embeddings (representaciones vectoriales del texto) para entender
 ## Características
 
 - 🔍 **Búsqueda semántica**: Encuentra libros describiendo lo que buscas en lenguaje natural
+- 🔐 **Autenticación JWT**: Login/logout/refresh con cookies httpOnly, recuperación de contraseña por email
+- ⭐ **Favoritos**: Marca libros como favoritos y filtra tu lista personal
 - 🌐 **API REST**: Integra con cualquier cliente web
 - 📖 **Swagger UI**: Interfaz interactiva de la API disponible en `/docs` (entornos de desarrollo y test)
 - 📦 **Carga de datos automática**: Importa libros desde archivos JSON
@@ -222,8 +224,15 @@ Desde ahí podés explorar todos los endpoints, ver los esquemas de request/resp
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
+| `POST` | `/api/auth/login` | Iniciar sesión (JWT en cookies httpOnly) |
+| `POST` | `/api/auth/logout` | Cerrar sesión (elimina cookies) |
+| `POST` | `/api/auth/refresh` | Renovar tokens de autenticación |
+| `POST` | `/api/auth/forgot-password` | Solicitar restablecimiento de contraseña |
+| `POST` | `/api/auth/reset-password` | Restablecer contraseña con token |
 | `POST` | `/api/books` | Crear un nuevo libro |
 | `GET` | `/api/books` | Buscar libros (filtros, paginación, búsqueda semántica) |
+| `POST` | `/api/books/:id/send` | Enviar archivo de libro por email |
+| `POST` | `/api/books/:id/favorite` | Alternar favorito (requiere auth) |
 | `GET` | `/api/book-types` | Listar tipos de libro |
 | `GET` | `/api/book-categories` | Listar categorías (filtrable por tipo) |
 | `GET` | `/api/book-levels` | Listar niveles de dificultad (filtrable por tipo) |
@@ -234,7 +243,7 @@ Desde ahí podés explorar todos los endpoints, ver los esquemas de request/resp
 curl -X POST http://localhost:3000/api/books \
   -H "Content-Type: application/json" \
   -d '{
-    "isbn": "aa2s8df188sd"
+    "isbn": "9780132350884",
     "title": "Clean Code",
     "authors": ["Robert C. Martin"],
     "description": "A handbook of agile software craftsmanship",
@@ -242,9 +251,7 @@ curl -X POST http://localhost:3000/api/books \
     "categories": ["programming"],
     "format": "pdf",
     "level": "Intermediate",
-    "image": "https://dominio.com/imagen",
-    "publication_date": "June 2025"
-    "language": "es"
+    "language": "en"
   }'
 ```
 
@@ -571,16 +578,16 @@ El proyecto utiliza [Vitest](https://vitest.dev/) como framework de testing con 
 
 ```
 apps/api/tests/
-├── unit/                    # Tests unitarios (~1435 tests)
+├── unit/                    # Tests unitarios (~1642 tests)
 │   ├── domain/              # Entidades, Value Objects, Criteria
 │   ├── application/         # Casos de uso
 │   ├── infrastructure/      # Mappers, configuración
 │   └── scripts/             # Scripts de consolidación/seeding
-├── integration/             # Tests de integración (~159 tests)
+├── integration/             # Tests de integración (~184 tests, 44 skipped — Ollama)
 │   ├── application/         # Use cases con repos reales
 │   ├── infrastructure/      # Repositorios, servicios externos
 │   └── scripts/             # Scripts con BD real
-└── e2e/                     # Tests end-to-end (~96 tests)
+└── e2e/                     # Tests end-to-end (~130 tests)
     └── http/                # API REST completa
 ```
 

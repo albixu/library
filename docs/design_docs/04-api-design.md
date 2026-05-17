@@ -20,13 +20,15 @@ Este documento define la arquitectura y diseño del backend API para el sistema 
 - Traducción automática de descripciones (inglés → español)
 - Gestión de tipos, categorías y niveles de dificultad
 - Paginación cursor-based
+- Autenticación/autorización con JWT (login, logout, refresh, recuperación de contraseña)
+- Favoritos de usuario (toggle, filtro en búsqueda)
+- Envío de libros por email (Kindle)
+- Registro de descargas de usuario
 
 **Excluido:**
 
-- Autenticación/autorización de usuarios
 - Actualización y eliminación de libros
-- Gestión de archivos físicos (upload/download)
-- Envío a Kindle (futuro)
+- Gestión de archivos físicos (upload)
 
 ---
 
@@ -113,9 +115,11 @@ apps/api/
 │   │   │   ├── BookType.ts
 │   │   │   ├── Category.ts
 │   │   │   └── Level.ts
-│   │   ├── value-objects/         # Value Objects
+   │   │   ├── value-objects/         # Value Objects
 │   │   │   ├── BookIdentifier.ts
 │   │   │   └── BookFormat.ts
+│   │   ├── entities/              # Entidades adicionales
+│   │   │   └── User.ts
 │   │   ├── criteria/              # Patrón Criteria para queries
 │   │   │   ├── Criteria.ts
 │   │   │   ├── Filter.ts
@@ -126,22 +130,34 @@ apps/api/
 │   │   └── validators/            # Validadores puros
 │   │       └── uuid.ts
 │   │
-│   ├── application/               # Capa de Aplicación
+   │   ├── application/               # Capa de Aplicación
 │   │   ├── use-cases/             # Casos de uso
 │   │   │   ├── CreateBookUseCase.ts
 │   │   │   ├── SearchBooksUseCase.ts
+│   │   │   ├── GetBookUseCase.ts
 │   │   │   ├── ListBookTypesUseCase.ts
 │   │   │   ├── ListCategoriesUseCase.ts
 │   │   │   ├── ListBookLevelsUseCase.ts
-│   │   │   └── GetBookUseCase.ts
+│   │   │   ├── LoginUseCase.ts
+│   │   │   ├── LogoutUseCase.ts
+│   │   │   ├── RefreshTokenUseCase.ts
+│   │   │   ├── ForgotPasswordUseCase.ts
+│   │   │   ├── ResetPasswordUseCase.ts
+│   │   │   ├── ToggleFavoriteUseCase.ts
+│   │   │   └── SendBookByEmailUseCase.ts
 │   │   ├── ports/                 # Interfaces (contratos)
 │   │   │   ├── BookRepository.ts
 │   │   │   ├── AuthorRepository.ts
 │   │   │   ├── TypeRepository.ts
 │   │   │   ├── CategoryRepository.ts
 │   │   │   ├── LevelRepository.ts
+│   │   │   ├── UserRepository.ts
+│   │   │   ├── PasswordResetTokenRepository.ts
+│   │   │   ├── FavoriteRepository.ts
+│   │   │   ├── DownloadRepository.ts
 │   │   │   ├── EmbeddingService.ts
 │   │   │   ├── TranslationService.ts
+│   │   │   ├── EmailService.ts
 │   │   │   └── Logger.ts
 │   │   └── errors/                # Errores de aplicación
 │   │       └── ApplicationErrors.ts
@@ -191,8 +207,15 @@ apps/api/
 
 | Método | Endpoint | Descripción | Estado |
 |--------|----------|-------------|--------|
+| POST | `/api/auth/login` | Iniciar sesión (JWT en cookies httpOnly) | ✅ |
+| POST | `/api/auth/logout` | Cerrar sesión (elimina cookies) | ✅ |
+| POST | `/api/auth/refresh` | Renovar tokens de autenticación | ✅ |
+| POST | `/api/auth/forgot-password` | Solicitar restablecimiento de contraseña | ✅ |
+| POST | `/api/auth/reset-password` | Restablecer contraseña con token | ✅ |
 | GET | `/api/books` | Buscar libros con filtros | ✅ |
 | POST | `/api/books` | Crear nuevo libro | ✅ |
+| POST | `/api/books/:id/send` | Enviar libro por email (Kindle) | ✅ |
+| POST | `/api/books/:id/favorite` | Alternar favorito del libro (requiere auth) | ✅ |
 | GET | `/api/book-types` | Listar tipos de libro | ✅ |
 | GET | `/api/book-categories` | Listar categorías | ✅ |
 | GET | `/api/book-levels` | Listar niveles | ✅ |
@@ -343,8 +366,7 @@ Lista todos los tipos de libro disponibles.
   "data": [
     {
       "id": "uuid",
-      "name": "technical",
-      "description": "Technical and programming books"
+      "name": "technical"
     }
   ],
   "error": null
@@ -388,9 +410,7 @@ Lista niveles de dificultad, opcionalmente filtrados por tipo.
   "data": [
     {
       "id": "uuid",
-      "name": "Beginner",
-      "typeId": "uuid",
-      "typeName": "technical"
+      "name": "Beginner"
     }
   ],
   "error": null
@@ -638,6 +658,10 @@ Orquesta la búsqueda de libros:
 6. Retornar resultados paginados
 ```
 
+#### GetBookUseCase
+
+Obtiene un libro por su ID.
+
 #### ListBookTypesUseCase
 
 Lista todos los tipos de libro disponibles.
@@ -649,6 +673,34 @@ Lista categorías, opcionalmente filtradas por tipo.
 #### ListBookLevelsUseCase
 
 Lista niveles, opcionalmente filtrados por tipo.
+
+#### LoginUseCase
+
+Autentica al usuario y emite tokens JWT (access token + refresh token en cookies httpOnly).
+
+#### LogoutUseCase
+
+Invalida la sesión eliminando los tokens JWT del cliente.
+
+#### RefreshTokenUseCase
+
+Renueva el access token usando el refresh token (rotación de tokens).
+
+#### ForgotPasswordUseCase
+
+Genera un token de restablecimiento de contraseña y lo envía por email.
+
+#### ResetPasswordUseCase
+
+Verifica el token de restablecimiento y actualiza la contraseña del usuario.
+
+#### ToggleFavoriteUseCase
+
+Alterna el estado de favorito de un libro para un usuario autenticado.
+
+#### SendBookByEmailUseCase
+
+Envía el archivo físico de un libro a la dirección de email Kindle del usuario.
 
 ### 5.2 Ports (Interfaces)
 
@@ -750,6 +802,53 @@ interface Logger {
   warn(message: string, context?: object): void;
   error(message: string, context?: object): void;
   child(bindings: object): Logger;
+}
+```
+
+#### UserRepository
+
+```typescript
+interface UserRepository {
+  findById(id: string): Promise<User | null>;
+  findByEmail(email: string): Promise<User | null>;
+  save(user: User): Promise<void>;
+}
+```
+
+#### PasswordResetTokenRepository
+
+```typescript
+interface PasswordResetTokenRepository {
+  save(token: PasswordResetToken): Promise<void>;
+  findByTokenHash(hash: string): Promise<PasswordResetToken | null>;
+  markAsUsed(id: string): Promise<void>;
+}
+```
+
+#### FavoriteRepository
+
+```typescript
+interface FavoriteRepository {
+  isFavorite(userId: string, bookId: string): Promise<boolean>;
+  add(userId: string, bookId: string): Promise<void>;
+  remove(userId: string, bookId: string): Promise<void>;
+}
+```
+
+#### DownloadRepository
+
+```typescript
+interface DownloadRepository {
+  record(userId: string, bookId: string): Promise<void>;
+}
+```
+
+#### EmailService
+
+```typescript
+interface EmailService {
+  sendBookToKindle(to: string, bookPath: string, bookTitle: string): Promise<void>;
+  sendPasswordResetEmail(to: string, resetToken: string): Promise<void>;
 }
 ```
 
