@@ -192,7 +192,6 @@ export function loadEnvConfig(): EnvConfig {
   // HU-036: Gmail credentials are optional — only required when email service is used
   const gmailUser = process.env['GMAIL_USER']?.trim() || undefined;
   const gmailAppPassword = process.env['GMAIL_APP_PASSWORD']?.trim() || undefined;
-
   return {
     app: {
       nodeEnv: process.env['NODE_ENV'] ?? DEFAULTS.NODE_ENV,
