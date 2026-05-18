@@ -1324,4 +1324,79 @@ describe('PostgresBookRepository Integration', () => {
       });
     });
   });
+
+  describe('findEmbeddingsByIds', () => {
+    async function saveBookWithEmbedding(title: string, embedding?: number[]): Promise<Book> {
+      const book = Book.create({
+        id: generateUUID(),
+        title,
+        authors: [robertMartin],
+        description: `Description for ${title}`,
+        language: 'en',
+        type: technicalType,
+        format: 'pdf',
+        categories: [programmingCategory],
+      });
+      await bookRepository.save({ book, embedding: embedding ?? generateTestEmbedding() });
+      return book;
+    }
+
+    it('should return empty array when no ids provided', async () => {
+      const result = await bookRepository.findEmbeddingsByIds([]);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should return embeddings for existing books with embeddings', async () => {
+      const embedding = generateTestEmbedding();
+      const book = await saveBookWithEmbedding('Book With Embedding', embedding);
+
+      const result = await bookRepository.findEmbeddingsByIds([book.id]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(book.id);
+      expect(Array.isArray(result[0]!.embedding)).toBe(true);
+      expect(result[0]!.embedding).toHaveLength(768);
+    });
+
+    it('should return embeddings for multiple books', async () => {
+      const book1 = await saveBookWithEmbedding('Book One');
+      const book2 = await saveBookWithEmbedding('Book Two');
+
+      const result = await bookRepository.findEmbeddingsByIds([book1.id, book2.id]);
+
+      expect(result).toHaveLength(2);
+      const ids = result.map(r => r.id);
+      expect(ids).toContain(book1.id);
+      expect(ids).toContain(book2.id);
+    });
+
+    it('should not return books that are not in the ids list', async () => {
+      const book1 = await saveBookWithEmbedding('Requested Book');
+      await saveBookWithEmbedding('Other Book');
+
+      const result = await bookRepository.findEmbeddingsByIds([book1.id]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(book1.id);
+    });
+
+    it('should return numeric array embeddings (not strings)', async () => {
+      const embedding = Array.from({ length: 768 }, (_, i) => i / 768);
+      const book = await saveBookWithEmbedding('Typed Embedding Book', embedding);
+
+      const result = await bookRepository.findEmbeddingsByIds([book.id]);
+
+      expect(result).toHaveLength(1);
+      result[0]!.embedding.forEach(v => {
+        expect(typeof v).toBe('number');
+      });
+    });
+
+    it('should return empty array when ids do not match any book', async () => {
+      const result = await bookRepository.findEmbeddingsByIds([generateUUID(), generateUUID()]);
+
+      expect(result).toEqual([]);
+    });
+  });
 });
