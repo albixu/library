@@ -1,6 +1,19 @@
 import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { MainLayoutComponent } from '@layout/main-layout/main-layout.component.js';
 import { ResetPasswordPageComponent } from './auth/reset-password/index.js';
+import { AuthService } from './auth/auth.service.js';
+
+/**
+ * Guard: allows access only when the user is authenticated.
+ * Redirects to /books if not logged in.
+ */
+const authGuard = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return auth.currentUser() !== null ? true : router.createUrlTree(['/books']);
+};
 
 /**
  * Application Routes
@@ -24,6 +37,16 @@ export const routes: Routes = [
       {
         path: 'books',
         loadChildren: () => import('./catalog/catalog.routes.js').then((m) => m.catalogRoutes),
+      },
+      // Personalised recommendations (auth required)
+      {
+        path: 'recomendaciones',
+        loadComponent: () =>
+          import('./recommendations/feature/recommendations-page.component.js').then(
+            (m) => m.RecommendationsPageComponent
+          ),
+        canActivate: [authGuard],
+        title: 'Para ti',
       },
       // Password reset page
       {
