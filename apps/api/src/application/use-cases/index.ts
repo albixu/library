@@ -32,3 +32,8 @@ export {
   type SearchBooksPagination,
   type SearchBooksUseCaseDeps,
 } from './SearchBooksUseCase.js';
+
+export {
+  GetRecommendationsUseCase,
+  type GetRecommendationsUseCaseDeps,
+} from './GetRecommendationsUseCase.js';
