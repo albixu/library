@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { firstValueFrom, of, throwError } from 'rxjs';
 
-import { KindleService, SendToKindleResult } from './kindle.service.js';
+import { KindleService } from './kindle.service.js';
 import { BookService } from './book.service.js';
 import { Book } from '../models/index.js';
 
@@ -44,15 +44,13 @@ describe('KindleService', () => {
   });
 
   describe('sendToKindle', () => {
-    it('should return success result when API call succeeds', (done) => {
+    it('should return success result when API call succeeds', async () => {
       mockBookService.sendBookByEmail.mockReturnValue(of(undefined));
 
-      service.sendToKindle(mockBook, 'test@kindle.com').subscribe((result: SendToKindleResult) => {
-        expect(result.success).toBe(true);
-        expect(result.message).toContain('Clean Code');
-        expect(result.message).toContain('test@kindle.com');
-        done();
-      });
+      const result = await firstValueFrom(service.sendToKindle(mockBook, 'test@kindle.com'));
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('Clean Code');
+      expect(result.message).toContain('test@kindle.com');
     });
 
     it('should call BookService.sendBookByEmail with correct arguments', () => {
@@ -66,26 +64,22 @@ describe('KindleService', () => {
       );
     });
 
-    it('should return error result when API call fails', (done) => {
+    it('should return error result when API call fails', async () => {
       mockBookService.sendBookByEmail.mockReturnValue(throwError(() => new Error('Network error')));
 
-      service.sendToKindle(mockBook, 'test@kindle.com').subscribe((result: SendToKindleResult) => {
-        expect(result.success).toBe(false);
-        expect(result.message).toContain('Error al enviar');
-        done();
-      });
+      const result = await firstValueFrom(service.sendToKindle(mockBook, 'test@kindle.com'));
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Error al enviar');
     });
 
-    it('should return error result when API returns HTTP error', (done) => {
+    it('should return error result when API returns HTTP error', async () => {
       mockBookService.sendBookByEmail.mockReturnValue(
         throwError(() => ({ status: 404, message: 'Book not found' }))
       );
 
-      service.sendToKindle(mockBook, 'test@gmail.com').subscribe((result: SendToKindleResult) => {
-        expect(result.success).toBe(false);
-        expect(result.message).toBeTruthy();
-        done();
-      });
+      const result = await firstValueFrom(service.sendToKindle(mockBook, 'test@gmail.com'));
+      expect(result.success).toBe(false);
+      expect(result.message).toBeTruthy();
     });
   });
 

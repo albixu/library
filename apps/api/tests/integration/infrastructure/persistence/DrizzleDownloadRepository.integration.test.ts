@@ -160,4 +160,72 @@ describe('DrizzleDownloadRepository Integration', () => {
       expect(rows).toHaveLength(1);
     });
   });
+
+  describe('findAllByUser', () => {
+    it('should return empty array when user has no downloads', async () => {
+      const userId = testUser.id as UserId;
+
+      const result = await repository.findAllByUser(userId.value);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should return all downloads for a given user', async () => {
+      const userId = testUser.id as UserId;
+
+      // Create a second book
+      const secondBookId = BookId.generate();
+      await insertTestBook(db as any, secondBookId.value, testTypeId);
+
+      // Upsert two downloads for the user
+      const d1 = Download.create(userId, testBookId);
+      const d2 = Download.create(userId, secondBookId);
+      await repository.upsert(d1);
+      await repository.upsert(d2);
+
+      const result = await repository.findAllByUser(userId.value);
+
+      expect(result).toHaveLength(2);
+      const bookIds = result.map(d => d.bookId.value);
+      expect(bookIds).toContain(testBookId.value);
+      expect(bookIds).toContain(secondBookId.value);
+    });
+
+    it('should return only downloads belonging to the requested user', async () => {
+      const userId = testUser.id as UserId;
+
+      // Create a second user
+      const otherUser = User.create({ email: 'other-user@example.com', passwordHash: 'hash' });
+      await userRepository.save(otherUser);
+      const otherUserId = otherUser.id as UserId;
+
+      // Create a second book for the other user
+      const otherBookId = BookId.generate();
+      await insertTestBook(db as any, otherBookId.value, testTypeId);
+
+      // Upsert downloads for both users
+      await repository.upsert(Download.create(userId, testBookId));
+      await repository.upsert(Download.create(otherUserId, otherBookId));
+
+      const result = await repository.findAllByUser(userId.value);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.userId.value).toBe(userId.value);
+      expect(result[0]!.bookId.value).toBe(testBookId.value);
+    });
+
+    it('should return Download domain entities with correct fields', async () => {
+      const userId = testUser.id as UserId;
+      const download = Download.create(userId, testBookId);
+      await repository.upsert(download);
+
+      const result = await repository.findAllByUser(userId.value);
+
+      expect(result).toHaveLength(1);
+      const retrieved = result[0]!;
+      expect(retrieved.userId.value).toBe(userId.value);
+      expect(retrieved.bookId.value).toBe(testBookId.value);
+      expect(retrieved.downloadedAt).toBeInstanceOf(Date);
+    });
+  });
 });

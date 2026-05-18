@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { CategoryChipsComponent } from '../../data-display/category-chips/category-chips.component.js';
 import { LevelBadgeComponent } from '../../data-display/level-badge/level-badge.component.js';
 import { FormatIconComponent } from '../../data-display/format-icon/format-icon.component.js';
@@ -46,7 +54,9 @@ import { FavoriteService } from '../../../../books/services/favorite.service.js'
             </button>
             <button
               type="button"
-              [attr.aria-label]="getEffectiveFavorite() ? 'Quitar de favoritos' : 'Añadir a favoritos'"
+              [attr.aria-label]="
+                getEffectiveFavorite() ? 'Quitar de favoritos' : 'Añadir a favoritos'
+              "
               class="book-card-action"
               [class.favorite-active]="getEffectiveFavorite()"
               [disabled]="pendingFavorite()"

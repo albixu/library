@@ -25,7 +25,7 @@ import { AuthService } from '../../auth/auth.service.js';
  */
 export const authInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
-  next: HttpHandlerFn,
+  next: HttpHandlerFn
 ) => {
   const authService = inject(AuthService);
 
@@ -55,8 +55,8 @@ export const authInterceptor: HttpInterceptorFn = (
         catchError((refreshError: unknown) => {
           authService.clearSession();
           return throwError(() => refreshError);
-        }),
+        })
       );
-    }),
+    })
   );
 };

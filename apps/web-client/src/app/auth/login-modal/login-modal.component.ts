@@ -1,10 +1,4 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  inject,
-  signal,
-  OnDestroy,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnDestroy } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { DialogRef } from '@angular/cdk/dialog';
@@ -32,22 +26,13 @@ import { AuthService } from '../auth.service.js';
       <!-- Header -->
       <div class="login-modal__header">
         <h2 id="login-modal-title" class="login-modal__title">Iniciar sesión</h2>
-        <button
-          class="login-modal__close"
-          aria-label="Cerrar"
-          (click)="close()"
-        >
+        <button class="login-modal__close" aria-label="Cerrar" (click)="close()">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
 
       <!-- Form -->
-      <form
-        class="login-modal__form"
-        [formGroup]="form"
-        (ngSubmit)="submit()"
-        novalidate
-      >
+      <form class="login-modal__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <!-- Email field -->
         <div class="login-modal__field">
           <label for="login-email" class="login-modal__label">Email</label>
@@ -84,9 +69,7 @@ import { AuthService } from '../auth.service.js';
             autocomplete="current-password"
           />
           @if (passwordHasError()) {
-            <span class="login-modal__error" role="alert">
-              La contraseña es obligatoria.
-            </span>
+            <span class="login-modal__error" role="alert"> La contraseña es obligatoria. </span>
           }
         </div>
 
@@ -99,11 +82,7 @@ import { AuthService } from '../auth.service.js';
         }
 
         <!-- Submit -->
-        <button
-          type="submit"
-          class="login-modal__submit"
-          [disabled]="isLoading()"
-        >
+        <button type="submit" class="login-modal__submit" [disabled]="isLoading()">
           @if (isLoading()) {
             <span class="material-symbols-outlined login-modal__spinner">sync</span>
             Iniciando sesión...

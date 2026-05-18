@@ -124,7 +124,7 @@ export function normalizeForDuplicateCheck(text: string): string {
  * Provides CRUD operations for books with duplicate detection and embedding storage.
  */
 export class PostgresBookRepository implements BookRepository {
-  constructor(readonly db: DatabaseClient) {}
+  constructor(private readonly db: DatabaseClient) {}
 
   /**
    * Finds a book by its unique identifier
@@ -1018,6 +1018,61 @@ export class PostgresBookRepository implements BookRepository {
       .where(eq(bookCategories.bookId, bookId)) as { categories: CategorySelect }[];
 
     return results.map((r) => CategoryMapper.toDomain(r.categories));
+  }
+
+  /**
+   * Retrieves categories for a list of book IDs (HU-040)
+   *
+   * Used by the recommendations engine to determine the dominant category
+   * from seed books before the search step.
+   */
+  async findCategoriesByIds(bookIds: string[]): Promise<Array<{ id: string; categories: string[] }>> {
+    if (bookIds.length === 0) {
+      return [];
+    }
+
+    const results = await this.db
+      .select({
+        bookId: bookCategories.bookId,
+        categoryName: categories.name,
+      })
+      .from(bookCategories)
+      .innerJoin(categories, eq(bookCategories.categoryId, categories.id))
+      .where(inArray(bookCategories.bookId, bookIds));
+
+    // Group category names by bookId
+    const categoryMap = new Map<string, string[]>();
+    for (const row of results) {
+      const existing = categoryMap.get(row.bookId) ?? [];
+      existing.push(row.categoryName);
+      categoryMap.set(row.bookId, existing);
+    }
+
+    return bookIds.map((id) => ({
+      id,
+      categories: categoryMap.get(id) ?? [],
+    }));
+  }
+
+  /**
+   * Retrieves embeddings for a list of book IDs (HU-040)
+   *
+   * Only returns books that have a non-null embedding stored.
+   * Used by the recommendations engine to compute cosine similarity.
+   */
+  async findEmbeddingsByIds(bookIds: string[]): Promise<{ id: string; embedding: number[] }[]> {
+    if (bookIds.length === 0) {
+      return [];
+    }
+
+    const rows = await this.db
+      .select({ id: books.id, embedding: books.embedding })
+      .from(books)
+      .where(and(inArray(books.id, bookIds), sql`${books.embedding} IS NOT NULL`));
+
+    return rows
+      .filter((row): row is { id: string; embedding: number[] } => row.embedding !== null)
+      .map(row => ({ id: row.id, embedding: row.embedding }));
   }
 
   /**
