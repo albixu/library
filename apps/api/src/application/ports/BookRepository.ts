@@ -205,6 +205,17 @@ export interface BookRepository {
   search(criteria: Criteria, embedding?: number[], favoritesOf?: BookId[]): Promise<SearchBooksResult>;
 
   /**
+   * Retrieves the categories for a list of book IDs.
+   *
+   * Used by the recommendations engine to determine the dominant category
+   * from the user's seed books (downloads + favorites) BEFORE the search step.
+   *
+   * @param bookIds - Array of book UUIDs to look up
+   * @returns Promise resolving to an array of { id, categories } objects
+   */
+  findCategoriesByIds(bookIds: string[]): Promise<Array<{ id: string; categories: string[] }>>;
+
+  /**
    * Retrieves the embeddings for a list of book IDs.
    *
    * Only returns entries for books that have a non-null embedding stored.

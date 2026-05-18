@@ -44,7 +44,7 @@ const SEARCH_LIMIT = 40;
 const MAX_RECOMMENDATIONS = 20;
 
 /** Empty output returned when no recommendations can be computed */
-const EMPTY_OUTPUT: GetRecommendationsOutput = { items: [], label: '' };
+const EMPTY_OUTPUT: GetRecommendationsOutput = Object.freeze({ items: Object.freeze([]) as [], label: '' });
 
 /**
  * Dependencies required by GetRecommendationsUseCase
@@ -113,33 +113,23 @@ export class GetRecommendationsUseCase {
     const embeddings = embeddingEntries.map((e) => e.embedding);
     const centroid = computeCentroid(embeddings);
 
-    // 8. Search for similar books using centroid
+    // 8. Fetch categories for seed books (BEFORE search step — seeds are the user's profile)
+    const seedCategoryEntries = await this.bookRepository.findCategoriesByIds(seedIds);
+    const allSeedCategories = seedCategoryEntries.flatMap((entry) => entry.categories);
+    const dominantCategory = getDominantCategory(allSeedCategories);
+
+    // 9. Search for similar books using centroid
     const criteria = Criteria.create({ limit: SEARCH_LIMIT, cursor: null }).withOrder(
       Order.desc('similarity'),
     );
     const searchResult = await this.bookRepository.search(criteria, centroid);
 
-    // 9. Filter: exclude seeds, exclude below threshold, take top 20
+    // 10. Filter: exclude seeds, exclude below threshold, take top 20
     const seedSet = new Set(seedIds);
     const filtered = searchResult.items
       .filter((item) => !seedSet.has(item.book.id))
       .filter((item) => item.similarityScore !== null && item.similarityScore >= SIMILARITY_THRESHOLD)
       .slice(0, MAX_RECOMMENDATIONS);
-
-    // 10. Determine dominant category from ALL seed books returned in search
-    // We use categories from the candidate items that came from search as a proxy,
-    // but for seeds we need to look at the seed books themselves. We extract categories
-    // from the full result (which may include seeds before filtering).
-    const seedBooksInResult = searchResult.items.filter((item) => seedSet.has(item.book.id));
-    const allSeedCategories = seedBooksInResult.flatMap((item) =>
-      item.book.categories.map((c) => c.name),
-    );
-    // If seeds aren't in search results, use categories from filtered candidates as fallback
-    const categoryList = allSeedCategories.length > 0
-      ? allSeedCategories
-      : filtered.flatMap((item) => item.book.categories.map((c) => c.name));
-
-    const dominantCategory = getDominantCategory(categoryList);
 
     // 11. Build output
     const items = filtered.map((item) =>
@@ -147,7 +137,6 @@ export class GetRecommendationsUseCase {
         bookId: item.book.id,
         title: item.book.title,
         author: item.book.authors.map((a) => a.name).join(', '),
-        coverUrl: null,
         similarity: item.similarityScore!,
         dominantCategory,
       }),

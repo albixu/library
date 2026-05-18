@@ -29,6 +29,7 @@ describe('GetRecommendationsUseCase', () => {
   let mockFavoriteRepository: { findAllByUser: ReturnType<typeof vi.fn>; findByUserAndBook: ReturnType<typeof vi.fn>; add: ReturnType<typeof vi.fn>; remove: ReturnType<typeof vi.fn> };
   let mockBookRepository: {
     findEmbeddingsByIds: ReturnType<typeof vi.fn>;
+    findCategoriesByIds: ReturnType<typeof vi.fn>;
     search: ReturnType<typeof vi.fn>;
     findById: ReturnType<typeof vi.fn>;
     findByIsbn: ReturnType<typeof vi.fn>;
@@ -75,6 +76,7 @@ describe('GetRecommendationsUseCase', () => {
     };
     mockBookRepository = {
       findEmbeddingsByIds: vi.fn(),
+      findCategoriesByIds: vi.fn(),
       search: vi.fn(),
       findById: vi.fn(),
       findByIsbn: vi.fn(),
@@ -132,6 +134,10 @@ describe('GetRecommendationsUseCase', () => {
       mockBookRepository.findEmbeddingsByIds.mockResolvedValue([
         { id: bookId1, embedding: embedding1 },
         { id: bookId2, embedding: embedding2 },
+      ]);
+      mockBookRepository.findCategoriesByIds.mockResolvedValue([
+        { id: bookId1, categories: ['Programming'] },
+        { id: bookId2, categories: ['Programming'] },
       ]);
     });
 
@@ -242,6 +248,10 @@ describe('GetRecommendationsUseCase', () => {
         { id: bookId1, embedding: [1.0, 0.0] },
         { id: bookId2, embedding: [0.0, 1.0] },
       ]);
+      mockBookRepository.findCategoriesByIds.mockResolvedValue([
+        { id: bookId1, categories: ['Programming'] },
+        { id: bookId2, categories: ['Programming'] },
+      ]);
 
       const candidateBook = createTestBook(bookId3);
       mockBookRepository.search.mockResolvedValue({
@@ -332,6 +342,9 @@ describe('GetRecommendationsUseCase', () => {
       mockDownloadRepository.findAllByUser.mockResolvedValue([createDownload(bookId1)]);
       mockBookRepository.findEmbeddingsByIds.mockResolvedValue([
         { id: bookId1, embedding: [1.0, 0.0] },
+      ]);
+      mockBookRepository.findCategoriesByIds.mockResolvedValue([
+        { id: bookId1, categories: ['Programming'] },
       ]);
 
       const candidateBook = createTestBook(bookId3);

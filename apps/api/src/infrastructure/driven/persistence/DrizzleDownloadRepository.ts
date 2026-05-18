@@ -8,7 +8,7 @@
  * HU-040: Added findAllByUser for recommendations feature.
  */
 
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import type { DownloadRepository } from '../../../domain/download/ports/DownloadRepository.js';
 import type { Download } from '../../../domain/download/Download.js';
 import { Download as DownloadEntity } from '../../../domain/download/Download.js';
@@ -55,7 +55,9 @@ export class DrizzleDownloadRepository implements DownloadRepository {
     const rows = await this.db
       .select()
       .from(userBookDownloads)
-      .where(eq(userBookDownloads.userId, userId));
+      .where(eq(userBookDownloads.userId, userId))
+      .orderBy(desc(userBookDownloads.downloadedAt))
+      .limit(100);
 
     return rows.map(row =>
       DownloadEntity.fromPersistence({

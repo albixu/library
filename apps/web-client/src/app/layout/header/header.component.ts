@@ -34,7 +34,7 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
         <nav class="header__nav" aria-label="Navegación principal">
           <a
             class="header__nav-link"
-            routerLink="/recomendaciones"
+            routerLink="/recommendations"
             routerLinkActive="header__nav-link--active"
             aria-label="Para ti — recomendaciones personalizadas"
           >

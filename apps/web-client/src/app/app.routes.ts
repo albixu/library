@@ -40,7 +40,7 @@ export const routes: Routes = [
       },
       // Personalised recommendations (auth required)
       {
-        path: 'recomendaciones',
+        path: 'recommendations',
         loadComponent: () =>
           import('./recommendations/feature/recommendations-page.component.js').then(
             (m) => m.RecommendationsPageComponent

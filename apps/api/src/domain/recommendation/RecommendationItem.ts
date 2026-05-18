@@ -4,7 +4,6 @@ export interface RecommendationItemProps {
   bookId: string;
   title: string;
   author: string;
-  coverUrl: string | null;
   similarity: number;
   dominantCategory: string;
 }
@@ -13,7 +12,6 @@ export class RecommendationItem {
   readonly bookId: string;
   readonly title: string;
   readonly author: string;
-  readonly coverUrl: string | null;
   readonly similarity: number;
   readonly dominantCategory: string;
 
@@ -21,7 +19,6 @@ export class RecommendationItem {
     this.bookId = props.bookId;
     this.title = props.title;
     this.author = props.author;
-    this.coverUrl = props.coverUrl;
     this.similarity = props.similarity;
     this.dominantCategory = props.dominantCategory;
     Object.freeze(this);

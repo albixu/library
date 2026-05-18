@@ -5,6 +5,7 @@ import { DomainError } from '../errors/DomainErrors.js';
  * @param embeddings - Array of numeric vectors (all must have the same length)
  * @returns The centroid vector
  * @throws DomainError if embeddings array is empty
+ * @throws DomainError if embeddings have inconsistent dimensions
  */
 export function computeCentroid(embeddings: number[][]): number[] {
   if (embeddings.length === 0) {
@@ -12,6 +13,13 @@ export function computeCentroid(embeddings: number[][]): number[] {
   }
 
   const dims = embeddings[0].length;
+
+  for (let i = 1; i < embeddings.length; i++) {
+    if (embeddings[i].length !== dims) {
+      throw new InconsistentEmbeddingDimensionsError(dims, embeddings[i].length, i);
+    }
+  }
+
   const centroid = new Array<number>(dims).fill(0);
 
   for (const embedding of embeddings) {
@@ -30,5 +38,13 @@ export function computeCentroid(embeddings: number[][]): number[] {
 export class EmptyEmbeddingsError extends DomainError {
   constructor() {
     super('embeddings cannot be empty');
+  }
+}
+
+export class InconsistentEmbeddingDimensionsError extends DomainError {
+  constructor(expected: number, actual: number, index: number) {
+    super(
+      `embedding at index ${index} has ${actual} dimensions, expected ${expected}`,
+    );
   }
 }

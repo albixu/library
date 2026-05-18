@@ -6,7 +6,6 @@ describe('RecommendationItem', () => {
     bookId: 'book-uuid-123',
     title: 'Clean Code',
     author: 'Robert C. Martin',
-    coverUrl: 'https://example.com/cover.jpg',
     similarity: 0.85,
     dominantCategory: 'Programming',
   };
@@ -17,14 +16,8 @@ describe('RecommendationItem', () => {
       expect(item.bookId).toBe('book-uuid-123');
       expect(item.title).toBe('Clean Code');
       expect(item.author).toBe('Robert C. Martin');
-      expect(item.coverUrl).toBe('https://example.com/cover.jpg');
       expect(item.similarity).toBe(0.85);
       expect(item.dominantCategory).toBe('Programming');
-    });
-
-    it('should allow coverUrl to be null', () => {
-      const item = RecommendationItem.create({ ...validProps, coverUrl: null });
-      expect(item.coverUrl).toBeNull();
     });
 
     it('should accept similarity = 0 (boundary)', () => {

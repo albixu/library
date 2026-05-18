@@ -1,4 +1,12 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  inject,
+  signal,
+  OnInit,
+  DestroyRef,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
@@ -28,7 +36,7 @@ import {
         @if (!loading() && label()) {
           <p class="recommendations-label">
             <span class="material-symbols-outlined label-icon" aria-hidden="true">category</span>
-            Basado en tu interés por <strong>{{ label() }}</strong>
+            {{ label() }}
           </p>
         }
       </div>
@@ -76,18 +84,9 @@ import {
               [attr.aria-label]="item.title + ' de ' + item.author"
             >
               <div class="book-card__cover">
-                @if (item.coverUrl) {
-                  <img
-                    [src]="item.coverUrl"
-                    [alt]="'Portada de ' + item.title"
-                    class="book-card__img"
-                    loading="lazy"
-                  />
-                } @else {
-                  <div class="book-card__cover-placeholder" aria-hidden="true">
-                    <span class="material-symbols-outlined">book</span>
-                  </div>
-                }
+                <div class="book-card__cover-placeholder" aria-hidden="true">
+                  <span class="material-symbols-outlined">book</span>
+                </div>
                 <div
                   class="book-card__similarity"
                   [attr.aria-label]="'Similitud ' + similarityPercent(item.similarity) + '%'"
@@ -476,6 +475,7 @@ import {
 })
 export class RecommendationsPageComponent implements OnInit {
   private readonly recommendationsService = inject(RecommendationsService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(true);
   readonly error = signal(false);
@@ -495,7 +495,10 @@ export class RecommendationsPageComponent implements OnInit {
 
     this.recommendationsService
       .getRecommendations()
-      .pipe(catchError(() => of(null)))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError(() => of(null))
+      )
       .subscribe((response) => {
         if (response === null) {
           this.error.set(true);

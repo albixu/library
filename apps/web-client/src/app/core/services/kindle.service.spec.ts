@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of, throwError } from 'rxjs';
 
-import { KindleService, SendToKindleResult } from './kindle.service.js';
+import { KindleService } from './kindle.service.js';
 import { BookService } from './book.service.js';
 import { Book } from '../models/index.js';
 

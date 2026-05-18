@@ -74,7 +74,6 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
         <!-- Form -->
         @if (token && !isSuccess()) {
           <form class="rp-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-
             <!-- New password field -->
             <div class="rp-field">
               <label for="rp-password" class="rp-label">Nueva contraseña</label>
@@ -402,9 +401,7 @@ export class ResetPasswordPageComponent implements OnInit, OnDestroy {
       error: (err: { status?: number }) => {
         this.isLoading.set(false);
         if (err?.status === 400 || err?.status === 401 || err?.status === 404) {
-          this.serverError.set(
-            'El enlace ha expirado o ya fue utilizado. Solicitá uno nuevo.'
-          );
+          this.serverError.set('El enlace ha expirado o ya fue utilizado. Solicitá uno nuevo.');
         } else {
           this.serverError.set('Ha ocurrido un error. Intentalo de nuevo.');
         }
