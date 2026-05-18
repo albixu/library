@@ -14,6 +14,7 @@ import {
   RecommendationsService,
   RecommendationItem,
 } from '../data-access/recommendations.service.js';
+import { Book } from '../../core/models/index.js';
 import { FavoriteService } from '../../books/services/favorite.service.js';
 import { DialogService } from '../../core/services/dialog.service.js';
 import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/send-to-kindle-dialog/send-to-kindle-dialog.component.js';
@@ -639,7 +640,11 @@ export class RecommendationsPageComponent implements OnInit {
     event.preventDefault();
     event.stopPropagation();
     this.dialogService.open(SendToKindleDialogComponent, {
-      data: { id: item.bookId, title: item.title, available: true } as never,
+      data: {
+        id: item.bookId,
+        title: item.title,
+        available: true,
+      } as Pick<Book, 'id' | 'title' | 'available'>,
       width: '400px',
       maxWidth: '90vw',
     });
