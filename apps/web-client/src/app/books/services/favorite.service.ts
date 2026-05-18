@@ -11,6 +11,15 @@ export interface FavoriteToggleResponse {
 }
 
 /**
+ * API envelope wrapper used by all API responses
+ */
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error: string | null;
+}
+
+/**
  * FavoriteService - Handles book favorite toggle operations
  *
  * Calls POST /api/books/:id/favorite to toggle the favorite state.
@@ -28,7 +37,7 @@ export class FavoriteService {
    * @param bookId - The ID of the book to toggle
    * @returns Observable of FavoriteToggleResponse with updated favorite state
    */
-  toggle(bookId: string): Observable<FavoriteToggleResponse> {
-    return this.api.post<FavoriteToggleResponse>(`/books/${bookId}/favorite`, {});
+  toggle(bookId: string): Observable<ApiResponse<FavoriteToggleResponse>> {
+    return this.api.post<ApiResponse<FavoriteToggleResponse>>(`/books/${bookId}/favorite`, {});
   }
 }

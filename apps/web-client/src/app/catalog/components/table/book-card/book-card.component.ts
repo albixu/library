@@ -340,9 +340,9 @@ export class BookCardComponent {
 
     this.favoriteService.toggle(this.book().id).subscribe({
       next: (response) => {
-        this.favoriteOverride.set(response.favorite);
+        this.favoriteOverride.set(response.data.favorite);
         this.pendingFavorite.set(false);
-        this.favoriteToggle.emit({ book: this.book(), favorite: response.favorite });
+        this.favoriteToggle.emit({ book: this.book(), favorite: response.data.favorite });
       },
       error: () => {
         // Revert optimistic update on error
