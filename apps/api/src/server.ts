@@ -192,7 +192,7 @@ async function bootstrap(): Promise<void> {
     const getRecommendationsUseCase = new GetRecommendationsUseCase({
       downloadRepository,
       bookRepository,
-      logger,
+      favoriteRepository,
     });
 
     // Create and start server
