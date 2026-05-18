@@ -98,6 +98,7 @@ export class SearchBooksController {
 
       // HU-039: Only apply favorites filter if user is authenticated
       const favoritesOf = query.favorites && userId ? userId : undefined;
+      const currentUserId = !favoritesOf && userId ? userId : undefined;
 
       // 2. Execute use case
       const result = await this.searchBooksUseCase.execute({
@@ -111,6 +112,7 @@ export class SearchBooksController {
         limit: query.limit,
         cursor: query.cursor,
         favoritesOf,
+        currentUserId,
       });
 
       // 3. Return search results with standardized response structure

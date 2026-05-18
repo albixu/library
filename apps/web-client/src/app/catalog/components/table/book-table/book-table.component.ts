@@ -392,9 +392,9 @@ export class BookTableComponent {
       next: (response) => {
         this.favoriteOverrides.update((overrides) => ({
           ...overrides,
-          [book.id]: response.favorite,
+          [book.id]: response.data.favorite,
         }));
-        this.favoriteToggle.emit({ book, favorite: response.favorite });
+        this.favoriteToggle.emit({ book, favorite: response.data.favorite });
       },
       error: () => {
         // Revert optimistic update on error
