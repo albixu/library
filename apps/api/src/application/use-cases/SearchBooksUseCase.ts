@@ -58,6 +58,8 @@ export interface SearchBooksInput {
   cursor?: string;
   /** If provided, only returns books favorited by this user */
   favoritesOf?: UserId;
+  /** If provided, decorates results with favorite flag without filtering */
+  currentUserId?: UserId;
 }
 
 /**
@@ -79,6 +81,7 @@ export interface SearchBooksItemOutput {
   language: string; // HU-013: ISO 639-1 code
   similarityScore: number | null;
   available: boolean;
+  favorite: boolean;
 }
 
 /**
@@ -147,11 +150,13 @@ export class SearchBooksUseCase {
 
     // 1. If filtering by favorites, resolve the bookId list first
     let favoriteBookIds: BookId[] | undefined;
-    if (input.favoritesOf) {
-      favoriteBookIds = await this.favoriteRepository!.findAllByUser(input.favoritesOf);
+    const userForFavorites = input.favoritesOf ?? input.currentUserId;
 
-      // Short-circuit: if user has no favorites, return empty result immediately
-      if (favoriteBookIds.length === 0) {
+    if (userForFavorites && this.favoriteRepository) {
+      favoriteBookIds = await this.favoriteRepository.findAllByUser(userForFavorites);
+
+      // Short-circuit ONLY when explicitly filtering by favorites
+      if (input.favoritesOf && favoriteBookIds.length === 0) {
         return {
           items: [],
           pagination: { limit, hasNextPage: false, nextCursor: null, totalCount: 0 },
@@ -183,8 +188,9 @@ export class SearchBooksUseCase {
       hasSimilarityFilter: criteria.hasSimilarityFilter(),
     });
 
-    // 4. Execute search — pass favoriteBookIds to let the repository filter at DB level
-    const result = await this.bookRepository.search(criteria, embedding, favoriteBookIds);
+    // 4. Execute search — only use favoriteBookIds as a filter when explicitly filtering by favorites
+    const favoritesFilter = input.favoritesOf ? favoriteBookIds : undefined;
+    const result = await this.bookRepository.search(criteria, embedding, favoritesFilter);
 
     this.logger.info('Book search completed', {
       resultCount: result.items.length,
@@ -193,7 +199,8 @@ export class SearchBooksUseCase {
     });
 
     // 5. Map results to output
-    return this.toOutput(result, limit);
+    const favoriteIdSet = new Set(favoriteBookIds?.map((id) => id.value));
+    return this.toOutput(result, limit, favoriteIdSet);
   }
 
   /**
@@ -263,7 +270,7 @@ export class SearchBooksUseCase {
   /**
    * Maps repository result to output DTO
    */
-  private toOutput(result: SearchBooksResult, limit: number): SearchBooksOutput {
+  private toOutput(result: SearchBooksResult, limit: number, favoriteIds: Set<string>): SearchBooksOutput {
     return {
       items: result.items.map((item) => ({
         id: item.book.id,
@@ -279,6 +286,7 @@ export class SearchBooksUseCase {
         language: item.book.language, // HU-013
         similarityScore: item.similarityScore,
         available: item.book.available,
+        favorite: favoriteIds.has(item.book.id),
       })),
       pagination: {
         limit,

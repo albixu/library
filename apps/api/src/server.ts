@@ -132,9 +132,13 @@ async function bootstrap(): Promise<void> {
       typeRepository,
     );
 
+    // HU-039: Favorites repository (needed by SearchBooksUseCase for decoration)
+    const favoriteRepository = new DrizzleFavoriteRepository(db);
+
     const searchBooksUseCase = new SearchBooksUseCase({
       bookRepository,
       embeddingService,
+      favoriteRepository,
       logger,
     });
 
@@ -179,7 +183,6 @@ async function bootstrap(): Promise<void> {
     });
 
     // HU-039: Favorites and downloads use cases
-    const favoriteRepository = new DrizzleFavoriteRepository(db);
     const downloadRepository = new DrizzleDownloadRepository(db);
     const toggleFavoriteUseCase = new ToggleFavoriteUseCase({ favoriteRepository });
     const registerDownloadUseCase = new RegisterDownloadUseCase({ downloadRepository });
