@@ -1021,6 +1021,27 @@ export class PostgresBookRepository implements BookRepository {
   }
 
   /**
+   * Retrieves embeddings for a list of book IDs (HU-040)
+   *
+   * Only returns books that have a non-null embedding stored.
+   * Used by the recommendations engine to compute cosine similarity.
+   */
+  async findEmbeddingsByIds(bookIds: string[]): Promise<Array<{ id: string; embedding: number[] }>> {
+    if (bookIds.length === 0) {
+      return [];
+    }
+
+    const rows = await this.db
+      .select({ id: books.id, embedding: books.embedding })
+      .from(books)
+      .where(and(inArray(books.id, bookIds), sql`${books.embedding} IS NOT NULL`));
+
+    return rows
+      .filter((row): row is { id: string; embedding: number[] } => row.embedding !== null)
+      .map(row => ({ id: row.id, embedding: row.embedding }));
+  }
+
+  /**
    * Handles save errors, converting database errors to domain errors
    */
   private handleSaveError(error: unknown, book: Book): never {
