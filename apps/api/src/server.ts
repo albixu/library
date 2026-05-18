@@ -27,6 +27,7 @@ import { ListBookLevelsUseCase } from './application/use-cases/ListBookLevelsUse
 import { SendBookByEmailUseCase } from './application/use-cases/SendBookByEmailUseCase.js';
 import { ToggleFavoriteUseCase } from './application/use-cases/favorite/ToggleFavoriteUseCase.js';
 import { RegisterDownloadUseCase } from './application/use-cases/download/RegisterDownloadUseCase.js';
+import { GetRecommendationsUseCase } from './application/use-cases/GetRecommendationsUseCase.js';
 import { LoginUseCase } from './application/use-cases/auth/LoginUseCase.js';
 import { LogoutUseCase } from './application/use-cases/auth/LogoutUseCase.js';
 import { RefreshTokenUseCase } from './application/use-cases/auth/RefreshTokenUseCase.js';
@@ -187,6 +188,13 @@ async function bootstrap(): Promise<void> {
     const toggleFavoriteUseCase = new ToggleFavoriteUseCase({ favoriteRepository });
     const registerDownloadUseCase = new RegisterDownloadUseCase({ downloadRepository });
 
+    // HU-040: Recommendations use case
+    const getRecommendationsUseCase = new GetRecommendationsUseCase({
+      downloadRepository,
+      bookRepository,
+      logger,
+    });
+
     // Create and start server
     const server = await createServer(
       {
@@ -198,6 +206,7 @@ async function bootstrap(): Promise<void> {
         sendBookByEmailUseCase,
         toggleFavoriteUseCase,
         registerDownloadUseCase,
+        getRecommendationsUseCase,
         loginUseCase,
         logoutUseCase,
         refreshTokenUseCase,
