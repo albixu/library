@@ -14,6 +14,10 @@ import {
   RecommendationsService,
   RecommendationItem,
 } from '../data-access/recommendations.service.js';
+import { Book } from '../../core/models/index.js';
+import { FavoriteService } from '../../books/services/favorite.service.js';
+import { DialogService } from '../../core/services/dialog.service.js';
+import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/send-to-kindle-dialog/send-to-kindle-dialog.component.js';
 
 /**
  * RecommendationsPageComponent - "Para ti" personalised recommendations page
@@ -99,6 +103,25 @@ import {
                 <p class="book-card__author">{{ item.author }}</p>
                 <p class="book-card__category">{{ item.dominantCategory }}</p>
               </div>
+              <div class="book-card__actions">
+                <button
+                  class="card-action-btn"
+                  [class.favorite-active]="isFavorite(item.bookId)"
+                  [attr.aria-label]="isFavorite(item.bookId) ? 'Quitar de favoritos' : 'Añadir a favoritos'"
+                  [title]="isFavorite(item.bookId) ? 'Quitar de favoritos' : 'Añadir a favoritos'"
+                  (click)="onToggleFavorite($event, item.bookId)"
+                >
+                  <span class="material-symbols-outlined">{{ isFavorite(item.bookId) ? 'favorite' : 'favorite_border' }}</span>
+                </button>
+                <button
+                  class="card-action-btn"
+                  aria-label="Enviar a Kindle"
+                  title="Enviar a Kindle"
+                  (click)="onSendToKindle($event, item)"
+                >
+                  <span class="material-symbols-outlined">send_to_mobile</span>
+                </button>
+              </div>
             </a>
           }
         </div>
@@ -109,6 +132,32 @@ import {
     :host {
       display: block;
       height: 100%;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
+      transition: scrollbar-color 0.2s ease;
+    }
+
+    :host(:hover) {
+      scrollbar-color: var(--color-border-strong, rgb(148 163 184)) transparent;
+    }
+
+    :host::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    :host::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    :host::-webkit-scrollbar-thumb {
+      background-color: transparent;
+      border-radius: 3px;
+      transition: background-color 0.2s ease;
+    }
+
+    :host(:hover)::-webkit-scrollbar-thumb {
+      background-color: rgb(148 163 184);
     }
 
     .recommendations-page {
@@ -305,6 +354,56 @@ import {
       }
     }
 
+    /* Card actions */
+    .book-card__actions {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.375rem 0.5rem;
+      border-top: 1px solid;
+
+      [data-theme='dark'] & {
+        border-color: rgb(51 65 85);
+      }
+
+      [data-theme='light'] & {
+        border-color: rgb(226 232 240);
+      }
+    }
+
+    .card-action-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: background-color 150ms ease, color 150ms ease;
+
+      .material-symbols-outlined {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+
+      [data-theme='dark'] & {
+        color: rgb(148 163 184);
+        &:hover { background-color: rgb(30 41 59); color: rgb(203 213 225); }
+      }
+
+      [data-theme='light'] & {
+        color: rgb(100 116 139);
+        &:hover { background-color: rgb(241 245 249); color: rgb(51 65 85); }
+      }
+    }
+
+    .card-action-btn.favorite-active {
+      color: #e11d48;
+    }
+
     /* Skeleton */
     .book-card--skeleton {
       pointer-events: none;
@@ -476,11 +575,15 @@ import {
 export class RecommendationsPageComponent implements OnInit {
   private readonly recommendationsService = inject(RecommendationsService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly favoriteService = inject(FavoriteService);
+  private readonly dialogService = inject(DialogService);
 
   readonly loading = signal(true);
   readonly error = signal(false);
   readonly items = signal<RecommendationItem[]>([]);
   readonly label = signal('');
+
+  private readonly favoriteOverrides = signal<Record<string, boolean>>({});
 
   /** Placeholder array for skeleton loading cards */
   readonly skeletonItems = Array.from({ length: 8 });
@@ -513,5 +616,37 @@ export class RecommendationsPageComponent implements OnInit {
   /** Convert a 0–1 similarity score to a whole-number percentage */
   similarityPercent(similarity: number): number {
     return Math.round(similarity * 100);
+  }
+
+  isFavorite(bookId: string): boolean {
+    const overrides = this.favoriteOverrides();
+    if (bookId in overrides) return overrides[bookId];
+    return false;
+  }
+
+  onToggleFavorite(event: Event, bookId: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const current = this.isFavorite(bookId);
+    this.favoriteOverrides.update(o => ({ ...o, [bookId]: !current }));
+    this.favoriteService.toggle(bookId).subscribe({
+      error: () => {
+        this.favoriteOverrides.update(o => ({ ...o, [bookId]: current }));
+      },
+    });
+  }
+
+  onSendToKindle(event: Event, item: RecommendationItem): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dialogService.open(SendToKindleDialogComponent, {
+      data: {
+        id: item.bookId,
+        title: item.title,
+        available: true,
+      } as Pick<Book, 'id' | 'title' | 'available'>,
+      width: '400px',
+      maxWidth: '90vw',
+    });
   }
 }
