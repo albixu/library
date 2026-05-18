@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { RecommendationsService, RecommendationsResponse } from './recommendations.service.js';
 import { ApiService } from '../../core/services/api.service.js';
+import { ApiResponse } from '../../core/models/index.js';
 
 describe('RecommendationsService', () => {
   let service: RecommendationsService;
@@ -31,6 +32,12 @@ describe('RecommendationsService', () => {
     ],
   };
 
+  const wrappedResponse: ApiResponse<RecommendationsResponse> = {
+    success: true,
+    data: mockResponse,
+    error: null,
+  };
+
   beforeEach(() => {
     apiServiceMock = {
       get: vi.fn(),
@@ -51,7 +58,7 @@ describe('RecommendationsService', () => {
 
   describe('getRecommendations', () => {
     it('should call GET /books/recommendations', async () => {
-      apiServiceMock.get.mockReturnValue(of(mockResponse));
+      apiServiceMock.get.mockReturnValue(of(wrappedResponse));
 
       await firstValueFrom(service.getRecommendations());
 
@@ -59,7 +66,7 @@ describe('RecommendationsService', () => {
     });
 
     it('should return the recommendations response', async () => {
-      apiServiceMock.get.mockReturnValue(of(mockResponse));
+      apiServiceMock.get.mockReturnValue(of(wrappedResponse));
 
       const result = await firstValueFrom(service.getRecommendations());
 
@@ -67,7 +74,7 @@ describe('RecommendationsService', () => {
     });
 
     it('should return items array from response', async () => {
-      apiServiceMock.get.mockReturnValue(of(mockResponse));
+      apiServiceMock.get.mockReturnValue(of(wrappedResponse));
 
       const result = await firstValueFrom(service.getRecommendations());
 
@@ -76,7 +83,7 @@ describe('RecommendationsService', () => {
     });
 
     it('should handle items with null coverUrl', async () => {
-      apiServiceMock.get.mockReturnValue(of(mockResponse));
+      apiServiceMock.get.mockReturnValue(of(wrappedResponse));
 
       const result = await firstValueFrom(service.getRecommendations());
 
@@ -84,7 +91,7 @@ describe('RecommendationsService', () => {
     });
 
     it('should return the category label', async () => {
-      apiServiceMock.get.mockReturnValue(of(mockResponse));
+      apiServiceMock.get.mockReturnValue(of(wrappedResponse));
 
       const result = await firstValueFrom(service.getRecommendations());
 
@@ -92,7 +99,11 @@ describe('RecommendationsService', () => {
     });
 
     it('should handle empty items array', async () => {
-      const emptyResponse: RecommendationsResponse = { label: '', items: [] };
+      const emptyResponse: ApiResponse<RecommendationsResponse> = {
+        success: true,
+        data: { label: '', items: [] },
+        error: null,
+      };
       apiServiceMock.get.mockReturnValue(of(emptyResponse));
 
       const result = await firstValueFrom(service.getRecommendations());

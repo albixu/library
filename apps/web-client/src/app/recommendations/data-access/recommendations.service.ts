@@ -1,7 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { ApiService } from '../../core/services/api.service.js';
+import { ApiResponse } from '../../core/models/index.js';
 
 /**
  * A single recommendation item returned by the API
@@ -40,6 +42,8 @@ export class RecommendationsService {
    * @returns Observable of RecommendationsResponse
    */
   getRecommendations(): Observable<RecommendationsResponse> {
-    return this.api.get<RecommendationsResponse>('/books/recommendations');
+    return this.api
+      .get<ApiResponse<RecommendationsResponse>>('/books/recommendations')
+      .pipe(map((res) => res.data!));
   }
 }
