@@ -20,9 +20,12 @@ import {
   BookNotFoundError,
   BookFileNotFoundError,
 } from '../../domain/errors/DomainErrors.js';
+import { UserId } from '../../domain/user/value-objects/UserId.js';
+import { BookId } from '../../domain/book/value-objects/BookId.js';
 import type { BookRepository } from '../ports/BookRepository.js';
 import type { FileSystemPort } from '../ports/FileSystemPort.js';
 import type { EmailPort } from '../ports/EmailPort.js';
+import type { RegisterDownloadUseCase } from './download/RegisterDownloadUseCase.js';
 
 /**
  * Input DTO for sending a book by email
@@ -32,6 +35,8 @@ export interface SendBookByEmailInput {
   bookId: string;
   /** Recipient email address */
   email: string;
+  /** UUID of the authenticated user (optional — used to register the Kindle send as a download) */
+  userId?: string;
 }
 
 /**
@@ -46,6 +51,11 @@ export interface SendBookByEmailUseCaseDeps {
    * Defaults to '/books' (the Docker volume mount point).
    */
   booksMountPath?: string;
+  /**
+   * Optional use case for registering the Kindle send as a download event.
+   * When present, a download is recorded after every successful email delivery.
+   */
+  registerDownloadUseCase?: RegisterDownloadUseCase;
 }
 
 /**
@@ -61,12 +71,14 @@ export class SendBookByEmailUseCase {
   private readonly fileSystemPort: FileSystemPort;
   private readonly emailPort: EmailPort;
   private readonly booksMountPath: string;
+  private readonly registerDownloadUseCase?: RegisterDownloadUseCase;
 
   constructor(deps: SendBookByEmailUseCaseDeps) {
     this.bookRepository = deps.bookRepository;
     this.fileSystemPort = deps.fileSystemPort;
     this.emailPort = deps.emailPort;
     this.booksMountPath = deps.booksMountPath ?? '/books';
+    this.registerDownloadUseCase = deps.registerDownloadUseCase;
   }
 
   /**
@@ -79,7 +91,7 @@ export class SendBookByEmailUseCase {
    * @throws BookFileNotFoundError if the book has no path or the file does not exist
    * @throws EmailSendError if the email could not be delivered
    */
-  async execute({ bookId, email }: SendBookByEmailInput): Promise<void> {
+  async execute({ bookId, email, userId }: SendBookByEmailInput): Promise<void> {
     // 1. Validate email — throws InvalidEmailAddressError if invalid
     const emailAddress = EmailAddress.create(email);
 
@@ -114,5 +126,17 @@ export class SendBookByEmailUseCase {
       attachmentPath: fullPath,
       attachmentFilename: path.basename(book.path),
     });
+
+    // 8. Register the Kindle send as a download event (best-effort — never fails the request)
+    if (this.registerDownloadUseCase && userId) {
+      try {
+        await this.registerDownloadUseCase.execute({
+          userId: UserId.create(userId),
+          bookId: BookId.create(bookId),
+        });
+      } catch {
+        // Intentionally swallowed: registration failure must not affect the user
+      }
+    }
   }
 }

@@ -156,11 +156,6 @@ async function bootstrap(): Promise<void> {
       appPassword: gmailAppPassword,
     });
     const fileSystemAdapter = new NodeFileSystemAdapter();
-    const sendBookByEmailUseCase = new SendBookByEmailUseCase({
-      bookRepository,
-      fileSystemPort: fileSystemAdapter,
-      emailPort: emailAdapter,
-    });
 
     // HU-038: Auth adapters and use cases
     const jwtService = new JwtServiceImpl(env.jwt.secret, env.jwt.refreshSecret);
@@ -187,6 +182,14 @@ async function bootstrap(): Promise<void> {
     const downloadRepository = new DrizzleDownloadRepository(db);
     const toggleFavoriteUseCase = new ToggleFavoriteUseCase({ favoriteRepository });
     const registerDownloadUseCase = new RegisterDownloadUseCase({ downloadRepository });
+
+    // HU-036: Send book by email use case — wired after registerDownloadUseCase (HU-039)
+    const sendBookByEmailUseCase = new SendBookByEmailUseCase({
+      bookRepository,
+      fileSystemPort: fileSystemAdapter,
+      emailPort: emailAdapter,
+      registerDownloadUseCase,
+    });
 
     // HU-040: Recommendations use case
     const getRecommendationsUseCase = new GetRecommendationsUseCase({
