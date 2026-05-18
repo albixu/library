@@ -198,10 +198,7 @@ const DEFAULT_FILTERS: FilterState = {
           <section class="filter-section">
             <h3 class="filter-section__title">Mi biblioteca</h3>
 
-            <label
-              class="favorites-checkbox-label"
-              data-testid="favorites-filter"
-            >
+            <label class="favorites-checkbox-label" data-testid="favorites-filter">
               <input
                 type="checkbox"
                 class="favorites-checkbox"

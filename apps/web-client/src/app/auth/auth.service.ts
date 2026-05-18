@@ -39,7 +39,7 @@ export class AuthService {
       catchError(() => {
         this._currentUser.set(null);
         return of(undefined as any);
-      }),
+      })
     );
   }
 
@@ -51,9 +51,9 @@ export class AuthService {
    * @param password - User password
    */
   login(email: string, password: string): Observable<void> {
-    return this.api.post<void>('/auth/login', { email, password }).pipe(
-      tap(() => this._currentUser.set({ email }))
-    );
+    return this.api
+      .post<void>('/auth/login', { email, password })
+      .pipe(tap(() => this._currentUser.set({ email })));
   }
 
   /**
@@ -61,9 +61,7 @@ export class AuthService {
    * On success, clears the currentUser signal.
    */
   logout(): Observable<void> {
-    return this.api.post<void>('/auth/logout', {}).pipe(
-      tap(() => this._currentUser.set(null))
-    );
+    return this.api.post<void>('/auth/logout', {}).pipe(tap(() => this._currentUser.set(null)));
   }
 
   /**
@@ -73,7 +71,7 @@ export class AuthService {
   refreshToken(): Observable<boolean> {
     return this.api.post<void>('/auth/refresh', {}).pipe(
       tap(() => {}),
-      catchError(() => of(false as any)),
+      catchError(() => of(false as any))
     );
   }
 
@@ -104,4 +102,3 @@ export class AuthService {
     return this.api.post<void>('/auth/reset-password', { token, newPassword });
   }
 }
-

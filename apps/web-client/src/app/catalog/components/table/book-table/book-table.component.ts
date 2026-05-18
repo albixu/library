@@ -8,6 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+
 import { CategoryChipsComponent } from '../../data-display/category-chips/category-chips.component.js';
 import { LevelBadgeComponent } from '../../data-display/level-badge/level-badge.component.js';
 import { LanguageFlagComponent } from '../../data-display/language-flag/language-flag.component.js';
@@ -53,12 +54,7 @@ import { FavoriteService } from '../../../../books/services/favorite.service.js'
               </thead>
               <tbody>
                 @for (book of books(); track book.id) {
-                  <tr
-                    class="book-row"
-                    tabindex="0"
-                    (click)="onRowClick(book)"
-                    (keydown.enter)="onRowClick(book)"
-                  >
+                  <tr class="book-row">
                     <td class="isbn-column">
                       <span class="isbn-text">{{ book.isbn || '-' }}</span>
                     </td>
@@ -155,6 +151,34 @@ import { FavoriteService } from '../../../../books/services/favorite.service.js'
 
     .table-scroll {
       overflow-x: auto;
+      overflow-y: auto;
+      scrollbar-width: thin; /* Firefox */
+      scrollbar-color: transparent transparent; /* Firefox: oculto por defecto */
+      transition: scrollbar-color 0.2s ease;
+    }
+
+    .table-scroll:hover {
+      scrollbar-color: var(--color-border-strong, rgb(148 163 184)) transparent; /* Firefox: visible al hover */
+    }
+
+    /* WebKit (Chrome, Safari, Edge) */
+    .table-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .table-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .table-scroll::-webkit-scrollbar-thumb {
+      background-color: transparent;
+      border-radius: 3px;
+      transition: background-color 0.2s ease;
+    }
+
+    .table-scroll:hover::-webkit-scrollbar-thumb {
+      background-color: rgb(148 163 184); /* slate-400 */
     }
 
     .book-table {
@@ -172,16 +196,10 @@ import { FavoriteService } from '../../../../books/services/favorite.service.js'
     }
 
     .book-row {
-      cursor: pointer;
       transition: background-color 0.15s ease;
 
       &:hover {
         background-color: var(--color-table-row-hover);
-      }
-
-      &:focus-visible {
-        outline: 2px solid var(--color-accent);
-        outline-offset: -2px;
       }
     }
 
@@ -354,7 +372,6 @@ export class BookTableComponent {
   readonly loading = input<boolean>(false);
   readonly emptyStateType = input<'empty' | 'no-results' | 'initial'>('empty');
 
-  readonly rowClick = output<Book>();
   readonly sendToKindle = output<Book>();
   readonly favoriteToggle = output<{ book: Book; favorite: boolean }>();
 
@@ -365,10 +382,6 @@ export class BookTableComponent {
 
   /** Local map to track optimistic favorite state (bookId → favorite) */
   private readonly favoriteOverrides = signal<Record<string, boolean>>({});
-
-  onRowClick(book: Book): void {
-    this.rowClick.emit(book);
-  }
 
   onSendToKindle(event: Event, book: Book): void {
     event.stopPropagation();

@@ -27,6 +27,7 @@ import { ListBookLevelsUseCase } from './application/use-cases/ListBookLevelsUse
 import { SendBookByEmailUseCase } from './application/use-cases/SendBookByEmailUseCase.js';
 import { ToggleFavoriteUseCase } from './application/use-cases/favorite/ToggleFavoriteUseCase.js';
 import { RegisterDownloadUseCase } from './application/use-cases/download/RegisterDownloadUseCase.js';
+import { GetRecommendationsUseCase } from './application/use-cases/GetRecommendationsUseCase.js';
 import { LoginUseCase } from './application/use-cases/auth/LoginUseCase.js';
 import { LogoutUseCase } from './application/use-cases/auth/LogoutUseCase.js';
 import { RefreshTokenUseCase } from './application/use-cases/auth/RefreshTokenUseCase.js';
@@ -155,11 +156,6 @@ async function bootstrap(): Promise<void> {
       appPassword: gmailAppPassword,
     });
     const fileSystemAdapter = new NodeFileSystemAdapter();
-    const sendBookByEmailUseCase = new SendBookByEmailUseCase({
-      bookRepository,
-      fileSystemPort: fileSystemAdapter,
-      emailPort: emailAdapter,
-    });
 
     // HU-038: Auth adapters and use cases
     const jwtService = new JwtServiceImpl(env.jwt.secret, env.jwt.refreshSecret);
@@ -187,6 +183,21 @@ async function bootstrap(): Promise<void> {
     const toggleFavoriteUseCase = new ToggleFavoriteUseCase({ favoriteRepository });
     const registerDownloadUseCase = new RegisterDownloadUseCase({ downloadRepository });
 
+    // HU-036: Send book by email use case — wired after registerDownloadUseCase (HU-039)
+    const sendBookByEmailUseCase = new SendBookByEmailUseCase({
+      bookRepository,
+      fileSystemPort: fileSystemAdapter,
+      emailPort: emailAdapter,
+      registerDownloadUseCase,
+    });
+
+    // HU-040: Recommendations use case
+    const getRecommendationsUseCase = new GetRecommendationsUseCase({
+      downloadRepository,
+      bookRepository,
+      favoriteRepository,
+    });
+
     // Create and start server
     const server = await createServer(
       {
@@ -198,6 +209,7 @@ async function bootstrap(): Promise<void> {
         sendBookByEmailUseCase,
         toggleFavoriteUseCase,
         registerDownloadUseCase,
+        getRecommendationsUseCase,
         loginUseCase,
         logoutUseCase,
         refreshTokenUseCase,

@@ -289,6 +289,8 @@ export const userBookDownloads = pgTable('user_book_downloads', {
 }, (table) => [
   // Composite primary key
   primaryKey({ columns: [table.userId, table.bookId] }),
+  // HU-040: Index for querying downloads by user (required for recommendations)
+  index('user_book_downloads_user_idx').on(table.userId),
 ]);
 
 export type UserBookFavoriteInsert = typeof userBookFavorites.$inferInsert;

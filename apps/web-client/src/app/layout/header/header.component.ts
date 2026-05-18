@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 
 import { ThemeToggleComponent } from '@shared/components/theme-toggle';
@@ -18,16 +19,43 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [ThemeToggleComponent],
+  imports: [ThemeToggleComponent, RouterLink, RouterLinkActive],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="header">
-      <div class="header__brand">
-        <div class="header__logo">
-          <span class="material-symbols-outlined">auto_stories</span>
+      <a class="header__brand-link" routerLink="/books" aria-label="Ir al catálogo">
+        <div class="header__brand">
+          <div class="header__logo">
+            <span class="material-symbols-outlined">auto_stories</span>
+          </div>
+          <span class="header__title">BiblioManager</span>
         </div>
-        <span class="header__title">BiblioManager</span>
-      </div>
+      </a>
+
+      @if (authService.currentUser() !== null) {
+        <nav class="header__nav" aria-label="Navegación principal">
+          <a
+            class="header__nav-link"
+            routerLink="/books"
+            routerLinkActive="header__nav-link--active"
+            aria-label="Catálogo de libros"
+          >
+            <span class="material-symbols-outlined header__nav-icon" aria-hidden="true">menu_book</span>
+            Catálogo
+          </a>
+          <a
+            class="header__nav-link"
+            routerLink="/recommendations"
+            routerLinkActive="header__nav-link--active"
+            aria-label="Para ti — recomendaciones personalizadas"
+          >
+            <span class="material-symbols-outlined header__nav-icon" aria-hidden="true"
+              >recommend</span
+            >
+            Para ti
+          </a>
+        </nav>
+      }
 
       <div class="header__actions">
         <app-theme-toggle />
@@ -46,16 +74,21 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
           </div>
         } @else {
           <!-- Authenticated: show user menu -->
-          <div class="header__user" (click)="toggleDropdown()" (keydown.enter)="toggleDropdown()" role="button" tabindex="0" aria-label="Menú de usuario" aria-haspopup="true" [attr.aria-expanded]="isDropdownOpen()">
+          <div
+            class="header__user"
+            (click)="toggleDropdown()"
+            (keydown.enter)="toggleDropdown()"
+            role="button"
+            tabindex="0"
+            aria-label="Menú de usuario"
+            aria-haspopup="true"
+            [attr.aria-expanded]="isDropdownOpen()"
+          >
             <span class="header__email">{{ authService.currentUser()!.email }}</span>
             <span class="material-symbols-outlined header__user-icon">account_circle</span>
             @if (isDropdownOpen()) {
               <div class="header__dropdown" role="menu">
-                <button
-                  class="header__dropdown-item"
-                  role="menuitem"
-                  (click)="logout($event)"
-                >
+                <button class="header__dropdown-item" role="menuitem" (click)="logout($event)">
                   <span class="material-symbols-outlined">logout</span>
                   Desconectarse
                 </button>
@@ -93,6 +126,13 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
 
       :host-context([data-theme='dark']) .header {
         background-color: rgba(17, 29, 33, 0.8);
+      }
+
+      .header__brand-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-decoration: none;
       }
 
       .header__brand {
@@ -136,6 +176,75 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
         align-items: center;
         gap: 1rem;
         flex-shrink: 0;
+      }
+
+      /* Navigation links */
+      .header__nav {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        flex: 1;
+        padding-left: 1.5rem;
+      }
+
+      .header__nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition:
+          background-color 150ms ease,
+          color 150ms ease;
+
+        [data-theme='dark'] & {
+          color: rgb(148 163 184);
+
+          &:hover {
+            background-color: rgb(30 41 59);
+            color: rgb(203 213 225);
+          }
+        }
+
+        [data-theme='light'] & {
+          color: rgb(71 85 105);
+
+          &:hover {
+            background-color: rgb(241 245 249);
+            color: rgb(15 23 42);
+          }
+        }
+
+        &:focus-visible {
+          outline: 2px solid #17a1cf;
+          outline-offset: 2px;
+        }
+      }
+
+      .header__nav-link--active {
+        [data-theme='dark'] & {
+          background-color: rgb(30 41 59);
+          color: rgb(23 161 207);
+        }
+
+        [data-theme='light'] & {
+          background-color: rgb(239 248 252);
+          color: #17a1cf;
+        }
+      }
+
+      .header__nav-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 18;
       }
 
       /* Unauthenticated avatar */

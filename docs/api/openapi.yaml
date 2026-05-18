@@ -29,6 +29,8 @@ tags:
     description: "Operaciones de consulta de categorías (endpoint: /book-categories)"
   - name: Favorites
     description: "Operaciones de gestión de favoritos del usuario autenticado"
+  - name: Recommendations
+    description: "Recomendaciones personalizadas de libros basadas en el historial de lectura del usuario"
 
 paths:
   # ============================================
@@ -1150,6 +1152,95 @@ paths:
                 error:
                   message: "Book with id \"550e8400-e29b-41d4-a716-446655440000\" not found"
 
+  # ============================================
+  # HU-040: Book Recommendations Endpoints
+  # ============================================
+
+  /books/recommendations:
+    get:
+      tags:
+        - Recommendations
+      summary: Obtener recomendaciones personalizadas de libros
+      description: |
+        Devuelve una lista de libros recomendados para el usuario autenticado, basada en su historial de descargas.
+
+        ## Algoritmo
+
+        1. Se obtienen los últimos libros descargados por el usuario.
+        2. Se genera un embedding promedio de las categorías dominantes de esos libros.
+        3. Se buscan libros similares en el catálogo usando similitud vectorial (≥70%).
+        4. Se excluyen los libros ya descargados por el usuario.
+        5. Se devuelven hasta 10 recomendaciones ordenadas por similitud descendente.
+
+        ## Sin historial
+
+        Si el usuario no tiene descargas registradas, se devuelve una lista vacía con `label: ""`.
+
+        ## Autenticación
+
+        Requiere un JWT válido en la cookie `access_token`. Si el token está ausente o es inválido,
+        se retorna `401 Unauthorized`.
+      operationId: getBookRecommendations
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Recomendaciones obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookRecommendationsResponse'
+              examples:
+                with_recommendations:
+                  summary: Usuario con historial — recomendaciones disponibles
+                  value:
+                    success: true
+                    data:
+                      items:
+                        - bookId: "550e8400-e29b-41d4-a716-446655440000"
+                          title: "Clean Code"
+                          author: "Robert C. Martin"
+                          coverUrl: "https://example.com/covers/clean-code.jpg"
+                          similarity: 0.87
+                          dominantCategory: "Programming"
+                        - bookId: "550e8400-e29b-41d4-a716-446655440001"
+                          title: "The Pragmatic Programmer"
+                          author: "David Thomas"
+                          coverUrl: null
+                          similarity: 0.74
+                          dominantCategory: "Programming"
+                      label: "Porque te interesa Programación"
+                    error: null
+                no_history:
+                  summary: Usuario sin historial — lista vacía
+                  value:
+                    success: true
+                    data:
+                      items: []
+                      label: ""
+                    error: null
+        '401':
+          description: No autenticado. El token JWT está ausente o es inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missing_token:
+                  summary: Token ausente
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Unauthorized"
+                invalid_token:
+                  summary: Token inválido o expirado
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      message: "Unauthorized"
+
   /book-types:
     get:
       tags:
@@ -1995,6 +2086,75 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/FavoriteToggleData'
+
+    # ============================================
+    # HU-040: Book Recommendations Schemas
+    # ============================================
+
+    BookRecommendationItem:
+      type: object
+      required:
+        - bookId
+        - title
+        - author
+        - similarity
+        - dominantCategory
+      properties:
+        bookId:
+          type: string
+          format: uuid
+          description: Identificador único del libro recomendado (UUID v4)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        title:
+          type: string
+          description: Título del libro
+          example: "Clean Code"
+        author:
+          type: string
+          description: Autor principal del libro
+          example: "Robert C. Martin"
+        coverUrl:
+          type: string
+          nullable: true
+          description: URL de la portada del libro, o `null` si no tiene portada asignada
+          example: "https://example.com/covers/clean-code.jpg"
+        similarity:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Puntuación de similitud vectorial con el perfil de lectura del usuario (0.0 - 1.0)
+          example: 0.87
+        dominantCategory:
+          type: string
+          description: Categoría dominante del libro, usada para generar la etiqueta de recomendación
+          example: "Programming"
+
+    BookRecommendationsData:
+      type: object
+      required:
+        - items
+        - label
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookRecommendationItem'
+          description: Lista de libros recomendados (máximo 10). Vacía si el usuario no tiene historial.
+        label:
+          type: string
+          description: |
+            Etiqueta descriptiva de la recomendación, ej. `"Porque te interesa Programación"`.
+            Cadena vacía si no hay recomendaciones disponibles.
+          example: "Porque te interesa Programación"
+
+    BookRecommendationsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiSuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/BookRecommendationsData'
 
   securitySchemes:
     cookieAuth:
