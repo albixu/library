@@ -1162,19 +1162,19 @@ paths:
         - Recommendations
       summary: Obtener recomendaciones personalizadas de libros
       description: |
-        Devuelve una lista de libros recomendados para el usuario autenticado, basada en su historial de descargas.
+        Devuelve hasta 20 libros recomendados para el usuario autenticado, basándose en su historial de descargas y favoritos.
 
         ## Algoritmo
 
-        1. Se obtienen los últimos libros descargados por el usuario.
-        2. Se genera un embedding promedio de las categorías dominantes de esos libros.
-        3. Se buscan libros similares en el catálogo usando similitud vectorial (≥70%).
-        4. Se excluyen los libros ya descargados por el usuario.
-        5. Se devuelven hasta 10 recomendaciones ordenadas por similitud descendente.
+        1. Se obtienen los libros descargados y marcados como favoritos por el usuario (seeds).
+        2. Se calcula el centroide de sus embeddings para obtener el perfil temático del usuario.
+        3. Se buscan libros similares en el catálogo usando similitud vectorial (≥55%, modelo `nomic-embed-text`).
+        4. Se excluyen los libros ya descargados o marcados como favoritos por el usuario.
+        5. Se devuelven hasta 20 recomendaciones ordenadas por similitud descendente.
 
         ## Sin historial
 
-        Si el usuario no tiene descargas registradas, se devuelve una lista vacía con `label: ""`.
+        Si el usuario no tiene descargas ni favoritos registrados, se devuelve una lista vacía con `label: ""`.
 
         ## Autenticación
 
@@ -1200,13 +1200,11 @@ paths:
                         - bookId: "550e8400-e29b-41d4-a716-446655440000"
                           title: "Clean Code"
                           author: "Robert C. Martin"
-                          coverUrl: "https://example.com/covers/clean-code.jpg"
                           similarity: 0.87
                           dominantCategory: "Programming"
                         - bookId: "550e8400-e29b-41d4-a716-446655440001"
                           title: "The Pragmatic Programmer"
-                          author: "David Thomas"
-                          coverUrl: null
+                          author: "David Thomas, Andrew Hunt"
                           similarity: 0.74
                           dominantCategory: "Programming"
                       label: "Porque te interesa Programación"
@@ -2111,13 +2109,8 @@ components:
           example: "Clean Code"
         author:
           type: string
-          description: Autor principal del libro
+          description: Autores del libro, concatenados con ", " si hay más de uno
           example: "Robert C. Martin"
-        coverUrl:
-          type: string
-          nullable: true
-          description: URL de la portada del libro, o `null` si no tiene portada asignada
-          example: "https://example.com/covers/clean-code.jpg"
         similarity:
           type: number
           format: float
@@ -2140,7 +2133,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BookRecommendationItem'
-          description: Lista de libros recomendados (máximo 10). Vacía si el usuario no tiene historial.
+          description: Lista de libros recomendados (máximo 20). Vacía si el usuario no tiene historial.
         label:
           type: string
           description: |
