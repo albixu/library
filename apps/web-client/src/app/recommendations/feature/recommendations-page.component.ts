@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { catchError, finalize, of } from 'rxjs';
 
 import {
   RecommendationsService,
@@ -496,17 +496,17 @@ export class RecommendationsPageComponent implements OnInit {
     this.recommendationsService
       .getRecommendations()
       .pipe(
+        catchError(() => {
+          this.error.set(true);
+          return of(null);
+        }),
+        finalize(() => this.loading.set(false)),
         takeUntilDestroyed(this.destroyRef),
-        catchError(() => of(null))
       )
       .subscribe((response) => {
-        if (response === null) {
-          this.error.set(true);
-        } else {
-          this.items.set(response.items);
-          this.label.set(response.label);
-        }
-        this.loading.set(false);
+        if (response === null) return;
+        this.items.set(response.items);
+        this.label.set(response.label);
       });
   }
 
