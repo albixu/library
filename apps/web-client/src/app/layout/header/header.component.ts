@@ -23,15 +23,26 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="header">
-      <div class="header__brand">
-        <div class="header__logo">
-          <span class="material-symbols-outlined">auto_stories</span>
+      <a class="header__brand-link" routerLink="/books" aria-label="Ir al catálogo">
+        <div class="header__brand">
+          <div class="header__logo">
+            <span class="material-symbols-outlined">auto_stories</span>
+          </div>
+          <span class="header__title">BiblioManager</span>
         </div>
-        <span class="header__title">BiblioManager</span>
-      </div>
+      </a>
 
       @if (authService.currentUser() !== null) {
         <nav class="header__nav" aria-label="Navegación principal">
+          <a
+            class="header__nav-link"
+            routerLink="/books"
+            routerLinkActive="header__nav-link--active"
+            aria-label="Catálogo de libros"
+          >
+            <span class="material-symbols-outlined header__nav-icon" aria-hidden="true">menu_book</span>
+            Catálogo
+          </a>
           <a
             class="header__nav-link"
             routerLink="/recommendations"
@@ -115,6 +126,13 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
 
       :host-context([data-theme='dark']) .header {
         background-color: rgba(17, 29, 33, 0.8);
+      }
+
+      .header__brand-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-decoration: none;
       }
 
       .header__brand {
