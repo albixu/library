@@ -46,6 +46,8 @@ Tras esto, se ejecutará el EsLint y en caso de que aparezcan errores o warnings
 
 Para terminar nos aseguraremos que los test siguen pasando correctamente.
 
+Antes de realizar el PR, se actualizará la documentación en Notion para reflejar los cambios introducidos por la historia de usuario. Ver sección **3.2** para los criterios de actualización.
+
 Y por último se realizará un PR de la rama de la historia de usuario en la de dev para que lo revise manualmente.
 
 Acontinuación defino los paso a seguir:
@@ -53,6 +55,38 @@ Acontinuación defino los paso a seguir:
 **Importante**
 Ten en cuenta que SI tienes permisos para mergear las ramas de las subtareas en las ramas de las historias.
 NO tienes permisos para aprobar ni mergear PR de historias que van a la rama dev.
+
+### 3.2 Actualización de documentación en Notion
+
+Tras finalizar todas las tareas, la revisión de código y los tests, y **antes de abrir el PR**, se actualizará la documentación en Notion según lo que haya cambiado en la historia de usuario.
+
+**Estructura de páginas en Notion:**
+
+La documentación se encuentra bajo `📁 Proyectos > 📚 Library` en Notion:
+- `📋 Product Overview` (id: `3649616d-fee6-819e-a0f3-c5224fe28abb`)
+- `🔧 Developer Documentation` (id: `3649616d-fee6-8157-85ab-f886824c0bb4`)
+- `📖 User Guide` (id: `3649616d-fee6-812e-aae1-d358051934c1`)
+
+**Criterios de qué actualizar según el tipo de cambio:**
+
+| Cambio introducido | Página a actualizar | Qué revisar/actualizar |
+| --- | --- | --- |
+| Nueva funcionalidad visible para el usuario | `User Guide` | Añadir o actualizar la sección correspondiente al flujo de usuario |
+| Nueva entidad, Value Object o caso de uso | `Developer Documentation` | Sección "Arquitectura" — tablas de entidades y casos de uso |
+| Nuevo endpoint o cambio en contrato de API | `Developer Documentation` | Sección "API Reference" — método, ruta, parámetros y ejemplos |
+| Nuevo adaptador de infraestructura | `Developer Documentation` | Sección "Arquitectura" — tabla de Driven/Driver Adapters |
+| Cambio en el esquema de base de datos | `Developer Documentation` | Sección "Base de datos" — diagrama ER y descripción de tablas |
+| Cambio de dependencia o tecnología del stack | `Developer Documentation` | Sección "Stack Tecnológico" |
+| Cambio en la estructura de carpetas del proyecto | `Developer Documentation` | Sección "Estructura del Proyecto" |
+| Nueva variable de entorno | `Developer Documentation` | Sección "Variables de entorno" |
+| Cambio en el estado del producto (HU completada) | `Product Overview` | Sección "Estado del Producto" — marcar la HU como completada |
+| Nueva funcionalidad de alto nivel o cambio de alcance | `Product Overview` | Sección "Funcionalidades" y/o "Objetivos" |
+
+**Reglas generales:**
+- Solo actualizar lo que realmente ha cambiado. No reescribir secciones que no se han tocado.
+- Mantener los diagramas Mermaid sincronizados con el código real.
+- Si una funcionalidad se elimina o refactoriza significativamente, eliminar o actualizar la documentación correspondiente.
+- Los cambios en Notion no requieren commit ni PR — se aplican directamente.
 
 ## 4. Build/Lint/Test Commands (apps/api/)
 
