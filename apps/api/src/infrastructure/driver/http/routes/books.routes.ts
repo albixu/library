@@ -12,6 +12,7 @@ import type { BooksController } from '../controllers/BooksController.js';
 import type { SearchBooksController } from '../controllers/SearchBooksController.js';
 import type { SendBookByEmailController } from '../controllers/SendBookByEmailController.js';
 import type { FavoriteController } from '../controllers/FavoriteController.js';
+import type { RecommendationsController } from '../controllers/RecommendationsController.js';
 
 /**
  * Options for registering book routes
@@ -21,6 +22,7 @@ export interface BooksRoutesOptions extends FastifyPluginOptions {
   searchController: SearchBooksController;
   sendBookByEmailController: SendBookByEmailController;
   favoriteController?: FavoriteController;
+  recommendationsController?: RecommendationsController;
 }
 
 /**
@@ -39,7 +41,18 @@ export async function booksRoutes(
   fastify: FastifyInstance,
   options: BooksRoutesOptions,
 ): Promise<void> {
-  const { controller, searchController, sendBookByEmailController, favoriteController } = options;
+  const { controller, searchController, sendBookByEmailController, favoriteController, recommendationsController } = options;
+
+  /**
+   * GET /api/books/recommendations
+   * Returns personalized book recommendations for the authenticated user (HU-040)
+   * IMPORTANT: Must be registered BEFORE /books/:id to avoid route conflict
+   */
+  if (recommendationsController) {
+    fastify.get('/books/recommendations', async (request, reply) => {
+      return recommendationsController.getRecommendations(request, reply);
+    });
+  }
 
   /**
    * GET /api/books

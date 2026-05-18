@@ -27,6 +27,7 @@ import { BookLevelsController } from './controllers/BookLevelsController.js';
 import { SendBookByEmailController } from './controllers/SendBookByEmailController.js';
 import { FavoriteController } from './controllers/FavoriteController.js';
 import { AuthController } from './controllers/AuthController.js';
+import { RecommendationsController } from './controllers/RecommendationsController.js';
 import { booksRoutes } from './routes/books.routes.js';
 import { bookTypesRoutes } from './routes/book-types.routes.js';
 import { categoriesRoutes } from './routes/categories.routes.js';
@@ -40,6 +41,7 @@ import type { ListBookLevelsUseCase } from '../../../application/use-cases/ListB
 import type { SendBookByEmailUseCase } from '../../../application/use-cases/SendBookByEmailUseCase.js';
 import type { ToggleFavoriteUseCase } from '../../../application/use-cases/favorite/ToggleFavoriteUseCase.js';
 import type { RegisterDownloadUseCase } from '../../../application/use-cases/download/RegisterDownloadUseCase.js';
+import type { GetRecommendationsUseCase } from '../../../application/use-cases/GetRecommendationsUseCase.js';
 import type { LoginUseCase } from '../../../application/use-cases/auth/LoginUseCase.js';
 import type { LogoutUseCase } from '../../../application/use-cases/auth/LogoutUseCase.js';
 import type { RefreshTokenUseCase } from '../../../application/use-cases/auth/RefreshTokenUseCase.js';
@@ -59,6 +61,7 @@ export interface ServerDeps {
   sendBookByEmailUseCase: SendBookByEmailUseCase;
   toggleFavoriteUseCase?: ToggleFavoriteUseCase;
   registerDownloadUseCase?: RegisterDownloadUseCase;
+  getRecommendationsUseCase?: GetRecommendationsUseCase;
   loginUseCase: LoginUseCase;
   logoutUseCase: LogoutUseCase;
   refreshTokenUseCase: RefreshTokenUseCase;
@@ -89,7 +92,7 @@ export async function createServer(
   deps: ServerDeps,
   options: ServerOptions = {},
 ): Promise<FastifyInstance> {
-  const { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, sendBookByEmailUseCase, toggleFavoriteUseCase, registerDownloadUseCase, loginUseCase, logoutUseCase, refreshTokenUseCase, forgotPasswordUseCase, resetPasswordUseCase, jwtService, logger = noopLogger } = deps;
+  const { createBookUseCase, searchBooksUseCase, listBookTypesUseCase, listCategoriesUseCase, listBookLevelsUseCase, sendBookByEmailUseCase, toggleFavoriteUseCase, registerDownloadUseCase, getRecommendationsUseCase, loginUseCase, logoutUseCase, refreshTokenUseCase, forgotPasswordUseCase, resetPasswordUseCase, jwtService, logger = noopLogger } = deps;
   const { prefix = '/api', nodeEnv = 'production' } = options;
 
   const serverLogger = logger.child({ name: 'FastifyServer' });
@@ -166,6 +169,11 @@ export async function createServer(
     ? new FavoriteController({ toggleFavoriteUseCase, jwtService, logger })
     : undefined;
 
+  // HU-040: RecommendationsController (only created if use case and jwtService are provided)
+  const recommendationsController = getRecommendationsUseCase && jwtService
+    ? new RecommendationsController({ getRecommendationsUseCase, jwtService, logger })
+    : undefined;
+
   const authController = new AuthController({
     loginUseCase,
     logoutUseCase,
@@ -183,6 +191,7 @@ export async function createServer(
     searchController: searchBooksController,
     sendBookByEmailController,
     favoriteController,
+    recommendationsController,
   });
 
   await fastify.register(bookTypesRoutes, {
@@ -211,6 +220,7 @@ export async function createServer(
     const routes = [
       { method: 'GET', path: `${prefix}/books` },
       { method: 'POST', path: `${prefix}/books` },
+      { method: 'GET', path: `${prefix}/books/recommendations` },
       { method: 'POST', path: `${prefix}/books/:id/send` },
       { method: 'POST', path: `${prefix}/books/:id/favorite` },
       { method: 'GET', path: `${prefix}/book-types` },

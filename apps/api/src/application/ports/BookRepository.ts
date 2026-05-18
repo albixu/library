@@ -215,5 +215,5 @@ export interface BookRepository {
    * @returns Promise resolving to an array of { id, embedding } objects
    *          (only for books with a stored embedding)
    */
-  findEmbeddingsByIds(bookIds: string[]): Promise<Array<{ id: string; embedding: number[] }>>;
+  findEmbeddingsByIds(bookIds: string[]): Promise<{ id: string; embedding: number[] }[]>;
 }

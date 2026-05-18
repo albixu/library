@@ -1026,7 +1026,7 @@ export class PostgresBookRepository implements BookRepository {
    * Only returns books that have a non-null embedding stored.
    * Used by the recommendations engine to compute cosine similarity.
    */
-  async findEmbeddingsByIds(bookIds: string[]): Promise<Array<{ id: string; embedding: number[] }>> {
+  async findEmbeddingsByIds(bookIds: string[]): Promise<{ id: string; embedding: number[] }[]> {
     if (bookIds.length === 0) {
       return [];
     }
