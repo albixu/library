@@ -151,6 +151,34 @@ import { FavoriteService } from '../../../../books/services/favorite.service.js'
 
     .table-scroll {
       overflow-x: auto;
+      overflow-y: auto;
+      scrollbar-width: thin; /* Firefox */
+      scrollbar-color: transparent transparent; /* Firefox: oculto por defecto */
+      transition: scrollbar-color 0.2s ease;
+    }
+
+    .table-scroll:hover {
+      scrollbar-color: var(--color-border-strong, rgb(148 163 184)) transparent; /* Firefox: visible al hover */
+    }
+
+    /* WebKit (Chrome, Safari, Edge) */
+    .table-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .table-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .table-scroll::-webkit-scrollbar-thumb {
+      background-color: transparent;
+      border-radius: 3px;
+      transition: background-color 0.2s ease;
+    }
+
+    .table-scroll:hover::-webkit-scrollbar-thumb {
+      background-color: rgb(148 163 184); /* slate-400 */
     }
 
     .book-table {
