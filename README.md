@@ -724,6 +724,86 @@ El script es **idempotente**: verifica cada libro por ISBN antes de insertarlo. 
 - 💾 Configurar backups de PostgreSQL (ver sección [Backup/Restore](#backup-y-restore))
 - 🔄 Usar un reverse proxy (nginx, traefik) con HTTPS
 
+### Actualizar un despliegue existente en producción
+
+Usa este proceso para aplicar cambios de código a una VPS ya en funcionamiento **sin perder los datos existentes**.
+
+> ⚠️ **Nunca elimines el contenedor de postgres ni su volumen** durante una actualización. Ahí viven todos los datos.
+
+#### Paso 1 — Hacer backup previo (recomendado)
+
+Antes de cualquier actualización que incluya cambios de schema, hacer un backup:
+
+```bash
+docker exec library-postgres pg_dump -U library -d library -F c -f /tmp/backup_preupdate_$(date +%Y%m%d_%H%M%S).dump
+docker cp library-postgres:/tmp/backup_preupdate_<timestamp>.dump ~/backup_preupdate_<timestamp>.dump
+```
+
+Ver sección [Backup y Restore](#backup-y-restore) para más detalles.
+
+#### Paso 2 — Obtener el código actualizado
+
+```bash
+cd library
+git pull origin main
+```
+
+#### Paso 3 — Reconstruir y reiniciar servicios (sin tocar la base de datos)
+
+```bash
+# Reconstruir solo la API y el web client. El flag --no-deps evita reiniciar postgres.
+docker compose -f docker-compose.prod.yml up -d --build --no-deps api web-client
+```
+
+> Si hubo cambios en `package.json`, el `--build` asegura que la nueva imagen se construye con las dependencias actualizadas.
+
+#### Paso 4 — Aplicar migraciones de base de datos pendientes
+
+Drizzle usa migraciones aditivas: nunca eliminan datos a menos que la migración lo haga explícitamente.
+
+```bash
+docker exec library-api npm run db:migrate
+```
+
+Si no hay migraciones pendientes, el comando termina sin hacer cambios.
+
+#### Paso 5 — Verificar el estado
+
+```bash
+# Confirmar que todos los contenedores están corriendo
+docker compose -f docker-compose.prod.yml ps
+
+# Verificar que la API responde correctamente
+curl http://localhost:3000/health
+
+# Revisar logs por si hay errores de arranque
+docker compose -f docker-compose.prod.yml logs -f api
+```
+
+#### Secuencia completa (referencia rápida)
+
+```bash
+cd library
+git pull origin main
+docker compose -f docker-compose.prod.yml up -d --build --no-deps api web-client
+docker exec library-api npm run db:migrate
+docker compose -f docker-compose.prod.yml ps
+curl http://localhost:3000/health
+```
+
+#### Rollback si algo sale mal
+
+```bash
+# Volver al commit anterior
+cd library
+git checkout HEAD~1
+
+# Reconstruir con el código anterior
+docker compose -f docker-compose.prod.yml up -d --build --no-deps api web-client
+```
+
+> ⚠️ Las migraciones de base de datos ya aplicadas no se revierten automáticamente. Si la migración era destructiva, restaurar desde el backup previo (ver [Backup y Restore](#backup-y-restore)).
+
 ## Entorno de Testing
 
 El entorno de testing está completamente aislado de producción con su propia base de datos y volúmenes.
