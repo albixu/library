@@ -28,7 +28,7 @@
     "consolidate:books": "NODE_OPTIONS=--max-old-space-size=4096 tsx scripts/consolidate-books.ts",
     "seed:database": "tsx scripts/seed-database.ts",
     "seed:prod": "NODE_OPTIONS=--max-old-space-size=1024 node dist/scripts/seed-database.js",
-    "create-user": "tsx scripts/create-user.ts"
+    "create-user": "node dist/scripts/create-user.js"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
