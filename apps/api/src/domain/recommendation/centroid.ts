@@ -12,11 +12,11 @@ export function computeCentroid(embeddings: number[][]): number[] {
     throw new EmptyEmbeddingsError();
   }
 
-  const dims = embeddings[0].length;
+  const dims = embeddings[0]!.length;
 
   for (let i = 1; i < embeddings.length; i++) {
-    if (embeddings[i].length !== dims) {
-      throw new InconsistentEmbeddingDimensionsError(dims, embeddings[i].length, i);
+    if (embeddings[i]!.length !== dims) {
+      throw new InconsistentEmbeddingDimensionsError(dims, embeddings[i]!.length, i);
     }
   }
 
@@ -24,12 +24,12 @@ export function computeCentroid(embeddings: number[][]): number[] {
 
   for (const embedding of embeddings) {
     for (let i = 0; i < dims; i++) {
-      centroid[i] += embedding[i];
+      centroid[i]! += embedding[i]!;
     }
   }
 
   for (let i = 0; i < dims; i++) {
-    centroid[i] /= embeddings.length;
+    centroid[i]! /= embeddings.length;
   }
 
   return centroid;

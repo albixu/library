@@ -12,7 +12,7 @@ export function getDominantCategory(categories: string[]): string {
   const firstSeen = new Map<string, number>();
 
   for (let i = 0; i < categories.length; i++) {
-    const cat = categories[i];
+    const cat = categories[i]!;
     counts.set(cat, (counts.get(cat) ?? 0) + 1);
     if (!firstSeen.has(cat)) {
       firstSeen.set(cat, i);
