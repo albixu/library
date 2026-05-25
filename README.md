@@ -804,6 +804,192 @@ docker compose -f docker-compose.prod.yml up -d --build --no-deps api web-client
 
 > ⚠️ Las migraciones de base de datos ya aplicadas no se revierten automáticamente. Si la migración era destructiva, restaurar desde el backup previo (ver [Backup y Restore](#backup-y-restore)).
 
+## Montar pCloud en el VPS con rclone (acceso a archivos de libros)
+
+Los archivos físicos de los libros se sirven desde un directorio de pCloud montado en el VPS usando `rclone` y FUSE. Este montaje es de solo lectura y se gestiona como servicio `systemd`.
+
+### 1. Instalar dependencias
+
+```bash
+sudo apt update
+sudo apt install rclone fuse3
+```
+
+### 2. Configurar rclone con pCloud
+
+```bash
+rclone config
+```
+
+Crear un nuevo remote con estos valores:
+
+```text
+n
+name> pcloud-library-catalog
+Storage> pcloud
+client_id>
+client_secret>
+Edit advanced config? y
+hostname> eapi.pcloud.com
+Use auto config? n
+```
+
+> - `client_id` y `client_secret` pueden dejarse vacíos.
+> - Para cuentas pCloud **europeas**: `eapi.pcloud.com`. Para cuentas **US**: `api.pcloud.com`.
+> - En un VPS/headless responder `n` a `Use auto config?`.
+
+Al responder `n`, rclone muestra:
+
+```text
+Execute the following on the machine with the web browser:
+    rclone authorize "pcloud"
+Then paste the result.
+config_token>
+```
+
+En un ordenador con navegador, ejecutar `rclone authorize "pcloud"`. En Windows sin rclone instalado:
+
+```powershell
+winget install Rclone.Rclone
+```
+
+Cerrar y reabrir PowerShell, luego:
+
+```powershell
+rclone authorize "pcloud"
+```
+
+El comando abre el navegador para autorizar pCloud y devuelve un bloque JSON. Copiarlo completo y pegarlo en el VPS cuando pida `config_token>`.
+
+### 3. Verificar el remote
+
+```bash
+rclone listremotes              # Debe aparecer: pcloud-library-catalog:
+rclone lsd pcloud-library-catalog:              # Listar raíz
+rclone lsd pcloud-library-catalog:liburuak      # Listar directorio a montar
+```
+
+> El nombre del remote siempre lleva `:` al final cuando se usa con rclone.
+
+### 4. Crear el punto de montaje
+
+```bash
+sudo mkdir -p /mnt/library-catalog
+sudo chown ion:ion /mnt/library-catalog
+```
+
+Sustituir `ion:ion` por el usuario y grupo que ejecutarán el montaje.
+
+### 5. Permitir `allow_other` en FUSE
+
+```bash
+sudo nano /etc/fuse.conf
+```
+
+Asegurarse de que existe esta línea sin comentar:
+
+```text
+user_allow_other
+```
+
+Esto permite que otros usuarios o servicios del VPS (como Docker) puedan leer el montaje.
+
+### 6. Probar el montaje manualmente
+
+```bash
+rclone mount "pcloud-library-catalog:liburuak" /mnt/library-catalog \
+  --read-only \
+  --allow-other \
+  --vfs-cache-mode full \
+  -vv
+```
+
+Si el comando no devuelve el prompt, el montaje está activo. En otra terminal:
+
+```bash
+ls /mnt/library-catalog
+```
+
+Para desmontar:
+
+```bash
+fusermount3 -u /mnt/library-catalog
+# o si el sistema usa fusermount en lugar de fusermount3:
+fusermount -u /mnt/library-catalog
+```
+
+### 7. Crear servicio systemd
+
+```bash
+sudo nano /etc/systemd/system/pcloud-readonly.service
+```
+
+Contenido:
+
+```ini
+[Unit]
+Description=pCloud read-only mount
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ion
+Group=ion
+ExecStart=/usr/bin/rclone mount pcloud-library-catalog:liburuak /mnt/library-catalog --config /home/ion/.config/rclone/rclone.conf --read-only --allow-other --vfs-cache-mode full
+ExecStop=/bin/fusermount3 -u /mnt/library-catalog
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+> Si el sistema usa `fusermount` en lugar de `fusermount3`, verificar con `which fusermount3` y ajustar `ExecStop` en consecuencia.
+
+### 8. Activar el servicio
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now pcloud-readonly.service
+
+# Verificar estado
+systemctl status pcloud-readonly.service
+
+# Ver logs si hay error
+journalctl -xeu pcloud-readonly.service
+
+# Verificar que está montado
+mount | grep library-catalog
+ls /mnt/library-catalog
+```
+
+### 9. Errores frecuentes
+
+#### `didn't find section in config file`
+
+rclone no encuentra el remote en el config que está usando. Si funciona sin `sudo` pero falla con `sudo`, es porque `sudo` usa el config de root (`/root/.config/rclone/rclone.conf`). Usar:
+
+```bash
+sudo rclone --config /home/ion/.config/rclone/rclone.conf lsd pcloud-library-catalog:
+```
+
+#### `Invalid 'access_token' provided. (2094)`
+
+Suele ocurrir con cuentas pCloud EU si el remote usa el endpoint US. Editar el remote con `rclone config` y configurar `hostname = eapi.pcloud.com`.
+
+#### `option allow_other only allowed if 'user_allow_other' is set in /etc/fuse.conf`
+
+Editar `/etc/fuse.conf` y activar `user_allow_other` (ver paso 5).
+
+#### `mount not ready`
+
+Ejecutar sin `--daemon` y con `-vv` para ver el error real en la salida (ver paso 6).
+
+### 10. Nota de seguridad
+
+El montaje se realiza con `--read-only`, lo que evita escrituras desde el VPS. Sin embargo, el token de rclone puede tener permisos completos sobre la cuenta pCloud. Para una separación más estricta, se recomienda compartir la carpeta con una cuenta pCloud secundaria con permisos de solo lectura y configurar rclone usando esa cuenta.
+
 ## Entorno de Testing
 
 El entorno de testing está completamente aislado de producción con su propia base de datos y volúmenes.
