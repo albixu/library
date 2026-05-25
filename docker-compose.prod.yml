@@ -48,6 +48,8 @@ services:
       context: ./apps/api
       dockerfile: docker/Dockerfile
     container_name: library-api
+    env_file:
+      - .env
     ports:
       - "3000:3000"
     environment:
