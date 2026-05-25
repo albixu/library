@@ -7,7 +7,7 @@
  */
 
 /**
- * Options for sending an email with an attachment
+ * Options for sending a plain email (no attachment)
  */
 export interface SendEmailOptions {
   /** Recipient email address */
@@ -16,6 +16,12 @@ export interface SendEmailOptions {
   subject: string;
   /** Plain text body of the email */
   body: string;
+}
+
+/**
+ * Options for sending an email with an attachment
+ */
+export interface SendEmailWithAttachmentOptions extends SendEmailOptions {
   /** Absolute file system path to the attachment */
   attachmentPath: string;
   /** Filename to use for the attachment in the email */
@@ -29,11 +35,20 @@ export interface SendEmailOptions {
  */
 export interface EmailPort {
   /**
+   * Sends a plain email without attachments
+   *
+   * @param options - Email recipient, subject, and body
+   * @returns Promise resolving when the email has been sent successfully
+   * @throws Error if the email could not be sent
+   */
+  send(options: SendEmailOptions): Promise<void>;
+
+  /**
    * Sends an email with a single file attachment
    *
    * @param options - Email recipient, subject, body, and attachment details
    * @returns Promise resolving when the email has been sent successfully
    * @throws Error if the email could not be sent
    */
-  sendWithAttachment(options: SendEmailOptions): Promise<void>;
+  sendWithAttachment(options: SendEmailWithAttachmentOptions): Promise<void>;
 }
