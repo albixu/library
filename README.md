@@ -751,11 +751,16 @@ git pull origin main
 #### Paso 3 — Reconstruir y reiniciar servicios (sin tocar la base de datos)
 
 ```bash
-# Reconstruir solo la API y el web client. El flag --no-deps evita reiniciar postgres.
-docker compose -f docker-compose.prod.yml up -d --build --no-deps api web-client
+# Reconstruir las imágenes desde cero (sin caché) para garantizar que el código nuevo se incluye
+docker compose -f docker-compose.prod.yml build --no-cache api web-client
+
+# Reiniciar los contenedores con las nuevas imágenes
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate api web-client
 ```
 
-> Si hubo cambios en `package.json`, el `--build` asegura que la nueva imagen se construye con las dependencias actualizadas.
+> - `--no-cache` es importante: sin él, Docker puede reutilizar capas cacheadas y el contenedor seguirá corriendo código viejo aunque el build parezca exitoso.
+> - `--force-recreate` garantiza que el contenedor se recrea con la nueva imagen. Sin él, Docker puede mantener el contenedor anterior si detecta que la configuración no cambió.
+> - `--no-deps` evita reiniciar postgres ni otros servicios de datos.
 
 #### Paso 4 — Aplicar migraciones de base de datos pendientes
 
@@ -783,9 +788,10 @@ docker compose -f docker-compose.prod.yml logs -f api
 #### Secuencia completa (referencia rápida)
 
 ```bash
-cd library
+cd /opt/library
 git pull origin main
-docker compose -f docker-compose.prod.yml up -d --build --no-deps api web-client
+docker compose -f docker-compose.prod.yml build --no-cache api web-client
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate api web-client
 docker exec library-api npm run db:migrate
 docker compose -f docker-compose.prod.yml ps
 curl http://localhost:3000/health
