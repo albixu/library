@@ -159,8 +159,6 @@ export async function createServer(
 
   const sendBookByEmailController = new SendBookByEmailController({
     sendBookByEmailUseCase,
-    registerDownloadUseCase,
-    jwtService,
     logger,
   });
 
