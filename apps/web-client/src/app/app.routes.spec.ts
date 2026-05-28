@@ -2,28 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { routes } from './app.routes';
-import { ThemeService } from '@core/services/theme.service';
-import { signal, computed } from '@angular/core';
 
 describe('Application Routes', () => {
   beforeEach(async () => {
-    // Create mock ThemeService with signals
-    const themeSignal = signal<'light' | 'dark'>('dark');
-    const mockThemeService = {
-      theme: themeSignal,
-      isDark: computed(() => themeSignal() === 'dark'),
-      themeIcon: computed(() => (themeSignal() === 'dark' ? 'light_mode' : 'dark_mode')),
-      toggleLabel: computed(() =>
-        themeSignal() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-      ),
-      toggleTheme: vi.fn(),
-    };
-
     await TestBed.configureTestingModule({
       providers: [
         provideRouter(routes),
         provideAnimationsAsync(),
-        { provide: ThemeService, useValue: mockThemeService },
       ],
     }).compileComponents();
   });

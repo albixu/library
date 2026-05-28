@@ -2,25 +2,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { applicationConfig, moduleMetadata } from '@storybook/angular';
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { ThemeService } from '@core/services/theme.service';
-import { signal, computed } from '@angular/core';
 import { MainLayoutComponent } from './main-layout.component';
-
-// Mock ThemeService for Storybook
-const createMockThemeService = (isDark = true) => {
-  const themeSignal = signal<'light' | 'dark'>(isDark ? 'dark' : 'light');
-  return {
-    theme: themeSignal,
-    isDark: computed(() => themeSignal() === 'dark'),
-    themeIcon: computed(() => (themeSignal() === 'dark' ? 'light_mode' : 'dark_mode')),
-    toggleLabel: computed(() =>
-      themeSignal() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-    ),
-    toggleTheme: () => {
-      themeSignal.update((current) => (current === 'light' ? 'dark' : 'light'));
-    },
-  };
-};
 
 const meta: Meta<MainLayoutComponent> = {
   title: 'Layout/MainLayout',
@@ -30,9 +12,6 @@ const meta: Meta<MainLayoutComponent> = {
     applicationConfig({
       providers: [provideAnimationsAsync(), provideRouter([])],
     }),
-    moduleMetadata({
-      providers: [{ provide: ThemeService, useFactory: () => createMockThemeService() }],
-    }),
   ],
   parameters: {
     docs: {
@@ -41,7 +20,7 @@ const meta: Meta<MainLayoutComponent> = {
 Main application layout wrapper component.
 
 ## Features
-- Header with logo and theme toggle at the top
+- Header with logo at the top
 - Main content area with router-outlet
 - Footer with copyright and GitHub link at the bottom
 - Flexbox layout with min-height: 100vh
