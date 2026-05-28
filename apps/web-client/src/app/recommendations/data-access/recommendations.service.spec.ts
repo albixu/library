@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { RecommendationsService, RecommendationsResponse } from './recommendations.service.js';
 import { ApiService } from '../../core/services/api.service.js';
 import { ApiResponse } from '../../core/models/index.js';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 describe('RecommendationsService', () => {
   let service: RecommendationsService;
@@ -44,7 +45,7 @@ describe('RecommendationsService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [RecommendationsService, { provide: ApiService, useValue: apiServiceMock }],
+      providers: [provideZonelessChangeDetection(), RecommendationsService, { provide: ApiService, useValue: apiServiceMock }],
     });
 
     service = TestBed.inject(RecommendationsService);

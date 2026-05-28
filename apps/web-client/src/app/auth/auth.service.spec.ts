@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from './auth.service.js';
 import { ApiService } from '../core/services/api.service.js';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -13,7 +14,7 @@ describe('AuthService', () => {
     apiServiceMock = { post: vi.fn() };
 
     TestBed.configureTestingModule({
-      providers: [AuthService, { provide: ApiService, useValue: apiServiceMock }],
+      providers: [provideZonelessChangeDetection(), AuthService, { provide: ApiService, useValue: apiServiceMock }],
     });
 
     service = TestBed.inject(AuthService);

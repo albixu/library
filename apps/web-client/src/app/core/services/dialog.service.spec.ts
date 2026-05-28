@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Dialog, DialogRef } from '@angular/cdk/dialog';
 import { Subject } from 'rxjs';
-import { Component } from '@angular/core';
+import { Component, provideZonelessChangeDetection } from '@angular/core';
 
 import { DialogService } from './dialog.service.js';
 
@@ -30,7 +30,7 @@ describe('DialogService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [DialogService, { provide: Dialog, useValue: mockCdkDialog }],
+      providers: [provideZonelessChangeDetection(), DialogService, { provide: Dialog, useValue: mockCdkDialog }],
     });
 
     service = TestBed.inject(DialogService);

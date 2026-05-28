@@ -4,6 +4,7 @@ import { of, throwError, delay } from 'rxjs';
 import { BookSearchStore } from './book-search.store.js';
 import { BookService } from './book.service.js';
 import {
+import { provideZonelessChangeDetection } from '@angular/core';
   Book,
   BookSearchResponse,
   BookTypeListResponse,
@@ -87,7 +88,7 @@ describe('BookSearchStore', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [BookSearchStore, { provide: BookService, useValue: bookServiceMock }],
+      providers: [provideZonelessChangeDetection(), BookSearchStore, { provide: BookService, useValue: bookServiceMock }],
     });
 
     store = TestBed.inject(BookSearchStore);

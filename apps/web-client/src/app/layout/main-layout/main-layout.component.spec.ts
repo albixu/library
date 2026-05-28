@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { MainLayoutComponent } from './main-layout.component.js';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 describe('MainLayoutComponent', () => {
   let component: MainLayoutComponent;
@@ -10,7 +11,7 @@ describe('MainLayoutComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MainLayoutComponent],
-      providers: [
+      providers: [provideZonelessChangeDetection(), 
         provideAnimationsAsync(),
         provideRouter([]),
       ],

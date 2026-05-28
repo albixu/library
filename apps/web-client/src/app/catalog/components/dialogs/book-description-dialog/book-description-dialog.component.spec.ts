@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BookDescriptionDialogComponent } from './book-description-dialog.component';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 describe('BookDescriptionDialogComponent', () => {
   let component: BookDescriptionDialogComponent;
@@ -7,7 +8,8 @@ describe('BookDescriptionDialogComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BookDescriptionDialogComponent],
+      imports: [BookDescriptionDialogComponent],,
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BookDescriptionDialogComponent);

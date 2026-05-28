@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { signal, provideZonelessChangeDetection } from '@angular/core';
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { DialogRef } from '@angular/cdk/dialog';
 import { of, Subject } from 'rxjs';
@@ -110,6 +110,7 @@ describe('BookListPageComponent', () => {
     await TestBed.configureTestingModule({
       imports: [BookListPageComponent],
       providers: [
+        provideZonelessChangeDetection(),
         { provide: BookSearchStore, useValue: mockStore },
         { provide: DialogService, useValue: mockDialogService },
       ],

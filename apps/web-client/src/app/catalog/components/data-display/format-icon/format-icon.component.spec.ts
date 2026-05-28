@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { FormatIconComponent } from './format-icon.component';
 import { BookFormat } from '../../../../core/models/index.js';
 
@@ -9,6 +10,7 @@ describe('FormatIconComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [FormatIconComponent],
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(FormatIconComponent);
