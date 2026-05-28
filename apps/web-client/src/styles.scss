@@ -42,49 +42,7 @@
   --primary-hover: #1493c0;
   --primary-active: #1082ab;
 
-  // Light mode colors (default)
-  --color-bg-primary: #f6f7f8;
-  --color-bg-surface: #ffffff;
-  --color-bg-elevated: #ffffff;
-  --color-bg-input: var(--slate-50);
-  --color-accent: var(--primary);
-  --color-accent-hover: var(--primary-hover);
-  --color-accent-active: var(--primary-active);
-  --color-text-primary: var(--slate-800);
-  --color-text-secondary: var(--slate-500);
-  --color-text-muted: var(--slate-400);
-  --color-border: var(--slate-200);
-  --color-border-strong: var(--slate-300);
-
-  // Table specific
-  --color-table-header-bg: var(--slate-50);
-  --color-table-row-hover: var(--slate-50);
-  --color-table-border: var(--slate-100);
-
-  // Semantic colors
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-info: #3b82f6;
-
-  // Level badge colors (light mode)
-  --level-beginner-bg: #dcfce7;
-  --level-beginner-text: #15803d;
-  --level-intermediate-bg: #fef3c7;
-  --level-intermediate-text: #b45309;
-  --level-advanced-bg: #fee2e2;
-  --level-advanced-text: #b91c1c;
-  --level-expert-bg: #f3e8ff;
-  --level-expert-text: #7e22ce;
-
-  // Scrollbar
-  --scrollbar-track: transparent;
-  --scrollbar-thumb: var(--slate-300);
-  --scrollbar-thumb-hover: var(--primary);
-}
-
-// Dark mode colors (matching Stitch/Figma design)
-[data-theme='dark'] {
+  // Dark mode colors (only theme)
   --color-bg-primary: #111d21;
   --color-bg-surface: var(--slate-900);
   --color-bg-elevated: var(--slate-800);
@@ -98,12 +56,12 @@
   --color-border: var(--slate-800);
   --color-border-strong: var(--slate-700);
 
-  // Table specific (dark mode)
+  // Table specific
   --color-table-header-bg: rgba(30, 41, 59, 0.5); // slate-800 with 50% opacity
   --color-table-row-hover: rgba(30, 41, 59, 0.4); // slate-800 with 40% opacity
   --color-table-border: var(--slate-800);
 
-  // Semantic colors (adjusted for dark mode)
+  // Semantic colors
   --color-success: #4ade80;
   --color-warning: #fbbf24;
   --color-error: #f87171;
@@ -119,7 +77,8 @@
   --level-expert-bg: rgba(88, 28, 135, 0.3);
   --level-expert-text: #c084fc;
 
-  // Scrollbar (dark mode)
+  // Scrollbar
+  --scrollbar-track: transparent;
   --scrollbar-thumb: #345965;
   --scrollbar-thumb-hover: var(--primary);
 }
@@ -443,16 +402,16 @@ a {
   // Base input styles (shared by text, textarea, select)
   .input-base {
     @apply w-full px-3 rounded-lg;
-    @apply text-sm text-slate-100 dark:text-slate-100;
-    @apply bg-slate-900 dark:bg-slate-900;
-    @apply border border-slate-800 dark:border-slate-800;
+    @apply text-sm text-slate-100;
+    @apply bg-slate-900;
+    @apply border border-slate-800;
     @apply transition-all duration-150 ease-in-out;
     @apply placeholder:text-slate-500;
     height: 41px;
     border-radius: 0.5rem;
 
     &:hover:not(:disabled) {
-      @apply border-slate-700 dark:border-slate-700;
+      @apply border-slate-700;
     }
 
     &:focus {
@@ -462,22 +421,7 @@ a {
 
     &:disabled {
       @apply opacity-50 cursor-not-allowed;
-      @apply bg-slate-900 dark:bg-slate-900;
-    }
-  }
-
-  // Light mode variant for inputs
-  [data-theme='light'] .input-base {
-    @apply text-slate-900 bg-white;
-    @apply border-slate-200;
-    @apply placeholder:text-slate-400;
-
-    &:hover:not(:disabled) {
-      @apply border-slate-300;
-    }
-
-    &:disabled {
-      @apply bg-slate-50;
+      @apply bg-slate-900;
     }
   }
 
@@ -513,12 +457,6 @@ a {
   // Filter label (uppercase variant)
   .label-filter {
     @apply label-base uppercase tracking-wider font-semibold;
-  }
-
-  // Light mode variant for labels
-  [data-theme='light'] .label-base,
-  [data-theme='light'] .label-filter {
-    @apply text-slate-600;
   }
 
   // ---------------------------------------------------------------------------

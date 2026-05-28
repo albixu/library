@@ -190,21 +190,10 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
           0 8px 10px -6px rgb(0 0 0 / 0.3);
       }
 
-      [data-theme='light'] .dialog-container {
-        background-color: rgb(255 255 255);
-        box-shadow:
-          0 20px 25px -5px rgb(0 0 0 / 0.1),
-          0 8px 10px -6px rgb(0 0 0 / 0.1);
-      }
-
       /* Header */
       .dialog-header {
         padding: 1.5rem;
         border-bottom: 1px solid rgb(51 65 85);
-      }
-
-      [data-theme='light'] .dialog-header {
-        border-bottom-color: rgb(226 232 240);
       }
 
       .dialog-title-wrapper {
@@ -225,10 +214,6 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
         color: rgb(241 245 249);
       }
 
-      [data-theme='light'] .dialog-title {
-        color: rgb(30 41 59);
-      }
-
       /* Content */
       .dialog-content {
         padding: 1.5rem;
@@ -239,10 +224,6 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
         margin: 0 0 1rem;
         font-size: 1rem;
         color: rgb(203 213 225);
-      }
-
-      [data-theme='light'] .book-title {
-        color: rgb(51 65 85);
       }
 
       /* Form Field */
@@ -300,16 +281,6 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
         border-color: rgb(239 68 68);
       }
 
-      [data-theme='light'] .input-field {
-        background-color: rgb(255 255 255);
-        color: rgb(30 41 59);
-        border-color: rgb(226 232 240);
-      }
-
-      [data-theme='light'] .input-field::placeholder {
-        color: rgb(148 163 184);
-      }
-
       .error-message {
         display: block;
         margin-top: 0.375rem;
@@ -346,20 +317,10 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
         border: 1px solid rgba(23, 161, 207, 0.3);
       }
 
-      [data-theme='light'] .warning-banner.kindle-warning {
-        background-color: rgba(23, 161, 207, 0.1);
-        color: rgb(7 89 133);
-      }
-
       .warning-banner.unavailable {
         background-color: rgba(239, 68, 68, 0.1);
         color: rgb(252 165 165);
         border: 1px solid rgba(239, 68, 68, 0.3);
-      }
-
-      [data-theme='light'] .warning-banner.unavailable {
-        background-color: rgba(239, 68, 68, 0.1);
-        color: rgb(153 27 27);
       }
 
       /* Loading Container */
@@ -420,10 +381,6 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
         color: rgb(203 213 225);
       }
 
-      [data-theme='light'] .result-container p {
-        color: rgb(51 65 85);
-      }
-
       /* Dialog Actions */
       .dialog-actions {
         display: flex;
@@ -431,10 +388,6 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
         gap: 0.75rem;
         padding: 1rem 1.5rem;
         border-top: 1px solid rgb(51 65 85);
-      }
-
-      [data-theme='light'] .dialog-actions {
-        border-top-color: rgb(226 232 240);
       }
 
       /* Buttons */
@@ -484,15 +437,6 @@ type DialogState = 'input' | 'sending' | 'success' | 'error';
 
       .btn-secondary:hover:not(:disabled) {
         background-color: rgb(51 65 85);
-      }
-
-      [data-theme='light'] .btn-secondary {
-        color: rgb(71 85 105);
-        border-color: rgb(203 213 225);
-      }
-
-      [data-theme='light'] .btn-secondary:hover:not(:disabled) {
-        background-color: rgb(241 245 249);
       }
     `,
   ],
