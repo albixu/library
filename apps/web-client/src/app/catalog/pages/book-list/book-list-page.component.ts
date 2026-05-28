@@ -14,6 +14,7 @@ import { FilterPanelComponent } from '../../components/filters/index.js';
 import { BookTableComponent } from '../../components/table/book-table/index.js';
 import { BookCardComponent } from '../../components/table/book-card/index.js';
 import { BookCardGridComponent } from '../../components/cards/book-card-grid/index.js';
+import { BookCardSkeletonComponent } from '../../components/cards/book-card-skeleton/index.js';
 import { PaginatorComponent } from '../../components/table/paginator/index.js';
 import { SendToKindleDialogComponent } from '../../components/dialogs/index.js';
 import { BookSearchStore } from '../../../core/services/book-search.store.js';
@@ -44,7 +45,7 @@ import {
 @Component({
   selector: 'app-book-list-page',
   standalone: true,
-  imports: [FilterPanelComponent, BookTableComponent, BookCardComponent, BookCardGridComponent, PaginatorComponent],
+  imports: [FilterPanelComponent, BookTableComponent, BookCardComponent, BookCardGridComponent, BookCardSkeletonComponent, PaginatorComponent],
   template: `
     <div class="book-list-container">
       <!-- Mobile Backdrop -->
@@ -164,11 +165,15 @@ import {
             <!-- Book display -->
             @if (isMobile()) {
               <!-- Mobile: always cards grid -->
-              <app-book-card-grid
-                [books]="store.books()"
-                (bookSelect)="onBookSelect($event)"
-                (sendToKindle)="onSendToKindle($event)"
-              />
+              @if (store.loading() && store.books().length === 0) {
+                <app-book-card-skeleton />
+              } @else {
+                <app-book-card-grid
+                  [books]="store.books()"
+                  (bookSelect)="onBookSelect($event)"
+                  (sendToKindle)="onSendToKindle($event)"
+                />
+              }
               @if (!store.isEmpty()) {
                 <app-paginator
                   [totalCount]="store.pagination().totalCount"
@@ -180,11 +185,15 @@ import {
               }
             } @else if (viewMode() === 'cards') {
               <!-- Desktop: Cards grid -->
-              <app-book-card-grid
-                [books]="store.books()"
-                (bookSelect)="onBookSelect($event)"
-                (sendToKindle)="onSendToKindle($event)"
-              />
+              @if (store.loading() && store.books().length === 0) {
+                <app-book-card-skeleton />
+              } @else {
+                <app-book-card-grid
+                  [books]="store.books()"
+                  (bookSelect)="onBookSelect($event)"
+                  (sendToKindle)="onSendToKindle($event)"
+                />
+              }
               @if (!store.isEmpty()) {
                 <div class="paginator-wrapper standalone">
                   <app-paginator
