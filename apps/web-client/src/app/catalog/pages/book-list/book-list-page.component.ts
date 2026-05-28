@@ -196,14 +196,7 @@ import {
       z-index: 40;
       backdrop-filter: blur(2px);
       animation: fadeIn 0.3s ease;
-
-      [data-theme='dark'] & {
-        background-color: rgba(15, 23, 42, 0.7); /* slate-900 */
-      }
-
-      [data-theme='light'] & {
-        background-color: rgba(0, 0, 0, 0.5);
-      }
+      background-color: rgba(15, 23, 42, 0.7); /* slate-900 */
     }
 
     @keyframes fadeIn {
@@ -223,8 +216,8 @@ import {
       overflow-x: hidden;
       flex-shrink: 0;
       transition: transform 0.3s ease;
-      background-color: rgb(255 255 255) !important; /* white - default for light mode */
-      border-right: 1px solid rgb(226 232 240); /* slate-200 */
+      background-color: #111d21 !important; /* background-dark from Stitch design */
+      border-right: 1px solid rgb(51 65 85); /* slate-700 */
 
       /* Mobile: drawer */
       &.mobile {
@@ -242,12 +235,6 @@ import {
       }
     }
 
-    /* Dark mode override */
-    :host-context([data-theme='dark']) .filter-sidenav {
-      background-color: #111d21 !important; /* background-dark from Stitch design */
-      border-right: 1px solid rgb(51 65 85); /* slate-700 */
-    }
-
     /* Main Content */
     .main-content {
       flex: 1;
@@ -255,11 +242,6 @@ import {
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      background-color: rgb(248 250 252); /* slate-50 - default for light mode */
-    }
-
-    /* Dark mode override */
-    :host-context([data-theme='dark']) .main-content {
       background-color: rgb(15 23 42); /* slate-900 */
     }
 
@@ -271,16 +253,8 @@ import {
       position: sticky;
       top: 0;
       z-index: 10;
-
-      [data-theme='dark'] & {
-        background-color: rgb(30 41 59); /* slate-800 */
-        border-bottom: 1px solid rgb(51 65 85); /* slate-700 */
-      }
-
-      [data-theme='light'] & {
-        background-color: rgb(255 255 255); /* white */
-        border-bottom: 1px solid rgb(226 232 240); /* slate-200 */
-      }
+      background-color: rgb(30 41 59); /* slate-800 */
+      border-bottom: 1px solid rgb(51 65 85); /* slate-700 */
     }
 
     .filter-toggle-btn {
@@ -294,25 +268,14 @@ import {
       background: transparent;
       cursor: pointer;
       transition: background-color 0.2s ease;
+      color: rgb(203 213 225); /* slate-300 */
 
       .material-symbols-outlined {
         font-size: 1.5rem;
       }
 
-      [data-theme='dark'] & {
-        color: rgb(203 213 225); /* slate-300 */
-
-        &:hover {
-          background-color: rgb(51 65 85); /* slate-700 */
-        }
-      }
-
-      [data-theme='light'] & {
-        color: rgb(71 85 105); /* slate-600 */
-
-        &:hover {
-          background-color: rgb(241 245 249); /* slate-100 */
-        }
+      &:hover {
+        background-color: rgb(51 65 85); /* slate-700 */
       }
     }
 
@@ -320,14 +283,7 @@ import {
       flex: 1;
       font-weight: 500;
       margin-left: 0.5rem;
-
-      [data-theme='dark'] & {
-        color: rgb(241 245 249); /* slate-100 */
-      }
-
-      [data-theme='light'] & {
-        color: rgb(15 23 42); /* slate-900 */
-      }
+      color: rgb(241 245 249); /* slate-100 */
     }
 
     .filter-badge {
@@ -362,27 +318,13 @@ import {
       font-size: 1.5rem;
       font-weight: 700;
       margin: 0;
-
-      [data-theme='dark'] & {
-        color: rgb(241 245 249); /* slate-100 */
-      }
-
-      [data-theme='light'] & {
-        color: rgb(15 23 42); /* slate-900 */
-      }
+      color: rgb(241 245 249); /* slate-100 */
     }
 
     .results-subtitle {
       font-size: 0.875rem;
       margin: 0.25rem 0 0;
-
-      [data-theme='dark'] & {
-        color: rgb(148 163 184); /* slate-400 */
-      }
-
-      [data-theme='light'] & {
-        color: rgb(100 116 139); /* slate-500 */
-      }
+      color: rgb(148 163 184); /* slate-400 */
     }
 
     /* Cards Container */
@@ -398,18 +340,9 @@ import {
       flex-direction: column;
       border-radius: 0.75rem;
       overflow: hidden;
-
-      [data-theme='dark'] & {
-        background-color: rgb(30 41 59); /* slate-800 */
-        border: 1px solid rgb(51 65 85); /* slate-700 */
-        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-      }
-
-      [data-theme='light'] & {
-        background-color: rgb(255 255 255); /* white */
-        border: 1px solid rgb(226 232 240); /* slate-200 */
-        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-      }
+      background-color: rgb(30 41 59); /* slate-800 */
+      border: 1px solid rgb(51 65 85); /* slate-700 */
+      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
     }
 
     .table-with-paginator app-book-table ::ng-deep .book-table-container {
@@ -419,15 +352,8 @@ import {
     }
 
     .paginator-wrapper {
-      [data-theme='dark'] & {
-        border-top: 1px solid rgb(51 65 85); /* slate-700 */
-        background-color: rgb(15 23 42); /* slate-900 */
-      }
-
-      [data-theme='light'] & {
-        border-top: 1px solid rgb(226 232 240); /* slate-200 */
-        background-color: rgb(248 250 252); /* slate-50 */
-      }
+      border-top: 1px solid rgb(51 65 85); /* slate-700 */
+      background-color: rgb(15 23 42); /* slate-900 */
     }
 
     /* Error State */
@@ -450,28 +376,14 @@ import {
       margin: 0;
       font-size: 1.25rem;
       font-weight: 500;
-
-      [data-theme='dark'] & {
-        color: rgb(241 245 249); /* slate-100 */
-      }
-
-      [data-theme='light'] & {
-        color: rgb(15 23 42); /* slate-900 */
-      }
+      color: rgb(241 245 249); /* slate-100 */
     }
 
     .error-message {
       margin: 0;
       font-size: 0.875rem;
       max-width: 400px;
-
-      [data-theme='dark'] & {
-        color: rgb(148 163 184); /* slate-400 */
-      }
-
-      [data-theme='light'] & {
-        color: rgb(100 116 139); /* slate-500 */
-      }
+      color: rgb(148 163 184); /* slate-400 */
     }
 
     /* Button Styles */
@@ -512,24 +424,12 @@ import {
     }
 
     .btn-secondary {
-      [data-theme='dark'] & {
-        background-color: transparent;
-        border: 1px solid rgb(51 65 85); /* slate-700 */
-        color: rgb(203 213 225); /* slate-300 */
+      background-color: transparent;
+      border: 1px solid rgb(51 65 85); /* slate-700 */
+      color: rgb(203 213 225); /* slate-300 */
 
-        &:hover:not(:disabled) {
-          background-color: rgb(51 65 85); /* slate-700 */
-        }
-      }
-
-      [data-theme='light'] & {
-        background-color: transparent;
-        border: 1px solid rgb(226 232 240); /* slate-200 */
-        color: rgb(71 85 105); /* slate-600 */
-
-        &:hover:not(:disabled) {
-          background-color: rgb(241 245 249); /* slate-100 */
-        }
+      &:hover:not(:disabled) {
+        background-color: rgb(51 65 85); /* slate-700 */
       }
 
       &:focus-visible {

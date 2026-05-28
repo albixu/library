@@ -174,14 +174,7 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
       font-size: 1.75rem;
       font-weight: 700;
       margin: 0 0 0.5rem;
-
-      [data-theme='dark'] & {
-        color: rgb(241 245 249);
-      }
-
-      [data-theme='light'] & {
-        color: rgb(15 23 42);
-      }
+      color: rgb(241 245 249);
     }
 
     .recommendations-label {
@@ -190,14 +183,7 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
       gap: 0.375rem;
       font-size: 0.9375rem;
       margin: 0;
-
-      [data-theme='dark'] & {
-        color: rgb(148 163 184);
-      }
-
-      [data-theme='light'] & {
-        color: rgb(100 116 139);
-      }
+      color: rgb(148 163 184);
     }
 
     .label-icon {
@@ -224,28 +210,12 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
         transform 150ms ease,
         box-shadow 150ms ease;
       cursor: pointer;
-
-      [data-theme='dark'] & {
-        background-color: rgb(30 41 59);
-        border: 1px solid rgb(51 65 85);
-      }
-
-      [data-theme='light'] & {
-        background-color: rgb(255 255 255);
-        border: 1px solid rgb(226 232 240);
-        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.07);
-      }
+      background-color: rgb(30 41 59);
+      border: 1px solid rgb(51 65 85);
 
       &:hover {
         transform: translateY(-2px);
-
-        [data-theme='dark'] & {
-          box-shadow: 0 8px 16px -4px rgb(0 0 0 / 0.4);
-        }
-
-        [data-theme='light'] & {
-          box-shadow: 0 8px 16px -4px rgb(0 0 0 / 0.12);
-        }
+        box-shadow: 0 8px 16px -4px rgb(0 0 0 / 0.4);
       }
 
       &:focus-visible {
@@ -257,12 +227,8 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
     .book-card__cover {
       position: relative;
       aspect-ratio: 2/3;
-      background-color: rgb(226 232 240);
+      background-color: rgb(51 65 85);
       overflow: hidden;
-
-      [data-theme='dark'] & {
-        background-color: rgb(51 65 85);
-      }
     }
 
     .book-card__img {
@@ -280,14 +246,7 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
 
       .material-symbols-outlined {
         font-size: 3rem;
-
-        [data-theme='dark'] & {
-          color: rgb(100 116 139);
-        }
-
-        [data-theme='light'] & {
-          color: rgb(148 163 184);
-        }
+        color: rgb(100 116 139);
       }
     }
 
@@ -318,40 +277,19 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-
-      [data-theme='dark'] & {
-        color: rgb(241 245 249);
-      }
-
-      [data-theme='light'] & {
-        color: rgb(15 23 42);
-      }
+      color: rgb(241 245 249);
     }
 
     .book-card__author {
       font-size: 0.8125rem;
       margin: 0;
-
-      [data-theme='dark'] & {
-        color: rgb(148 163 184);
-      }
-
-      [data-theme='light'] & {
-        color: rgb(100 116 139);
-      }
+      color: rgb(148 163 184);
     }
 
     .book-card__category {
       font-size: 0.75rem;
       margin: 0;
-
-      [data-theme='dark'] & {
-        color: rgb(100 116 139);
-      }
-
-      [data-theme='light'] & {
-        color: rgb(148 163 184);
-      }
+      color: rgb(100 116 139);
     }
 
     /* Card actions */
@@ -361,14 +299,7 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
       gap: 0.25rem;
       padding: 0.375rem 0.5rem;
       border-top: 1px solid;
-
-      [data-theme='dark'] & {
-        border-color: rgb(51 65 85);
-      }
-
-      [data-theme='light'] & {
-        border-color: rgb(226 232 240);
-      }
+      border-color: rgb(51 65 85);
     }
 
     .card-action-btn {
@@ -382,6 +313,7 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
       border-radius: 0.375rem;
       cursor: pointer;
       transition: background-color 150ms ease, color 150ms ease;
+      color: rgb(148 163 184);
 
       .material-symbols-outlined {
         font-size: 18px;
@@ -389,15 +321,7 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
         height: 18px;
       }
 
-      [data-theme='dark'] & {
-        color: rgb(148 163 184);
-        &:hover { background-color: rgb(30 41 59); color: rgb(203 213 225); }
-      }
-
-      [data-theme='light'] & {
-        color: rgb(100 116 139);
-        &:hover { background-color: rgb(241 245 249); color: rgb(51 65 85); }
-      }
+      &:hover { background-color: rgb(30 41 59); color: rgb(203 213 225); }
     }
 
     .card-action-btn.favorite-active {
@@ -412,47 +336,24 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
     .skeleton-box {
       background: linear-gradient(
         90deg,
-        rgb(226 232 240) 25%,
-        rgb(241 245 249) 50%,
-        rgb(226 232 240) 75%
+        rgb(51 65 85) 25%,
+        rgb(71 85 105) 50%,
+        rgb(51 65 85) 75%
       );
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
-
-      [data-theme='dark'] & {
-        background: linear-gradient(
-          90deg,
-          rgb(51 65 85) 25%,
-          rgb(71 85 105) 50%,
-          rgb(51 65 85) 75%
-        );
-        background-size: 200% 100%;
-      }
     }
 
     .skeleton-line {
       border-radius: 0.25rem;
       animation: shimmer 1.5s infinite;
-
-      [data-theme='dark'] & {
-        background: linear-gradient(
-          90deg,
-          rgb(51 65 85) 25%,
-          rgb(71 85 105) 50%,
-          rgb(51 65 85) 75%
-        );
-        background-size: 200% 100%;
-      }
-
-      [data-theme='light'] & {
-        background: linear-gradient(
-          90deg,
-          rgb(226 232 240) 25%,
-          rgb(241 245 249) 50%,
-          rgb(226 232 240) 75%
-        );
-        background-size: 200% 100%;
-      }
+      background: linear-gradient(
+        90deg,
+        rgb(51 65 85) 25%,
+        rgb(71 85 105) 50%,
+        rgb(51 65 85) 75%
+      );
+      background-size: 200% 100%;
     }
 
     .skeleton-line--title {
@@ -488,14 +389,7 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
 
     .empty-icon {
       font-size: 3.5rem;
-
-      [data-theme='dark'] & {
-        color: rgb(100 116 139);
-      }
-
-      [data-theme='light'] & {
-        color: rgb(148 163 184);
-      }
+      color: rgb(100 116 139);
     }
 
     .empty-message {
@@ -503,28 +397,14 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
       font-size: 1rem;
       font-weight: 500;
       max-width: 400px;
-
-      [data-theme='dark'] & {
-        color: rgb(203 213 225);
-      }
-
-      [data-theme='light'] & {
-        color: rgb(51 65 85);
-      }
+      color: rgb(203 213 225);
     }
 
     .empty-hint {
       margin: 0;
       font-size: 0.875rem;
       max-width: 400px;
-
-      [data-theme='dark'] & {
-        color: rgb(100 116 139);
-      }
-
-      [data-theme='light'] & {
-        color: rgb(148 163 184);
-      }
+      color: rgb(100 116 139);
     }
 
     /* Button */
