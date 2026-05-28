@@ -154,27 +154,19 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
         align-items: center;
         justify-content: center;
         padding: 2rem 1rem;
-        background-color: var(--color-bg-primary, #f8fafc);
-      }
-
-      :host-context([data-theme='dark']) .rp-page {
         background-color: rgb(10 20 25);
       }
 
       .rp-card {
         width: 100%;
         max-width: 28rem;
-        background-color: white;
+        background-color: rgb(17 29 33);
+        border: 1px solid rgb(51 65 85);
         border-radius: 0.75rem;
         box-shadow:
           0 20px 25px -5px rgba(0, 0, 0, 0.1),
           0 8px 10px -6px rgba(0, 0, 0, 0.1);
         padding: 2rem;
-      }
-
-      :host-context([data-theme='dark']) .rp-card {
-        background-color: rgb(17 29 33);
-        border: 1px solid rgb(51 65 85);
       }
 
       .rp-title {
@@ -207,11 +199,11 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
       .rp-input {
         width: 100%;
         padding: 0.625rem 0.875rem;
-        border: 1px solid rgb(203 213 225);
+        border: 1px solid rgb(51 65 85);
         border-radius: 0.5rem;
         font-size: 0.875rem;
-        color: var(--color-text-primary);
-        background-color: white;
+        color: rgb(226 232 240);
+        background-color: rgb(30 41 59);
         transition:
           border-color 150ms ease,
           box-shadow 150ms ease;
@@ -231,16 +223,6 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
       .rp-input--error:focus {
         border-color: rgb(239 68 68);
         box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
-      }
-
-      :host-context([data-theme='dark']) .rp-input {
-        background-color: rgb(30 41 59);
-        border-color: rgb(51 65 85);
-        color: rgb(226 232 240);
-      }
-
-      :host-context([data-theme='dark']) .rp-input:focus {
-        border-color: #17a1cf;
       }
 
       .rp-error {
@@ -273,26 +255,14 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
       }
 
       .rp-alert--error {
-        background-color: rgb(254 242 242);
-        border: 1px solid rgb(252 165 165);
-        color: rgb(185 28 28);
-      }
-
-      :host-context([data-theme='dark']) .rp-alert--error {
         background-color: rgba(239, 68, 68, 0.1);
-        border-color: rgba(239, 68, 68, 0.3);
+        border: 1px solid rgba(239, 68, 68, 0.3);
         color: rgb(252 165 165);
       }
 
       .rp-alert--success {
-        background-color: rgb(240 253 244);
-        border: 1px solid rgb(134 239 172);
-        color: rgb(21 128 61);
-      }
-
-      :host-context([data-theme='dark']) .rp-alert--success {
         background-color: rgba(34, 197, 94, 0.1);
-        border-color: rgba(34, 197, 94, 0.3);
+        border: 1px solid rgba(34, 197, 94, 0.3);
         color: rgb(134 239 172);
       }
 

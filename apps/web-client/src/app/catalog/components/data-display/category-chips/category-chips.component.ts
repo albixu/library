@@ -40,11 +40,6 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
       text-transform: uppercase;
       border-radius: 9999px;
       white-space: nowrap;
-      background-color: rgb(241 245 249); /* slate-100 */
-      color: rgb(100 116 139); /* slate-500 */
-    }
-
-    :host-context([data-theme='dark']) .category-chip {
       background-color: rgb(30 41 59); /* slate-800 */
       color: rgb(148 163 184); /* slate-400 */
     }
@@ -58,11 +53,6 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
       font-weight: 600;
       border-radius: 9999px;
       cursor: help;
-      background-color: rgb(226 232 240); /* slate-200 */
-      color: rgb(71 85 105); /* slate-600 */
-    }
-
-    :host-context([data-theme='dark']) .overflow-indicator {
       background-color: rgb(51 65 85); /* slate-700 */
       color: rgb(203 213 225); /* slate-300 */
     }

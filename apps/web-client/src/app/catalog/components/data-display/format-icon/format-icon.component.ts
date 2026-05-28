@@ -41,10 +41,6 @@ const DEFAULT_ICON = 'insert_drive_file';
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: rgb(100 116 139); /* slate-500 */
-    }
-
-    :host-context([data-theme='dark']) .format-icon {
       color: rgb(148 163 184); /* slate-400 */
     }
 

@@ -64,7 +64,7 @@ const STATE_CONFIGS: Record<EmptyStateType, StateConfig> = {
       width: 4rem;
       height: 4rem;
       margin-bottom: 1rem;
-      color: rgb(203 213 225); /* slate-300 */
+      color: rgb(71 85 105); /* slate-600 */
       font-variation-settings:
         'FILL' 0,
         'wght' 300,
@@ -72,18 +72,10 @@ const STATE_CONFIGS: Record<EmptyStateType, StateConfig> = {
         'opsz' 48;
     }
 
-    :host-context([data-theme='dark']) .empty-state-icon {
-      color: rgb(71 85 105); /* slate-600 */
-    }
-
     .empty-state-title {
       margin: 0 0 0.5rem;
       font-size: 1.25rem;
       font-weight: 500;
-      color: rgb(15 23 42); /* slate-900 */
-    }
-
-    :host-context([data-theme='dark']) .empty-state-title {
       color: rgb(241 245 249); /* slate-100 */
     }
 
@@ -91,10 +83,6 @@ const STATE_CONFIGS: Record<EmptyStateType, StateConfig> = {
       margin: 0 0 1.5rem;
       font-size: 0.875rem;
       max-width: 24rem;
-      color: rgb(100 116 139); /* slate-500 */
-    }
-
-    :host-context([data-theme='dark']) .empty-state-description {
       color: rgb(148 163 184); /* slate-400 */
     }
 
