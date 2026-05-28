@@ -107,7 +107,8 @@ import { AuthService } from '../auth.service.js';
       }
 
       .login-modal {
-        background-color: white;
+        background-color: rgb(17 29 33);
+        border: 1px solid rgb(51 65 85);
         border-radius: 0.75rem;
         box-shadow:
           0 20px 25px -5px rgba(0, 0, 0, 0.1),
@@ -115,11 +116,6 @@ import { AuthService } from '../auth.service.js';
         width: 100%;
         max-width: 400px;
         padding: 1.5rem;
-      }
-
-      :host-context([data-theme='dark']) .login-modal {
-        background-color: rgb(17 29 33);
-        border: 1px solid rgb(51 65 85);
       }
 
       .login-modal__header {
@@ -151,10 +147,6 @@ import { AuthService } from '../auth.service.js';
       }
 
       .login-modal__close:hover {
-        background-color: rgb(241 245 249);
-      }
-
-      :host-context([data-theme='dark']) .login-modal__close:hover {
         background-color: rgb(30 41 59);
       }
 
@@ -185,11 +177,11 @@ import { AuthService } from '../auth.service.js';
       .login-modal__input {
         width: 100%;
         padding: 0.625rem 0.875rem;
-        border: 1px solid rgb(203 213 225);
+        border: 1px solid rgb(51 65 85);
         border-radius: 0.5rem;
         font-size: 0.875rem;
-        color: var(--color-text-primary);
-        background-color: white;
+        color: rgb(226 232 240);
+        background-color: rgb(30 41 59);
         transition:
           border-color 150ms ease,
           box-shadow 150ms ease;
@@ -211,16 +203,6 @@ import { AuthService } from '../auth.service.js';
         box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
       }
 
-      :host-context([data-theme='dark']) .login-modal__input {
-        background-color: rgb(30 41 59);
-        border-color: rgb(51 65 85);
-        color: rgb(226 232 240);
-      }
-
-      :host-context([data-theme='dark']) .login-modal__input:focus {
-        border-color: #17a1cf;
-      }
-
       .login-modal__error {
         font-size: 0.75rem;
         color: rgb(239 68 68);
@@ -231,16 +213,10 @@ import { AuthService } from '../auth.service.js';
         align-items: center;
         gap: 0.5rem;
         padding: 0.75rem;
-        background-color: rgb(254 242 242);
-        border: 1px solid rgb(252 165 165);
+        background-color: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
         border-radius: 0.5rem;
         font-size: 0.875rem;
-        color: rgb(185 28 28);
-      }
-
-      :host-context([data-theme='dark']) .login-modal__server-error {
-        background-color: rgba(239, 68, 68, 0.1);
-        border-color: rgba(239, 68, 68, 0.3);
         color: rgb(252 165 165);
       }
 

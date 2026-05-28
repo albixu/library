@@ -12,7 +12,7 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
  * - Sticky positioning at top
  * - Logo with auto_stories icon in cyan container
  * - "BiblioManager" title with bold styling
- * - Theme toggle and profile icons on the right
+ * - Profile icon on the right
  * - Auth-aware: shows login modal when unauthenticated, user menu when authenticated
  */
 @Component({
@@ -112,17 +112,13 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
         gap: 1.5rem;
         height: 64px;
         padding: 0 1.5rem;
-        background-color: rgba(255, 255, 255, 0.8);
+        background-color: rgba(17, 29, 33, 0.8);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border-bottom: 1px solid var(--color-border);
         transition:
           background-color 250ms ease,
           border-color 250ms ease;
-      }
-
-      :host-context([data-theme='dark']) .header {
-        background-color: rgba(17, 29, 33, 0.8);
       }
 
       .header__brand-link {
@@ -196,14 +192,11 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
         transition:
           background-color 150ms ease,
           color 150ms ease;
+        color: rgb(148 163 184);
 
-        [data-theme='dark'] & {
-          color: rgb(148 163 184);
-
-          &:hover {
-            background-color: rgb(30 41 59);
-            color: rgb(203 213 225);
-          }
+        &:hover {
+          background-color: rgb(30 41 59);
+          color: rgb(203 213 225);
         }
 
         &:focus-visible {
@@ -213,10 +206,8 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
       }
 
       .header__nav-link--active {
-        [data-theme='dark'] & {
-          background-color: rgb(30 41 59);
-          color: rgb(23 161 207);
-        }
+        background-color: rgb(30 41 59);
+        color: rgb(23 161 207);
       }
 
       .header__nav-icon {
@@ -238,29 +229,21 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
         width: 40px;
         height: 40px;
         border-radius: 9999px;
-        background-color: rgb(226 232 240); /* slate-200 */
+        background-color: rgb(51 65 85); /* slate-700 */
         overflow: hidden;
         cursor: pointer;
-      }
-
-      :host-context([data-theme='dark']) .header__avatar {
-        background-color: rgb(51 65 85); /* slate-700 */
       }
 
       .header__avatar .material-symbols-outlined {
         font-size: 24px;
         width: 24px;
         height: 24px;
-        color: rgb(71 85 105); /* slate-600 */
+        color: rgb(148 163 184); /* slate-400 */
         font-variation-settings:
           'FILL' 1,
           'wght' 400,
           'GRAD' 0,
           'opsz' 24;
-      }
-
-      :host-context([data-theme='dark']) .header__avatar .material-symbols-outlined {
-        color: rgb(148 163 184); /* slate-400 */
       }
 
       /* Authenticated user area */
@@ -271,52 +254,36 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
         gap: 0.5rem;
         padding: 0.375rem 0.75rem;
         border-radius: 9999px;
-        background-color: rgb(226 232 240);
+        background-color: rgb(51 65 85);
         cursor: pointer;
         transition: background-color 150ms ease;
         user-select: none;
       }
 
       .header__user:hover {
-        background-color: rgb(203 213 225);
-      }
-
-      :host-context([data-theme='dark']) .header__user {
-        background-color: rgb(51 65 85);
-      }
-
-      :host-context([data-theme='dark']) .header__user:hover {
         background-color: rgb(71 85 105);
       }
 
       .header__email {
         font-size: 0.8125rem;
         font-weight: 500;
-        color: rgb(51 65 85);
+        color: rgb(203 213 225);
         max-width: 150px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
-      :host-context([data-theme='dark']) .header__email {
-        color: rgb(203 213 225);
-      }
-
       .header__user-icon {
         font-size: 20px;
         width: 20px;
         height: 20px;
-        color: rgb(71 85 105);
+        color: rgb(148 163 184);
         font-variation-settings:
           'FILL' 1,
           'wght' 400,
           'GRAD' 0,
           'opsz' 20;
-      }
-
-      :host-context([data-theme='dark']) .header__user-icon {
-        color: rgb(148 163 184);
       }
 
       /* Dropdown */
@@ -326,18 +293,13 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
         right: 0;
         z-index: 100;
         min-width: 160px;
-        background-color: white;
-        border: 1px solid rgb(226 232 240);
+        background-color: rgb(17 29 33);
+        border: 1px solid rgb(51 65 85);
         border-radius: 0.5rem;
         box-shadow:
           0 4px 6px -1px rgba(0, 0, 0, 0.1),
           0 2px 4px -2px rgba(0, 0, 0, 0.1);
         overflow: hidden;
-      }
-
-      :host-context([data-theme='dark']) .header__dropdown {
-        background-color: rgb(17 29 33);
-        border-color: rgb(51 65 85);
       }
 
       .header__dropdown-item {
@@ -349,21 +311,13 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
         border: none;
         background-color: transparent;
         font-size: 0.875rem;
-        color: rgb(51 65 85);
+        color: rgb(203 213 225);
         cursor: pointer;
         transition: background-color 150ms ease;
         text-align: left;
       }
 
       .header__dropdown-item:hover {
-        background-color: rgb(241 245 249);
-      }
-
-      :host-context([data-theme='dark']) .header__dropdown-item {
-        color: rgb(203 213 225);
-      }
-
-      :host-context([data-theme='dark']) .header__dropdown-item:hover {
         background-color: rgb(30 41 59);
       }
 
