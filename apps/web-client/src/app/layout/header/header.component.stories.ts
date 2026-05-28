@@ -1,26 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { applicationConfig, moduleMetadata } from '@storybook/angular';
+import { applicationConfig } from '@storybook/angular';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { ThemeToggleComponent } from '@shared/components/theme-toggle';
-import { ThemeService } from '@core/services/theme.service';
-import { signal, computed } from '@angular/core';
 import { HeaderComponent } from './header.component';
-
-// Mock ThemeService for Storybook
-const createMockThemeService = (isDark = true) => {
-  const themeSignal = signal<'light' | 'dark'>(isDark ? 'dark' : 'light');
-  return {
-    theme: themeSignal,
-    isDark: computed(() => themeSignal() === 'dark'),
-    themeIcon: computed(() => (themeSignal() === 'dark' ? 'light_mode' : 'dark_mode')),
-    toggleLabel: computed(() =>
-      themeSignal() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-    ),
-    toggleTheme: () => {
-      themeSignal.update((current) => (current === 'light' ? 'dark' : 'light'));
-    },
-  };
-};
 
 const meta: Meta<HeaderComponent> = {
   title: 'Layout/Header',
@@ -30,23 +11,18 @@ const meta: Meta<HeaderComponent> = {
     applicationConfig({
       providers: [provideAnimationsAsync()],
     }),
-    moduleMetadata({
-      imports: [ThemeToggleComponent],
-      providers: [{ provide: ThemeService, useFactory: () => createMockThemeService() }],
-    }),
   ],
   parameters: {
     docs: {
       description: {
         component: `
-Application header with logo, title, and theme toggle.
+Application header with logo, title, and user menu.
 
 ## Features
 - Sticky positioning at the top of the viewport
 - Logo with auto_stories Material icon in cyan container
-- "Library" title with bold styling and tracking-tight letter spacing
-- Theme toggle button on the right side
-- Smooth theme transition animations
+- "BiblioManager" title with bold styling and tracking-tight letter spacing
+- User avatar / login button on the right side
 
 ## Usage
 \`\`\`html
@@ -74,45 +50,7 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Default header with logo, title, and theme toggle in dark mode.',
-      },
-    },
-  },
-};
-
-export const DarkTheme: Story = {
-  decorators: [
-    applicationConfig({
-      providers: [provideAnimationsAsync()],
-    }),
-    moduleMetadata({
-      providers: [{ provide: ThemeService, useFactory: () => createMockThemeService(true) }],
-    }),
-  ],
-  parameters: {
-    backgrounds: { default: 'dark' },
-    docs: {
-      description: {
-        story: 'Header appearance in dark theme.',
-      },
-    },
-  },
-};
-
-export const LightTheme: Story = {
-  decorators: [
-    applicationConfig({
-      providers: [provideAnimationsAsync()],
-    }),
-    moduleMetadata({
-      providers: [{ provide: ThemeService, useFactory: () => createMockThemeService(false) }],
-    }),
-  ],
-  parameters: {
-    backgrounds: { default: 'light' },
-    docs: {
-      description: {
-        story: 'Header appearance in light theme.',
+        story: 'Default header with logo and title in dark mode.',
       },
     },
   },

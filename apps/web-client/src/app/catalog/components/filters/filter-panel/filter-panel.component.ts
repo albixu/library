@@ -278,23 +278,10 @@ const DEFAULT_FILTERS: FilterState = {
         font-size: 1rem;
       }
 
-      [data-theme='light'] .clear-filters-btn {
-        color: rgb(100 116 139);
-      }
-
-      [data-theme='light'] .clear-filters-btn:hover:not(:disabled) {
-        background-color: rgb(241 245 249);
-        color: #17a1cf;
-      }
-
       .filter-panel__divider {
         height: 1px;
         background-color: rgb(51 65 85);
         flex-shrink: 0;
-      }
-
-      [data-theme='light'] .filter-panel__divider {
-        background-color: rgb(226 232 240);
       }
 
       .filter-panel__content {
@@ -347,10 +334,6 @@ const DEFAULT_FILTERS: FilterState = {
       .favorites-icon {
         font-size: 1rem;
         color: #e11d48;
-      }
-
-      [data-theme='light'] .favorites-checkbox-label {
-        color: rgb(100 116 139);
       }
     `,
   ],

@@ -34,14 +34,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
       justify-content: center;
       z-index: 10;
       backdrop-filter: blur(2px);
-
-      [data-theme='dark'] & {
-        background-color: rgba(15, 23, 42, 0.8); /* slate-900 with opacity */
-      }
-
-      [data-theme='light'] & {
-        background-color: rgba(255, 255, 255, 0.8); /* white with opacity */
-      }
+      background-color: rgba(15, 23, 42, 0.8); /* slate-900 with opacity */
     }
 
     .loading-overlay.transparent {
@@ -59,16 +52,8 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
     .spinner {
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
-
-      [data-theme='dark'] & {
-        border: 3px solid rgb(51 65 85); /* slate-700 */
-        border-top-color: #17a1cf; /* primary */
-      }
-
-      [data-theme='light'] & {
-        border: 3px solid rgb(226 232 240); /* slate-200 */
-        border-top-color: #17a1cf; /* primary */
-      }
+      border: 3px solid rgb(51 65 85); /* slate-700 */
+      border-top-color: #17a1cf; /* primary */
     }
 
     @keyframes spin {
@@ -80,14 +65,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
     .loading-message {
       margin: 0;
       font-size: 0.875rem;
-
-      [data-theme='dark'] & {
-        color: rgb(148 163 184); /* slate-400 */
-      }
-
-      [data-theme='light'] & {
-        color: rgb(100 116 139); /* slate-500 */
-      }
+      color: rgb(148 163 184); /* slate-400 */
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
