@@ -2,7 +2,6 @@ import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/cor
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 
-import { ThemeToggleComponent } from '@shared/components/theme-toggle';
 import { AuthService } from '../../auth/auth.service.js';
 import { LoginModalComponent } from '../../auth/login-modal/login-modal.component.js';
 
@@ -19,7 +18,7 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [ThemeToggleComponent, RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="header">
@@ -58,8 +57,6 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
       }
 
       <div class="header__actions">
-        <app-theme-toggle />
-
         @if (authService.currentUser() === null) {
           <!-- Unauthenticated: show login icon -->
           <div
@@ -209,15 +206,6 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
           }
         }
 
-        [data-theme='light'] & {
-          color: rgb(71 85 105);
-
-          &:hover {
-            background-color: rgb(241 245 249);
-            color: rgb(15 23 42);
-          }
-        }
-
         &:focus-visible {
           outline: 2px solid #17a1cf;
           outline-offset: 2px;
@@ -228,11 +216,6 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
         [data-theme='dark'] & {
           background-color: rgb(30 41 59);
           color: rgb(23 161 207);
-        }
-
-        [data-theme='light'] & {
-          background-color: rgb(239 248 252);
-          color: #17a1cf;
         }
       }
 
