@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
 
@@ -44,7 +45,7 @@ describe('RecommendationsPageComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [RecommendationsPageComponent, RouterTestingModule],
-      providers: [{ provide: RecommendationsService, useValue: mockService }],
+      providers: [provideZonelessChangeDetection(), { provide: RecommendationsService, useValue: mockService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecommendationsPageComponent);

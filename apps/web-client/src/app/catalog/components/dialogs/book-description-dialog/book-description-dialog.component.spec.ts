@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BookDescriptionDialogComponent } from './book-description-dialog.component';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 describe('BookDescriptionDialogComponent', () => {
   let component: BookDescriptionDialogComponent;
@@ -7,7 +8,8 @@ describe('BookDescriptionDialogComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BookDescriptionDialogComponent],
+      imports: [BookDescriptionDialogComponent],,
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BookDescriptionDialogComponent);
@@ -30,6 +32,10 @@ describe('BookDescriptionDialogComponent', () => {
 
     it('should start with empty description', () => {
       expect(component.description()).toBe('');
+    });
+
+    it('should start with null isbn', () => {
+      expect(component.isbn()).toBeNull();
     });
   });
 
@@ -65,6 +71,31 @@ describe('BookDescriptionDialogComponent', () => {
 
       expect(component.visible()).toBe(true);
       expect(component.description()).toBe('');
+    });
+
+    it('should set isbn when provided', () => {
+      component.open('Clean Code', 'A handbook.', '978-0132350884');
+
+      expect(component.isbn()).toBe('978-0132350884');
+    });
+
+    it('should set isbn to null when not provided', () => {
+      component.open('Clean Code', 'A handbook.');
+
+      expect(component.isbn()).toBeNull();
+    });
+
+    it('should set isbn to null when explicitly passed null', () => {
+      component.open('Clean Code', 'A handbook.', null);
+
+      expect(component.isbn()).toBeNull();
+    });
+
+    it('should clear isbn on subsequent call without isbn', () => {
+      component.open('Clean Code', 'First', '978-0132350884');
+      component.open('Pragmatic', 'Second');
+
+      expect(component.isbn()).toBeNull();
     });
 
     it('should handle long descriptions', () => {

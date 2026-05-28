@@ -5,6 +5,7 @@ import { of, delay, throwError } from 'rxjs';
 import { SendToKindleDialogComponent } from './send-to-kindle-dialog.component.js';
 import { KindleService, SendToKindleResult } from '../../../../core/services/kindle.service.js';
 import { Book } from '../../../../core/models/index.js';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 describe('SendToKindleDialogComponent', () => {
   let component: SendToKindleDialogComponent;
@@ -56,7 +57,7 @@ describe('SendToKindleDialogComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [SendToKindleDialogComponent],
-      providers: [
+      providers: [provideZonelessChangeDetection(), 
         { provide: DialogRef, useValue: mockDialogRef },
         { provide: DIALOG_DATA, useValue: book },
         { provide: KindleService, useValue: mockKindleService },

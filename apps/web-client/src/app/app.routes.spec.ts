@@ -2,11 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { routes } from './app.routes';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 describe('Application Routes', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      providers: [
+      providers: [provideZonelessChangeDetection(), 
         provideRouter(routes),
         provideAnimationsAsync(),
       ],

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
@@ -19,6 +20,7 @@ describe('MultiSelectChipsComponent', () => {
     await TestBed.configureTestingModule({
       imports: [MultiSelectChipsComponent],
       providers: [
+        provideZonelessChangeDetection(),
         provideAnimationsAsync(),
         providePrimeNG({
           theme: {

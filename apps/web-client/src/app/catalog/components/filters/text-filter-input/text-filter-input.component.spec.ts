@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TextFilterInputComponent } from './text-filter-input.component.js';
 
 describe('TextFilterInputComponent', () => {
@@ -8,6 +9,7 @@ describe('TextFilterInputComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TextFilterInputComponent],
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TextFilterInputComponent);

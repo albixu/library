@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { signal, provideZonelessChangeDetection } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { of } from 'rxjs';
 
@@ -30,6 +31,7 @@ describe('HeaderComponent', () => {
     await TestBed.configureTestingModule({
       imports: [HeaderComponent],
       providers: [
+        provideZonelessChangeDetection(),
         { provide: AuthService, useValue: mockAuthService },
         { provide: Dialog, useValue: mockDialog },
       ],

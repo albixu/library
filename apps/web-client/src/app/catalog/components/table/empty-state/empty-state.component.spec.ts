@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { EmptyStateComponent } from './empty-state.component';
 
 describe('EmptyStateComponent', () => {
@@ -8,6 +9,7 @@ describe('EmptyStateComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [EmptyStateComponent],
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EmptyStateComponent);

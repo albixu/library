@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { LanguageFlagComponent, LanguageCode } from './language-flag.component';
 
 describe('LanguageFlagComponent', () => {
@@ -8,6 +9,7 @@ describe('LanguageFlagComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [LanguageFlagComponent],
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LanguageFlagComponent);

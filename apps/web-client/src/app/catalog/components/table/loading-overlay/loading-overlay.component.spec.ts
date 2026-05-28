@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { LoadingOverlayComponent } from './loading-overlay.component';
 
 describe('LoadingOverlayComponent', () => {
@@ -8,6 +9,7 @@ describe('LoadingOverlayComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [LoadingOverlayComponent],
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoadingOverlayComponent);

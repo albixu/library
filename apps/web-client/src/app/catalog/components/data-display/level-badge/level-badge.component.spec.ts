@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { LevelBadgeComponent } from './level-badge.component';
 import { BookLevelName } from '../../../../core/models/index.js';
 
@@ -9,6 +10,7 @@ describe('LevelBadgeComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [LevelBadgeComponent],
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LevelBadgeComponent);

@@ -4,6 +4,7 @@ import { firstValueFrom, of, throwError } from 'rxjs';
 import { KindleService } from './kindle.service.js';
 import { BookService } from './book.service.js';
 import { Book } from '../models/index.js';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 describe('KindleService', () => {
   let service: KindleService;
@@ -31,7 +32,7 @@ describe('KindleService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [KindleService, { provide: BookService, useValue: mockBookService }],
+      providers: [provideZonelessChangeDetection(), KindleService, { provide: BookService, useValue: mockBookService }],
     });
 
     service = TestBed.inject(KindleService);

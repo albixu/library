@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { of, throwError, Subject } from 'rxjs';
-import { signal } from '@angular/core';
+import { signal, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { LoginModalComponent } from './login-modal.component.js';
@@ -24,7 +24,7 @@ describe('LoginModalComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [LoginModalComponent],
-      providers: [provideRouter([]), { provide: AuthService, useValue: authServiceMock }],
+      providers: [provideZonelessChangeDetection(), provideRouter([]), { provide: AuthService, useValue: authServiceMock }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginModalComponent);
