@@ -1,7 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
+import { of, throwError } from 'rxjs';
 import { BookCoverCardComponent } from './book-cover-card.component.js';
 import { Book } from '../../../../core/models/index.js';
+import { FavoriteService } from '../../../../books/services/favorite.service.js';
+import { AuthService } from '../../../../auth/auth.service.js';
 
 describe('BookCoverCardComponent', () => {
   let component: BookCoverCardComponent;
@@ -23,10 +26,20 @@ describe('BookCoverCardComponent', () => {
     similarityScore: null,
   };
 
+  const mockFavoriteService = { toggle: vi.fn() };
+  const mockAuthService = { currentUser: signal<{ id: string } | null>(null) };
+
   beforeEach(async () => {
+    mockFavoriteService.toggle.mockReset();
+    mockAuthService.currentUser.set(null);
+
     await TestBed.configureTestingModule({
       imports: [BookCoverCardComponent],
-      providers: [provideZonelessChangeDetection()],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: FavoriteService, useValue: mockFavoriteService },
+        { provide: AuthService, useValue: mockAuthService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BookCoverCardComponent);
@@ -182,16 +195,112 @@ describe('BookCoverCardComponent', () => {
     });
   });
 
-  describe('Favorite icon', () => {
-    it('should render favorite icon button', () => {
+  describe('Favorite button (Fix 1)', () => {
+    it('should show favorite button when authenticated', () => {
+      mockAuthService.currentUser.set({ id: 'user1' });
       fixture.componentRef.setInput('book', mockBook);
       fixture.detectChanges();
 
       const btn = fixture.nativeElement.querySelector('.favorite-btn');
       expect(btn).toBeTruthy();
+    });
 
+    it('should not show favorite button when not authenticated', () => {
+      mockAuthService.currentUser.set(null);
+      fixture.componentRef.setInput('book', mockBook);
+      fixture.detectChanges();
+
+      const btn = fixture.nativeElement.querySelector('.favorite-btn');
+      expect(btn).toBeNull();
+    });
+
+    it('should show favorite_border icon when book.favorite is false', () => {
+      mockAuthService.currentUser.set({ id: 'user1' });
+      const bookNotFavorite: Book = { ...mockBook, favorite: false };
+      fixture.componentRef.setInput('book', bookNotFavorite);
+      fixture.detectChanges();
+
+      const btn = fixture.nativeElement.querySelector('.favorite-btn');
       const icon = btn.querySelector('.material-symbols-outlined');
       expect(icon.textContent.trim()).toBe('favorite_border');
+    });
+
+    it('should show favorite icon when book.favorite is true', () => {
+      mockAuthService.currentUser.set({ id: 'user1' });
+      const bookFavorite: Book = { ...mockBook, favorite: true };
+      fixture.componentRef.setInput('book', bookFavorite);
+      fixture.detectChanges();
+
+      const btn = fixture.nativeElement.querySelector('.favorite-btn');
+      const icon = btn.querySelector('.material-symbols-outlined');
+      expect(icon.textContent.trim()).toBe('favorite');
+    });
+
+    it('should call FavoriteService.toggle and emit favoriteToggle on click', () => {
+      mockAuthService.currentUser.set({ id: 'user1' });
+      mockFavoriteService.toggle.mockReturnValue(of({ data: { favorite: true } }));
+
+      const spy = vi.fn();
+      component.favoriteToggle.subscribe(spy);
+
+      fixture.componentRef.setInput('book', { ...mockBook, favorite: false });
+      fixture.detectChanges();
+
+      const btn = fixture.nativeElement.querySelector('.favorite-btn');
+      btn.click();
+
+      expect(mockFavoriteService.toggle).toHaveBeenCalledWith(mockBook.id);
+      expect(spy).toHaveBeenCalledWith({ book: expect.objectContaining({ id: mockBook.id }), favorite: true });
+    });
+
+    it('should revert optimistic update on error', () => {
+      mockAuthService.currentUser.set({ id: 'user1' });
+      mockFavoriteService.toggle.mockReturnValue(throwError(() => new Error('Network error')));
+
+      const bookNotFavorite: Book = { ...mockBook, favorite: false };
+      fixture.componentRef.setInput('book', bookNotFavorite);
+      fixture.detectChanges();
+
+      const btn = fixture.nativeElement.querySelector('.favorite-btn');
+      btn.click();
+      fixture.detectChanges();
+
+      // After error, should revert to original state (false → favorite_border)
+      expect(component.getEffectiveFavorite()).toBe(false);
+      expect(component.pendingFavorite()).toBe(false);
+    });
+  });
+
+  describe('Info button opens description dialog (Fix 2)', () => {
+    it('should open description dialog when info button is clicked', () => {
+      fixture.componentRef.setInput('book', mockBook);
+      fixture.detectChanges();
+
+      const openSpy = vi.spyOn(component.descriptionDialog(), 'open');
+
+      const btn = fixture.nativeElement.querySelector('.info-btn');
+      btn.click();
+
+      expect(openSpy).toHaveBeenCalledWith(mockBook.title, mockBook.description);
+    });
+  });
+
+  describe('Categories (Fix 3)', () => {
+    it('should render category chips when book has categories', () => {
+      fixture.componentRef.setInput('book', mockBook);
+      fixture.detectChanges();
+
+      const row = fixture.nativeElement.querySelector('.categories-row');
+      expect(row).toBeTruthy();
+    });
+
+    it('should not render categories row when book has no categories', () => {
+      const bookNoCategories: Book = { ...mockBook, categories: [] };
+      fixture.componentRef.setInput('book', bookNoCategories);
+      fixture.detectChanges();
+
+      const row = fixture.nativeElement.querySelector('.categories-row');
+      expect(row).toBeNull();
     });
   });
 });

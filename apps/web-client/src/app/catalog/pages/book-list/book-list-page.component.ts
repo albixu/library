@@ -179,6 +179,7 @@ type ViewMode = 'cards' | 'table';
                   [books]="store.books()"
                   (bookSelect)="onBookSelect($event)"
                   (sendToKindle)="onSendToKindle($event)"
+                  (favoriteToggle)="onFavoriteToggle($event)"
                 />
               }
               @if (!store.isEmpty()) {
@@ -199,6 +200,7 @@ type ViewMode = 'cards' | 'table';
                   [books]="store.books()"
                   (bookSelect)="onBookSelect($event)"
                   (sendToKindle)="onSendToKindle($event)"
+                  (favoriteToggle)="onFavoriteToggle($event)"
                 />
               }
               @if (!store.isEmpty()) {
@@ -668,6 +670,10 @@ export class BookListPageComponent implements OnInit {
   }
 
   onRetrySearch(): void {
+    this.store.searchBooks();
+  }
+
+  onFavoriteToggle(_event: { book: Book; favorite: boolean }): void {
     this.store.searchBooks();
   }
 

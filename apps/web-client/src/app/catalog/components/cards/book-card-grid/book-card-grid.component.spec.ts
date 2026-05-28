@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { BookCardGridComponent } from './book-card-grid.component.js';
 import { Book } from '../../../../core/models/index.js';
+import { FavoriteService } from '../../../../books/services/favorite.service.js';
+import { AuthService } from '../../../../auth/auth.service.js';
 
 const makeBook = (id: string, available = true): Book => ({
   id,
@@ -23,10 +25,17 @@ describe('BookCardGridComponent', () => {
   let component: BookCardGridComponent;
   let fixture: ComponentFixture<BookCardGridComponent>;
 
+  const mockFavoriteService = { toggle: vi.fn() };
+  const mockAuthService = { currentUser: signal<null>(null) };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [BookCardGridComponent],
-      providers: [provideZonelessChangeDetection()],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: FavoriteService, useValue: mockFavoriteService },
+        { provide: AuthService, useValue: mockAuthService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BookCardGridComponent);
@@ -53,7 +62,7 @@ describe('BookCardGridComponent', () => {
       fixture.componentRef.setInput('books', books);
       fixture.detectChanges();
 
-      const items = fixture.nativeElement.querySelectorAll('[role="listitem"]');
+      const items = fixture.nativeElement.querySelectorAll('.book-card-grid > [role="listitem"]');
       expect(items.length).toBe(3);
     });
 
@@ -93,7 +102,7 @@ describe('BookCardGridComponent', () => {
       fixture.componentRef.setInput('books', books);
       fixture.detectChanges();
 
-      const firstItem = fixture.nativeElement.querySelector('[role="listitem"]');
+      const firstItem = fixture.nativeElement.querySelector('.book-card-grid > [role="listitem"]');
       firstItem.click();
 
       expect(spy).toHaveBeenCalledWith(books[0]);
@@ -107,7 +116,7 @@ describe('BookCardGridComponent', () => {
       fixture.componentRef.setInput('books', books);
       fixture.detectChanges();
 
-      const items = fixture.nativeElement.querySelectorAll('[role="listitem"]');
+      const items = fixture.nativeElement.querySelectorAll('.book-card-grid > [role="listitem"]');
       items[1].click();
 
       expect(spy).toHaveBeenCalledWith(books[1]);
