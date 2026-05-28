@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { SemanticSearchComponent } from './semantic-search.component.js';
 
 describe('SemanticSearchComponent', () => {
@@ -8,6 +9,7 @@ describe('SemanticSearchComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SemanticSearchComponent],
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SemanticSearchComponent);

@@ -2,42 +2,18 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { MainLayoutComponent } from './main-layout.component.js';
-import { ThemeService } from '@core/services/theme.service';
-import { signal, computed } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 describe('MainLayoutComponent', () => {
   let component: MainLayoutComponent;
   let fixture: ComponentFixture<MainLayoutComponent>;
-  let mockThemeService: {
-    theme: ReturnType<typeof signal<'light' | 'dark'>>;
-    isDark: ReturnType<typeof computed<boolean>>;
-    themeIcon: ReturnType<typeof computed<string>>;
-    toggleLabel: ReturnType<typeof computed<string>>;
-    toggleTheme: ReturnType<typeof vi.fn>;
-  };
 
   beforeEach(async () => {
-    // Create mock ThemeService with signals
-    const themeSignal = signal<'light' | 'dark'>('dark');
-
-    mockThemeService = {
-      theme: themeSignal,
-      isDark: computed(() => themeSignal() === 'dark'),
-      themeIcon: computed(() => (themeSignal() === 'dark' ? 'light_mode' : 'dark_mode')),
-      toggleLabel: computed(() =>
-        themeSignal() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-      ),
-      toggleTheme: vi.fn(() => {
-        themeSignal.update((current) => (current === 'light' ? 'dark' : 'light'));
-      }),
-    };
-
     await TestBed.configureTestingModule({
       imports: [MainLayoutComponent],
-      providers: [
+      providers: [provideZonelessChangeDetection(), 
         provideAnimationsAsync(),
         provideRouter([]),
-        { provide: ThemeService, useValue: mockThemeService },
       ],
     }).compileComponents();
 

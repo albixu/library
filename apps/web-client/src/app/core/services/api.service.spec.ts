@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { of } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
@@ -23,7 +24,7 @@ describe('ApiService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [ApiService, { provide: HttpClient, useValue: httpClientMock }],
+      providers: [provideZonelessChangeDetection(), ApiService, { provide: HttpClient, useValue: httpClientMock }],
     });
 
     service = TestBed.inject(ApiService);

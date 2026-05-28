@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { BookService } from './book.service.js';
 import { ApiService } from './api.service.js';
 import {
+import { provideZonelessChangeDetection } from '@angular/core';
   BookSearchResponse,
   BookTypeListResponse,
   CategoryListResponse,
@@ -85,7 +86,7 @@ describe('BookService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [BookService, { provide: ApiService, useValue: apiServiceMock }],
+      providers: [provideZonelessChangeDetection(), BookService, { provide: ApiService, useValue: apiServiceMock }],
     });
 
     service = TestBed.inject(BookService);

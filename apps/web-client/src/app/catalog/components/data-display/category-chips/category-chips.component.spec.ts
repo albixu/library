@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { CategoryChipsComponent } from './category-chips.component';
 
 describe('CategoryChipsComponent', () => {
@@ -8,6 +9,7 @@ describe('CategoryChipsComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [CategoryChipsComponent],
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CategoryChipsComponent);

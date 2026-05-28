@@ -122,33 +122,15 @@ import { FavoriteService } from '../../../../books/services/favorite.service.js'
       }
 
       /* Dark mode */
-      [data-theme='dark'] & {
-        background-color: rgb(30 41 59); /* slate-800 */
+      background-color: rgb(30 41 59); /* slate-800 */
 
-        &:hover {
-          background-color: rgb(51 65 85); /* slate-700 */
-        }
-
-        &.selected {
-          background-color: rgb(15 23 42); /* slate-900 */
-          box-shadow: 0 0 0 2px #17a1cf;
-        }
+      &:hover {
+        background-color: rgb(51 65 85); /* slate-700 */
       }
 
-      /* Light mode */
-      [data-theme='light'] & {
-        background-color: rgb(255 255 255); /* white */
-        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-
-        &:hover {
-          background-color: rgb(248 250 252); /* slate-50 */
-          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        }
-
-        &.selected {
-          background-color: rgb(240 249 255); /* sky-50 */
-          box-shadow: 0 0 0 2px #17a1cf;
-        }
+      &.selected {
+        background-color: rgb(15 23 42); /* slate-900 */
+        box-shadow: 0 0 0 2px #17a1cf;
       }
 
       &:focus-visible {
@@ -209,31 +191,15 @@ import { FavoriteService } from '../../../../books/services/favorite.service.js'
       }
 
       /* Dark mode */
-      [data-theme='dark'] & {
-        color: rgb(203 213 225); /* slate-300 */
+      color: rgb(203 213 225); /* slate-300 */
 
-        &:hover {
-          background-color: rgba(51, 65, 85, 0.5); /* slate-700 with opacity */
-        }
-
-        &:focus-visible {
-          outline: 2px solid #17a1cf;
-          outline-offset: 2px;
-        }
+      &:hover {
+        background-color: rgba(51, 65, 85, 0.5); /* slate-700 with opacity */
       }
 
-      /* Light mode */
-      [data-theme='light'] & {
-        color: rgb(71 85 105); /* slate-600 */
-
-        &:hover {
-          background-color: rgba(226, 232, 240, 0.8); /* slate-200 with opacity */
-        }
-
-        &:focus-visible {
-          outline: 2px solid #17a1cf;
-          outline-offset: 2px;
-        }
+      &:focus-visible {
+        outline: 2px solid #17a1cf;
+        outline-offset: 2px;
       }
     }
 
@@ -244,14 +210,7 @@ import { FavoriteService } from '../../../../books/services/favorite.service.js'
       line-height: 1.3;
       position: relative;
       z-index: 1;
-
-      [data-theme='dark'] & {
-        color: rgb(241 245 249); /* slate-100 */
-      }
-
-      [data-theme='light'] & {
-        color: rgb(15 23 42); /* slate-900 */
-      }
+      color: rgb(241 245 249); /* slate-100 */
     }
 
     .book-card-authors {
@@ -259,14 +218,7 @@ import { FavoriteService } from '../../../../books/services/favorite.service.js'
       font-size: 0.875rem;
       position: relative;
       z-index: 1;
-
-      [data-theme='dark'] & {
-        color: rgb(148 163 184); /* slate-400 */
-      }
-
-      [data-theme='light'] & {
-        color: rgb(100 116 139); /* slate-500 */
-      }
+      color: rgb(148 163 184); /* slate-400 */
     }
 
     .book-card-description {
@@ -274,14 +226,7 @@ import { FavoriteService } from '../../../../books/services/favorite.service.js'
       font-size: 0.8125rem;
       position: relative;
       z-index: 1;
-
-      [data-theme='dark'] & {
-        color: rgb(148 163 184); /* slate-400 */
-      }
-
-      [data-theme='light'] & {
-        color: rgb(100 116 139); /* slate-500 */
-      }
+      color: rgb(148 163 184); /* slate-400 */
     }
 
     .book-card-footer {

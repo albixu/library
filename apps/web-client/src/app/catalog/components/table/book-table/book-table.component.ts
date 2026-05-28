@@ -54,7 +54,7 @@ import { FavoriteService } from '../../../../books/services/favorite.service.js'
               </thead>
               <tbody>
                 @for (book of books(); track book.id) {
-                  <tr class="book-row">
+                  <tr class="book-row" tabindex="0" (click)="onRowClick(book)" (keydown.enter)="onRowClick(book)">
                     <td class="isbn-column">
                       <span class="isbn-text">{{ book.isbn || '-' }}</span>
                     </td>
@@ -374,6 +374,7 @@ export class BookTableComponent {
 
   readonly sendToKindle = output<Book>();
   readonly favoriteToggle = output<{ book: Book; favorite: boolean }>();
+  readonly rowClick = output<Book>();
 
   readonly descriptionDialog = viewChild.required(BookDescriptionDialogComponent);
 
@@ -383,6 +384,10 @@ export class BookTableComponent {
   /** Local map to track optimistic favorite state (bookId → favorite) */
   private readonly favoriteOverrides = signal<Record<string, boolean>>({});
 
+  onRowClick(book: Book): void {
+    this.rowClick.emit(book);
+  }
+
   onSendToKindle(event: Event, book: Book): void {
     event.stopPropagation();
     this.sendToKindle.emit(book);
@@ -390,7 +395,7 @@ export class BookTableComponent {
 
   onShowDescription(event: Event, book: Book): void {
     event.stopPropagation();
-    this.descriptionDialog().open(book.title, book.description);
+    this.descriptionDialog().open(book.title, book.description, book.isbn);
   }
 
   onToggleFavorite(event: Event, book: Book): void {

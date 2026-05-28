@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { BookTableComponent } from './book-table.component';
 import { Book } from '../../../../core/models/index';
 
@@ -48,6 +49,7 @@ describe('BookTableComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [BookTableComponent],
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BookTableComponent);

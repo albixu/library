@@ -58,10 +58,6 @@ const DEFAULT_LANGUAGE: LanguageInfo = { flag: '🌐', name: 'Desconocido' };
 
     .language-name {
       font-size: 0.75rem;
-      color: rgb(100 116 139); /* slate-500 */
-    }
-
-    :host-context([data-theme='dark']) .language-name {
       color: rgb(148 163 184); /* slate-400 */
     }
   `,

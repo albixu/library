@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { of, throwError, Subject } from 'rxjs';
 import { provideRouter, ActivatedRoute } from '@angular/router';
 import { Router } from '@angular/router';
@@ -24,6 +25,7 @@ async function createComponent(token: string | null): Promise<{
   await TestBed.configureTestingModule({
     imports: [ResetPasswordPageComponent],
     providers: [
+      provideZonelessChangeDetection(),
       provideRouter([]),
       { provide: AuthService, useValue: authServiceMock },
       {

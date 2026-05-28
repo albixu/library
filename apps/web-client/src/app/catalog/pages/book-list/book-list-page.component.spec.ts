@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { signal, provideZonelessChangeDetection } from '@angular/core';
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { DialogRef } from '@angular/cdk/dialog';
 import { of, Subject } from 'rxjs';
@@ -110,6 +110,7 @@ describe('BookListPageComponent', () => {
     await TestBed.configureTestingModule({
       imports: [BookListPageComponent],
       providers: [
+        provideZonelessChangeDetection(),
         { provide: BookSearchStore, useValue: mockStore },
         { provide: DialogService, useValue: mockDialogService },
       ],
@@ -142,7 +143,15 @@ describe('BookListPageComponent', () => {
       expect(filterPanel).toBeTruthy();
     });
 
-    it('should render book table', () => {
+    it('should render book card grid by default (cards mode)', () => {
+      const grid = fixture.nativeElement.querySelector('app-book-card-grid');
+      expect(grid).toBeTruthy();
+    });
+
+    it('should render book table when view mode is set to table', () => {
+      component.setViewMode('table');
+      fixture.detectChanges();
+
       const bookTable = fixture.nativeElement.querySelector('app-book-table');
       expect(bookTable).toBeTruthy();
     });
@@ -245,7 +254,8 @@ describe('BookListPageComponent', () => {
   });
 
   describe('Loading state', () => {
-    it('should pass loading state to book table', () => {
+    it('should pass loading state to book table when in table mode', () => {
+      component.setViewMode('table');
       (mockStore.loading as ReturnType<typeof signal>).set(true);
       fixture.detectChanges();
 
@@ -545,11 +555,11 @@ describe('BookListPageComponent – Mobile layout', () => {
     expect(badge).toBeFalsy();
   });
 
-  it('should render book cards instead of table in mobile', () => {
-    const cards = fixture.nativeElement.querySelectorAll('app-book-card');
+  it('should render book card grid instead of table in mobile', () => {
+    const grid = fixture.nativeElement.querySelector('app-book-card-grid');
     const table = fixture.nativeElement.querySelector('app-book-table');
 
-    expect(cards.length).toBeGreaterThan(0);
+    expect(grid).toBeTruthy();
     expect(table).toBeFalsy();
   });
 

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TruncatedTextComponent } from './truncated-text.component';
 
 describe('TruncatedTextComponent', () => {
@@ -8,6 +9,7 @@ describe('TruncatedTextComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TruncatedTextComponent],
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TruncatedTextComponent);

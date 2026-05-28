@@ -1,19 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { signal, provideZonelessChangeDetection } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { of } from 'rxjs';
 
 import { HeaderComponent } from './header.component.js';
-import { ThemeService } from '@core/services/theme.service';
 import { AuthService } from '../../auth/auth.service.js';
 
 describe('HeaderComponent', () => {
   let component: HeaderComponent;
   let fixture: ComponentFixture<HeaderComponent>;
-  let mockThemeService: {
-    theme: ReturnType<typeof signal<'light' | 'dark'>>;
-    setTheme: ReturnType<typeof vi.fn>;
-  };
   let mockAuthService: {
     currentUser: ReturnType<typeof signal<{ email: string } | null>>;
     logout: ReturnType<typeof vi.fn>;
@@ -21,15 +17,7 @@ describe('HeaderComponent', () => {
   let mockDialog: { open: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
-    const themeSignal = signal<'light' | 'dark'>('dark');
     const currentUserSignal = signal<{ email: string } | null>(null);
-
-    mockThemeService = {
-      theme: themeSignal,
-      setTheme: vi.fn((theme: 'light' | 'dark') => {
-        themeSignal.set(theme);
-      }),
-    };
 
     mockAuthService = {
       currentUser: currentUserSignal,
@@ -43,7 +31,7 @@ describe('HeaderComponent', () => {
     await TestBed.configureTestingModule({
       imports: [HeaderComponent],
       providers: [
-        { provide: ThemeService, useValue: mockThemeService },
+        provideZonelessChangeDetection(),
         { provide: AuthService, useValue: mockAuthService },
         { provide: Dialog, useValue: mockDialog },
       ],
@@ -102,21 +90,6 @@ describe('HeaderComponent', () => {
       const title = brand.querySelector('.header__title');
       expect(logo).toBeTruthy();
       expect(title).toBeTruthy();
-    });
-  });
-
-  describe('Theme Toggle', () => {
-    it('should include the theme toggle component', () => {
-      const themeToggle = fixture.nativeElement.querySelector('app-theme-toggle');
-      expect(themeToggle).toBeTruthy();
-    });
-
-    it('should position theme toggle inside actions container', () => {
-      const actions = fixture.nativeElement.querySelector('.header__actions');
-      expect(actions).toBeTruthy();
-
-      const themeToggle = actions.querySelector('app-theme-toggle');
-      expect(themeToggle).toBeTruthy();
     });
   });
 

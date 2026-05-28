@@ -24,3 +24,4 @@ build/
 
 # Original raw data (not processed)
 original_data/
+backups/
