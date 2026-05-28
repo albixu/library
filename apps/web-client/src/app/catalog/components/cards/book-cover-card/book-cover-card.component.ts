@@ -1,6 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { LevelBadgeComponent } from '../../data-display/level-badge/level-badge.component.js';
+import { CategoryChipsComponent } from '../../data-display/category-chips/category-chips.component.js';
+import { BookDescriptionDialogComponent } from '../../dialogs/book-description-dialog/book-description-dialog.component.js';
 import { Book } from '../../../../core/models/index.js';
+import { FavoriteService } from '../../../../books/services/favorite.service.js';
+import { AuthService } from '../../../../auth/auth.service.js';
 
 const LANGUAGE_FLAGS: Record<string, string> = {
   en: '🇬🇧',
@@ -16,7 +29,7 @@ const LANGUAGE_FLAGS: Record<string, string> = {
 @Component({
   selector: 'app-book-cover-card',
   standalone: true,
-  imports: [LevelBadgeComponent],
+  imports: [LevelBadgeComponent, CategoryChipsComponent, BookDescriptionDialogComponent],
   template: `
     <article class="book-cover-card" [attr.aria-label]="'Libro: ' + book().title">
       <!-- Cover image area -->
@@ -35,22 +48,35 @@ const LANGUAGE_FLAGS: Record<string, string> = {
           <span class="lang-flag" aria-hidden="true">{{ languageFlag() }}</span>
         </div>
 
-        <!-- Favorite icon (visual only, no functionality yet) -->
-        <div class="favorite-btn" aria-hidden="true">
-          <span class="material-symbols-outlined">favorite_border</span>
-        </div>
+        <!-- Favorite button -->
+        @if (isAuthenticated()) {
+          <button
+            type="button"
+            class="favorite-btn"
+            [class.favorite-active]="getEffectiveFavorite()"
+            [disabled]="pendingFavorite()"
+            [attr.aria-label]="
+              getEffectiveFavorite() ? 'Quitar de favoritos' : 'Añadir a favoritos'
+            "
+            (click)="onToggleFavorite($event)"
+          >
+            <span class="material-symbols-outlined">
+              {{ getEffectiveFavorite() ? 'favorite' : 'favorite_border' }}
+            </span>
+          </button>
+        }
       </div>
 
       <!-- Card body -->
       <div class="card-body">
-        <!-- Title row with info tooltip -->
+        <!-- Title row with info button -->
         <div class="title-row">
           <h3 class="book-title">{{ book().title }}</h3>
           <button
             type="button"
             class="info-btn"
-            [title]="book().title"
-            aria-label="Ver título completo"
+            aria-label="Ver descripción"
+            (click)="onShowDescription($event)"
           >
             <span class="material-symbols-outlined" aria-hidden="true">info</span>
           </button>
@@ -69,6 +95,13 @@ const LANGUAGE_FLAGS: Record<string, string> = {
           <app-level-badge [level]="book().level" />
         </div>
 
+        <!-- Categories -->
+        @if (categoryNames().length > 0) {
+          <div class="categories-row">
+            <app-category-chips [categories]="categoryNames()" [maxVisible]="1" />
+          </div>
+        }
+
         <!-- Send to Kindle button — only when available -->
         @if (book().available) {
           <button
@@ -83,6 +116,7 @@ const LANGUAGE_FLAGS: Record<string, string> = {
         }
       </div>
     </article>
+    <app-book-description-dialog />
   `,
   styles: `
     .book-cover-card {
@@ -166,11 +200,29 @@ const LANGUAGE_FLAGS: Record<string, string> = {
       border-radius: 50%;
       background: rgba(0, 0, 0, 0.45);
       backdrop-filter: blur(4px);
-      cursor: default;
+      cursor: pointer;
       color: rgb(203 213 225); /* slate-300 */
 
       .material-symbols-outlined {
         font-size: 1.1rem;
+      }
+
+      &.favorite-active {
+        color: #e11d48;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.65);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--color-accent, #17a1cf);
+        outline-offset: 2px;
       }
     }
 
@@ -258,6 +310,11 @@ const LANGUAGE_FLAGS: Record<string, string> = {
       margin-top: 0.125rem;
     }
 
+    /* ── Categories row ── */
+    .categories-row {
+      margin-top: 0.125rem;
+    }
+
     /* ── Send to Kindle button ── */
     .kindle-btn {
       display: inline-flex;
@@ -292,10 +349,20 @@ const LANGUAGE_FLAGS: Record<string, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BookCoverCardComponent {
+  private readonly favoriteService = inject(FavoriteService);
+  private readonly authService = inject(AuthService);
+
   readonly book = input.required<Book>();
   readonly coverUrl = input<string | undefined>(undefined);
 
   readonly sendToKindle = output<Book>();
+  readonly favoriteToggle = output<{ book: Book; favorite: boolean }>();
+
+  readonly descriptionDialog = viewChild.required(BookDescriptionDialogComponent);
+
+  readonly isAuthenticated = computed(() => this.authService.currentUser() !== null);
+  private readonly favoriteOverride = signal<boolean | undefined>(undefined);
+  readonly pendingFavorite = signal<boolean>(false);
 
   readonly authorNames = computed(() =>
     this.book()
@@ -309,6 +376,38 @@ export class BookCoverCardComponent {
     const lang = this.book().language.toLowerCase();
     return LANGUAGE_FLAGS[lang] ?? '';
   });
+
+  readonly categoryNames = computed(() => this.book().categories.map((c) => c.name));
+
+  getEffectiveFavorite(): boolean {
+    const override = this.favoriteOverride();
+    return override !== undefined ? override : (this.book().favorite ?? false);
+  }
+
+  onToggleFavorite(event: Event): void {
+    event.stopPropagation();
+    if (this.pendingFavorite()) return;
+    const currentFavorite = this.getEffectiveFavorite();
+    const newFavorite = !currentFavorite;
+    this.favoriteOverride.set(newFavorite);
+    this.pendingFavorite.set(true);
+    this.favoriteService.toggle(this.book().id).subscribe({
+      next: (response) => {
+        this.favoriteOverride.set(response.data.favorite);
+        this.pendingFavorite.set(false);
+        this.favoriteToggle.emit({ book: this.book(), favorite: response.data.favorite });
+      },
+      error: () => {
+        this.favoriteOverride.set(currentFavorite);
+        this.pendingFavorite.set(false);
+      },
+    });
+  }
+
+  onShowDescription(event: Event): void {
+    event.stopPropagation();
+    this.descriptionDialog().open(this.book().title, this.book().description ?? '');
+  }
 
   onSendToKindle(event: Event): void {
     event.stopPropagation();

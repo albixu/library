@@ -17,7 +17,11 @@ import { Book } from '../../../../core/models/index.js';
           (keyup.enter)="bookSelect.emit(book)"
           (keydown.space)="bookSelect.emit(book); $event.preventDefault()"
         >
-          <app-book-cover-card [book]="book" (sendToKindle)="sendToKindle.emit($event)" />
+          <app-book-cover-card
+            [book]="book"
+            (sendToKindle)="sendToKindle.emit($event)"
+            (favoriteToggle)="favoriteToggle.emit($event)"
+          />
         </div>
       } @empty {
         <p class="empty-message">No se encontraron libros.</p>
@@ -64,4 +68,5 @@ export class BookCardGridComponent {
 
   readonly bookSelect = output<Book>();
   readonly sendToKindle = output<Book>();
+  readonly favoriteToggle = output<{ book: Book; favorite: boolean }>();
 }
