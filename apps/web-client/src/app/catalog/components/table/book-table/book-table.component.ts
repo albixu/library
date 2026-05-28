@@ -395,7 +395,7 @@ export class BookTableComponent {
 
   onShowDescription(event: Event, book: Book): void {
     event.stopPropagation();
-    this.descriptionDialog().open(book.title, book.description);
+    this.descriptionDialog().open(book.title, book.description, book.isbn);
   }
 
   onToggleFavorite(event: Event, book: Book): void {

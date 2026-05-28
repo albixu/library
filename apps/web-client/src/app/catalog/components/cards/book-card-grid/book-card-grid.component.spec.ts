@@ -135,7 +135,7 @@ describe('BookCardGridComponent', () => {
       // Simulate card emitting showDescription by calling onShowDescription directly
       component.onShowDescription(book);
 
-      expect(openSpy).toHaveBeenCalledWith(book.title, book.description);
+      expect(openSpy).toHaveBeenCalledWith(book.title, book.description, book.isbn);
     });
   });
 

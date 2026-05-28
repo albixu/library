@@ -34,6 +34,9 @@ import { ButtonModule } from 'primeng/button';
 
       <div class="dialog-content">
         <p class="description-text">{{ description() }}</p>
+        @if (isbn()) {
+          <p class="isbn-text">ISBN: {{ isbn() }}</p>
+        }
       </div>
 
       <ng-template pTemplate="footer">
@@ -111,6 +114,13 @@ import { ButtonModule } from 'primeng/button';
       white-space: pre-wrap;
       word-wrap: break-word;
     }
+
+    .isbn-text {
+      margin: 1rem 0 0;
+      font-size: 0.75rem;
+      font-family: monospace;
+      color: var(--color-text-muted);
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -118,10 +128,12 @@ export class BookDescriptionDialogComponent {
   readonly visible = signal(false);
   readonly title = signal('');
   readonly description = signal('');
+  readonly isbn = signal<string | null>(null);
 
-  open(title: string, description: string): void {
+  open(title: string, description: string, isbn?: string | null): void {
     this.title.set(title);
     this.description.set(description);
+    this.isbn.set(isbn ?? null);
     this.visible.set(true);
   }
 

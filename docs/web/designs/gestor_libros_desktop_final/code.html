@@ -1,0 +1,430 @@
+<!DOCTYPE html><html class="dark" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BiblioManager Pro - Research Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#bdc8cf",
+                        "on-primary-fixed-variant": "#004d65",
+                        "status-expert": "#a855f7",
+                        "on-surface": "#dfe3e7",
+                        "on-tertiary-fixed-variant": "#673d00",
+                        "on-background": "#dfe3e7",
+                        "tertiary-container": "#cf8522",
+                        "surface-variant": "#303539",
+                        "on-tertiary": "#482900",
+                        "surface-container-high": "#262b2e",
+                        "secondary-fixed": "#c2e9f7",
+                        "surface-dim": "#0f1417",
+                        "on-secondary-container": "#98becc",
+                        "inverse-surface": "#dfe3e7",
+                        "secondary-fixed-dim": "#a6cddb",
+                        "inverse-on-surface": "#2c3134",
+                        "surface-container": "#1b2023",
+                        "inverse-primary": "#006686",
+                        "on-tertiary-fixed": "#2b1700",
+                        "secondary": "#a6cddb",
+                        "status-intermediate": "#f59e0b",
+                        "surface-container-lowest": "#0a0f12",
+                        "tertiary-fixed-dim": "#ffb867",
+                        "secondary-container": "#294e5a",
+                        "on-secondary-fixed-variant": "#264c57",
+                        "error": "#ffb4ab",
+                        "surface-container-low": "#171c1f",
+                        "on-primary-fixed": "#001f2a",
+                        "primary": "#6ed2ff",
+                        "status-advanced": "#ef4444",
+                        "surface-container-highest": "#303539",
+                        "background": "#0f1417",
+                        "surface-slate": "#1e293b",
+                        "on-secondary": "#0b3540",
+                        "outline": "#879299",
+                        "on-secondary-fixed": "#001f27",
+                        "surface-tint": "#6ed2ff",
+                        "on-tertiary-container": "#452700",
+                        "on-error": "#690005",
+                        "error-container": "#93000a",
+                        "surface": "#0f1417",
+                        "primary-fixed": "#bfe8ff",
+                        "primary-fixed-dim": "#6ed2ff",
+                        "surface-bright": "#353a3d",
+                        "background-dark": "#111d21",
+                        "primary-container": "#17a1cf",
+                        "on-error-container": "#ffdad6",
+                        "status-beginner": "#10b981",
+                        "tertiary-fixed": "#ffddbb",
+                        "on-primary": "#003547",
+                        "tertiary": "#ffb867",
+                        "outline-variant": "#3e484e",
+                        "on-primary-container": "#003244"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container-max": "80rem",
+                        "sidebar-width": "20rem",
+                        "row-padding": "1rem",
+                        "gutter": "1.5rem",
+                        "section-gap": "2rem"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "mono-data": ["monospace"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "label-caps": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "mono-data": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "label-caps": ["10px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #0f1417;
+            color: #dfe3e7;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for library feel */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111d21; }
+        ::-webkit-scrollbar-thumb { background: #3e484e; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6ed2ff; }
+    </style>
+</head>
+<body class="font-body-md text-body-md overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-background-dark/80 backdrop-blur-md border-b border-outline-variant flex items-center justify-between px-gutter h-16 w-full">
+<div class="flex items-center gap-8 flex-1">
+<h1 class="font-display-lg text-display-lg text-primary tracking-tight">BiblioManager Pro</h1>
+<!-- Semantic Search Bar -->
+<div class="relative w-full max-w-xl group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full bg-background-dark border border-outline-variant rounded-lg py-2 pl-10 pr-4 text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/50" placeholder="Buscar por título, autor o temática semántica..." type="text">
+<div class="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1 opacity-40 group-focus-within:opacity-100 transition-opacity">
+<span class="px-1.5 py-0.5 rounded bg-surface-variant text-[10px] border border-outline-variant">⌘</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-variant text-[10px] border border-outline-variant">K</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-variant/40 transition-colors active:scale-95 duration-200 text-on-surface-variant">
+<span class="material-symbols-outlined">dark_mode</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-variant/40 transition-colors active:scale-95 duration-200 text-on-surface-variant relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full"></span>
+</button>
+<button class="flex items-center gap-2 p-1.5 pr-3 rounded-full hover:bg-surface-variant/40 transition-colors active:scale-95 duration-200">
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlaQpARBCCOkJQu7aKQRFyDdY-Bs4FvwmMCx-IIxC4mx9g5_dpEkU06AyQKvjXxxWEo2Skr9iUKVyDCWpJWoW6zNdWX7oax4Ab1HjB1bWyNEWJt5uGB9s26Fi64Mu5QKYedAMAf7xLn7VlBP0jBl1aywYNU1fL-lZbV7vs7LZOqJulvorRPeeeVJgoReV9V7FICzGJwdByadY8CzKW7TLM5SE53Mk_WpLbtCcqehH5V77gFNDTb7Mx-jtsz4av15JuNvyxE9HegUY">
+<span class="material-symbols-outlined text-on-surface-variant">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Sidebar Navigation -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-4rem)] w-sidebar-width bg-background-dark/80 backdrop-blur-md border-r border-outline-variant flex flex-col p-row-padding gap-y-4 hidden md:flex">
+<div class="mb-4">
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Research Library</h2>
+<p class="text-on-surface-variant text-body-sm opacity-70">Manage your inventory</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-primary font-bold bg-secondary-container/20 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">library_books</span>
+<span class="">Library</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="">Collections</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="">Recent</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">bookmark</span>
+<span class="">Bookmarks</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="">Settings</span>
+</a>
+</nav>
+<!-- Filters Section -->
+<div class="mt-8 border-t border-outline-variant pt-6 space-y-6">
+<div>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest mb-4">Filters</h3>
+<div class="space-y-3">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input checked="" class="w-4 h-4 rounded border-outline-variant bg-background-dark text-primary focus:ring-primary/40 transition-all" type="checkbox">
+<span class="text-body-sm group-hover:text-on-surface transition-colors">Available Now</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-4 h-4 rounded border-outline-variant bg-background-dark text-primary focus:ring-primary/40 transition-all" type="checkbox">
+<span class="text-body-sm group-hover:text-on-surface transition-colors">Digital Edition</span>
+</label>
+</div>
+</div>
+<div>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest mb-4">Categories</h3>
+<div class="flex flex-wrap gap-2">
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-caps text-label-caps border border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors">History</span>
+<span class="bg-surface-variant text-on-surface-variant px-3 py-1 rounded-full font-label-caps text-label-caps border border-outline-variant cursor-pointer hover:bg-outline-variant/40 transition-colors">Science</span>
+<span class="bg-surface-variant text-on-surface-variant px-3 py-1 rounded-full font-label-caps text-label-caps border border-outline-variant cursor-pointer hover:bg-outline-variant/40 transition-colors">Technology</span>
+<span class="bg-surface-variant text-on-surface-variant px-3 py-1 rounded-full font-label-caps text-label-caps border border-outline-variant cursor-pointer hover:bg-outline-variant/40 transition-colors">Philosophy</span>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-6 border-t border-outline-variant">
+<button class="w-full bg-primary text-on-primary py-3 px-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined">add</span>
+                Add New Book
+            </button>
+<div class="mt-4 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-variant/40 rounded-lg text-body-sm transition-all" href="#">
+<span class="material-symbols-outlined text-[18px]">help</span>
+                    Help
+                </a>
+<a class="flex items-center gap-3 px-4 py-2 text-error hover:bg-error-container/20 rounded-lg text-body-sm transition-all" href="#">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+                    Logout
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pt-24 pl-gutter pr-gutter md:pl-[21.5rem] pb-12 min-h-screen">
+<div class="max-w-container-max mx-auto">
+<!-- Page Header Area -->
+<div class="flex items-end justify-between mb-8">
+<div>
+<h2 class="font-display-lg text-display-lg text-on-surface mb-1">Tu Biblioteca Digital</h2>
+<p class="text-on-surface-variant">Explorando 1,248 títulos en el catálogo principal.</p>
+</div>
+<div class="flex items-center gap-2 bg-surface-container rounded-lg p-1 border border-outline-variant">
+<button class="p-2 rounded hover:bg-surface-variant transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">view_list</span>
+</button>
+<button class="p-2 rounded bg-primary/20 text-primary shadow-sm">
+<span class="material-symbols-outlined">grid_view</span>
+</button>
+</div>
+</div>
+<!-- Responsive Book Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+<!-- Book Card 1 -->
+<div class="group bg-surface-slate rounded-xl border border-outline-variant overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col">
+<div class="relative aspect-[3/4] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A vintage book cover with gold-embossed typography on a deep emerald green leather texture. The scene is lit with warm, library-style spotlighting, highlighting the texture of the aged paper. Sophisticated dark mode aesthetic with rich deep tones and high-utility design feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVvDrfsrRMlUufAqwOgV9a0oitkdxTNBSIQe3OeniBPwpWESiw5ocRkwM5ZyM2KbDr9eQRjgaKOzKlB1XKxZ_FjYh6YB3iotnvLFmDk2qtZucBTg5WpbQnBK2_XoRojEXsIj9-aRS3Kp752Ss8zBvqCaMGlshnwZogwbE4WnlgZzMKWrQrmwnWBGKmEoTH0yxA-YCsKfkfX0UkQ6qbofKoKK7OmD3Gr-Pi-yjnjGti2CjPrry1EFxU71qNox-CJFSEchgrIdDTjYQ">
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent opacity-60"></div>
+<div class="absolute top-3 left-3 flex gap-1">
+<span class="bg-background-dark/80 backdrop-blur-md text-[10px] font-bold px-2 py-1 rounded border border-outline-variant text-on-surface">ES 🇪🇸</span>
+</div>
+<button class="absolute top-3 right-3 p-2 bg-background-dark/60 backdrop-blur-md rounded-full text-on-surface hover:text-primary transition-colors group/fav active:scale-90 duration-200 text-primary" style="opacity: 0;">
+  <span class="material-symbols-outlined text-[20px] block group-hover/fav:scale-110 transition-transform" style="font-variation-settings: &quot;FILL&quot; 1;">favorite</span>
+</button></div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-body-md text-on-surface line-clamp-1 group-hover:text-primary transition-colors">Principios de Diseño Moderno</h3>
+<button class="p-1 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</button>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-4">Dieter Rams</p>
+<div class="mt-auto space-y-3">
+<div class="flex items-center justify-between text-mono-data text-on-surface-variant/60">
+<span class="">ISBN: 978-3-16-148410-0</span>
+</div>
+<div class="pt-3 border-t border-outline-variant flex items-center justify-between">
+<span class="bg-status-beginner/10 text-status-beginner font-label-caps text-label-caps px-2 py-0.5 rounded border border-status-beginner/20">NEW</span>
+<button class="flex items-center gap-1.5 text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[18px]">send_to_mobile</span>
+<span class="">Send to Kindle</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Book Card 2 -->
+<div class="group bg-surface-slate rounded-xl border border-outline-variant overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col">
+<div class="relative aspect-[3/4] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Modern architectural photography showing a minimalist concrete building interior with sharp light and shadow patterns. Cool blue and slate color palette reflecting a corporate technical aesthetic. Professional library management UI theme with clean lines and high contrast." src="https://lh3.googleusercontent.com/aida-public/AB6AXuACsc3jtEq9lf-uvBR4Q5rKLwKxCK-M2IMyHCA4T25iEphucMMS-JjARODQD1Saw7xisXNH-7z4Nl8ry0SQqGJtuDHDYfdVVvQduDL9MQWuk0DqlOv7Ta_1RXEmAoCFQKFi23qG-_X7Dy5SXfDX5kazOpTzWskZnfqVw9tF0Knea2QYP6V8seePlHTfoEVUd7YW6sSpN1bwVWjaCfG1_mTLH8VLd8dj-GdyzhGg3qEpVJdMUCYWjzY5pwNo0K_8GkX0Y7rv9-2d1fw">
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent opacity-60"></div>
+<div class="absolute top-3 left-3 flex gap-1">
+<span class="bg-background-dark/80 backdrop-blur-md text-[10px] font-bold px-2 py-1 rounded border border-outline-variant text-on-surface">EN 🇺🇸</span>
+</div>
+<button class="absolute top-3 right-3 p-2 bg-background-dark/60 backdrop-blur-md rounded-full text-on-surface hover:text-primary transition-colors group/fav active:scale-90 duration-200">
+  <span class="material-symbols-outlined text-[20px] block group-hover/fav:scale-110 transition-transform">favorite</span>
+</button></div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-body-md text-on-surface line-clamp-1 group-hover:text-primary transition-colors">Quantum Mechanics V2</h3>
+<button class="p-1 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</button>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-4">Richard Feynman</p>
+<div class="mt-auto space-y-3">
+<div class="flex items-center justify-between text-mono-data text-on-surface-variant/60">
+<span class="">ISBN: 978-0-13-110362-7</span>
+</div>
+<div class="pt-3 border-t border-outline-variant flex items-center justify-between">
+<span class="bg-status-advanced/10 text-status-advanced font-label-caps text-label-caps px-2 py-0.5 rounded border border-status-advanced/20">TECHNICAL</span>
+<button class="flex items-center gap-1.5 text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[18px]">send_to_mobile</span>
+<span class="">Send to Kindle</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Book Card 3 -->
+<div class="group bg-surface-slate rounded-xl border border-outline-variant overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col">
+<div class="relative aspect-[3/4] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Digital illustration of a starry night sky above a dark forest silhouette. Moody blues, teals, and cyan accents. High-detail cosmic art style that matches a dark mode data-centric dashboard. Atmospheric and calm lighting with professional contrast." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8J2v-aggXK6N-d7ZzpSr5HCGIeE0NyqY72bnsh9MQbMX-u5_5tDtRgR-cZrsbm4BzWtrkNkEtiK2CNPPygYp6sV80TR33_tST1IRaCoGYdjTsRqOVfLZcM_75pYX57vyJ522EzM4okVbXv3NmFKKmzq5SJ-z89bx0frnyJHYNmm0bylWYc9SuV4dOGUEiyTH92E_hvQlrYDpaGxoIvBq4v6I3aZ4fP3z52HvZg9rc9sBPjek7r7ddpI8OPRkBDJarHsyvjERNhDo">
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent opacity-60"></div>
+<div class="absolute top-3 left-3 flex gap-1">
+<span class="bg-background-dark/80 backdrop-blur-md text-[10px] font-bold px-2 py-1 rounded border border-outline-variant text-on-surface">FR 🇫🇷</span>
+</div>
+<button class="absolute top-3 right-3 p-2 bg-background-dark/60 backdrop-blur-md rounded-full text-on-surface hover:text-primary transition-colors group/fav active:scale-90 duration-200">
+  <span class="material-symbols-outlined text-[20px] block group-hover/fav:scale-110 transition-transform">favorite</span>
+</button></div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-body-md text-on-surface line-clamp-1 group-hover:text-primary transition-colors">L'Étranger (Annotated)</h3>
+<button class="p-1 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</button>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-4">Albert Camus</p>
+<div class="mt-auto space-y-3">
+<div class="flex items-center justify-between text-mono-data text-on-surface-variant/60">
+<span class="">ISBN: 978-2-07-036002-4</span>
+</div>
+<div class="pt-3 border-t border-outline-variant flex items-center justify-between">
+<span class="bg-status-expert/10 text-status-expert font-label-caps text-label-caps px-2 py-0.5 rounded border border-status-expert/20">CLASSIC</span>
+<button class="flex items-center gap-1.5 text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[18px]">send_to_mobile</span>
+<span class="">Send to Kindle</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Book Card 4 -->
+<div class="group bg-surface-slate rounded-xl border border-outline-variant overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col">
+<div class="relative aspect-[3/4] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A clean top-down view of an open notebook with diagrams and sketches of user interface layouts. Minimalist black and white style with cyan marker accents. Professional tech workspace vibes, sharp focus, corporate dark mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfu3BvWXFH6KXYahTwrJmW37pvlFG4mFwx9td38Z6Vk39yBn28vyyZL7PgUdo9FDg0RXG79a4_t4PWqyjJh3rk3Yf8x1NcnUC2hW_HSzmmZK3hMpq0lkU9fJKhAgxK7FkXC8yy4ZmXwep1xp9XsXbkzqoYKA4CltgIUX9_wAiLyv6H5KCK2Q229TGlkf1Lz-Qy18XMQ_wSgqp_qERGzLfwy-4a_s9qtlTcTlYPYlLnJAqU-bUu2ghp5QUscgqFZorHhmZ-ZOGA330">
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent opacity-60"></div>
+<div class="absolute top-3 left-3 flex gap-1">
+<span class="bg-background-dark/80 backdrop-blur-md text-[10px] font-bold px-2 py-1 rounded border border-outline-variant text-on-surface">DE 🇩🇪</span>
+</div>
+<button class="absolute top-3 right-3 p-2 bg-background-dark/60 backdrop-blur-md rounded-full text-on-surface hover:text-primary transition-colors group/fav active:scale-90 duration-200">
+  <span class="material-symbols-outlined text-[20px] block group-hover/fav:scale-110 transition-transform">favorite</span>
+</button></div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-body-md text-on-surface line-clamp-1 group-hover:text-primary transition-colors">Architektur der Moderne</h3>
+<button class="p-1 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</button>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-4">Mies van der Rohe</p>
+<div class="mt-auto space-y-3">
+<div class="flex items-center justify-between text-mono-data text-on-surface-variant/60">
+<span class="">ISBN: 978-3-82-282463-4</span>
+</div>
+<div class="pt-3 border-t border-outline-variant flex items-center justify-between">
+<span class="bg-status-intermediate/10 text-status-intermediate font-label-caps text-label-caps px-2 py-0.5 rounded border border-status-intermediate/20">REFERENCE</span>
+<button class="flex items-center gap-1.5 text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[18px]">send_to_mobile</span>
+<span class="">Send to Kindle</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Book Card 5 -->
+<div class="group bg-surface-slate rounded-xl border border-outline-variant overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col">
+<div class="relative aspect-[3/4] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="An abstract 3D rendering of floating geometric layers in teal and dark slate. Glassmorphism effect with blurred background shapes and sharp foreground edges. Deep corporate blue tones, technical and organized feel for a sophisticated UI background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAavbdfYX2r5mSH51HWfm7h7enSlgTzWTGf8dbKaQUXB1mLG8-DYqu7W0ghu6bOl7HrY8xWhPGC5vOQnIZS_8IY8L_oa7QAauS5K1mAXQBVQ11_s2j9kCSGL05uv3kS7NfBoFsYawHEePz9DOPUaFRkhK8zsTHZKUiJ616exTr0yxnRc51iux5NL_rnjGYL5_c-sH6nNVSYWIf2bvPiQmeSmVU9rNWTM8kfNNWEx0SVuPTZOJyk8JK3jzIIsUlvM3BKG7uKMqN794U">
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent opacity-60"></div>
+<div class="absolute top-3 left-3 flex gap-1">
+<span class="bg-background-dark/80 backdrop-blur-md text-[10px] font-bold px-2 py-1 rounded border border-outline-variant text-on-surface">EN 🇺🇸</span>
+</div>
+<button class="absolute top-3 right-3 p-2 bg-background-dark/60 backdrop-blur-md rounded-full text-on-surface hover:text-primary transition-colors group/fav active:scale-90 duration-200">
+  <span class="material-symbols-outlined text-[20px] block group-hover/fav:scale-110 transition-transform">favorite</span>
+</button></div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-body-md text-on-surface line-clamp-1 group-hover:text-primary transition-colors">Systems Theory Foundations</h3>
+<button class="p-1 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</button>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-4">Ludwig von Bertalanffy</p>
+<div class="mt-auto space-y-3">
+<div class="flex items-center justify-between text-mono-data text-on-surface-variant/60">
+<span class="">ISBN: 978-0-80-760453-3</span>
+</div>
+<div class="pt-3 border-t border-outline-variant flex items-center justify-between">
+<span class="bg-primary/10 text-primary font-label-caps text-label-caps px-2 py-0.5 rounded border border-primary/20">ESSENTIAL</span>
+<button class="flex items-center gap-1.5 text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[18px]">send_to_mobile</span>
+<span class="">Send to Kindle</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Action Button (FAB) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group">
+<span class="material-symbols-outlined">auto_fix_high</span>
+<div class="absolute right-full mr-4 bg-surface-container border border-outline-variant px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-body-sm font-bold text-primary">
+                    AI Search Helper
+                </div>
+</button>
+</div>
+</main>
+<script>
+        // Micro-interactions and subtle effects
+        document.querySelectorAll('.group').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                // Potential for more complex JS animations here
+            });
+        });
+
+        // Search bar interaction
+        const searchInput = document.querySelector('input[type="text"]');
+        document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
+    </script>
+
+
+</body></html>

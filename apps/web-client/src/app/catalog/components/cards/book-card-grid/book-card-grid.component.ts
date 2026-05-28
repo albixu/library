@@ -76,6 +76,6 @@ export class BookCardGridComponent {
   readonly descriptionDialog = viewChild.required(BookDescriptionDialogComponent);
 
   onShowDescription(book: Book): void {
-    this.descriptionDialog().open(book.title, book.description ?? '');
+    this.descriptionDialog().open(book.title, book.description ?? '', book.isbn);
   }
 }
