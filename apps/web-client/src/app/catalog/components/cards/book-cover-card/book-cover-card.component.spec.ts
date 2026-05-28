@@ -250,7 +250,10 @@ describe('BookCoverCardComponent', () => {
       btn.click();
 
       expect(mockFavoriteService.toggle).toHaveBeenCalledWith(mockBook.id);
-      expect(spy).toHaveBeenCalledWith({ book: expect.objectContaining({ id: mockBook.id }), favorite: true });
+      expect(spy).toHaveBeenCalledWith({
+        book: expect.objectContaining({ id: mockBook.id }),
+        favorite: true,
+      });
     });
 
     it('should revert optimistic update on error', () => {
@@ -271,17 +274,18 @@ describe('BookCoverCardComponent', () => {
     });
   });
 
-  describe('Info button opens description dialog (Fix 2)', () => {
-    it('should open description dialog when info button is clicked', () => {
+  describe('Info button emits showDescription (Fix 2)', () => {
+    it('should emit showDescription with the book when info button is clicked', () => {
+      const spy = vi.fn();
+      component.showDescription.subscribe(spy);
+
       fixture.componentRef.setInput('book', mockBook);
       fixture.detectChanges();
-
-      const openSpy = vi.spyOn(component.descriptionDialog(), 'open');
 
       const btn = fixture.nativeElement.querySelector('.info-btn');
       btn.click();
 
-      expect(openSpy).toHaveBeenCalledWith(mockBook.title, mockBook.description);
+      expect(spy).toHaveBeenCalledWith(mockBook);
     });
   });
 
