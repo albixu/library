@@ -13,11 +13,15 @@ import { map } from 'rxjs';
 import { FilterPanelComponent } from '../../components/filters/index.js';
 import { BookTableComponent } from '../../components/table/book-table/index.js';
 import { BookCardComponent } from '../../components/table/book-card/index.js';
+import { BookCardGridComponent } from '../../components/cards/book-card-grid/index.js';
 import { PaginatorComponent } from '../../components/table/paginator/index.js';
 import { SendToKindleDialogComponent } from '../../components/dialogs/index.js';
 import { BookSearchStore } from '../../../core/services/book-search.store.js';
 import { DialogService } from '../../../core/services/dialog.service.js';
 import { AuthService } from '../../../auth/auth.service.js';
+
+const VIEW_MODE_KEY = 'book-list-view-mode';
+type ViewMode = 'cards' | 'table';
 import {
   Book,
   BookType,
@@ -40,7 +44,7 @@ import {
 @Component({
   selector: 'app-book-list-page',
   standalone: true,
-  imports: [FilterPanelComponent, BookTableComponent, BookCardComponent, PaginatorComponent],
+  imports: [FilterPanelComponent, BookTableComponent, BookCardComponent, BookCardGridComponent, PaginatorComponent],
   template: `
     <div class="book-list-container">
       <!-- Mobile Backdrop -->
@@ -129,16 +133,42 @@ import {
                   }
                 </p>
               </div>
+
+              <!-- View mode toggle (desktop only) -->
+              @if (!isMobile()) {
+                <div class="view-toggle" role="group" aria-label="Modo de visualización">
+                  <button
+                    type="button"
+                    class="view-btn"
+                    [class.active]="viewMode() === 'cards'"
+                    aria-label="Vista de tarjetas"
+                    [attr.aria-pressed]="viewMode() === 'cards'"
+                    (click)="setViewMode('cards')"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">grid_view</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="view-btn"
+                    [class.active]="viewMode() === 'table'"
+                    aria-label="Vista de tabla"
+                    [attr.aria-pressed]="viewMode() === 'table'"
+                    (click)="setViewMode('table')"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">table_rows</span>
+                  </button>
+                </div>
+              }
             </div>
 
             <!-- Book display -->
             @if (isMobile()) {
-              <!-- Mobile: Cards view -->
-              <div class="cards-container" role="list">
-                @for (book of store.books(); track book.id) {
-                  <app-book-card [book]="book" (sendToKindle)="onSendToKindle($event)" />
-                }
-              </div>
+              <!-- Mobile: always cards grid -->
+              <app-book-card-grid
+                [books]="store.books()"
+                (bookSelect)="onBookSelect($event)"
+                (sendToKindle)="onSendToKindle($event)"
+              />
               @if (!store.isEmpty()) {
                 <app-paginator
                   [totalCount]="store.pagination().totalCount"
@@ -147,6 +177,24 @@ import {
                   [loading]="store.loading()"
                   (loadMore)="onLoadMore()"
                 />
+              }
+            } @else if (viewMode() === 'cards') {
+              <!-- Desktop: Cards grid -->
+              <app-book-card-grid
+                [books]="store.books()"
+                (bookSelect)="onBookSelect($event)"
+                (sendToKindle)="onSendToKindle($event)"
+              />
+              @if (!store.isEmpty()) {
+                <div class="paginator-wrapper standalone">
+                  <app-paginator
+                    [totalCount]="store.pagination().totalCount"
+                    [currentCount]="store.books().length"
+                    [hasNextPage]="store.pagination().hasNextPage"
+                    [loading]="store.loading()"
+                    (loadMore)="onLoadMore()"
+                  />
+                </div>
               }
             } @else {
               <!-- Desktop: Table view with paginator inside container -->
@@ -327,11 +375,45 @@ import {
       color: rgb(148 163 184); /* slate-400 */
     }
 
-    /* Cards Container */
-    .cards-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1rem;
+    /* View Mode Toggle */
+    .view-toggle {
+      display: flex;
+      border: 1px solid rgb(51 65 85);
+      border-radius: 0.5rem;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .view-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      border: none;
+      background: transparent;
+      color: rgb(100 116 139); /* slate-500 */
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+
+      .material-symbols-outlined {
+        font-size: 1.25rem;
+      }
+
+      &:hover:not(.active) {
+        background-color: rgb(51 65 85);
+        color: rgb(203 213 225);
+      }
+
+      &.active {
+        background-color: var(--color-accent, #17a1cf);
+        color: white;
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--color-accent, #17a1cf);
+        outline-offset: -2px;
+      }
     }
 
     /* Table with Paginator */
@@ -354,6 +436,12 @@ import {
     .paginator-wrapper {
       border-top: 1px solid rgb(51 65 85); /* slate-700 */
       background-color: rgb(15 23 42); /* slate-900 */
+    }
+
+    .paginator-wrapper.standalone {
+      border-top: none;
+      background-color: transparent;
+      margin-top: 1rem;
     }
 
     /* Error State */
@@ -444,10 +532,6 @@ import {
         padding: 1rem;
       }
 
-      .cards-container {
-        grid-template-columns: 1fr;
-      }
-
       .results-header {
         flex-direction: column;
         align-items: flex-start;
@@ -468,6 +552,11 @@ export class BookListPageComponent implements OnInit {
 
   // Mobile state
   readonly isMobileDrawerOpen = signal(false);
+
+  // View mode: 'cards' (default) or 'table', persisted in localStorage
+  readonly viewMode = signal<ViewMode>(
+    (localStorage.getItem(VIEW_MODE_KEY) as ViewMode | null) ?? 'cards'
+  );
 
   // Responsive breakpoint
   readonly isMobile = toSignal(
@@ -519,6 +608,15 @@ export class BookListPageComponent implements OnInit {
     // Load initial data
     this.store.loadTypes();
     this.store.searchBooks();
+  }
+
+  setViewMode(mode: ViewMode): void {
+    this.viewMode.set(mode);
+    localStorage.setItem(VIEW_MODE_KEY, mode);
+  }
+
+  onBookSelect(_book: Book): void {
+    // Reserved for future detail view navigation
   }
 
   onFiltersChange(filters: SearchFilters): void {
