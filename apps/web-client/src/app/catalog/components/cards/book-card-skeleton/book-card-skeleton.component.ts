@@ -1,8 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 @Component({
   selector: 'app-book-card-skeleton',
@@ -79,8 +75,12 @@ import {
     }
 
     @keyframes shimmer {
-      0% { background-position: -400px 0; }
-      100% { background-position: 400px 0; }
+      0% {
+        background-position: -400px 0;
+      }
+      100% {
+        background-position: 400px 0;
+      }
     }
 
     .shimmer {
@@ -100,5 +100,5 @@ export class BookCardSkeletonComponent {
   /** Number of skeleton cards to render */
   readonly count = input<number>(12);
 
-  readonly items = () => Array.from({ length: this.count() });
+  readonly items = computed(() => Array.from({ length: this.count() }));
 }

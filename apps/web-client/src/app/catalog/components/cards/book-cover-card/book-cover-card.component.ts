@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { LevelBadgeComponent } from '../../data-display/level-badge/level-badge.component.js';
 import { Book } from '../../../../core/models/index.js';
 
@@ -24,19 +18,11 @@ const LANGUAGE_FLAGS: Record<string, string> = {
   standalone: true,
   imports: [LevelBadgeComponent],
   template: `
-    <article
-      class="book-cover-card"
-      role="article"
-      [attr.aria-label]="'Libro: ' + book().title"
-    >
+    <article class="book-cover-card" [attr.aria-label]="'Libro: ' + book().title">
       <!-- Cover image area -->
       <div class="cover-area">
         @if (coverUrl()) {
-          <img
-            class="cover-img"
-            [src]="coverUrl()"
-            [alt]="'Portada de ' + book().title"
-          />
+          <img class="cover-img" [src]="coverUrl()" [alt]="'Portada de ' + book().title" />
         } @else {
           <div class="cover-placeholder" aria-hidden="true">
             <span class="material-symbols-outlined placeholder-icon">menu_book</span>
@@ -49,16 +35,10 @@ const LANGUAGE_FLAGS: Record<string, string> = {
           <span class="lang-flag" aria-hidden="true">{{ languageFlag() }}</span>
         </div>
 
-        <!-- Favorite icon (visual only) -->
-        <button
-          type="button"
-          class="favorite-btn"
-          aria-label="Favorito"
-          tabindex="-1"
-          (click)="$event.stopPropagation()"
-        >
-          <span class="material-symbols-outlined" aria-hidden="true">favorite_border</span>
-        </button>
+        <!-- Favorite icon (visual only, no functionality yet) -->
+        <div class="favorite-btn" aria-hidden="true">
+          <span class="material-symbols-outlined">favorite_border</span>
+        </div>
       </div>
 
       <!-- Card body -->

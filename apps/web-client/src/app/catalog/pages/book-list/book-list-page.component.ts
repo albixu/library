@@ -5,14 +5,23 @@ import {
   computed,
   OnInit,
   ChangeDetectionStrategy,
+  PLATFORM_ID,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 
+import {
+  Book,
+  BookType,
+  CategoryListItem,
+  BookLevel,
+  SearchFilters,
+  SelectOption,
+} from '../../../core/models/index.js';
 import { FilterPanelComponent } from '../../components/filters/index.js';
 import { BookTableComponent } from '../../components/table/book-table/index.js';
-import { BookCardComponent } from '../../components/table/book-card/index.js';
 import { BookCardGridComponent } from '../../components/cards/book-card-grid/index.js';
 import { BookCardSkeletonComponent } from '../../components/cards/book-card-skeleton/index.js';
 import { PaginatorComponent } from '../../components/table/paginator/index.js';
@@ -23,14 +32,6 @@ import { AuthService } from '../../../auth/auth.service.js';
 
 const VIEW_MODE_KEY = 'book-list-view-mode';
 type ViewMode = 'cards' | 'table';
-import {
-  Book,
-  BookType,
-  CategoryListItem,
-  BookLevel,
-  SearchFilters,
-  SelectOption,
-} from '../../../core/models/index.js';
 
 /**
  * BookListPageComponent - Main page for book catalog search and listing
@@ -45,7 +46,13 @@ import {
 @Component({
   selector: 'app-book-list-page',
   standalone: true,
-  imports: [FilterPanelComponent, BookTableComponent, BookCardComponent, BookCardGridComponent, BookCardSkeletonComponent, PaginatorComponent],
+  imports: [
+    FilterPanelComponent,
+    BookTableComponent,
+    BookCardGridComponent,
+    BookCardSkeletonComponent,
+    PaginatorComponent,
+  ],
   template: `
     <div class="book-list-container">
       <!-- Mobile Backdrop -->
@@ -403,7 +410,9 @@ import {
       background: transparent;
       color: rgb(100 116 139); /* slate-500 */
       cursor: pointer;
-      transition: background-color 0.15s ease, color 0.15s ease;
+      transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
 
       .material-symbols-outlined {
         font-size: 1.25rem;
@@ -555,6 +564,7 @@ export class BookListPageComponent implements OnInit {
   private readonly dialogService = inject(DialogService);
   private readonly authService = inject(AuthService);
   private readonly breakpointObserver = inject(BreakpointObserver);
+  private readonly platformId = inject(PLATFORM_ID);
 
   /** True when a user is logged in */
   readonly isAuthenticated = computed(() => this.authService.currentUser() !== null);
@@ -564,7 +574,9 @@ export class BookListPageComponent implements OnInit {
 
   // View mode: 'cards' (default) or 'table', persisted in localStorage
   readonly viewMode = signal<ViewMode>(
-    (localStorage.getItem(VIEW_MODE_KEY) as ViewMode | null) ?? 'cards'
+    isPlatformBrowser(this.platformId)
+      ? ((localStorage.getItem(VIEW_MODE_KEY) as ViewMode | null) ?? 'cards')
+      : 'cards'
   );
 
   // Responsive breakpoint

@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { BookCoverCardComponent } from '../book-cover-card/book-cover-card.component.js';
 import { Book } from '../../../../core/models/index.js';
 
@@ -12,17 +7,17 @@ import { Book } from '../../../../core/models/index.js';
   standalone: true,
   imports: [BookCoverCardComponent],
   template: `
-    <div
-      class="book-card-grid"
-      role="list"
-      aria-label="Lista de libros"
-    >
+    <div class="book-card-grid" role="list" aria-label="Lista de libros">
       @for (book of books(); track book.id) {
-        <div role="listitem" class="grid-item" (click)="bookSelect.emit(book)">
-          <app-book-cover-card
-            [book]="book"
-            (sendToKindle)="sendToKindle.emit($event)"
-          />
+        <div
+          role="listitem"
+          class="grid-item"
+          tabindex="0"
+          (click)="bookSelect.emit(book)"
+          (keyup.enter)="bookSelect.emit(book)"
+          (keydown.space)="bookSelect.emit(book); $event.preventDefault()"
+        >
+          <app-book-cover-card [book]="book" (sendToKindle)="sendToKindle.emit($event)" />
         </div>
       } @empty {
         <p class="empty-message">No se encontraron libros.</p>
