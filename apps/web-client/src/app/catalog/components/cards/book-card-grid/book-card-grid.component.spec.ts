@@ -123,6 +123,22 @@ describe('BookCardGridComponent', () => {
     });
   });
 
+  describe('showDescription (Fix 2 — dialog in grid)', () => {
+    it('should call descriptionDialog().open() when a card emits showDescription', () => {
+      mockAuthService.currentUser.set(null);
+      const book = makeBook('1');
+      fixture.componentRef.setInput('books', [book]);
+      fixture.detectChanges();
+
+      const openSpy = vi.spyOn(component.descriptionDialog(), 'open');
+
+      // Simulate card emitting showDescription by calling onShowDescription directly
+      component.onShowDescription(book);
+
+      expect(openSpy).toHaveBeenCalledWith(book.title, book.description);
+    });
+  });
+
   describe('sendToKindle output', () => {
     it('should emit sendToKindle when card emits it', () => {
       const spy = vi.fn();

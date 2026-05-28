@@ -6,11 +6,9 @@ import {
   input,
   output,
   signal,
-  viewChild,
 } from '@angular/core';
 import { LevelBadgeComponent } from '../../data-display/level-badge/level-badge.component.js';
 import { CategoryChipsComponent } from '../../data-display/category-chips/category-chips.component.js';
-import { BookDescriptionDialogComponent } from '../../dialogs/book-description-dialog/book-description-dialog.component.js';
 import { Book } from '../../../../core/models/index.js';
 import { FavoriteService } from '../../../../books/services/favorite.service.js';
 import { AuthService } from '../../../../auth/auth.service.js';
@@ -29,7 +27,7 @@ const LANGUAGE_FLAGS: Record<string, string> = {
 @Component({
   selector: 'app-book-cover-card',
   standalone: true,
-  imports: [LevelBadgeComponent, CategoryChipsComponent, BookDescriptionDialogComponent],
+  imports: [LevelBadgeComponent, CategoryChipsComponent],
   template: `
     <article class="book-cover-card" [attr.aria-label]="'Libro: ' + book().title">
       <!-- Cover image area -->
@@ -116,7 +114,6 @@ const LANGUAGE_FLAGS: Record<string, string> = {
         }
       </div>
     </article>
-    <app-book-description-dialog />
   `,
   styles: `
     .book-cover-card {
@@ -357,8 +354,7 @@ export class BookCoverCardComponent {
 
   readonly sendToKindle = output<Book>();
   readonly favoriteToggle = output<{ book: Book; favorite: boolean }>();
-
-  readonly descriptionDialog = viewChild.required(BookDescriptionDialogComponent);
+  readonly showDescription = output<Book>();
 
   readonly isAuthenticated = computed(() => this.authService.currentUser() !== null);
   private readonly favoriteOverride = signal<boolean | undefined>(undefined);
@@ -406,7 +402,7 @@ export class BookCoverCardComponent {
 
   onShowDescription(event: Event): void {
     event.stopPropagation();
-    this.descriptionDialog().open(this.book().title, this.book().description ?? '');
+    this.showDescription.emit(this.book());
   }
 
   onSendToKindle(event: Event): void {
