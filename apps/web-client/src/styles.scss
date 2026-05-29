@@ -71,6 +71,10 @@
   --scrollbar-track: transparent;
   --scrollbar-thumb: #345965;
   --scrollbar-thumb-hover: var(--primary);
+
+  // Layout
+  --bottom-nav-height: 56px;
+  --z-sticky: 50;
 }
 
 // =============================================================================

@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, DestroyRef } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AuthService } from '../../auth/auth.service.js';
 import { LoginModalComponent } from '../../auth/login-modal/login-modal.component.js';
@@ -115,6 +116,7 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
 export class BottomNavComponent {
   readonly authService = inject(AuthService);
   private readonly dialog = inject(Dialog);
+  private readonly destroyRef = inject(DestroyRef);
 
   openLoginModal(): void {
     this.dialog.open(LoginModalComponent, {
@@ -125,6 +127,6 @@ export class BottomNavComponent {
   }
 
   logout(): void {
-    this.authService.logout().subscribe();
+    this.authService.logout().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 }

@@ -35,10 +35,6 @@ import { LayoutService } from '../layout.service.js';
   `,
   styles: [
     `
-      :root {
-        --bottom-nav-height: 56px;
-      }
-
       :host {
         display: block;
         height: 100%;
