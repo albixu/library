@@ -99,7 +99,7 @@ describe('BookCoverCardComponent', () => {
       expect(badge).toBeTruthy();
 
       const code = badge.querySelector('.lang-code');
-      expect(code.textContent.trim()).toBe('EN');
+      expect(code).toBeNull();
 
       const flag = badge.querySelector('.lang-flag');
       expect(flag.textContent.trim()).toBe('🇬🇧');

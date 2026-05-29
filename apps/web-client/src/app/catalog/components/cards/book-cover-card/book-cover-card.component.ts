@@ -42,7 +42,6 @@ const LANGUAGE_FLAGS: Record<string, string> = {
 
         <!-- Language badge -->
         <div class="language-badge" [attr.aria-label]="'Idioma: ' + book().language">
-          <span class="lang-code">{{ languageCode() }}</span>
           <span class="lang-flag" aria-hidden="true">{{ languageFlag() }}</span>
         </div>
 
@@ -177,10 +176,6 @@ const LANGUAGE_FLAGS: Record<string, string> = {
       letter-spacing: 0.04em;
       color: rgb(226 232 240); /* slate-200 */
       user-select: none;
-    }
-
-    .lang-code {
-      text-transform: uppercase;
     }
 
     /* ── Favorite button ── */
@@ -365,8 +360,6 @@ export class BookCoverCardComponent {
       .authors.map((a) => a.name)
       .join(', ')
   );
-
-  readonly languageCode = computed(() => this.book().language.toUpperCase());
 
   readonly languageFlag = computed(() => {
     const lang = this.book().language.toLowerCase();
