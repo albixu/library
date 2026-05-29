@@ -50,6 +50,16 @@ const LANGUAGE_FLAGS: Record<string, string> = {
           <app-level-badge [level]="book().level" />
         </div>
 
+        <!-- Similarity badge (only for recommendation context) -->
+        @if (similarityPercent() !== null) {
+          <div
+            class="similarity-badge"
+            [attr.aria-label]="'Similitud ' + similarityPercent() + '%'"
+          >
+            {{ similarityPercent() }}%
+          </div>
+        }
+
         <!-- Favorite button -->
         @if (isAuthenticated()) {
           <button
@@ -302,6 +312,20 @@ const LANGUAGE_FLAGS: Record<string, string> = {
       right: 0.375rem;
     }
 
+    /* ── Similarity badge (recommendations context) ── */
+    .similarity-badge {
+      position: absolute;
+      bottom: 0.375rem;
+      left: 0.375rem;
+      background-color: #17a1cf;
+      color: white;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.375rem;
+      line-height: 1.4;
+    }
+
     /* ── Categories row ── */
     .categories-row {
       margin-top: 0.125rem;
@@ -364,6 +388,11 @@ export class BookCoverCardComponent {
   readonly languageFlag = computed(() => {
     const lang = this.book().language.toLowerCase();
     return LANGUAGE_FLAGS[lang] ?? '';
+  });
+
+  readonly similarityPercent = computed(() => {
+    const score = this.book().similarityScore;
+    return score !== null ? Math.round(score * 100) : null;
   });
 
   readonly categoryNames = computed(() => this.book().categories.map((c) => c.name));

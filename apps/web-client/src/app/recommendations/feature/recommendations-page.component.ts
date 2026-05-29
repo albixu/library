@@ -7,7 +7,6 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
 import { catchError, finalize, of } from 'rxjs';
 
 import {
@@ -15,9 +14,16 @@ import {
   RecommendationItem,
 } from '../data-access/recommendations.service.js';
 import { Book } from '../../core/models/index.js';
-import { FavoriteService } from '../../books/services/favorite.service.js';
-import { DialogService } from '../../core/services/dialog.service.js';
+import { BookCoverCardComponent } from '../../catalog/components/cards/book-cover-card/book-cover-card.component.js';
+import { BookCardSkeletonComponent } from '../../catalog/components/cards/book-card-skeleton/book-card-skeleton.component.js';
 import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/send-to-kindle-dialog/send-to-kindle-dialog.component.js';
+import { DialogService } from '../../core/services/dialog.service.js';
+
+/** Shape stored in the books signal — keeps the mapped Book next to its cover URL */
+interface BookEntry {
+  book: Book;
+  coverUrl: string | undefined;
+}
 
 /**
  * RecommendationsPageComponent - "Para ti" personalised recommendations page
@@ -31,7 +37,7 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
 @Component({
   selector: 'app-recommendations-page',
   standalone: true,
-  imports: [RouterLink],
+  imports: [BookCoverCardComponent, BookCardSkeletonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="recommendations-page">
@@ -49,13 +55,7 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
         <!-- Loading skeleton -->
         <div class="recommendations-grid" aria-busy="true" aria-label="Cargando recomendaciones">
           @for (_ of skeletonItems; track $index) {
-            <div class="book-card book-card--skeleton" aria-hidden="true">
-              <div class="book-card__cover skeleton-box"></div>
-              <div class="book-card__info">
-                <div class="skeleton-line skeleton-line--title"></div>
-                <div class="skeleton-line skeleton-line--author"></div>
-              </div>
-            </div>
+            <app-book-card-skeleton />
           }
         </div>
       } @else if (error()) {
@@ -70,7 +70,7 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
             Reintentar
           </button>
         </div>
-      } @else if (items().length === 0) {
+      } @else if (books().length === 0) {
         <!-- Empty state -->
         <div class="empty-state" data-testid="empty-state">
           <span class="material-symbols-outlined empty-icon" aria-hidden="true">auto_stories</span>
@@ -80,49 +80,15 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
       } @else {
         <!-- Recommendations grid -->
         <div class="recommendations-grid" role="list">
-          @for (item of items(); track item.bookId) {
-            <a
-              class="book-card"
-              [routerLink]="['/books', item.bookId]"
+          @for (entry of books(); track entry.book.id) {
+            <app-book-cover-card
               role="listitem"
-              [attr.aria-label]="item.title + ' de ' + item.author"
-            >
-              <div class="book-card__cover">
-                <div class="book-card__cover-placeholder" aria-hidden="true">
-                  <span class="material-symbols-outlined">book</span>
-                </div>
-                <div
-                  class="book-card__similarity"
-                  [attr.aria-label]="'Similitud ' + similarityPercent(item.similarity) + '%'"
-                >
-                  {{ similarityPercent(item.similarity) }}%
-                </div>
-              </div>
-              <div class="book-card__info">
-                <p class="book-card__title">{{ item.title }}</p>
-                <p class="book-card__author">{{ item.author }}</p>
-                <p class="book-card__category">{{ item.dominantCategory }}</p>
-              </div>
-              <div class="book-card__actions">
-                <button
-                  class="card-action-btn"
-                  [class.favorite-active]="isFavorite(item.bookId)"
-                  [attr.aria-label]="isFavorite(item.bookId) ? 'Quitar de favoritos' : 'Añadir a favoritos'"
-                  [title]="isFavorite(item.bookId) ? 'Quitar de favoritos' : 'Añadir a favoritos'"
-                  (click)="onToggleFavorite($event, item.bookId)"
-                >
-                  <span class="material-symbols-outlined">{{ isFavorite(item.bookId) ? 'favorite' : 'favorite_border' }}</span>
-                </button>
-                <button
-                  class="card-action-btn"
-                  aria-label="Enviar a Kindle"
-                  title="Enviar a Kindle"
-                  (click)="onSendToKindle($event, item)"
-                >
-                  <span class="material-symbols-outlined">send_to_mobile</span>
-                </button>
-              </div>
-            </a>
+              [book]="entry.book"
+              [coverUrl]="entry.coverUrl"
+              (sendToKindle)="onSendToKindle($event)"
+              (favoriteToggle)="onFavoriteToggle($event)"
+              (showDescription)="onShowDescription($event)"
+            />
           }
         </div>
       }
@@ -197,183 +163,6 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 1.5rem;
-    }
-
-    /* Book card */
-    .book-card {
-      display: flex;
-      flex-direction: column;
-      border-radius: 0.75rem;
-      overflow: hidden;
-      text-decoration: none;
-      transition:
-        transform 150ms ease,
-        box-shadow 150ms ease;
-      cursor: pointer;
-      background-color: rgb(30 41 59);
-      border: 1px solid rgb(51 65 85);
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 16px -4px rgb(0 0 0 / 0.4);
-      }
-
-      &:focus-visible {
-        outline: 2px solid #17a1cf;
-        outline-offset: 2px;
-      }
-    }
-
-    .book-card__cover {
-      position: relative;
-      aspect-ratio: 2/3;
-      background-color: rgb(51 65 85);
-      overflow: hidden;
-    }
-
-    .book-card__img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .book-card__cover-placeholder {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
-
-      .material-symbols-outlined {
-        font-size: 3rem;
-        color: rgb(100 116 139);
-      }
-    }
-
-    .book-card__similarity {
-      position: absolute;
-      bottom: 0.5rem;
-      right: 0.5rem;
-      background-color: #17a1cf;
-      color: white;
-      font-size: 0.6875rem;
-      font-weight: 600;
-      padding: 0.125rem 0.375rem;
-      border-radius: 0.375rem;
-    }
-
-    .book-card__info {
-      padding: 0.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .book-card__title {
-      font-size: 0.875rem;
-      font-weight: 600;
-      margin: 0;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      color: rgb(241 245 249);
-    }
-
-    .book-card__author {
-      font-size: 0.8125rem;
-      margin: 0;
-      color: rgb(148 163 184);
-    }
-
-    .book-card__category {
-      font-size: 0.75rem;
-      margin: 0;
-      color: rgb(100 116 139);
-    }
-
-    /* Card actions */
-    .book-card__actions {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      padding: 0.375rem 0.5rem;
-      border-top: 1px solid;
-      border-color: rgb(51 65 85);
-    }
-
-    .card-action-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      border: none;
-      background: transparent;
-      border-radius: 0.375rem;
-      cursor: pointer;
-      transition: background-color 150ms ease, color 150ms ease;
-      color: rgb(148 163 184);
-
-      .material-symbols-outlined {
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
-      }
-
-      &:hover { background-color: rgb(30 41 59); color: rgb(203 213 225); }
-    }
-
-    .card-action-btn.favorite-active {
-      color: #e11d48;
-    }
-
-    /* Skeleton */
-    .book-card--skeleton {
-      pointer-events: none;
-    }
-
-    .skeleton-box {
-      background: linear-gradient(
-        90deg,
-        rgb(51 65 85) 25%,
-        rgb(71 85 105) 50%,
-        rgb(51 65 85) 75%
-      );
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
-    }
-
-    .skeleton-line {
-      border-radius: 0.25rem;
-      animation: shimmer 1.5s infinite;
-      background: linear-gradient(
-        90deg,
-        rgb(51 65 85) 25%,
-        rgb(71 85 105) 50%,
-        rgb(51 65 85) 75%
-      );
-      background-size: 200% 100%;
-    }
-
-    .skeleton-line--title {
-      height: 0.875rem;
-      width: 90%;
-      margin-bottom: 0.375rem;
-    }
-
-    .skeleton-line--author {
-      height: 0.75rem;
-      width: 60%;
-    }
-
-    @keyframes shimmer {
-      0% {
-        background-position: -200% 0;
-      }
-      100% {
-        background-position: 200% 0;
-      }
     }
 
     /* Empty / error state */
@@ -455,15 +244,14 @@ import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/se
 export class RecommendationsPageComponent implements OnInit {
   private readonly recommendationsService = inject(RecommendationsService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly favoriteService = inject(FavoriteService);
   private readonly dialogService = inject(DialogService);
 
   readonly loading = signal(true);
   readonly error = signal(false);
-  readonly items = signal<RecommendationItem[]>([]);
   readonly label = signal('');
 
-  private readonly favoriteOverrides = signal<Record<string, boolean>>({});
+  /** Mapped book entries ready to pass to BookCoverCardComponent */
+  readonly books = signal<BookEntry[]>([]);
 
   /** Placeholder array for skeleton loading cards */
   readonly skeletonItems = Array.from({ length: 8 });
@@ -484,49 +272,51 @@ export class RecommendationsPageComponent implements OnInit {
           return of(null);
         }),
         finalize(() => this.loading.set(false)),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((response) => {
         if (response === null) return;
-        this.items.set(response.items);
         this.label.set(response.label);
+        this.books.set(response.items.map((item) => this.toBookEntry(item)));
       });
   }
 
-  /** Convert a 0–1 similarity score to a whole-number percentage */
-  similarityPercent(similarity: number): number {
-    return Math.round(similarity * 100);
-  }
-
-  isFavorite(bookId: string): boolean {
-    const overrides = this.favoriteOverrides();
-    if (bookId in overrides) return overrides[bookId];
-    return false;
-  }
-
-  onToggleFavorite(event: Event, bookId: string): void {
-    event.preventDefault();
-    event.stopPropagation();
-    const current = this.isFavorite(bookId);
-    this.favoriteOverrides.update(o => ({ ...o, [bookId]: !current }));
-    this.favoriteService.toggle(bookId).subscribe({
-      error: () => {
-        this.favoriteOverrides.update(o => ({ ...o, [bookId]: current }));
-      },
-    });
-  }
-
-  onSendToKindle(event: Event, item: RecommendationItem): void {
-    event.preventDefault();
-    event.stopPropagation();
+  onSendToKindle(book: Book): void {
     this.dialogService.open(SendToKindleDialogComponent, {
-      data: {
-        id: item.bookId,
-        title: item.title,
-        available: true,
-      } as Pick<Book, 'id' | 'title' | 'available'>,
+      data: book,
       width: '400px',
       maxWidth: '90vw',
     });
+  }
+
+  onFavoriteToggle(_event: { book: Book; favorite: boolean }): void {
+    // BookCoverCardComponent already handles optimistic updates internally.
+    // Nothing extra needed at page level.
+  }
+
+  onShowDescription(_book: Book): void {
+    // Description panel not implemented in recommendations context yet.
+  }
+
+  // ── Private helpers ──────────────────────────────────────────────────────────
+
+  private toBookEntry(item: RecommendationItem): BookEntry {
+    const book: Book = {
+      id: item.bookId,
+      title: item.title,
+      authors: [{ id: '', name: item.author }],
+      isbn: null,
+      type: '',
+      format: 'pdf',
+      language: '',
+      level: null,
+      categories: item.dominantCategory ? [{ id: '', name: item.dominantCategory }] : [],
+      available: true,
+      favorite: false,
+      originalDescription: '',
+      description: '',
+      similarityScore: item.similarity,
+    };
+    return { book, coverUrl: item.coverUrl ?? undefined };
   }
 }
