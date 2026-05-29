@@ -41,14 +41,18 @@ const LANGUAGE_FLAGS: Record<string, string> = {
         }
 
         <!-- Language badge -->
-        <div class="language-badge" [attr.aria-label]="'Idioma: ' + book().language">
-          <span class="lang-flag" aria-hidden="true">{{ languageFlag() }}</span>
-        </div>
+        @if (languageFlag()) {
+          <div class="language-badge" [attr.aria-label]="'Idioma: ' + book().language">
+            <span class="lang-flag" aria-hidden="true">{{ languageFlag() }}</span>
+          </div>
+        }
 
         <!-- Level badge -->
-        <div class="level-badge-overlay">
-          <app-level-badge [level]="book().level" />
-        </div>
+        @if (book().level) {
+          <div class="level-badge-overlay">
+            <app-level-badge [level]="book().level" />
+          </div>
+        }
 
         <!-- Similarity badge (only for recommendation context) -->
         @if (similarityPercent() !== null) {

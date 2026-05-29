@@ -114,13 +114,13 @@ describe('BookCoverCardComponent', () => {
       expect(flag.textContent.trim()).toBe('🇪🇸');
     });
 
-    it('should show no flag for unknown language', () => {
+    it('should not render language badge for unknown language', () => {
       const unknownBook: Book = { ...mockBook, language: 'xx' };
       fixture.componentRef.setInput('book', unknownBook);
       fixture.detectChanges();
 
-      const flag = fixture.nativeElement.querySelector('.lang-flag');
-      expect(flag.textContent.trim()).toBe('');
+      const badge = fixture.nativeElement.querySelector('.language-badge');
+      expect(badge).toBeNull();
     });
   });
 
