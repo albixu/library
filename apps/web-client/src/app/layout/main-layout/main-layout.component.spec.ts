@@ -3,15 +3,30 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideRouter } from '@angular/router';
 import { MainLayoutComponent } from './main-layout.component.js';
 import { provideZonelessChangeDetection } from '@angular/core';
+import { signal } from '@angular/core';
+import { LayoutService } from '../layout.service.js';
+import { AuthService } from '../../auth/auth.service.js';
+import { Dialog } from '@angular/cdk/dialog';
+import { vi } from 'vitest';
 
 describe('MainLayoutComponent', () => {
   let component: MainLayoutComponent;
   let fixture: ComponentFixture<MainLayoutComponent>;
+  let isMobileSignal: ReturnType<typeof signal<boolean>>;
 
   beforeEach(async () => {
+    isMobileSignal = signal(false);
+
     await TestBed.configureTestingModule({
       imports: [MainLayoutComponent],
-      providers: [provideZonelessChangeDetection(), provideAnimationsAsync(), provideRouter([])],
+      providers: [
+        provideZonelessChangeDetection(),
+        provideAnimationsAsync(),
+        provideRouter([]),
+        { provide: LayoutService, useValue: { isMobile: isMobileSignal } },
+        { provide: AuthService, useValue: { currentUser: signal(null), logout: vi.fn() } },
+        { provide: Dialog, useValue: { open: vi.fn() } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MainLayoutComponent);
@@ -77,7 +92,7 @@ describe('MainLayoutComponent', () => {
   });
 
   describe('Layout Order', () => {
-    it('should have correct order: header → content → footer', () => {
+    it('should have correct order: header → content → footer (desktop)', () => {
       const container = fixture.nativeElement.querySelector('.main-layout');
       const children = Array.from(container.children) as Element[];
 
@@ -85,6 +100,53 @@ describe('MainLayoutComponent', () => {
       expect(children[0].tagName.toLowerCase()).toBe('app-header');
       expect(children[1].tagName.toLowerCase()).toBe('main');
       expect(children[2].tagName.toLowerCase()).toBe('app-footer');
+    });
+
+    it('should show app-bottom-nav in mobile', async () => {
+      isMobileSignal.set(true);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const bottomNav = fixture.nativeElement.querySelector('app-bottom-nav');
+      expect(bottomNav).toBeTruthy();
+    });
+  });
+
+  describe('Bottom Nav', () => {
+    it('should render bottom-nav when mobile', async () => {
+      isMobileSignal.set(true);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const bottomNav = fixture.nativeElement.querySelector('app-bottom-nav');
+      expect(bottomNav).toBeTruthy();
+    });
+
+    it('should NOT render bottom-nav when desktop', () => {
+      isMobileSignal.set(false);
+      fixture.detectChanges();
+
+      const bottomNav = fixture.nativeElement.querySelector('app-bottom-nav');
+      expect(bottomNav).toBeFalsy();
+    });
+  });
+
+  describe('Mobile padding', () => {
+    it('should add mobile class to content when isMobile is true', async () => {
+      isMobileSignal.set(true);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const content = fixture.nativeElement.querySelector('.main-layout__content');
+      expect(content.classList.contains('main-layout__content--mobile')).toBe(true);
+    });
+
+    it('should NOT add mobile class when desktop', () => {
+      isMobileSignal.set(false);
+      fixture.detectChanges();
+
+      const content = fixture.nativeElement.querySelector('.main-layout__content');
+      expect(content.classList.contains('main-layout__content--mobile')).toBe(false);
     });
   });
 });
