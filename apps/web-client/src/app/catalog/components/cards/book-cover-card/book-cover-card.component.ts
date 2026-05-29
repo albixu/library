@@ -45,6 +45,11 @@ const LANGUAGE_FLAGS: Record<string, string> = {
           <span class="lang-flag" aria-hidden="true">{{ languageFlag() }}</span>
         </div>
 
+        <!-- Level badge -->
+        <div class="level-badge-overlay">
+          <app-level-badge [level]="book().level" />
+        </div>
+
         <!-- Favorite button -->
         @if (isAuthenticated()) {
           <button
@@ -86,11 +91,6 @@ const LANGUAGE_FLAGS: Record<string, string> = {
         @if (book().isbn) {
           <p class="book-isbn">ISBN: {{ book().isbn }}</p>
         }
-
-        <!-- Level badge -->
-        <div class="badge-row">
-          <app-level-badge [level]="book().level" />
-        </div>
 
         <!-- Categories -->
         @if (categoryNames().length > 0) {
@@ -294,12 +294,11 @@ const LANGUAGE_FLAGS: Record<string, string> = {
       font-family: monospace;
     }
 
-    /* ── Badge row ── */
-    .badge-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.375rem;
-      margin-top: 0.125rem;
+    /* ── Level badge overlay ── */
+    .level-badge-overlay {
+      position: absolute;
+      bottom: 0.375rem;
+      right: 0.375rem;
     }
 
     /* ── Categories row ── */
