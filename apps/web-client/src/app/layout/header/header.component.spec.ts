@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 
 import { HeaderComponent } from './header.component.js';
 import { AuthService } from '../../auth/auth.service.js';
+import { LayoutService } from '../layout.service.js';
 
 describe('HeaderComponent', () => {
   let component: HeaderComponent;
@@ -15,6 +16,7 @@ describe('HeaderComponent', () => {
     logout: ReturnType<typeof vi.fn>;
   };
   let mockDialog: { open: ReturnType<typeof vi.fn> };
+  let mockLayoutService: { isMobile: ReturnType<typeof signal<boolean>> };
 
   beforeEach(async () => {
     const currentUserSignal = signal<{ email: string } | null>(null);
@@ -28,12 +30,18 @@ describe('HeaderComponent', () => {
       open: vi.fn(),
     };
 
+    mockLayoutService = {
+      isMobile: signal(false),
+    };
+
     await TestBed.configureTestingModule({
       imports: [HeaderComponent],
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         { provide: AuthService, useValue: mockAuthService },
         { provide: Dialog, useValue: mockDialog },
+        { provide: LayoutService, useValue: mockLayoutService },
       ],
     }).compileComponents();
 
@@ -198,6 +206,51 @@ describe('HeaderComponent', () => {
     it('should include skip link target or appropriate structure', () => {
       const brand = fixture.nativeElement.querySelector('.header__brand');
       expect(brand).toBeTruthy();
+    });
+  });
+
+  describe('Mobile state (isMobile = true)', () => {
+    beforeEach(() => {
+      mockLayoutService.isMobile.set(true);
+      fixture.detectChanges();
+    });
+
+    it('should hide nav links', () => {
+      mockAuthService.currentUser.set({ email: 'user@example.com' });
+      fixture.detectChanges();
+
+      const nav = fixture.nativeElement.querySelector('.header__nav');
+      expect(nav).toBeFalsy();
+    });
+
+    it('should hide actions area', () => {
+      const actions = fixture.nativeElement.querySelector('.header__actions');
+      expect(actions).toBeFalsy();
+    });
+
+    it('should still render brand', () => {
+      const brand = fixture.nativeElement.querySelector('.header__brand');
+      expect(brand).toBeTruthy();
+    });
+  });
+
+  describe('Desktop state (isMobile = false)', () => {
+    beforeEach(() => {
+      mockLayoutService.isMobile.set(false);
+      fixture.detectChanges();
+    });
+
+    it('should show nav links when authenticated', () => {
+      mockAuthService.currentUser.set({ email: 'user@example.com' });
+      fixture.detectChanges();
+
+      const nav = fixture.nativeElement.querySelector('.header__nav');
+      expect(nav).toBeTruthy();
+    });
+
+    it('should show actions area', () => {
+      const actions = fixture.nativeElement.querySelector('.header__actions');
+      expect(actions).toBeTruthy();
     });
   });
 });
