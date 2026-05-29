@@ -57,7 +57,8 @@ describe('SendToKindleDialogComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [SendToKindleDialogComponent],
-      providers: [provideZonelessChangeDetection(), 
+      providers: [
+        provideZonelessChangeDetection(),
         { provide: DialogRef, useValue: mockDialogRef },
         { provide: DIALOG_DATA, useValue: book },
         { provide: KindleService, useValue: mockKindleService },

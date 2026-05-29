@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { RouterTestingModule } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
 
 import { RecommendationsPageComponent } from './recommendations-page.component.js';
@@ -8,11 +7,17 @@ import {
   RecommendationsService,
   RecommendationsResponse,
 } from '../data-access/recommendations.service.js';
+import { DialogService } from '../../core/services/dialog.service.js';
+import { AuthService } from '../../auth/auth.service.js';
+import { FavoriteService } from '../../books/services/favorite.service.js';
 
 describe('RecommendationsPageComponent', () => {
   let component: RecommendationsPageComponent;
   let fixture: ComponentFixture<RecommendationsPageComponent>;
   let mockService: { getRecommendations: ReturnType<typeof vi.fn> };
+  let mockDialogService: { open: ReturnType<typeof vi.fn> };
+  let mockAuthService: { currentUser: ReturnType<typeof vi.fn> };
+  let mockFavoriteService: { toggle: ReturnType<typeof vi.fn> };
 
   const mockResponse: RecommendationsResponse = {
     label: 'Programación',
@@ -42,10 +47,19 @@ describe('RecommendationsPageComponent', () => {
     mockService = {
       getRecommendations: vi.fn().mockReturnValue(of(mockResponse)),
     };
+    mockDialogService = { open: vi.fn() };
+    mockAuthService = { currentUser: vi.fn().mockReturnValue(null) };
+    mockFavoriteService = { toggle: vi.fn().mockReturnValue(of({ data: { favorite: true } })) };
 
     await TestBed.configureTestingModule({
-      imports: [RecommendationsPageComponent, RouterTestingModule],
-      providers: [provideZonelessChangeDetection(), { provide: RecommendationsService, useValue: mockService }],
+      imports: [RecommendationsPageComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: RecommendationsService, useValue: mockService },
+        { provide: DialogService, useValue: mockDialogService },
+        { provide: AuthService, useValue: mockAuthService },
+        { provide: FavoriteService, useValue: mockFavoriteService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecommendationsPageComponent);
@@ -68,12 +82,23 @@ describe('RecommendationsPageComponent', () => {
       expect(component.loading()).toBe(false);
     });
 
-    it('should populate items after successful load', () => {
-      expect(component.items()).toHaveLength(2);
+    it('should populate books after successful load', () => {
+      expect(component.books()).toHaveLength(2);
     });
 
     it('should set the category label', () => {
       expect(component.label()).toBe('Programación');
+    });
+
+    it('should map similarity score to book.similarityScore', () => {
+      const [first] = component.books();
+      expect(first.book.similarityScore).toBe(0.95);
+    });
+
+    it('should map coverUrl to the entry coverUrl', () => {
+      const [first, second] = component.books();
+      expect(first.coverUrl).toBe('https://example.com/cover.jpg');
+      expect(second.coverUrl).toBeUndefined();
     });
   });
 
@@ -88,36 +113,21 @@ describe('RecommendationsPageComponent', () => {
       expect(label?.textContent).toContain('Programación');
     });
 
-    it('should render a card for each recommendation', () => {
-      const cards = fixture.nativeElement.querySelectorAll('.book-card');
+    it('should render a BookCoverCard for each recommendation', () => {
+      const cards = fixture.nativeElement.querySelectorAll('app-book-cover-card');
       expect(cards.length).toBe(2);
     });
 
-    it('should render book titles', () => {
-      const titles = fixture.nativeElement.querySelectorAll('.book-card__title');
-      expect(titles[0].textContent.trim()).toBe('Clean Code');
+    it('should wrap the grid with role="list"', () => {
+      const grid = fixture.nativeElement.querySelector('.recommendations-grid[role="list"]');
+      expect(grid).toBeTruthy();
     });
 
-    it('should render book authors', () => {
-      const authors = fixture.nativeElement.querySelectorAll('.book-card__author');
-      expect(authors[0].textContent.trim()).toBe('Robert C. Martin');
-    });
-
-    it('should render cover image when coverUrl is present', () => {
-      const img = fixture.nativeElement.querySelector('.book-card__img');
-      expect(img).toBeTruthy();
-      expect(img.getAttribute('src')).toBe('https://example.com/cover.jpg');
-    });
-
-    it('should render cover placeholder when coverUrl is null', () => {
-      const cards = fixture.nativeElement.querySelectorAll('.book-card');
-      const placeholder = cards[1].querySelector('.book-card__cover-placeholder');
-      expect(placeholder).toBeTruthy();
-    });
-
-    it('should show similarity percentage badge', () => {
-      const badges = fixture.nativeElement.querySelectorAll('.book-card__similarity');
-      expect(badges[0].textContent.trim()).toBe('95%');
+    it('should assign role="listitem" to each card host', () => {
+      const listItems = fixture.nativeElement.querySelectorAll(
+        'app-book-cover-card[role="listitem"]'
+      );
+      expect(listItems.length).toBe(2);
     });
   });
 
@@ -139,7 +149,7 @@ describe('RecommendationsPageComponent', () => {
     });
 
     it('should NOT render any book cards', () => {
-      const cards = fixture.nativeElement.querySelectorAll('.book-card');
+      const cards = fixture.nativeElement.querySelectorAll('app-book-cover-card');
       expect(cards.length).toBe(0);
     });
   });
@@ -171,48 +181,69 @@ describe('RecommendationsPageComponent', () => {
       component.loading.set(true);
       fixture.detectChanges();
 
-      const skeletons = fixture.nativeElement.querySelectorAll('.book-card--skeleton');
+      const skeletons = fixture.nativeElement.querySelectorAll('app-book-card-skeleton');
       expect(skeletons.length).toBeGreaterThan(0);
     });
 
     it('should NOT show skeleton cards after loading completes', () => {
       // loading is false after detectChanges in beforeEach
-      const skeletons = fixture.nativeElement.querySelectorAll('.book-card--skeleton');
+      const skeletons = fixture.nativeElement.querySelectorAll('app-book-card-skeleton');
       expect(skeletons.length).toBe(0);
     });
   });
 
-  describe('similarityPercent', () => {
-    it('should convert 0.95 to 95', () => {
-      expect(component.similarityPercent(0.95)).toBe(95);
+  describe('toBookEntry mapping', () => {
+    it('should map bookId to book.id', () => {
+      expect(component.books()[0].book.id).toBe('book-1');
     });
 
-    it('should convert 0.5 to 50', () => {
-      expect(component.similarityPercent(0.5)).toBe(50);
+    it('should map author string to authors array', () => {
+      expect(component.books()[0].book.authors[0].name).toBe('Robert C. Martin');
     });
 
-    it('should round 0.876 to 88', () => {
-      expect(component.similarityPercent(0.876)).toBe(88);
+    it('should map dominantCategory to categories array', () => {
+      expect(component.books()[0].book.categories[0].name).toBe('Programación');
     });
 
-    it('should convert 1 to 100', () => {
-      expect(component.similarityPercent(1)).toBe(100);
-    });
-
-    it('should convert 0 to 0', () => {
-      expect(component.similarityPercent(0)).toBe(0);
+    it('should have an empty categories array when dominantCategory is empty', () => {
+      mockService.getRecommendations.mockReturnValue(
+        of({
+          label: '',
+          items: [
+            {
+              bookId: 'x',
+              title: 'T',
+              author: 'A',
+              coverUrl: null,
+              similarity: 0.5,
+              dominantCategory: '',
+            },
+          ],
+        })
+      );
+      component.load();
+      fixture.detectChanges();
+      expect(component.books()[0].book.categories).toHaveLength(0);
     });
   });
 
-  describe('Accessibility', () => {
-    it('should have role="list" on the grid when there are items', () => {
-      const grid = fixture.nativeElement.querySelector('.recommendations-grid[role="list"]');
-      expect(grid).toBeTruthy();
+  describe('onSendToKindle', () => {
+    it('should open the Kindle dialog with the mapped book', () => {
+      const [{ book }] = component.books();
+      component.onSendToKindle(book);
+      expect(mockDialogService.open).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ data: book })
+      );
     });
+  });
 
-    it('should have role="listitem" on each book card', () => {
-      const listItems = fixture.nativeElement.querySelectorAll('[role="listitem"]');
-      expect(listItems.length).toBe(2);
+  describe('onShowDescription', () => {
+    it('should open the description dialog with the book title and description', () => {
+      const [{ book }] = component.books();
+      const openSpy = vi.spyOn(component.descriptionDialog(), 'open');
+      component.onShowDescription(book);
+      expect(openSpy).toHaveBeenCalledWith(book.title, book.description ?? '', book.isbn);
     });
   });
 });

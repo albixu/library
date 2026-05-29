@@ -30,7 +30,11 @@ describe('DialogService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), DialogService, { provide: Dialog, useValue: mockCdkDialog }],
+      providers: [
+        provideZonelessChangeDetection(),
+        DialogService,
+        { provide: Dialog, useValue: mockCdkDialog },
+      ],
     });
 
     service = TestBed.inject(DialogService);

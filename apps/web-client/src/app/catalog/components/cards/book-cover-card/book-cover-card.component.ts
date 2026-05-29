@@ -41,10 +41,41 @@ const LANGUAGE_FLAGS: Record<string, string> = {
         }
 
         <!-- Language badge -->
-        <div class="language-badge" [attr.aria-label]="'Idioma: ' + book().language">
-          <span class="lang-code">{{ languageCode() }}</span>
-          <span class="lang-flag" aria-hidden="true">{{ languageFlag() }}</span>
-        </div>
+        @if (languageFlag()) {
+          <div class="language-badge" [attr.aria-label]="'Idioma: ' + book().language">
+            <span class="lang-flag" aria-hidden="true">{{ languageFlag() }}</span>
+          </div>
+        }
+
+        <!-- Level badge -->
+        @if (book().level) {
+          <div class="level-badge-overlay">
+            <app-level-badge [level]="book().level" />
+          </div>
+        }
+
+        <!-- Similarity badge (only for recommendation context) -->
+        @if (similarityPercent() !== null) {
+          <div
+            class="similarity-badge"
+            [attr.aria-label]="'Similitud ' + similarityPercent() + '%'"
+          >
+            {{ similarityPercent() }}%
+          </div>
+        }
+
+        <!-- Kindle button -->
+        @if (isAuthenticated() && book().available) {
+          <button
+            type="button"
+            class="kindle-btn"
+            title="Enviar a Kindle"
+            aria-label="Enviar a Kindle"
+            (click)="onSendToKindle($event)"
+          >
+            <span class="material-symbols-outlined">send_to_mobile</span>
+          </button>
+        }
 
         <!-- Favorite button -->
         @if (isAuthenticated()) {
@@ -88,29 +119,11 @@ const LANGUAGE_FLAGS: Record<string, string> = {
           <p class="book-isbn">ISBN: {{ book().isbn }}</p>
         }
 
-        <!-- Level badge -->
-        <div class="badge-row">
-          <app-level-badge [level]="book().level" />
-        </div>
-
         <!-- Categories -->
         @if (categoryNames().length > 0) {
           <div class="categories-row">
             <app-category-chips [categories]="categoryNames()" [maxVisible]="1" />
           </div>
-        }
-
-        <!-- Send to Kindle button — only when available -->
-        @if (book().available) {
-          <button
-            type="button"
-            class="kindle-btn"
-            aria-label="Enviar a Kindle"
-            (click)="onSendToKindle($event)"
-          >
-            <span class="material-symbols-outlined" aria-hidden="true">send_to_mobile</span>
-            <span>Enviar a Kindle</span>
-          </button>
         }
       </div>
     </article>
@@ -133,7 +146,7 @@ const LANGUAGE_FLAGS: Record<string, string> = {
     /* ── Cover area ── */
     .cover-area {
       position: relative;
-      aspect-ratio: 3 / 4;
+      aspect-ratio: 3 / 2;
       overflow: hidden;
       flex-shrink: 0;
     }
@@ -177,10 +190,6 @@ const LANGUAGE_FLAGS: Record<string, string> = {
       letter-spacing: 0.04em;
       color: rgb(226 232 240); /* slate-200 */
       user-select: none;
-    }
-
-    .lang-code {
-      text-transform: uppercase;
     }
 
     /* ── Favorite button ── */
@@ -250,6 +259,7 @@ const LANGUAGE_FLAGS: Record<string, string> = {
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       flex: 1;
+      min-height: calc(0.9375rem * 1.3 * 2);
     }
 
     .info-btn {
@@ -299,12 +309,25 @@ const LANGUAGE_FLAGS: Record<string, string> = {
       font-family: monospace;
     }
 
-    /* ── Badge row ── */
-    .badge-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.375rem;
-      margin-top: 0.125rem;
+    /* ── Level badge overlay ── */
+    .level-badge-overlay {
+      position: absolute;
+      bottom: 0.375rem;
+      right: 0.375rem;
+    }
+
+    /* ── Similarity badge (recommendations context) ── */
+    .similarity-badge {
+      position: absolute;
+      bottom: 0.375rem;
+      left: 0.375rem;
+      background-color: #17a1cf;
+      color: white;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.375rem;
+      line-height: 1.4;
     }
 
     /* ── Categories row ── */
@@ -312,29 +335,30 @@ const LANGUAGE_FLAGS: Record<string, string> = {
       margin-top: 0.125rem;
     }
 
-    /* ── Send to Kindle button ── */
+    /* ── Kindle button (cover overlay) ── */
     .kindle-btn {
-      display: inline-flex;
+      position: absolute;
+      top: 0.375rem;
+      right: 2.75rem;
+      display: flex;
       align-items: center;
-      gap: 0.375rem;
-      margin-top: auto;
-      padding: 0.4rem 0.75rem;
-      border: 1px solid var(--color-accent, #17a1cf);
-      border-radius: 0.5rem;
-      background: transparent;
-      color: var(--color-accent, #17a1cf);
-      font-size: 0.8125rem;
-      font-weight: 600;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      border: none;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(4px);
       cursor: pointer;
-      transition: background-color 0.2s ease;
-      align-self: flex-start;
+      color: rgb(203 213 225);
 
       .material-symbols-outlined {
-        font-size: 1rem;
+        font-size: 1.1rem;
       }
 
       &:hover {
-        background-color: rgba(23, 161, 207, 0.12);
+        background: rgba(0, 0, 0, 0.65);
+        color: var(--color-accent, #17a1cf);
       }
 
       &:focus-visible {
@@ -366,11 +390,14 @@ export class BookCoverCardComponent {
       .join(', ')
   );
 
-  readonly languageCode = computed(() => this.book().language.toUpperCase());
-
   readonly languageFlag = computed(() => {
     const lang = this.book().language.toLowerCase();
     return LANGUAGE_FLAGS[lang] ?? '';
+  });
+
+  readonly similarityPercent = computed(() => {
+    const score = this.book().similarityScore;
+    return score !== null ? Math.round(score * 100) : null;
   });
 
   readonly categoryNames = computed(() => this.book().categories.map((c) => c.name));

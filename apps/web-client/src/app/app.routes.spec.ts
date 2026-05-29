@@ -7,7 +7,8 @@ import { provideZonelessChangeDetection } from '@angular/core';
 describe('Application Routes', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), 
+      providers: [
+        provideZonelessChangeDetection(),
         provideRouter(routes),
         provideAnimationsAsync(),
       ],

@@ -11,10 +11,7 @@ describe('MainLayoutComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MainLayoutComponent],
-      providers: [provideZonelessChangeDetection(), 
-        provideAnimationsAsync(),
-        provideRouter([]),
-      ],
+      providers: [provideZonelessChangeDetection(), provideAnimationsAsync(), provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MainLayoutComponent);

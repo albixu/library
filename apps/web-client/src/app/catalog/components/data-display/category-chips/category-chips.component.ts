@@ -26,20 +26,25 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   styles: `
     .category-chips-container {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 0.25rem;
       align-items: center;
+      overflow: hidden;
     }
 
     .category-chip {
-      display: inline-flex;
-      align-items: center;
+      display: block;
       padding: 0.125rem 0.5rem;
       font-size: 0.625rem;
       font-weight: 500;
+      line-height: 1.6;
       text-transform: uppercase;
       border-radius: 9999px;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      flex-shrink: 1;
       background-color: rgb(30 41 59); /* slate-800 */
       color: rgb(148 163 184); /* slate-400 */
     }
@@ -53,6 +58,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
       font-weight: 600;
       border-radius: 9999px;
       cursor: help;
+      flex-shrink: 0;
       background-color: rgb(51 65 85); /* slate-700 */
       color: rgb(203 213 225); /* slate-300 */
     }

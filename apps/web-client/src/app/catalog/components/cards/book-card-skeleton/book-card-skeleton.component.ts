@@ -37,7 +37,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
     }
 
     .skeleton-cover {
-      aspect-ratio: 3 / 4;
+      aspect-ratio: 3 / 2;
       width: 100%;
       background-color: rgb(51 65 85);
     }
