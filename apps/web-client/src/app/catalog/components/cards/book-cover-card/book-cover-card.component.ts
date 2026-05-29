@@ -133,7 +133,7 @@ const LANGUAGE_FLAGS: Record<string, string> = {
     /* ── Cover area ── */
     .cover-area {
       position: relative;
-      aspect-ratio: 3 / 4;
+      aspect-ratio: 3 / 2;
       overflow: hidden;
       flex-shrink: 0;
     }
