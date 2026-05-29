@@ -4,6 +4,7 @@ import { Dialog } from '@angular/cdk/dialog';
 
 import { AuthService } from '../../auth/auth.service.js';
 import { LoginModalComponent } from '../../auth/login-modal/login-modal.component.js';
+import { LayoutService } from '../layout.service.js';
 
 /**
  * HeaderComponent - Application header with logo, actions and auth state
@@ -31,7 +32,7 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
         </div>
       </a>
 
-      @if (authService.currentUser() !== null) {
+      @if (!isMobile() && authService.currentUser() !== null) {
         <nav class="header__nav" aria-label="Navegación principal">
           <a
             class="header__nav-link"
@@ -58,6 +59,7 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
         </nav>
       }
 
+      @if (!isMobile()) {
       <div class="header__actions">
         @if (authService.currentUser() === null) {
           <!-- Unauthenticated: show login icon -->
@@ -96,6 +98,7 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
           </div>
         }
       </div>
+      }
     </header>
   `,
   styles: [
@@ -334,7 +337,9 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
 export class HeaderComponent {
   readonly authService = inject(AuthService);
   private readonly dialog = inject(Dialog);
+  private readonly layoutService = inject(LayoutService);
 
+  readonly isMobile = this.layoutService.isMobile;
   readonly isDropdownOpen = signal(false);
 
   openLoginModal(): void {
