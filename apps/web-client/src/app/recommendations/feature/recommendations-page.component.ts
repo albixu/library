@@ -55,11 +55,7 @@ interface BookEntry {
 
       @if (loading()) {
         <!-- Loading skeleton -->
-        <div class="recommendations-grid" aria-busy="true" aria-label="Cargando recomendaciones">
-          @for (_ of skeletonItems; track $index) {
-            <app-book-card-skeleton />
-          }
-        </div>
+        <app-book-card-skeleton aria-busy="true" aria-label="Cargando recomendaciones" />
       } @else if (error()) {
         <!-- Error state -->
         <div class="empty-state" role="alert" data-testid="error-state">
@@ -258,9 +254,6 @@ export class RecommendationsPageComponent implements OnInit {
 
   /** Mapped book entries ready to pass to BookCoverCardComponent */
   readonly books = signal<BookEntry[]>([]);
-
-  /** Placeholder array for skeleton loading cards */
-  readonly skeletonItems = Array.from({ length: 8 });
 
   ngOnInit(): void {
     this.load();
