@@ -39,7 +39,9 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
             routerLinkActive="header__nav-link--active"
             aria-label="Catálogo de libros"
           >
-            <span class="material-symbols-outlined header__nav-icon" aria-hidden="true">menu_book</span>
+            <span class="material-symbols-outlined header__nav-icon" aria-hidden="true"
+              >menu_book</span
+            >
             Catálogo
           </a>
           <a

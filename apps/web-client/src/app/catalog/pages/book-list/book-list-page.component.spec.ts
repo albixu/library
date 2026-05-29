@@ -143,17 +143,9 @@ describe('BookListPageComponent', () => {
       expect(filterPanel).toBeTruthy();
     });
 
-    it('should render book card grid by default (cards mode)', () => {
+    it('should render book card grid by default', () => {
       const grid = fixture.nativeElement.querySelector('app-book-card-grid');
       expect(grid).toBeTruthy();
-    });
-
-    it('should render book table when view mode is set to table', () => {
-      component.setViewMode('table');
-      fixture.detectChanges();
-
-      const bookTable = fixture.nativeElement.querySelector('app-book-table');
-      expect(bookTable).toBeTruthy();
     });
 
     it('should render paginator', () => {
@@ -227,40 +219,24 @@ describe('BookListPageComponent', () => {
   });
 
   describe('Empty states', () => {
-    it('should show initial state when no search has been performed', async () => {
+    it('should show subtitle "No se encontraron libros" when isEmpty is true', async () => {
       (mockStore.books as ReturnType<typeof signal>).set([]);
-      (mockStore.hasFilters as ReturnType<typeof signal>).set(false);
       (mockStore.isEmpty as ReturnType<typeof signal>).set(true);
       fixture.detectChanges();
 
-      expect(component.emptyStateType()).toBe('initial');
-    });
-
-    it('should show no-results state when search returns empty with filters', async () => {
-      (mockStore.books as ReturnType<typeof signal>).set([]);
-      (mockStore.hasFilters as ReturnType<typeof signal>).set(true);
-      (mockStore.isEmpty as ReturnType<typeof signal>).set(true);
-      fixture.detectChanges();
-
-      expect(component.emptyStateType()).toBe('no-results');
-    });
-
-    it('should show empty (non-empty) state when books are present', () => {
-      (mockStore.isEmpty as ReturnType<typeof signal>).set(false);
-      fixture.detectChanges();
-
-      expect(component.emptyStateType()).toBe('empty');
+      const subtitle = fixture.nativeElement.querySelector('.results-subtitle');
+      expect(subtitle?.textContent).toContain('No se encontraron libros');
     });
   });
 
   describe('Loading state', () => {
-    it('should pass loading state to book table when in table mode', () => {
-      component.setViewMode('table');
+    it('should show skeleton when loading with no books', () => {
       (mockStore.loading as ReturnType<typeof signal>).set(true);
+      (mockStore.books as ReturnType<typeof signal>).set([]);
       fixture.detectChanges();
 
-      const bookTable = fixture.nativeElement.querySelector('app-book-table');
-      expect(bookTable).toBeTruthy();
+      const skeleton = fixture.nativeElement.querySelector('app-book-card-skeleton');
+      expect(skeleton).toBeTruthy();
     });
   });
 
@@ -555,12 +531,9 @@ describe('BookListPageComponent – Mobile layout', () => {
     expect(badge).toBeFalsy();
   });
 
-  it('should render book card grid instead of table in mobile', () => {
+  it('should render book card grid in mobile', () => {
     const grid = fixture.nativeElement.querySelector('app-book-card-grid');
-    const table = fixture.nativeElement.querySelector('app-book-table');
-
     expect(grid).toBeTruthy();
-    expect(table).toBeFalsy();
   });
 
   it('should show backdrop when drawer is open in mobile', () => {

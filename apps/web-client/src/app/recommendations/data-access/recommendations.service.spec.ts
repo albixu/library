@@ -45,7 +45,11 @@ describe('RecommendationsService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), RecommendationsService, { provide: ApiService, useValue: apiServiceMock }],
+      providers: [
+        provideZonelessChangeDetection(),
+        RecommendationsService,
+        { provide: ApiService, useValue: apiServiceMock },
+      ],
     });
 
     service = TestBed.inject(RecommendationsService);
