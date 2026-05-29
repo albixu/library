@@ -32,7 +32,11 @@ describe('KindleService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), KindleService, { provide: BookService, useValue: mockBookService }],
+      providers: [
+        provideZonelessChangeDetection(),
+        KindleService,
+        { provide: BookService, useValue: mockBookService },
+      ],
     });
 
     service = TestBed.inject(KindleService);

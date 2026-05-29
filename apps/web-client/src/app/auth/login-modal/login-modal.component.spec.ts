@@ -24,7 +24,11 @@ describe('LoginModalComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [LoginModalComponent],
-      providers: [provideZonelessChangeDetection(), provideRouter([]), { provide: AuthService, useValue: authServiceMock }],
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        { provide: AuthService, useValue: authServiceMock },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginModalComponent);

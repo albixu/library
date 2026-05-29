@@ -24,7 +24,11 @@ describe('ApiService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), ApiService, { provide: HttpClient, useValue: httpClientMock }],
+      providers: [
+        provideZonelessChangeDetection(),
+        ApiService,
+        { provide: HttpClient, useValue: httpClientMock },
+      ],
     });
 
     service = TestBed.inject(ApiService);

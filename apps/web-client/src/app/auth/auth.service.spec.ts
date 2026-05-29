@@ -14,7 +14,11 @@ describe('AuthService', () => {
     apiServiceMock = { post: vi.fn() };
 
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), AuthService, { provide: ApiService, useValue: apiServiceMock }],
+      providers: [
+        provideZonelessChangeDetection(),
+        AuthService,
+        { provide: ApiService, useValue: apiServiceMock },
+      ],
     });
 
     service = TestBed.inject(AuthService);
