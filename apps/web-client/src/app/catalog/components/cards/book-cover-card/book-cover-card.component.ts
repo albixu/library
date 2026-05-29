@@ -64,6 +64,19 @@ const LANGUAGE_FLAGS: Record<string, string> = {
           </div>
         }
 
+        <!-- Kindle button -->
+        @if (book().available) {
+          <button
+            type="button"
+            class="kindle-btn"
+            title="Enviar a Kindle"
+            aria-label="Enviar a Kindle"
+            (click)="onSendToKindle($event)"
+          >
+            <span class="material-symbols-outlined">send_to_mobile</span>
+          </button>
+        }
+
         <!-- Favorite button -->
         @if (isAuthenticated()) {
           <button
@@ -111,19 +124,6 @@ const LANGUAGE_FLAGS: Record<string, string> = {
           <div class="categories-row">
             <app-category-chips [categories]="categoryNames()" [maxVisible]="1" />
           </div>
-        }
-
-        <!-- Send to Kindle button — only when available -->
-        @if (book().available) {
-          <button
-            type="button"
-            class="kindle-btn"
-            aria-label="Enviar a Kindle"
-            (click)="onSendToKindle($event)"
-          >
-            <span class="material-symbols-outlined" aria-hidden="true">send_to_mobile</span>
-            <span>Enviar a Kindle</span>
-          </button>
         }
       </div>
     </article>
@@ -335,29 +335,30 @@ const LANGUAGE_FLAGS: Record<string, string> = {
       margin-top: 0.125rem;
     }
 
-    /* ── Send to Kindle button ── */
+    /* ── Kindle button (cover overlay) ── */
     .kindle-btn {
-      display: inline-flex;
+      position: absolute;
+      top: 0.375rem;
+      right: 2.75rem;
+      display: flex;
       align-items: center;
-      gap: 0.375rem;
-      margin-top: auto;
-      padding: 0.4rem 0.75rem;
-      border: 1px solid var(--color-accent, #17a1cf);
-      border-radius: 0.5rem;
-      background: transparent;
-      color: var(--color-accent, #17a1cf);
-      font-size: 0.8125rem;
-      font-weight: 600;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      border: none;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(4px);
       cursor: pointer;
-      transition: background-color 0.2s ease;
-      align-self: flex-start;
+      color: rgb(203 213 225);
 
       .material-symbols-outlined {
-        font-size: 1rem;
+        font-size: 1.1rem;
       }
 
       &:hover {
-        background-color: rgba(23, 161, 207, 0.12);
+        background: rgba(0, 0, 0, 0.65);
+        color: var(--color-accent, #17a1cf);
       }
 
       &:focus-visible {
