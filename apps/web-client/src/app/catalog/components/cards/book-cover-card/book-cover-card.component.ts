@@ -245,6 +245,7 @@ const LANGUAGE_FLAGS: Record<string, string> = {
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       flex: 1;
+      min-height: calc(0.9375rem * 1.3 * 2);
     }
 
     .info-btn {
