@@ -237,4 +237,13 @@ describe('RecommendationsPageComponent', () => {
       );
     });
   });
+
+  describe('onShowDescription', () => {
+    it('should open the description dialog with the book title and description', () => {
+      const [{ book }] = component.books();
+      const openSpy = vi.spyOn(component.descriptionDialog(), 'open');
+      component.onShowDescription(book);
+      expect(openSpy).toHaveBeenCalledWith(book.title, book.description ?? '', book.isbn);
+    });
+  });
 });

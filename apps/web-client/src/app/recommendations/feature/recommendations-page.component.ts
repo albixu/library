@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   inject,
   signal,
+  viewChild,
   OnInit,
   DestroyRef,
 } from '@angular/core';
@@ -17,6 +18,7 @@ import { Book } from '../../core/models/index.js';
 import { BookCoverCardComponent } from '../../catalog/components/cards/book-cover-card/book-cover-card.component.js';
 import { BookCardSkeletonComponent } from '../../catalog/components/cards/book-card-skeleton/book-card-skeleton.component.js';
 import { SendToKindleDialogComponent } from '../../catalog/components/dialogs/send-to-kindle-dialog/send-to-kindle-dialog.component.js';
+import { BookDescriptionDialogComponent } from '../../catalog/components/dialogs/book-description-dialog/book-description-dialog.component.js';
 import { DialogService } from '../../core/services/dialog.service.js';
 
 /** Shape stored in the books signal — keeps the mapped Book next to its cover URL */
@@ -37,7 +39,7 @@ interface BookEntry {
 @Component({
   selector: 'app-recommendations-page',
   standalone: true,
-  imports: [BookCoverCardComponent, BookCardSkeletonComponent],
+  imports: [BookCoverCardComponent, BookCardSkeletonComponent, BookDescriptionDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="recommendations-page">
@@ -93,6 +95,8 @@ interface BookEntry {
         </div>
       }
     </div>
+
+    <app-book-description-dialog />
   `,
   styles: `
     :host {
@@ -246,6 +250,8 @@ export class RecommendationsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialogService = inject(DialogService);
 
+  readonly descriptionDialog = viewChild.required(BookDescriptionDialogComponent);
+
   readonly loading = signal(true);
   readonly error = signal(false);
   readonly label = signal('');
@@ -294,8 +300,8 @@ export class RecommendationsPageComponent implements OnInit {
     // Nothing extra needed at page level.
   }
 
-  onShowDescription(_book: Book): void {
-    // Description panel not implemented in recommendations context yet.
+  onShowDescription(book: Book): void {
+    this.descriptionDialog().open(book.title, book.description ?? '', book.isbn);
   }
 
   // ── Private helpers ──────────────────────────────────────────────────────────
