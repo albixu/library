@@ -125,7 +125,8 @@ describe('BookCoverCardComponent', () => {
   });
 
   describe('Send to Kindle button', () => {
-    it('should show Send to Kindle button when available is true', () => {
+    it('should show Send to Kindle button when authenticated and available is true', () => {
+      mockAuthService.currentUser.set({ id: 'u1' });
       fixture.componentRef.setInput('book', mockBook);
       fixture.detectChanges();
 
@@ -133,7 +134,17 @@ describe('BookCoverCardComponent', () => {
       expect(btn).toBeTruthy();
     });
 
-    it('should hide Send to Kindle button when available is false', () => {
+    it('should hide Send to Kindle button when not authenticated even if available is true', () => {
+      mockAuthService.currentUser.set(null);
+      fixture.componentRef.setInput('book', mockBook);
+      fixture.detectChanges();
+
+      const btn = fixture.nativeElement.querySelector('[aria-label="Enviar a Kindle"]');
+      expect(btn).toBeNull();
+    });
+
+    it('should hide Send to Kindle button when authenticated but available is false', () => {
+      mockAuthService.currentUser.set({ id: 'u1' });
       const unavailableBook: Book = { ...mockBook, available: false };
       fixture.componentRef.setInput('book', unavailableBook);
       fixture.detectChanges();
@@ -143,6 +154,7 @@ describe('BookCoverCardComponent', () => {
     });
 
     it('should emit sendToKindle output when button is clicked', () => {
+      mockAuthService.currentUser.set({ id: 'u1' });
       const spy = vi.fn();
       component.sendToKindle.subscribe(spy);
 
@@ -156,6 +168,7 @@ describe('BookCoverCardComponent', () => {
     });
 
     it('should not emit sendToKindle when clicking the card body', () => {
+      mockAuthService.currentUser.set({ id: 'u1' });
       const spy = vi.fn();
       component.sendToKindle.subscribe(spy);
 

@@ -65,7 +65,7 @@ const LANGUAGE_FLAGS: Record<string, string> = {
         }
 
         <!-- Kindle button -->
-        @if (book().available) {
+        @if (isAuthenticated() && book().available) {
           <button
             type="button"
             class="kindle-btn"
