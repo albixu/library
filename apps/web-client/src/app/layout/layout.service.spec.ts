@@ -8,9 +8,9 @@ describe('LayoutService', () => {
   describe('isMobile on desktop', () => {
     beforeEach(() => {
       const mockBreakpointObserver = {
-        observe: vi.fn().mockReturnValue(
-          of({ matches: false, breakpoints: {} } as BreakpointState)
-        ),
+        observe: vi
+          .fn()
+          .mockReturnValue(of({ matches: false, breakpoints: {} } as BreakpointState)),
       };
 
       TestBed.configureTestingModule({
@@ -30,9 +30,7 @@ describe('LayoutService', () => {
   describe('isMobile on mobile/tablet', () => {
     beforeEach(() => {
       const mockBreakpointObserver = {
-        observe: vi.fn().mockReturnValue(
-          of({ matches: true, breakpoints: {} } as BreakpointState)
-        ),
+        observe: vi.fn().mockReturnValue(of({ matches: true, breakpoints: {} } as BreakpointState)),
       };
 
       TestBed.configureTestingModule({

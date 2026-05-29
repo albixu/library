@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal, provideZonelessChangeDetection } from '@angular/core';
-import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
+import { BreakpointState } from '@angular/cdk/layout';
 import { DialogRef } from '@angular/cdk/dialog';
 import { of, Subject } from 'rxjs';
 

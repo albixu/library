@@ -60,44 +60,44 @@ import { LayoutService } from '../layout.service.js';
       }
 
       @if (!isMobile()) {
-      <div class="header__actions">
-        @if (authService.currentUser() === null) {
-          <!-- Unauthenticated: show login icon -->
-          <div
-            class="header__avatar"
-            role="button"
-            tabindex="0"
-            aria-label="Iniciar sesión"
-            (click)="openLoginModal()"
-            (keydown.enter)="openLoginModal()"
-          >
-            <span class="material-symbols-outlined">account_circle</span>
-          </div>
-        } @else {
-          <!-- Authenticated: show user menu -->
-          <div
-            class="header__user"
-            (click)="toggleDropdown()"
-            (keydown.enter)="toggleDropdown()"
-            role="button"
-            tabindex="0"
-            aria-label="Menú de usuario"
-            aria-haspopup="true"
-            [attr.aria-expanded]="isDropdownOpen()"
-          >
-            <span class="header__email">{{ authService.currentUser()!.email }}</span>
-            <span class="material-symbols-outlined header__user-icon">account_circle</span>
-            @if (isDropdownOpen()) {
-              <div class="header__dropdown" role="menu">
-                <button class="header__dropdown-item" role="menuitem" (click)="logout($event)">
-                  <span class="material-symbols-outlined">logout</span>
-                  Desconectarse
-                </button>
-              </div>
-            }
-          </div>
-        }
-      </div>
+        <div class="header__actions">
+          @if (authService.currentUser() === null) {
+            <!-- Unauthenticated: show login icon -->
+            <div
+              class="header__avatar"
+              role="button"
+              tabindex="0"
+              aria-label="Iniciar sesión"
+              (click)="openLoginModal()"
+              (keydown.enter)="openLoginModal()"
+            >
+              <span class="material-symbols-outlined">account_circle</span>
+            </div>
+          } @else {
+            <!-- Authenticated: show user menu -->
+            <div
+              class="header__user"
+              (click)="toggleDropdown()"
+              (keydown.enter)="toggleDropdown()"
+              role="button"
+              tabindex="0"
+              aria-label="Menú de usuario"
+              aria-haspopup="true"
+              [attr.aria-expanded]="isDropdownOpen()"
+            >
+              <span class="header__email">{{ authService.currentUser()!.email }}</span>
+              <span class="material-symbols-outlined header__user-icon">account_circle</span>
+              @if (isDropdownOpen()) {
+                <div class="header__dropdown" role="menu">
+                  <button class="header__dropdown-item" role="menuitem" (click)="logout($event)">
+                    <span class="material-symbols-outlined">logout</span>
+                    Desconectarse
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
       }
     </header>
   `,
