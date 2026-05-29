@@ -7,3 +7,4 @@
 export * from './main-layout/index.js';
 export * from './header/index.js';
 export * from './footer/index.js';
+export * from './layout.service.js';

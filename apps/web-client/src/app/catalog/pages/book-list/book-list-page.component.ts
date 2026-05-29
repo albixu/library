@@ -6,9 +6,6 @@ import {
   OnInit,
   ChangeDetectionStrategy,
 } from '@angular/core';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
 
 import {
   Book,
@@ -26,6 +23,7 @@ import { SendToKindleDialogComponent } from '../../components/dialogs/index.js';
 import { BookSearchStore } from '../../../core/services/book-search.store.js';
 import { DialogService } from '../../../core/services/dialog.service.js';
 import { AuthService } from '../../../auth/auth.service.js';
+import { LayoutService } from '../../../layout/layout.service.js';
 
 /**
  * BookListPageComponent - Main page for book catalog search and listing
@@ -446,7 +444,7 @@ export class BookListPageComponent implements OnInit {
   readonly store = inject(BookSearchStore);
   private readonly dialogService = inject(DialogService);
   private readonly authService = inject(AuthService);
-  private readonly breakpointObserver = inject(BreakpointObserver);
+  private readonly layoutService = inject(LayoutService);
 
   /** True when a user is logged in */
   readonly isAuthenticated = computed(() => this.authService.currentUser() !== null);
@@ -454,13 +452,8 @@ export class BookListPageComponent implements OnInit {
   // Mobile state
   readonly isMobileDrawerOpen = signal(false);
 
-  // Responsive breakpoint
-  readonly isMobile = toSignal(
-    this.breakpointObserver
-      .observe([Breakpoints.XSmall, Breakpoints.Small])
-      .pipe(map((result) => result.matches)),
-    { initialValue: false }
-  );
+  // Responsive breakpoint (delegated to LayoutService)
+  readonly isMobile = this.layoutService.isMobile;
 
   // Count active filters for badge
   readonly activeFilterCount = computed(() => {

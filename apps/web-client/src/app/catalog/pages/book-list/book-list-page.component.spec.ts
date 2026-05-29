@@ -7,6 +7,7 @@ import { of, Subject } from 'rxjs';
 import { BookListPageComponent } from './book-list-page.component.js';
 import { BookSearchStore } from '../../../core/services/book-search.store.js';
 import { DialogService } from '../../../core/services/dialog.service.js';
+import { LayoutService } from '../../../layout/layout.service.js';
 import {
   Book,
   PaginationInfo,
@@ -107,12 +108,17 @@ describe('BookListPageComponent', () => {
       } as unknown as DialogRef<unknown>),
     };
 
+    const mockLayoutService = {
+      isMobile: signal(false),
+    };
+
     await TestBed.configureTestingModule({
       imports: [BookListPageComponent],
       providers: [
         provideZonelessChangeDetection(),
         { provide: BookSearchStore, useValue: mockStore },
         { provide: DialogService, useValue: mockDialogService },
+        { provide: LayoutService, useValue: mockLayoutService },
       ],
     }).compileComponents();
 
@@ -413,7 +419,7 @@ describe('BookListPageComponent', () => {
   });
 });
 
-// ─── Mobile layout suite (separate TestBed with BreakpointObserver mocked as mobile) ───
+// ─── Mobile layout suite (separate TestBed with LayoutService mocked as mobile) ───
 describe('BookListPageComponent – Mobile layout', () => {
   let component: BookListPageComponent;
   let fixture: ComponentFixture<BookListPageComponent>;
@@ -478,11 +484,8 @@ describe('BookListPageComponent – Mobile layout', () => {
       } as unknown as DialogRef<unknown>),
     };
 
-    const mockBreakpointObserver = {
-      observe: vi.fn().mockReturnValue(
-        // Emit mobile=true immediately
-        of({ matches: true, breakpoints: {} } as BreakpointState)
-      ),
+    const mockLayoutService = {
+      isMobile: signal(true),
     };
 
     await TestBed.configureTestingModule({
@@ -490,7 +493,7 @@ describe('BookListPageComponent – Mobile layout', () => {
       providers: [
         { provide: BookSearchStore, useValue: mockStore },
         { provide: DialogService, useValue: mockDialogService },
-        { provide: BreakpointObserver, useValue: mockBreakpointObserver },
+        { provide: LayoutService, useValue: mockLayoutService },
       ],
     }).compileComponents();
 
