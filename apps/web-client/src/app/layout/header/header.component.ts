@@ -4,6 +4,7 @@ import { Dialog } from '@angular/cdk/dialog';
 
 import { AuthService } from '../../auth/auth.service.js';
 import { LoginModalComponent } from '../../auth/login-modal/login-modal.component.js';
+import { LayoutService } from '../layout.service.js';
 
 /**
  * HeaderComponent - Application header with logo, actions and auth state
@@ -31,7 +32,7 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
         </div>
       </a>
 
-      @if (authService.currentUser() !== null) {
+      @if (!isMobile() && authService.currentUser() !== null) {
         <nav class="header__nav" aria-label="Navegación principal">
           <a
             class="header__nav-link"
@@ -58,44 +59,46 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
         </nav>
       }
 
-      <div class="header__actions">
-        @if (authService.currentUser() === null) {
-          <!-- Unauthenticated: show login icon -->
-          <div
-            class="header__avatar"
-            role="button"
-            tabindex="0"
-            aria-label="Iniciar sesión"
-            (click)="openLoginModal()"
-            (keydown.enter)="openLoginModal()"
-          >
-            <span class="material-symbols-outlined">account_circle</span>
-          </div>
-        } @else {
-          <!-- Authenticated: show user menu -->
-          <div
-            class="header__user"
-            (click)="toggleDropdown()"
-            (keydown.enter)="toggleDropdown()"
-            role="button"
-            tabindex="0"
-            aria-label="Menú de usuario"
-            aria-haspopup="true"
-            [attr.aria-expanded]="isDropdownOpen()"
-          >
-            <span class="header__email">{{ authService.currentUser()!.email }}</span>
-            <span class="material-symbols-outlined header__user-icon">account_circle</span>
-            @if (isDropdownOpen()) {
-              <div class="header__dropdown" role="menu">
-                <button class="header__dropdown-item" role="menuitem" (click)="logout($event)">
-                  <span class="material-symbols-outlined">logout</span>
-                  Desconectarse
-                </button>
-              </div>
-            }
-          </div>
-        }
-      </div>
+      @if (!isMobile()) {
+        <div class="header__actions">
+          @if (authService.currentUser() === null) {
+            <!-- Unauthenticated: show login icon -->
+            <div
+              class="header__avatar"
+              role="button"
+              tabindex="0"
+              aria-label="Iniciar sesión"
+              (click)="openLoginModal()"
+              (keydown.enter)="openLoginModal()"
+            >
+              <span class="material-symbols-outlined">account_circle</span>
+            </div>
+          } @else {
+            <!-- Authenticated: show user menu -->
+            <div
+              class="header__user"
+              (click)="toggleDropdown()"
+              (keydown.enter)="toggleDropdown()"
+              role="button"
+              tabindex="0"
+              aria-label="Menú de usuario"
+              aria-haspopup="true"
+              [attr.aria-expanded]="isDropdownOpen()"
+            >
+              <span class="header__email">{{ authService.currentUser()!.email }}</span>
+              <span class="material-symbols-outlined header__user-icon">account_circle</span>
+              @if (isDropdownOpen()) {
+                <div class="header__dropdown" role="menu">
+                  <button class="header__dropdown-item" role="menuitem" (click)="logout($event)">
+                    <span class="material-symbols-outlined">logout</span>
+                    Desconectarse
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
     </header>
   `,
   styles: [
@@ -334,7 +337,9 @@ import { LoginModalComponent } from '../../auth/login-modal/login-modal.componen
 export class HeaderComponent {
   readonly authService = inject(AuthService);
   private readonly dialog = inject(Dialog);
+  private readonly layoutService = inject(LayoutService);
 
+  readonly isMobile = this.layoutService.isMobile;
   readonly isDropdownOpen = signal(false);
 
   openLoginModal(): void {

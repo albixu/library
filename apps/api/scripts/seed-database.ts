@@ -419,6 +419,7 @@ async function seedDatabase(): Promise<SeedingSummary> {
     const embeddingService = new OllamaEmbeddingService({
       baseUrl: env.ollama.baseUrl,
       model: env.ollama.model,
+      timeoutMs: env.ollama.timeoutMs,
     });
 
     const bookRepository = new PostgresBookRepository(db as any);

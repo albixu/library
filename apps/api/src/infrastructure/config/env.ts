@@ -109,7 +109,7 @@ const DEFAULTS = {
   LOG_LEVEL: 'debug',
   OLLAMA_EMBEDDING_URL: 'http://ollama-embeddings:11434',
   OLLAMA_MODEL: 'nomic-embed-text',
-  OLLAMA_TIMEOUT_MS: 30000,
+  OLLAMA_TIMEOUT_MS: 60000,
   // HU-013 & HU-021: Translation service defaults
   OLLAMA_TRANSLATION_URL: 'http://ollama-translations:11435',
   TRANSLATION_MODEL: 'llama3.2:1b',
