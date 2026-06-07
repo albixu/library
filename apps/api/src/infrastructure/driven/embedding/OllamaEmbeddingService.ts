@@ -215,11 +215,15 @@ export class OllamaEmbeddingService implements EmbeddingService {
   }
 
   /**
-   * Extracts a readable error message from an unknown error
+   * Extracts a readable error message from an unknown error.
+   *
+   * AbortError messages deliberately include the word "Embedding" so that
+   * the seed process retry logic (which checks for 'embedding' | 'Ollama' |
+   * '503' | 'service unavailable') activates when a request times out.
    */
   private getErrorMessage(error: unknown): string {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      return 'Request timeout';
+      return `Embedding request timed out after ${this.timeoutMs}ms`;
     }
     if (error instanceof Error) {
       return error.message;
