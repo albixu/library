@@ -63,6 +63,8 @@ services:
       # Monorepo root mapping
       - MONOREPO_ROOT=/app
       - DOCS_PATH=/app/docs
+      - JWT_SECRET=${JWT_SECRET:-dev-access-secret-key-min-32-chars!!}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-dev-refresh-secret-key-min-32-chars!}
     depends_on:
       libretranslate:
         condition: service_started
