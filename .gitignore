@@ -24,4 +24,5 @@ build/
 
 # Original raw data (not processed)
 original_data/
+initail_data/
 backups/
