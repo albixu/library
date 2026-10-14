@@ -88,6 +88,7 @@ interface SourceBook {
   // Additional fields that may be present but not used
   readonly pages?: string;
   readonly publication_date?: string;
+  readonly path?: string;
 }
 
 /**
@@ -106,6 +107,7 @@ interface ConsolidatedBook {
   readonly format: string;
   readonly available: boolean;
   readonly level?: string;
+  readonly path?: string;
 }
 
 /**
@@ -157,6 +159,7 @@ function isValidSourceBook(obj: unknown): obj is SourceBook {
     typeof book.language === 'string' &&
     typeof book.type === 'string' &&
     typeof book.format === 'string' &&
+    typeof book.path === 'string' &&
     tagsValid &&
     levelValid
   );
@@ -195,6 +198,7 @@ function transformSourceBook(source: SourceBook): ConsolidatedBook {
     format: source.format,
     available: true, // Default: all imported books are available
     level: source.level,
+    path: source.path,
   };
 }
 
@@ -267,7 +271,7 @@ function toCreateBookInput(book: ConsolidatedBook): CreateBookInput {
     format: book.format,
     isbn: book.isbn,
     available: book.available,
-    path: null,
+    path: book.path,
     level: book.level ?? null,
   };
 }

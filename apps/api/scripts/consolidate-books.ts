@@ -91,6 +91,7 @@ interface SourceBook {
   readonly tags?: readonly string[];
   readonly type?: string;
   readonly format?: string;
+  readonly path?: string;
   readonly [key: string]: unknown;
 }
 
